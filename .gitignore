@@ -5,5 +5,5 @@ __pycache__
 dask-worker-space/
 dist/
 build/
-cuquant.egg-info/
+gquant.egg-info/
 *.swp
