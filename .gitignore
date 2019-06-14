@@ -1,0 +1,9 @@
+__pycache__
+*.csv
+.ipynb_checkpoints/
+.cache/
+dask-worker-space/
+dist/
+build/
+cuquant.egg-info/
+*.swp

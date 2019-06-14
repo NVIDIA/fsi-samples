@@ -1,0 +1,143 @@
+- id: node_cpu_csvdata
+  type: PandasCsvStockLoader
+  conf:
+    path: ./data/stock_price_hist.csv.gz
+  inputs: []
+- id: node_sort
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    - node_cpu_csvdata
+- id: node_addReturn
+  type: CpuReturnFeatureNode
+  conf: {}
+  inputs:
+    - node_sort
+- id: node_addIndicator
+  type: CpuAssetIndicatorNode
+  conf: {}
+  inputs:
+    - node_addReturn
+- id: node_volumeMean
+  type: AverageNode
+  conf:
+    column: volume
+  inputs: 
+    - node_addIndicator
+- id: node_renameMeanVolume
+  type: RenameNode
+  conf:
+      old: volume
+      new: volume_mean
+  inputs:
+    - node_volumeMean
+- id: node_leftMergeMeanVolume
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_addIndicator
+    - node_renameMeanVolume
+- id: node_maxReturns
+  type: MaxNode
+  conf:
+    column: returns
+  inputs: 
+    - node_addIndicator
+- id: node_renameMaxReturn
+  type: RenameNode
+  conf:
+      old: returns
+      new: returns_max
+  inputs:
+    - node_maxReturns
+- id: node_leftMergeMaxReturn
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_leftMergeMeanVolume
+    - node_renameMaxReturn
+- id: node_minReturns
+  type: MinNode
+  conf:
+    column: returns
+  inputs: 
+    - node_addIndicator
+- id: node_renameMinReturn
+  type: RenameNode
+  conf:
+      old: returns
+      new: returns_min
+  inputs:
+    - node_minReturns
+- id: node_leftMergeMinReturn
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_leftMergeMaxReturn
+    - node_renameMinReturn
+- id: node_filterValue
+  type: ValueFilterNode
+  conf: 
+    - column: volume_mean
+      min: 10.0
+    - column: returns_max
+      max: 10.0
+    - column: returns_min
+      min: -10.0
+  inputs:
+    - node_leftMergeMinReturn
+- id: node_dropColumns
+  type: DropNode
+  conf:
+      columns: 
+        - volume_mean
+        - returns_min
+        - returns_max
+        - open
+        - high
+        - low
+        - volume
+  inputs:
+    - node_filterValue
+- id: node_sort2
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    - node_dropColumns
+- id: node_exp_strategy
+  type: CpuPortExpMovingAverageStrategyNode
+  conf:
+      fast: 5
+      slow: 20
+  inputs:
+    - node_sort2
+- id: node_backtest
+  type: SimpleBackTestNode
+  conf: {}
+  inputs: 
+    - node_exp_strategy
+- id: node_portfolioOpt
+  type: SimpleAveragePortOpt
+  conf: {}
+  inputs: 
+    - node_backtest
+- id: node_sharpeRatio
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    - node_portfolioOpt
+- id: node_cumlativeReturn
+  type: CumReturnNode
+  conf: {'points': 300}
+  inputs:
+    - node_portfolioOpt
+

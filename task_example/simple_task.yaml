@@ -1,0 +1,67 @@
+- id: node_csvdata
+  type: CsvStockLoader
+  conf:
+    path: ./data/stock_price_hist.csv.gz
+  inputs: []
+- id: node_minVolume
+  type: VolumeFilterNode
+  conf:
+    min: 50.0
+  inputs: 
+    - node_csvdata
+- id: node_sort
+  type: SortNode
+  conf:
+    keys: 
+      - asset
+      - datetime
+  inputs: 
+    - node_minVolume
+- id: node_addReturn
+  type: ReturnFeatureNode
+  conf: {}
+  inputs: 
+    - node_sort
+- id: node_stockSymbol
+  type: StockNameLoader
+  conf:
+      path: ./data/security_master.csv.gz
+  inputs: []
+- id: node_volumeMean
+  type: AverageNode
+  conf:
+    column: volume
+  inputs: 
+    - node_addReturn
+- id: node_leftMerge1
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_volumeMean
+    - node_stockSymbol
+- id: node_returnMean
+  type: AverageNode
+  conf:
+    column: returns
+  inputs: 
+    - node_addReturn
+- id: node_leftMerge2
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_returnMean
+    - node_stockSymbol
+- id: node_outputCsv1
+  type: OutCsvNode
+  conf:
+    path: symbol_volume.csv
+  inputs:
+    - node_leftMerge1
+- id: node_outputCsv2
+  type: OutCsvNode
+  conf:
+    path: symbol_returns.csv
+  inputs:
+    - node_leftMerge2

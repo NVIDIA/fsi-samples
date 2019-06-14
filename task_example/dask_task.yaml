@@ -1,0 +1,31 @@
+- id: node_csvdata_dask
+  type: DaskCsvStockLoader
+  conf:
+    path: many-small
+  inputs: []
+- id: node_minVolume
+  type: VolumeFilterNode
+  conf:
+    min: 50.0
+  inputs: 
+    - node_csvdata_dask
+- id: node_sort
+  type: SortNode
+  conf:
+    keys: 
+      - asset
+      - datetime
+  inputs: 
+    - node_minVolume
+- id: node_volumeMean
+  type: AverageNode
+  conf:
+    column: volume
+  inputs: 
+    - node_sort
+- id: node_outputCsv
+  type: OutCsvNode
+  conf:
+    path: symbol_volume.csv
+  inputs:
+    - node_volumeMean
