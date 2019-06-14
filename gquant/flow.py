@@ -1,4 +1,4 @@
-from cuquant.dataframe_flow import load_workflow, run
+from gquant.dataframe_flow import load_workflow, run
 import argparse
 
 

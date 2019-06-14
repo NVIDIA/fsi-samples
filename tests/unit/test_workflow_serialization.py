@@ -110,7 +110,7 @@ class TestWorkflowSerialization(unittest.TestCase):
     @ordered
     def test_save_workflow(self):
         '''Test saving a workflow to yaml:'''
-        from cuquant.dataframe_flow.workflow import save_workflow
+        from gquant.dataframe_flow.workflow import save_workflow
         workflow_file = os.path.join(self._test_dir, 'test_save_workflow.yaml')
         save_workflow(self._task_list, workflow_file)
 
@@ -135,7 +135,7 @@ class TestWorkflowSerialization(unittest.TestCase):
     @ordered
     def test_load_workflow(self):
         '''Test loading a workflow from yaml:'''
-        from cuquant.dataframe_flow.workflow import load_workflow
+        from gquant.dataframe_flow.workflow import load_workflow
         workflow_file = os.path.join(self._test_dir, 'test_save_workflow.yaml')
 
         with open(workflow_file, 'w') as wf:
