@@ -22,6 +22,15 @@ These examples can be used as-is or, as they are open source, can be extended to
 - Ubuntu 16.04 or 18.04.
 - [NVIDIA-docker v2+](https://github.com/nvidia/nvidia-docker/wiki/Frequently-Asked-Questions#how-do-i-install-20-if-im-not-using-the-latest-docker-version).
 
+
+### Download data file
+
+Run following command at the project root diretory 
+```bash
+bash download_data.sh
+
+```
+
 ### Install
 
 gQuant source code can be downloaded from [GitHub](https://github.com/rapidsai/gquant).
