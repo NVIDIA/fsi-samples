@@ -23,9 +23,9 @@ These examples can be used as-is or, as they are open source, can be extended to
 - [NVIDIA-docker v2+](https://github.com/nvidia/nvidia-docker/wiki/Frequently-Asked-Questions#how-do-i-install-20-if-im-not-using-the-latest-docker-version).
 
 
-### Download data file
+### Download data files
 
-Run following command at the project root diretory 
+Run the following command at the project root diretory 
 ```bash
 bash download_data.sh
 
