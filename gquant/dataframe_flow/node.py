@@ -7,7 +7,29 @@ import dask_cudf
 import dask
 
 
-__all__ = ['Node']
+__all__ = ['Node', 'TaskSpecSchema']
+
+
+class TaskSpecSchema(object):
+    '''Outline fields expected in a dictionary specifying a task node.
+
+    :ivar id: unique id or name for the node
+    :ivar plugin_type: Plugin class i.e. subclass of Node. Specified as string
+        or subclass of Node
+    :ivar conf: Configuration for the plugin i.e. parameterization. This is a
+        dictionary.
+    :ivar modulepath: Path to python module for custom plugin types.
+    :ivar inputs: List of ids of other tasks or an empty list.
+    '''
+
+    uid = 'id'
+    plugin_type = 'type'
+    conf = 'conf'
+    modulepath = 'filepath'
+    inputs = 'inputs'
+
+    # load = 'load'
+    # save = 'save'
 
 
 class Node(object):
