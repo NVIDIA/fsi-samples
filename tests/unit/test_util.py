@@ -29,31 +29,11 @@ import pathlib
 import cudf
 from gquant.cuindicator import shift, diff
 import numpy as np
-# --------------------------------------------------------- Keep tests in order
-def make_orderer():
-    order = {}
-
-    def ordered(f):
-        order[f.__name__] = len(order)
-        return f
-
-    def compare(a, b):
-        return [1, -1][order[a] < order[b]]
-
-    return ordered, compare
+from .utils import make_orderer, error_function
 
 ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
 
-# ------------------------------------------- Workflow Serialization Test Cases
-
-def error_function(gpu_arr, result_series):
-    gpu_arr = gpu_arr.to_array(fillna='pandas')
-    pan_arr = result_series.values
-    gpu_arr = gpu_arr[~np.isnan(gpu_arr) & ~np.isinf(gpu_arr)]
-    pan_arr = pan_arr[~np.isnan(pan_arr) & ~np.isinf(pan_arr)]
-    err = np.abs(gpu_arr - pan_arr).max()
-    return err
 
 class TestIndicator(unittest.TestCase):
 
