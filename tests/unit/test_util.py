@@ -19,13 +19,8 @@ pytest -v tests
 pytest -v tests/unit/test_util.py
 
 '''
-import os
-import warnings
-from io import StringIO
-import shutil, tempfile
 import pandas as pd
 import unittest
-import pathlib
 import cudf
 from gquant.cuindicator import shift, diff
 import numpy as np
@@ -40,7 +35,6 @@ class TestIndicator(unittest.TestCase):
     def setUp(self):
         array_len = int(1e4)
         self.average_window = 300
-        number_type = np.float64
         random_array = np.random.rand(array_len)
 
         df = cudf.dataframe.DataFrame()

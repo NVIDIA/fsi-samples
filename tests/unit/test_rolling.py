@@ -19,13 +19,8 @@ pytest -v tests
 pytest -v tests/unit/test_rolling.py
 
 '''
-import os
-import warnings
-from io import StringIO
-import shutil, tempfile
 import pandas as pd
 import unittest
-import pathlib
 import cudf
 from gquant.cuindicator import Rolling, Ewm
 from .utils import make_orderer, error_function
@@ -40,7 +35,6 @@ class TestIndicator(unittest.TestCase):
     def setUp(self):
         array_len = int(1e4)
         self.average_window = 300
-        number_type = np.float64
         random_array = np.random.rand(array_len)
 
         df = cudf.dataframe.DataFrame()
@@ -61,7 +55,8 @@ class TestIndicator(unittest.TestCase):
         '''Test rolling window method'''
 
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).mean()
-        cpu_result = self._pandas_data['in'].rolling(self.average_window).mean()
+        cpu_result = self._pandas_data[
+            'in'].rolling(self.average_window).mean()
         err = error_function(cudf.Series(gpu_result), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)

@@ -1,4 +1,6 @@
 import numpy as np
+
+
 def make_orderer():
     """Keep tests in order"""
     order = {}
@@ -34,4 +36,3 @@ def error_function(gpu_series, result_series):
     pan_arr = pan_arr[~np.isnan(pan_arr) & ~np.isinf(pan_arr)]
     err = np.abs(gpu_arr - pan_arr).max()
     return err
-

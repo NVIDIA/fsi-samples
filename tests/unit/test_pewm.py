@@ -19,13 +19,8 @@ pytest -v tests
 pytest -v tests/unit/test_pewm.py
 
 '''
-import os
-import warnings
-from io import StringIO
-import shutil, tempfile
 import pandas as pd
 import unittest
-import pathlib
 import cudf
 from .utils import make_orderer, error_function
 from gquant.cuindicator import PEwm
@@ -40,8 +35,8 @@ class TestIndicator(unittest.TestCase):
     def setUp(self):
         random_array = np.arange(20, dtype=np.float64)
         indicator = np.zeros(20, dtype=np.int32)
-        indicator[0]=1
-        indicator[10]=1
+        indicator[0] = 1
+        indicator[10] = 1
         df = cudf.dataframe.DataFrame()
         df['in'] = random_array
         df['indicator'] = indicator
@@ -80,6 +75,7 @@ class TestIndicator(unittest.TestCase):
         err = error_function(gpu_result, cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
 
 if __name__ == '__main__':
     unittest.main()
