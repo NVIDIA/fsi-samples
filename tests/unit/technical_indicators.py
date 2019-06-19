@@ -1,3 +1,4 @@
+# flake8: noqa
 """
 Indicators as shown by Peter Bakker at:
 https://www.quantopian.com/posts/technical-analysis-indicators-without-talib-code
@@ -25,9 +26,9 @@ log = logging.getLogger(__name__)
 
 def moving_average(df, n):
     """Calculate the moving average for the given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     MA = pd.Series(df['Close'].rolling(n, min_periods=n).mean(), name='MA_' + str(n))
@@ -37,9 +38,9 @@ def moving_average(df, n):
 
 def exponential_moving_average(df, n):
     """
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     EMA = pd.Series(df['Close'].ewm(span=n, min_periods=n).mean(), name='EMA_' + str(n))
@@ -49,9 +50,9 @@ def exponential_moving_average(df, n):
 
 def momentum(df, n):
     """
-    
-    :param df: pandas.DataFrame 
-    :param n: 
+
+    :param df: pandas.DataFrame
+    :param n:
     :return: pandas.DataFrame
     """
     M = pd.Series(df['Close'].diff(n), name='Momentum_' + str(n))
@@ -61,9 +62,9 @@ def momentum(df, n):
 
 def rate_of_change(df, n):
     """
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     M = df['Close'].diff(n - 1)
@@ -75,9 +76,9 @@ def rate_of_change(df, n):
 
 def average_true_range(df, n):
     """
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     i = 0
@@ -94,9 +95,9 @@ def average_true_range(df, n):
 
 def bollinger_bands(df, n):
     """
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     MA = pd.Series(df['Close'].rolling(n, min_periods=n).mean())
@@ -112,7 +113,7 @@ def bollinger_bands(df, n):
 
 def ppsr(df):
     """Calculate Pivot Points, Supports and Resistances for given data
-    
+
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
@@ -131,7 +132,7 @@ def ppsr(df):
 
 def stochastic_oscillator_k(df):
     """Calculate stochastic oscillator %K for given data.
-    
+
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
@@ -143,7 +144,7 @@ def stochastic_oscillator_k(df):
 def stochastic_oscillator_d(df, n):
     """Calculate stochastic oscillator %D for given data.
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     SOk = pd.Series((df['Close'] - df['Low']) / (df['High'] - df['Low']), name='SO%k')
@@ -154,9 +155,9 @@ def stochastic_oscillator_d(df, n):
 
 def trix(df, n):
     """Calculate TRIX for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     EX1 = df['Close'].ewm(span=n, min_periods=n).mean()
@@ -175,10 +176,10 @@ def trix(df, n):
 
 def average_directional_movement_index(df, n, n_ADX):
     """Calculate the Average Directional Movement Index for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
-    :param n_ADX: 
+    :param n:
+    :param n_ADX:
     :return: pandas.DataFrame
     """
     i = 0
@@ -218,10 +219,10 @@ def average_directional_movement_index(df, n, n_ADX):
 
 def macd(df, n_fast, n_slow):
     """Calculate MACD, MACD Signal and MACD difference
-    
+
     :param df: pandas.DataFrame
-    :param n_fast: 
-    :param n_slow: 
+    :param n_fast:
+    :param n_slow:
     :return: pandas.DataFrame
     """
     EMAfast = pd.Series(df['Close'].ewm(span=n_fast, min_periods=n_slow).mean())
@@ -237,7 +238,7 @@ def macd(df, n_fast, n_slow):
 
 def mass_index(df):
     """Calculate the Mass Index for given data.
-    
+
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
@@ -252,11 +253,11 @@ def mass_index(df):
 
 def vortex_indicator(df, n):
     """Calculate the Vortex Indicator for given data.
-    
+
     Vortex Indicator described here:
         http://www.vortexindicator.com/VFX_VORTEX.PDF
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     i = 0
@@ -278,16 +279,16 @@ def vortex_indicator(df, n):
 
 def kst_oscillator(df, r1, r2, r3, r4, n1, n2, n3, n4):
     """Calculate KST Oscillator for given data.
-    
+
     :param df: pandas.DataFrame
-    :param r1: 
-    :param r2: 
-    :param r3: 
-    :param r4: 
-    :param n1: 
-    :param n2: 
-    :param n3: 
-    :param n4: 
+    :param r1:
+    :param r2:
+    :param r3:
+    :param r4:
+    :param n1:
+    :param n2:
+    :param n3:
+    :param n4:
     :return: pandas.DataFrame
     """
     M = df['Close'].diff(r1 - 1)
@@ -312,9 +313,9 @@ def kst_oscillator(df, r1, r2, r3, r4, n1, n2, n3, n4):
 
 def relative_strength_index(df, n):
     """Calculate Relative Strength Index(RSI) for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     i = 0
@@ -345,10 +346,10 @@ def relative_strength_index(df, n):
 
 def true_strength_index(df, r, s):
     """Calculate True Strength Index (TSI) for given data.
-    
+
     :param df: pandas.DataFrame
-    :param r: 
-    :param s: 
+    :param r:
+    :param s:
     :return: pandas.DataFrame
     """
     M = pd.Series(df['Close'].diff(1))
@@ -364,9 +365,9 @@ def true_strength_index(df, r, s):
 
 def accumulation_distribution(df, n):
     """Calculate Accumulation/Distribution for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     ad = (2 * df['Close'] - df['High'] - df['Low']) / (df['High'] - df['Low']) * df['Volume']
@@ -380,7 +381,7 @@ def accumulation_distribution(df, n):
 
 def chaikin_oscillator(df):
     """Calculate Chaikin Oscillator for given data.
-    
+
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
@@ -392,9 +393,9 @@ def chaikin_oscillator(df):
 
 def money_flow_index(df, n):
     """Calculate Money Flow Index and Ratio for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     PP = (df['High'] + df['Low'] + df['Close']) / 3
@@ -416,9 +417,9 @@ def money_flow_index(df, n):
 
 def on_balance_volume(df, n):
     """Calculate On-Balance Volume for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     i = 0
@@ -439,9 +440,9 @@ def on_balance_volume(df, n):
 
 def force_index(df, n):
     """Calculate Force Index for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     F = pd.Series(df['Close'].diff(n) * df['Volume'].diff(n), name='Force_' + str(n))
@@ -451,9 +452,9 @@ def force_index(df, n):
 
 def ease_of_movement(df, n):
     """Calculate Ease of Movement for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     EoM = (df['High'].diff(1) + df['Low'].diff(1)) * (df['High'] - df['Low']) / (2 * df['Volume'])
@@ -464,9 +465,9 @@ def ease_of_movement(df, n):
 
 def commodity_channel_index(df, n):
     """Calculate Commodity Channel Index for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     PP = (df['High'] + df['Low'] + df['Close']) / 3
@@ -478,9 +479,9 @@ def commodity_channel_index(df, n):
 
 def coppock_curve(df, n):
     """Calculate Coppock Curve for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     M = df['Close'].diff(int(n * 11 / 10) - 1)
@@ -496,9 +497,9 @@ def coppock_curve(df, n):
 
 def keltner_channel(df, n):
     """Calculate Keltner Channel for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     KelChM = pd.Series(((df['High'] + df['Low'] + df['Close']) / 3).rolling(n, min_periods=n).mean(),
@@ -515,7 +516,7 @@ def keltner_channel(df, n):
 
 def ultimate_oscillator(df):
     """Calculate Ultimate Oscillator for given data.
-    
+
     :param df: pandas.DataFrame
     :return: pandas.DataFrame
     """
@@ -561,9 +562,9 @@ def donchian_channel(df, n):
 
 def standard_deviation(df, n):
     """Calculate Standard Deviation for given data.
-    
+
     :param df: pandas.DataFrame
-    :param n: 
+    :param n:
     :return: pandas.DataFrame
     """
     df = df.join(pd.Series(df['Close'].rolling(n, min_periods=n).std(), name='STD_' + str(n)))

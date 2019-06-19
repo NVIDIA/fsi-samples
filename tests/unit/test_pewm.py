@@ -30,7 +30,7 @@ ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
 
 
-class TestIndicator(unittest.TestCase):
+class TestPEwm(unittest.TestCase):
 
     def setUp(self):
         random_array = np.arange(20, dtype=np.float64)

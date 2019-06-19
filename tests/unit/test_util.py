@@ -30,7 +30,7 @@ ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
 
 
-class TestIndicator(unittest.TestCase):
+class TestUtil(unittest.TestCase):
 
     def setUp(self):
         array_len = int(1e4)
