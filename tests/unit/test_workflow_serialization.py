@@ -23,30 +23,18 @@ import os
 import warnings
 from io import StringIO
 import yaml
-import shutil, tempfile
+import shutil
+import tempfile
 import unittest
 from difflib import context_diff
-
-
-# --------------------------------------------------------- Keep tests in order
-def make_orderer():
-    order = {}
-
-    def ordered(f):
-        order[f.__name__] = len(order)
-        return f
-
-    def compare(a, b):
-        return [1, -1][order[a] < order[b]]
-
-    return ordered, compare
+from .utils import make_orderer
 
 ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
 
 # ------------------------------------------- Workflow Serialization Test Cases
 WORKFLOW_YAML = \
-'''- id: points
+    '''- id: points
   type: PointNode
   conf: {}
   inputs: []
@@ -122,13 +110,13 @@ class TestWorkflowSerialization(unittest.TestCase):
         cdiff_empty = cdiff == []
 
         err_msg = 'Workflow yaml contents do not match expected results.\n'\
-        'SHOULD HAVE SAVED:\n\n'\
-        '{wyaml}\n\n'\
-        'INSTEAD FILE CONTAINS:\n\n'\
-        '{fcont}\n\n'\
-        'DIFF:\n\n'\
-        '{diff}'.format(wyaml=WORKFLOW_YAML, fcont=workflow_str,
-                        diff=''.join(cdiff))
+            'SHOULD HAVE SAVED:\n\n'\
+            '{wyaml}\n\n'\
+            'INSTEAD FILE CONTAINS:\n\n'\
+            '{fcont}\n\n'\
+            'DIFF:\n\n'\
+            '{diff}'.format(wyaml=WORKFLOW_YAML, fcont=workflow_str,
+                            diff=''.join(cdiff))
 
         self.assertTrue(cdiff_empty, err_msg)
 
@@ -156,10 +144,10 @@ class TestWorkflowSerialization(unittest.TestCase):
             yf.seek(0)
 
             err_msg = 'Load workflow failed. Missing expected task items.\n'\
-            'EXPECTED WORKFLOW YAML:\n\n'\
-            '{wyaml}\n\n'\
-            'GOT TASKS FORMATTED AS YAML:\n\n'\
-            '{tlist}\n\n'.format(wyaml=WORKFLOW_YAML, tlist=yf.read())
+                'EXPECTED WORKFLOW YAML:\n\n'\
+                '{wyaml}\n\n'\
+                'GOT TASKS FORMATTED AS YAML:\n\n'\
+                '{tlist}\n\n'.format(wyaml=WORKFLOW_YAML, tlist=yf.read())
 
             self.assertTrue(all_tasks_exist, err_msg)
 
