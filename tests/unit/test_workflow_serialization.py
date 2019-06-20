@@ -27,21 +27,7 @@ import shutil
 import tempfile
 import unittest
 from difflib import context_diff
-
-
-# --------------------------------------------------------- Keep tests in order
-def make_orderer():
-    order = {}
-
-    def ordered(f):
-        order[f.__name__] = len(order)
-        return f
-
-    def compare(a, b):
-        return [1, -1][order[a] < order[b]]
-
-    return ordered, compare
-
+from .utils import make_orderer
 
 ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
@@ -49,23 +35,23 @@ unittest.defaultTestLoader.sortTestMethodsUsing = compare
 # ------------------------------------------- Workflow Serialization Test Cases
 WORKFLOW_YAML = \
     '''- id: points
-      type: PointNode
-      conf: {}
-      inputs: []
-      filepath: custom_nodes.py
-    - id: distance
-      type: DistanceNode
-      conf: {}
-      inputs:
-      - points
-      filepath: custom_nodes.py
-    - id: node_outputCsv
-      type: OutCsvNode
-      conf:
-        path: symbol_returns.csv
-      inputs:
-      - distance
-    '''
+  type: PointNode
+  conf: {}
+  inputs: []
+  filepath: custom_nodes.py
+- id: distance
+  type: DistanceNode
+  conf: {}
+  inputs:
+  - points
+  filepath: custom_nodes.py
+- id: node_outputCsv
+  type: OutCsvNode
+  conf:
+    path: symbol_returns.csv
+  inputs:
+  - distance
+'''
 
 
 class TestWorkflowSerialization(unittest.TestCase):
