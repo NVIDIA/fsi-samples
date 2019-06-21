@@ -3,13 +3,14 @@ import yaml
 import copy
 import networkx as nx
 import importlib
+import os
 
 from .node import Node
 
 __all__ = ['run', 'save_workflow', 'load_workflow', 'viz_graph', 'build_workflow']
 
 
-DEFAULT_MODULE = "gquant.plugin_nodes"
+DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
 mod_lib = importlib.import_module(DEFAULT_MODULE)
 
 __SETUP_YAML_ONCE = False
