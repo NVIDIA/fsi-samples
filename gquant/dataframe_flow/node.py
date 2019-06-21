@@ -35,7 +35,7 @@ class TaskSpecSchema(object):
 class Node(object):
     __metaclass__ = abc.ABCMeta
 
-    cache_dir = ".cache"
+    cache_dir = os.getenv('GQUANT_CACHE_DIR', ".cache")
 
     def __init__(self, uid, conf, load=False, save=False):
         self.uid = uid
