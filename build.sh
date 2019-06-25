@@ -1,10 +1,15 @@
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
 D_CONT=${D_CONT:='gquant/gquant:latest'}
 
+echo "Fetching latest version of GQuant project"
+git clone --recursive https://github.com/rapidsai/gquant
+
 cat > $D_FILE <<EOF
 FROM nvcr.io/nvidia/rapidsai/rapidsai:0.7-cuda10.0-devel-ubuntu18.04-gcc7-py3.6
 
 USER root
+
+ADD gquant /rapids
 
 RUN apt-get update
 RUN apt-get install -y libfontconfig1 libxrender1
