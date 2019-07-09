@@ -10,7 +10,7 @@ from gquant.cuindicator.util import (substract, summation, multiply,
                                      division, upDownMove, abs_arr,
                                      true_range, lowhigh_diff, money_flow,
                                      average_price, onbalance_volume,
-                                     ultimate_osc, scale)
+                                     ultimate_osc, scale, port_true_range)
 
 
 def moving_average(close_arr, n):
@@ -102,6 +102,20 @@ def trix(close_arr, n):
     return rate_of_change(cudf.Series(EX3), 2)
 
 
+def port_trix(asset_indicator, close_arr, n):
+    """Calculate the port trix.
+
+    :param asset_indicator: the indicator of beginning of the stock
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: expoential weighted moving average in cu.Series
+    """
+    EX1 = PEwm(n, close_arr, asset_indicator).mean()
+    EX2 = PEwm(n, EX1, asset_indicator).mean()
+    EX3 = PEwm(n, EX2, asset_indicator).mean()
+    return rate_of_change(cudf.Series(EX3), 2)
+
+
 def macd(close_arr, n_fast, n_slow):
     """Calculate MACD, MACD Signal and MACD difference
 
@@ -153,6 +167,25 @@ def average_true_range(high_arr, low_arr, close_arr, n):
     tr = true_range(high_arr.data.to_gpu_array(), low_arr.data.to_gpu_array(),
                     close_arr.data.to_gpu_array())
     ATR = Ewm(n, tr).mean()
+    return cudf.Series(ATR)
+
+
+def port_average_true_range(asset_indicator, high_arr,
+                            low_arr, close_arr, n):
+    """Calculate the port Average True Range
+    See https://www.investopedia.com/terms/a/atr.asp for details
+    :param asset_indicator: the indicator of beginning of the stock
+    :param high_arr: high price of the bar, expect series from cudf
+    :param low_arr: low price of the bar, expect series from cudf
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: average true range indicator
+    """
+    tr = port_true_range(asset_indicator.data.to_gpu_array(),
+                         high_arr.data.to_gpu_array(),
+                         low_arr.data.to_gpu_array(),
+                         close_arr.data.to_gpu_array())
+    ATR = PEwm(n, tr, asset_indicator).mean()
     return cudf.Series(ATR)
 
 
