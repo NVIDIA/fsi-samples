@@ -39,12 +39,13 @@ class TestPEwm(unittest.TestCase):
         half = size // 2
         self.size = size
         self.half = half
-        random_array = np.arange(size, dtype=np.float64)
-        open_array = np.arange(size, dtype=np.float64)
-        close_array = np.arange(size, dtype=np.float64)
-        high_array = np.arange(size, dtype=np.float64)
-        low_array = np.arange(size, dtype=np.float64)
-        volume_array = np.arange(size, dtype=np.float64)
+        np.random.seed(10)
+        random_array = np.random.rand(size)
+        open_array = np.random.rand(size)
+        close_array = np.random.rand(size)
+        high_array = np.random.rand(size)
+        low_array = np.random.rand(size)
+        volume_array = np.random.rand(size)
         indicator = np.zeros(size, dtype=np.int32)
         indicator[0] = 1
         indicator[half] = 1
@@ -66,14 +67,14 @@ class TestPEwm(unittest.TestCase):
 
         low_pdf['Open'] = open_array[0:half]
         low_pdf['Close'] = close_array[0:half]
-        low_pdf['High'] = open_array[0:half]
-        low_pdf['Low'] = close_array[0:half]
+        low_pdf['High'] = high_array[0:half]
+        low_pdf['Low'] = low_array[0:half]
         low_pdf['Volume'] = volume_array[0:half]
 
         high_pdf['Open'] = open_array[half:]
         high_pdf['Close'] = close_array[half:]
-        high_pdf['High'] = open_array[half:]
-        high_pdf['Low'] = close_array[half:]
+        high_pdf['High'] = high_array[half:]
+        high_pdf['Low'] = low_array[half:]
         high_pdf['Volume'] = volume_array[half:]
 
         # ignore importlib warnings.
@@ -266,6 +267,187 @@ class TestPEwm(unittest.TestCase):
         err = error_function(r.S3[self.half:], cpu_result['S3'])
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_stochastic_oscillator_k(self):
+        '''Test portfolio stochastic oscillator'''
+        r = gi.stochastic_oscillator_k(self._cudf_data['high'],
+                                       self._cudf_data['low'],
+                                       self._cudf_data['close'])
+
+        cpu_result = ti.stochastic_oscillator_k(self._plow_data)
+        err = error_function(r[:self.half], cpu_result['SO%k'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.stochastic_oscillator_k(self._phigh_data)
+        err = error_function(r[self.half:], cpu_result['SO%k'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_stochastic_oscillator_d(self):
+        '''Test portfolio stochastic oscillator'''
+        n = 10
+        r = gi.port_stochastic_oscillator_d(self._cudf_data['indicator'],
+                                            self._cudf_data['high'],
+                                            self._cudf_data['low'],
+                                            self._cudf_data['close'],
+                                            n)
+
+        cpu_result = ti.stochastic_oscillator_d(self._plow_data, n)
+        err = error_function(r[:self.half], cpu_result['SO%d_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.stochastic_oscillator_d(self._phigh_data, n)
+        err = error_function(r[self.half:], cpu_result['SO%d_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_moving_average(self):
+        '''Test portfolio moving average'''
+        n = 10
+        r = gi.port_moving_average(self._cudf_data['indicator'],
+                                   self._cudf_data['close'],
+                                   n)
+
+        cpu_result = ti.moving_average(self._plow_data, n)
+        err = error_function(r[:self.half], cpu_result['MA_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.moving_average(self._phigh_data, n)
+        err = error_function(r[self.half:], cpu_result['MA_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_rate_of_change(self):
+        '''Test portfolio rate_of_change'''
+        n = 10
+        r = gi.port_rate_of_change(self._cudf_data['indicator'],
+                                   self._cudf_data['close'],
+                                   n)
+
+        cpu_result = ti.rate_of_change(self._plow_data, n)
+        err = error_function(r[:self.half], cpu_result['ROC_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.rate_of_change(self._phigh_data, n)
+        err = error_function(r[self.half:], cpu_result['ROC_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        n = -10
+        r = gi.port_rate_of_change(self._cudf_data['indicator'],
+                                   self._cudf_data['close'],
+                                   n)
+
+        cpu_result = ti.rate_of_change(self._plow_data, n)
+        err = error_function(r[:self.half], cpu_result['ROC_-10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.rate_of_change(self._phigh_data, n)
+        err = error_function(r[self.half:], cpu_result['ROC_-10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_diff(self):
+        '''Test portfolio diff'''
+        n = 10
+        r = gi.port_diff(self._cudf_data['indicator'],
+                         self._cudf_data['close'],
+                         n)
+
+        cpu_result = self._plow_data['Close'].diff(n)
+        err = error_function(r[:self.half], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = self._phigh_data['Close'].diff(n)
+        err = error_function(r[self.half:], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        n = -10
+        r = gi.port_diff(self._cudf_data['indicator'],
+                         self._cudf_data['close'],
+                         n)
+
+        cpu_result = self._plow_data['Close'].diff(n)
+        err = error_function(r[:self.half], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = self._phigh_data['Close'].diff(n)
+        err = error_function(r[self.half:], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_shift(self):
+        '''Test portfolio shift'''
+        n = 10
+        r = gi.port_shift(self._cudf_data['indicator'],
+                          self._cudf_data['close'],
+                          n)
+
+        cpu_result = self._plow_data['Close'].shift(n)
+        err = error_function(r[:self.half], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = self._phigh_data['Close'].shift(n)
+        err = error_function(r[self.half:], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        n = -10
+        r = gi.port_shift(self._cudf_data['indicator'],
+                          self._cudf_data['close'],
+                          n)
+
+        cpu_result = self._plow_data['Close'].shift(n)
+        err = error_function(r[:self.half], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = self._phigh_data['Close'].shift(n)
+        err = error_function(r[self.half:], cpu_result)
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_bollinger_bands(self):
+        '''Test portfolio bollinger bands'''
+        n = 10
+        r = gi.port_bollinger_bands(self._cudf_data['indicator'],
+                                    self._cudf_data['close'],
+                                    n)
+
+        cpu_result = ti.bollinger_bands(self._plow_data, n)
+        err = error_function(r.b1[:self.half], cpu_result['BollingerB_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        err = error_function(r.b2[:self.half], cpu_result['Bollinger%b_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.bollinger_bands(self._phigh_data, n)
+        err = error_function(r.b1[self.half:], cpu_result['BollingerB_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        err = error_function(r.b2[self.half:], cpu_result['Bollinger%b_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
 
 
 if __name__ == '__main__':

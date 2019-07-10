@@ -88,8 +88,10 @@ def true_range_kernel(high_arr, low_arr, close_arr, out_arr, arr_len):
                              close_arr[i - 1]) - min(low_arr[i],
                                                      close_arr[i - 1])
 
+
 @cuda.jit
-def port_true_range_kernel(asset_ind, high_arr, low_arr, close_arr, out_arr, arr_len):
+def port_true_range_kernel(asset_ind, high_arr, low_arr, close_arr, out_arr,
+                           arr_len):
     i = cuda.grid(1)
     if i < arr_len:
         if asset_ind[i] == 1:
@@ -98,6 +100,23 @@ def port_true_range_kernel(asset_ind, high_arr, low_arr, close_arr, out_arr, arr
             out_arr[i] = max(high_arr[i],
                              close_arr[i - 1]) - min(low_arr[i],
                                                      close_arr[i - 1])
+
+
+@cuda.jit
+def port_mask_kernel(asset_ind, beg, end, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
+            if beg + i >= 0:
+                for j in range(beg + i, min(end + i, arr_len)):
+                    out_arr[j] = math.nan
+            else:
+                for j in range(beg + i + arr_len, min(end + i + arr_len,
+                                                      arr_len)):
+                    out_arr[j] = math.nan
+                for j in range(0, min(end + i, arr_len)):
+                    out_arr[j] = math.nan
+
 
 @cuda.jit
 def lowhigh_diff_kernel(high_arr, low_arr, out_arr, arr_len):
@@ -254,18 +273,33 @@ def true_range(high_arr, low_arr, close_arr):
                                                                  array_len)
     return out_arr
 
+
 def port_true_range(asset_indicator, high_arr, low_arr, close_arr):
     out_arr = cuda.device_array_like(high_arr)
     array_len = len(high_arr)
     number_of_blocks = (array_len + (
         number_of_threads - 1)) // number_of_threads
-    port_true_range_kernel[(number_of_blocks,), (number_of_threads,)](asset_indicator,
-                                                                      high_arr,
-                                                                      low_arr,
-                                                                      close_arr,
-                                                                      out_arr,
-                                                                      array_len)
+    port_true_range_kernel[(number_of_blocks,),
+                           (number_of_threads,)](asset_indicator,
+                                                 high_arr,
+                                                 low_arr,
+                                                 close_arr,
+                                                 out_arr,
+                                                 array_len)
     return out_arr
+
+
+def port_mask(asset_indicator, input_arr, beg, end):
+    array_len = len(input_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_mask_kernel[(number_of_blocks,),
+                     (number_of_threads,)](asset_indicator,
+                                           beg,
+                                           end,
+                                           input_arr,
+                                           array_len)
+
 
 def average_price(high_arr, low_arr, close_arr):
     out_arr = cuda.device_array_like(high_arr)

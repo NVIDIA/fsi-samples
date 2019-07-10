@@ -10,7 +10,8 @@ from gquant.cuindicator.util import (substract, summation, multiply,
                                      division, upDownMove, abs_arr,
                                      true_range, lowhigh_diff, money_flow,
                                      average_price, onbalance_volume,
-                                     ultimate_osc, scale, port_true_range)
+                                     ultimate_osc, scale, port_true_range,
+                                     port_mask)
 
 
 def moving_average(close_arr, n):
@@ -36,7 +37,8 @@ def exponential_moving_average(close_arr, n):
 
 
 def port_exponential_moving_average(asset_indicator, close_arr, n):
-    """Calculate the exponential weighted moving average for the given data.
+    """Calculate the port exponential weighted moving average
+    for the given data.
 
     :param close_arr: close price of the bar, expect series from cudf
     :param n: time steps
@@ -44,6 +46,18 @@ def port_exponential_moving_average(asset_indicator, close_arr, n):
     """
     EMA = PEwm(n, close_arr, asset_indicator).mean()
     return cudf.Series(EMA)
+
+
+def port_moving_average(asset_indicator, close_arr, n):
+    """Calculate the port moving average for the given data.
+
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: expoential weighted moving average in cu.Series
+    """
+    MA = Rolling(n, close_arr).mean()
+    port_mask(asset_indicator.data.to_gpu_array(), MA, 0, n - 1)
+    return cudf.Series(MA)
 
 
 def momentum(close_arr, n):
@@ -68,6 +82,53 @@ def rate_of_change(close_arr, n):
     return cudf.Series(division(M, N))
 
 
+def port_rate_of_change(asset_indicator, close_arr, n):
+    """ Calculate the port rate of return
+
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: rate of change in cu.Series
+    """
+    M = diff(close_arr, n - 1)
+    N = shift(close_arr, n - 1)
+    out = division(M, N)
+    if n - 1 >= 0:
+        port_mask(asset_indicator.data.to_gpu_array(), out, 0, n - 1)
+    else:
+        port_mask(asset_indicator.data.to_gpu_array(), out, n - 1, 0)
+    return cudf.Series(out)
+
+
+def port_diff(asset_indicator, close_arr, n):
+    """ Calculate the port diff
+
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: diff in cu.Series
+    """
+    M = diff(close_arr.data.to_gpu_array(), n)
+    if n >= 0:
+        port_mask(asset_indicator.data.to_gpu_array(), M, 0, n)
+    else:
+        port_mask(asset_indicator.data.to_gpu_array(), M, n, 0)
+    return cudf.Series(M)
+
+
+def port_shift(asset_indicator, close_arr, n):
+    """ Calculate the port diff
+
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: shift in cu.Series
+    """
+    M = shift(close_arr.data.to_gpu_array(), n)
+    if n >= 0:
+        port_mask(asset_indicator.data.to_gpu_array(), M, 0, n)
+    else:
+        port_mask(asset_indicator.data.to_gpu_array(), M, n, 0)
+    return cudf.Series(M)
+
+
 def bollinger_bands(close_arr, n):
     """Calculate the Bollinger Bands.
     See https://www.investopedia.com/terms/b/bollingerbands.asp for details
@@ -78,6 +139,30 @@ def bollinger_bands(close_arr, n):
     """
     MA = Rolling(n, close_arr).mean()
     MSD = Rolling(n, close_arr).std()
+    close_arr_gpu = numba.cuda.device_array_like(close_arr.data.to_gpu_array())
+    close_arr_gpu[:] = close_arr.data.to_gpu_array()[:]
+    close_arr_gpu[0:n-1] = math.nan
+    MSD_4 = scale(MSD, 4.0)
+    b1 = division(MSD_4, MA)
+    b2 = division(summation(substract(close_arr_gpu, MA), scale(MSD, 2.0)),
+                  MSD_4)
+    out = collections.namedtuple('Bollinger', 'b1 b2')
+    return out(b1=cudf.Series(b1), b2=cudf.Series(b2))
+
+
+def port_bollinger_bands(asset_indicator, close_arr, n):
+    """Calculate the port Bollinger Bands.
+    See https://www.investopedia.com/terms/b/bollingerbands.asp for details
+
+    :param asset_indicator: the indicator of beginning of the stock
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: b1 b2
+    """
+    MA = Rolling(n, close_arr).mean()
+    port_mask(asset_indicator.data.to_gpu_array(), MA, 0, n - 1)
+    MSD = Rolling(n, close_arr).std()
+    port_mask(asset_indicator.data.to_gpu_array(), MSD, 0, n - 1)
     close_arr_gpu = numba.cuda.device_array_like(close_arr.data.to_gpu_array())
     close_arr_gpu[:] = close_arr.data.to_gpu_array()[:]
     close_arr_gpu[0:n-1] = math.nan
@@ -240,6 +325,21 @@ def stochastic_oscillator_d(high_arr, low_arr, close_arr, n):
     """
     SOk = stochastic_oscillator_k(high_arr, low_arr, close_arr)
     SOd = Ewm(n, SOk).mean()
+    return cudf.Series(SOd)
+
+
+def port_stochastic_oscillator_d(asset_indicator, high_arr, low_arr,
+                                 close_arr, n):
+    """Calculate port stochastic oscillator D for given data.
+
+    :param high_arr: high price of the bar, expect series from cudf
+    :param low_arr: low price of the bar, expect series from cudf
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps
+    :return: stochastic oscillator D in cudf.Series
+    """
+    SOk = stochastic_oscillator_k(high_arr, low_arr, close_arr)
+    SOd = PEwm(n, SOk, asset_indicator).mean()
     return cudf.Series(SOd)
 
 
