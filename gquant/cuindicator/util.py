@@ -130,6 +130,17 @@ def lowhigh_diff_kernel(high_arr, low_arr, out_arr, arr_len):
 
 
 @cuda.jit
+def port_lowhigh_diff_kernel(asset_ind, high_arr, low_arr, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
+            out_arr[i] = 0
+        else:
+            out_arr[i] = abs(high_arr[i] - low_arr[i - 1]) - \
+                         abs(low_arr[i] - high_arr[i - 1])
+
+
+@cuda.jit
 def up_down_kernel(high_arr, low_arr, upD_arr, doD_arr, arr_len):
     i = cuda.grid(1)
     if i < arr_len - 1:
@@ -347,6 +358,20 @@ def lowhigh_diff(high_arr, low_arr):
                                                                    low_arr,
                                                                    out_arr,
                                                                    array_len)
+    return out_arr
+
+
+def port_lowhigh_diff(asset_ind, high_arr, low_arr):
+    out_arr = cuda.device_array_like(high_arr)
+    array_len = len(high_arr)
+    number_of_blocks = \
+        (array_len + (number_of_threads - 1)) // number_of_threads
+    port_lowhigh_diff_kernel[(number_of_blocks,),
+                             (number_of_threads,)](asset_ind,
+                                                   high_arr,
+                                                   low_arr,
+                                                   out_arr,
+                                                   array_len)
     return out_arr
 
 

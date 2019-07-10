@@ -448,6 +448,71 @@ class TestPEwm(unittest.TestCase):
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
+    @ordered
+    def test_port_average_directional_movement_index(self):
+        '''Test portfolio average directional movement index'''
+        n = 10
+        n_adx = 20
+        r = gi.port_average_directional_movement_index(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            n, n_adx)
+
+        cpu_result = ti.average_directional_movement_index(self._plow_data,
+                                                           n,
+                                                           n_adx)
+        err = error_function(r[:self.half], cpu_result['ADX_10_20'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.average_directional_movement_index(self._phigh_data,
+                                                           n,
+                                                           n_adx)
+        err = error_function(r[self.half:], cpu_result['ADX_10_20'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_vortex_indicator(self):
+        '''Test portfolio vortex indicator'''
+        n = 10
+        r = gi.port_vortex_indicator(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            n)
+
+        cpu_result = ti.vortex_indicator(self._plow_data,
+                                         n)
+        err = error_function(r[:self.half], cpu_result['Vortex_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.vortex_indicator(self._phigh_data,
+                                         n)
+        err = error_function(r[self.half:], cpu_result['Vortex_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_kst_oscillator(self):
+        '''Test portfolio kst oscillator'''
+
+        r = gi.port_kst_oscillator(
+            self._cudf_data['indicator'],
+            self._cudf_data['close'], 3, 4, 5, 6, 7, 8, 9, 10)
+
+        cpu_result = ti.kst_oscillator(self._plow_data,
+                                       3, 4, 5, 6, 7, 8, 9, 10)
+        err = error_function(r[:self.half], cpu_result['KST_3_4_5_6_7_8_9_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.kst_oscillator(self._phigh_data,
+                                       3, 4, 5, 6, 7, 8, 9, 10)
+        err = error_function(r[self.half:], cpu_result['KST_3_4_5_6_7_8_9_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
 
 if __name__ == '__main__':

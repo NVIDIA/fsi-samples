@@ -11,7 +11,7 @@ from gquant.cuindicator.util import (substract, summation, multiply,
                                      true_range, lowhigh_diff, money_flow,
                                      average_price, onbalance_volume,
                                      ultimate_osc, scale, port_true_range,
-                                     port_mask)
+                                     port_mask, port_lowhigh_diff)
 
 
 def moving_average(close_arr, n):
@@ -367,6 +367,33 @@ def average_directional_movement_index(high_arr, low_arr, close_arr, n, n_ADX):
     return ADX
 
 
+def port_average_directional_movement_index(asset_indicator,
+                                            high_arr, low_arr,
+                                            close_arr, n, n_ADX):
+    """Calculate the port Average Directional Movement Index for given data.
+
+    :param high_arr: high price of the bar, expect series from cudf
+    :param low_arr: low price of the bar, expect series from cudf
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps to do EWM average
+    :param n_ADX: time steps to do EWM average of ADX
+    :return: Average Directional Movement Index in cudf.Series
+    """
+    UpI, DoI = upDownMove(high_arr.data.to_gpu_array(),
+                          low_arr.data.to_gpu_array())
+    tr = port_true_range(asset_indicator.to_gpu_array(),
+                         high_arr.data.to_gpu_array(),
+                         low_arr.data.to_gpu_array(),
+                         close_arr.data.to_gpu_array())
+    ATR = PEwm(n, tr, asset_indicator).mean()
+    PosDI = division(PEwm(n, UpI, asset_indicator).mean(), ATR)
+    NegDI = division(PEwm(n, DoI, asset_indicator).mean(), ATR)
+    NORM = division(abs_arr(substract(PosDI, NegDI)), summation(PosDI, NegDI))
+    port_mask(asset_indicator.data.to_gpu_array(), NORM, -1, 0)
+    ADX = cudf.Series(PEwm(n_ADX, NORM, asset_indicator).mean())
+    return ADX
+
+
 def vortex_indicator(high_arr, low_arr, close_arr, n):
     """Calculate the Vortex Indicator for given data.
     Vortex Indicator described here:
@@ -386,6 +413,32 @@ def vortex_indicator(high_arr, low_arr, close_arr, n):
                       low_arr.data.to_gpu_array())
 
     VI = division(Rolling(n, VM).sum(), Rolling(n, TR).sum())
+    return cudf.Series(VI)
+
+
+def port_vortex_indicator(asset_indicator, high_arr, low_arr, close_arr, n):
+    """Calculate the port Vortex Indicator for given data.
+    Vortex Indicator described here:
+
+        http://www.vortexindicator.com/VFX_VORTEX.PDF
+
+    :param high_arr: high price of the bar, expect series from cudf
+    :param low_arr: low price of the bar, expect series from cudf
+    :param close_arr: close price of the bar, expect series from cudf
+    :param n: time steps to do EWM average
+    :return:  Vortex Indicator in cudf.Series
+    """
+    TR = port_true_range(asset_indicator.to_gpu_array(),
+                         high_arr.data.to_gpu_array(),
+                         low_arr.data.to_gpu_array(),
+                         close_arr.data.to_gpu_array())
+
+    VM = port_lowhigh_diff(asset_indicator.to_gpu_array(),
+                           high_arr.data.to_gpu_array(),
+                           low_arr.data.to_gpu_array())
+
+    VI = division(Rolling(n, VM).sum(), Rolling(n, TR).sum())
+    port_mask(asset_indicator.data.to_gpu_array(), VI, 0, n - 1)
     return cudf.Series(VI)
 
 
@@ -415,6 +468,49 @@ def kst_oscillator(close_arr, r1, r2, r3, r4, n1, n2, n3, n4):
     term2 = scale(Rolling(n2, division(M2, N2)).sum(), 2.0)
     term3 = scale(Rolling(n3, division(M3, N3)).sum(), 3.0)
     term4 = scale(Rolling(n4, division(M4, N4)).sum(), 4.0)
+    KST = summation(summation(summation(term1, term2), term3), term4)
+    return cudf.Series(KST)
+
+
+def port_kst_oscillator(asset_indicator, close_arr,
+                        r1, r2, r3, r4, n1, n2, n3, n4):
+    """Calculate port KST Oscillator for given data.
+
+    :param close_arr: close price of the bar, expect series from cudf
+    :param r1: r1 time steps
+    :param r2: r2 time steps
+    :param r3: r3 time steps
+    :param r4: r4 time steps
+    :param n1: n1 time steps
+    :param n2: n2 time steps
+    :param n3: n3 time steps
+    :param n4: n4 time steps
+    :return:  KST Oscillator in cudf.Series
+    """
+    M1 = diff(close_arr, r1 - 1)
+    N1 = shift(close_arr, r1 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), M1, 0, r1 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), N1, 0, r1 - 1)
+    M2 = diff(close_arr, r2 - 1)
+    N2 = shift(close_arr, r2 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), M2, 0, r2 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), N2, 0, r2 - 1)
+    M3 = diff(close_arr, r3 - 1)
+    N3 = shift(close_arr, r3 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), M3, 0, r3 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), N3, 0, r3 - 1)
+    M4 = diff(close_arr, r4 - 1)
+    N4 = shift(close_arr, r4 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), M4, 0, r4 - 1)
+    port_mask(asset_indicator.data.to_gpu_array(), N4, 0, r4 - 1)
+    term1 = Rolling(n1, division(M1, N1)).sum()
+    port_mask(asset_indicator.data.to_gpu_array(), term1, 0, n1 - 1)
+    term2 = scale(Rolling(n2, division(M2, N2)).sum(), 2.0)
+    port_mask(asset_indicator.data.to_gpu_array(), term2, 0, n2 - 1)
+    term3 = scale(Rolling(n3, division(M3, N3)).sum(), 3.0)
+    port_mask(asset_indicator.data.to_gpu_array(), term3, 0, n3 - 1)
+    term4 = scale(Rolling(n4, division(M4, N4)).sum(), 4.0)
+    port_mask(asset_indicator.data.to_gpu_array(), term4, 0, n4 - 1)
     KST = summation(summation(summation(term1, term2), term3), term4)
     return cudf.Series(KST)
 
