@@ -6,7 +6,7 @@ To run unittests:
 # Using standard library unittest
 
 python -m unittest -v
-python -m unittest tests/unit/test_pewm.py -v
+python -m unittest tests/unit/test_multi_assets_indicator.py -v
 
 or
 
@@ -16,7 +16,7 @@ python -m unittest discover -s <directory> -p 'test_*.py'
 # Using pytest
 # "conda install pytest" or "pip install pytest"
 pytest -v tests
-pytest -v tests/unit/test_pewm.py
+pytest -v tests/unit/test_multi_assets_indicator.py
 
 '''
 import pandas as pd
@@ -27,12 +27,13 @@ import gquant.cuindicator as gi
 from . import technical_indicators as ti
 from gquant.cuindicator import PEwm
 import numpy as np
+import warnings
 
 ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
 
 
-class TestPEwm(unittest.TestCase):
+class TestMultipleAssets(unittest.TestCase):
 
     def setUp(self):
         size = 200
@@ -77,17 +78,18 @@ class TestPEwm(unittest.TestCase):
         high_pdf['Low'] = low_array[half:]
         high_pdf['Volume'] = volume_array[half:]
 
-        # ignore importlib warnings.
         self._pandas_data = pdf
         self._cudf_data = df
         self._plow_data = low_pdf
         self._phigh_data = high_pdf
+        warnings.simplefilter('ignore', category=ImportWarning)
+        warnings.simplefilter('ignore', category=DeprecationWarning)
 
     def tearDown(self):
         pass
 
     @ordered
-    def test_pewm(self):
+    def test_multi_assets_indicator(self):
         '''Test portfolio ewm method'''
         self._cudf_data['ewma'] = PEwm(3,
                                        self._cudf_data['in'],
@@ -511,6 +513,272 @@ class TestPEwm(unittest.TestCase):
         cpu_result = ti.kst_oscillator(self._phigh_data,
                                        3, 4, 5, 6, 7, 8, 9, 10)
         err = error_function(r[self.half:], cpu_result['KST_3_4_5_6_7_8_9_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_mass_index(self):
+        '''Test portfolio mass index'''
+
+        r = gi.port_mass_index(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            9, 25)
+
+        cpu_result = ti.mass_index(self._plow_data)
+        err = error_function(r[:self.half], cpu_result['Mass Index'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.mass_index(self._phigh_data)
+        err = error_function(r[self.half:], cpu_result['Mass Index'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_true_strength_index(self):
+        '''Test portfolio true strength index'''
+
+        r = gi.port_true_strength_index(
+            self._cudf_data['indicator'],
+            self._cudf_data['close'],
+            5, 8)
+
+        cpu_result = ti.true_strength_index(self._plow_data, 5, 8)
+        err = error_function(r[:self.half], cpu_result['TSI_5_8'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.true_strength_index(self._phigh_data, 5, 8)
+        err = error_function(r[self.half:], cpu_result['TSI_5_8'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_chaikin_oscillator(self):
+        '''Test portfolio chaikin oscillator'''
+
+        r = gi.port_chaikin_oscillator(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            self._cudf_data['volume'],
+            3, 10)
+
+        cpu_result = ti.chaikin_oscillator(self._plow_data)
+        err = error_function(r[:self.half], cpu_result['Chaikin'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.chaikin_oscillator(self._phigh_data)
+        err = error_function(r[self.half:], cpu_result['Chaikin'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_money_flow_index(self):
+        '''Test portfolio money flow index'''
+
+        r = gi.port_money_flow_index(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            self._cudf_data['volume'],
+            10)
+
+        cpu_result = ti.money_flow_index(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['MFI_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.money_flow_index(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['MFI_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_on_balance_volume(self):
+        '''Test portfolio on balance volume'''
+
+        r = gi.port_on_balance_volume(
+            self._cudf_data['indicator'],
+            self._cudf_data['close'],
+            self._cudf_data['volume'],
+            10)
+
+        cpu_result = ti.on_balance_volume(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['OBV_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.on_balance_volume(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['OBV_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_force_index(self):
+        '''Test portfolio force index'''
+
+        r = gi.port_force_index(
+            self._cudf_data['indicator'],
+            self._cudf_data['close'],
+            self._cudf_data['volume'],
+            10)
+
+        cpu_result = ti.force_index(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['Force_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.force_index(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['Force_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_ease_of_movement(self):
+        '''Test portfolio ease of movement'''
+
+        r = gi.port_ease_of_movement(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['volume'],
+            10)
+
+        cpu_result = ti.ease_of_movement(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['EoM_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.ease_of_movement(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['EoM_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_ultimate_oscillator(self):
+        '''Test portfolio ultimate oscillator'''
+
+        r = gi.port_ultimate_oscillator(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'])
+
+        cpu_result = ti.ultimate_oscillator(self._plow_data)
+        err = error_function(r[:self.half], cpu_result['Ultimate_Osc'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.ultimate_oscillator(self._phigh_data)
+        err = error_function(r[self.half:], cpu_result['Ultimate_Osc'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_donchian_channel(self):
+        '''Test portfolio donchian channel'''
+
+        r = gi.port_donchian_channel(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            10)
+        cpu_result = ti.donchian_channel(self._plow_data, 10)
+        err = error_function(r[:self.half-1], cpu_result['Donchian_10'][0:99])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.donchian_channel(self._phigh_data, 10)
+        err = error_function(r[self.half:-1], cpu_result['Donchian_10'][0:99])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_coppock_curve(self):
+        '''Test portfolio coppock curve'''
+
+        r = gi.port_coppock_curve(
+            self._cudf_data['indicator'],
+            self._cudf_data['close'],
+            10)
+        cpu_result = ti.coppock_curve(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['Copp_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.coppock_curve(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['Copp_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_accumulation_distribution(self):
+        '''Test portfolio accumulation distribution'''
+
+        r = gi.port_accumulation_distribution(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            self._cudf_data['volume'],
+            10)
+        cpu_result = ti.accumulation_distribution(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['Acc/Dist_ROC_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.accumulation_distribution(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['Acc/Dist_ROC_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_commodity_channel_index(self):
+        '''Test portfolio commodity channel index'''
+
+        r = gi.port_commodity_channel_index(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            10)
+        cpu_result = ti.commodity_channel_index(self._plow_data, 10)
+        err = error_function(r[:self.half], cpu_result['CCI_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+        cpu_result = ti.commodity_channel_index(self._phigh_data, 10)
+        err = error_function(r[self.half:], cpu_result['CCI_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_port_keltner_channel(self):
+        '''Test portfolio keltner channel'''
+
+        r = gi.port_keltner_channel(
+            self._cudf_data['indicator'],
+            self._cudf_data['high'],
+            self._cudf_data['low'],
+            self._cudf_data['close'],
+            10)
+        cpu_result = ti.keltner_channel(self._plow_data, 10)
+        err = error_function(r.KelChD[:self.half], cpu_result['KelChD_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        err = error_function(r.KelChM[:self.half], cpu_result['KelChM_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        err = error_function(r.KelChU[:self.half], cpu_result['KelChU_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        cpu_result = ti.keltner_channel(self._phigh_data, 10)
+        err = error_function(r.KelChD[self.half:], cpu_result['KelChD_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        err = error_function(r.KelChM[self.half:], cpu_result['KelChM_10'])
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        err = error_function(r.KelChU[self.half:], cpu_result['KelChU_10'])
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
