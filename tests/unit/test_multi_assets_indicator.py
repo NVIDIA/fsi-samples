@@ -36,6 +36,9 @@ unittest.defaultTestLoader.sortTestMethodsUsing = compare
 class TestMultipleAssets(unittest.TestCase):
 
     def setUp(self):
+        warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
+        warnings.simplefilter('ignore', category=ImportWarning)
+        warnings.simplefilter('ignore', category=DeprecationWarning)
         size = 200
         half = size // 2
         self.size = size
@@ -82,8 +85,6 @@ class TestMultipleAssets(unittest.TestCase):
         self._cudf_data = df
         self._plow_data = low_pdf
         self._phigh_data = high_pdf
-        warnings.simplefilter('ignore', category=ImportWarning)
-        warnings.simplefilter('ignore', category=DeprecationWarning)
 
     def tearDown(self):
         pass
