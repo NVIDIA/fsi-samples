@@ -209,9 +209,10 @@ class TestMultipleAssets(unittest.TestCase):
     @ordered
     def test_port_ppsr(self):
         '''Test portfolio average true range'''
-        r = gi.ppsr(self._cudf_data['high'],
-                    self._cudf_data['low'],
-                    self._cudf_data['close'])
+        r = gi.port_ppsr(self._cudf_data['indicator'],
+                         self._cudf_data['high'],
+                         self._cudf_data['low'],
+                         self._cudf_data['close'])
 
         cpu_result = ti.ppsr(self._plow_data)
         err = error_function(r.PP[:self.half], cpu_result['PP'])
@@ -274,9 +275,10 @@ class TestMultipleAssets(unittest.TestCase):
     @ordered
     def test_port_stochastic_oscillator_k(self):
         '''Test portfolio stochastic oscillator'''
-        r = gi.stochastic_oscillator_k(self._cudf_data['high'],
-                                       self._cudf_data['low'],
-                                       self._cudf_data['close'])
+        r = gi.port_stochastic_oscillator_k(self._cudf_data['indicator'],
+                                            self._cudf_data['high'],
+                                            self._cudf_data['low'],
+                                            self._cudf_data['close'])
 
         cpu_result = ti.stochastic_oscillator_k(self._plow_data)
         err = error_function(r[:self.half], cpu_result['SO%k'])

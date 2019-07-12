@@ -311,9 +311,52 @@ def ppsr(high_arr, low_arr, close_arr):
                S3=cudf.Series(S3))
 
 
+def port_ppsr(asset_indicator, high_arr, low_arr, close_arr):
+    """Calculate port Pivot Points, Supports and Resistances for given data
+
+    :param asset_indicator: the indicator of beginning of the stock
+    :param high_arr: high price of the bar, expect series from cudf
+    :param low_arr: low price of the bar, expect series from cudf
+    :param close_arr: close price of the bar, expect series from cudf
+    :return: PP R1 S1 R2 S2 R3 S3
+    """
+    high_gpu = high_arr.data.to_gpu_array()
+    low_gpu = low_arr.data.to_gpu_array()
+    close_gpu = close_arr.data.to_gpu_array()
+    PP = average_price(high_gpu, low_gpu, close_gpu)
+    R1 = substract(scale(PP, 2.0), low_gpu)
+    S1 = substract(scale(PP, 2.0), high_gpu)
+    R2 = substract(summation(PP, high_gpu), low_gpu)
+    S2 = summation(substract(PP, high_gpu), low_gpu)
+    R3 = summation(high_gpu, scale(substract(PP, low_gpu), 2.0))
+    S3 = substract(low_gpu, scale(substract(high_gpu, PP), 2.0))
+    out = collections.namedtuple('PPSR', 'PP R1 S1 R2 S2 R3 S3')
+    return out(PP=cudf.Series(PP),
+               R1=cudf.Series(R1),
+               S1=cudf.Series(S1),
+               R2=cudf.Series(R2),
+               S2=cudf.Series(S2),
+               R3=cudf.Series(R3),
+               S3=cudf.Series(S3))
+
+
 def stochastic_oscillator_k(high_arr, low_arr, close_arr):
     """Calculate stochastic oscillator K for given data.
 
+    :param high_arr: high price of the bar, expect series from cudf
+    :param low_arr: low price of the bar, expect series from cudf
+    :param close_arr: close price of the bar, expect series from cudf
+    :return: stochastic oscillator K in cudf.Series
+    """
+    SOk = (close_arr - low_arr) / (high_arr - low_arr)
+    return SOk
+
+
+def port_stochastic_oscillator_k(asset_indicator, high_arr,
+                                 low_arr, close_arr):
+    """Calculate stochastic oscillator K for given data.
+
+    :param asset_indicator: the indicator of beginning of the stock
     :param high_arr: high price of the bar, expect series from cudf
     :param low_arr: low price of the bar, expect series from cudf
     :param close_arr: close price of the bar, expect series from cudf

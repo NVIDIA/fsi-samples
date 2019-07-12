@@ -40,9 +40,10 @@ class IndicatorNode(Node):
 
     def process(self, inputs):
         """
-        Add technical indicators to the dataframe
-        all technical indicators are defined in the self.conf
-
+        Add technical indicators to the dataframe.
+        All technical indicators are defined in the self.conf
+        "remove_na" in self.conf decides whether we want to remove the NAs
+        from the technical indicators
 
         Arguments
         -------
@@ -72,10 +73,12 @@ class IndicatorNode(Node):
                 out_col = self._compose_name(indicator, [])
                 input_df[out_col] = v
                 out_cols.append(out_col)
-
-        # hack to remove the nan, need official dropna function
-        # input_df[out_col] = input_df[out_col].fillna(np.inf)
-        # input_df = input_df[input_df[out_col] < LARGE_NUM]
+        # remove all the na elements, requires cudf>=0.8
+        if "remove_na" in self.conf and self.conf["remove_na"]:
+            na_element = input_df[out_cols[0]].isna()
+            for i in range(1, len(out_cols)):
+                na_element |= input_df[out_cols[i]].isna()
+            input_df = input_df[~na_element]
         return input_df
 
 
@@ -93,10 +96,8 @@ if __name__ == "__main__":
              "columns": ["close"],
              "args": [10],
              "outputs": ["b1", "b2"]}
-        ]
+        ],
+        "remove_na": True
     }
     inN = IndicatorNode("abc", conf)
     o = inN.process([df])
-    # df = df.sort_values(["asset", 'datetime'])
-    # sf = ReturnFeatureNode("id2", {})
-    # df2 = sf([df])
