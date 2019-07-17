@@ -1,9 +1,6 @@
 from gquant.dataframe_flow import Node
 # from .returnFeatureNode import ReturnFeatureNode
 import gquant.cuindicator as ci
-import numpy as np
-
-LARGE_NUM = 1e220
 
 
 class IndicatorNode(Node):
