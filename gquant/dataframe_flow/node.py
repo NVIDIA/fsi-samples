@@ -177,6 +177,7 @@ class Node(object):
         if not isinstance(input_df, cudf.DataFrame) and \
            not isinstance(input_df, dask_cudf.DataFrame):
             return True
+
         i_cols = input_df.columns
         if len(i_cols) != len(ref):
             print("expect %d columns, only see %d columns"
@@ -184,22 +185,41 @@ class Node(object):
             print("ref:", ref)
             print("columns", i_cols)
             raise Exception("not valid for node %s" % (self.uid))
+
         for col in ref.keys():
             if col not in i_cols:
                 print("error for node %s, %s is not in the required input df"
                       % (self.uid, col))
                 return False
+
             if ref[col] is None:
                 continue
+
+            err_msg = "for node {} type {}, column {} type {} "\
+                "does not match expected type {}".format(
+                    self.uid, type(self), col, input_df[col].dtype,
+                    ref[col])
+
             if ref[col] == 'category':
-                d_type = pd.core.dtypes.dtypes.CategoricalDtype()
+                # comparing pandas.core.dtypes.dtypes.CategoricalDtype to
+                # numpy.dtype causes TypeError. Instead, let's compare
+                # after converting all types to their string representation
+                # d_type_tuple = (pd.core.dtypes.dtypes.CategoricalDtype(),)
+                d_type_tuple = (str(pd.core.dtypes.dtypes.CategoricalDtype()),)
+            elif ref[col] == 'date':
+                # Cudf read_csv doesn't understand 'datetime64[ms]' even
+                # though it reads the data in as 'datetime64[ms]', but
+                # expects 'date' as dtype specified passed to read_csv.
+                d_type_tuple = ('datetime64[ms]', 'date',)
             else:
-                d_type = np.dtype(ref[col])
-            if (input_df[col].dtype != d_type):
-                print("error for node %s, column %s type %s "
-                      "does not match type %s"
-                      % (self.uid, col, input_df[col].dtype, ref[col]))
+                d_type_tuple = (str(np.dtype(ref[col])),)
+
+            if (str(input_df[col].dtype) not in d_type_tuple):
+                print("ERROR: {}".format(err_msg))
+                # Maybe raise an exception here and have the caller
+                # try/except the validation routine.
                 return False
+
         return True
 
     def __input_ready(self):
