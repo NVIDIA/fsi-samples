@@ -13,55 +13,14 @@ import logging
 #     'disable_existing_loggers': False
 # })
 
-CONFIGLOG = True
-
-
-def config_log_handler(logger, propagate=True, addtimestamp=False):
-    # logger = logging.getLogger(__name__)
-
-    if addtimestamp:
-        formatter = logging.Formatter(
-            '%(asctime)s.%(msecs)03d %(name)s:%(levelname)s: %(message)s',
-            datefmt='%H:%M:%S'
-        )
-    else:
-        formatter = logging.Formatter('%(name)s:%(levelname)s: %(message)s')
-
-    console_handler = logging.StreamHandler(sys.stdout)  # console handeler
-    console_handler.setLevel(logging.INFO)
-    console_handler.setFormatter(formatter)
-
-    logger.addHandler(console_handler)
-    logger.setLevel(logging.INFO)
-    logger.propagate = propagate
-
-    # logger.info('CONFIGURING LOGGER')
-
-    return console_handler
-
-
-def get_mortgage_plugins_logger(reconfig=False):
-    logger = logging.getLogger(__name__)
-
-    global CONFIGLOG
-
-    if CONFIGLOG or reconfig:
-        config_log_handler(logger, propagate=False)
-        CONFIGLOG = False
-
-    # Should only be one handler. With Dask there's a race condition and could
-    # have multiple logging handlers.
-    while len(logger.handlers) > 1:
-        logger.handlers.pop()
-
-    return logger
-
-
-DISTRIB_FORMATTER = None
+_DISTRIB_FORMATTER = None
 
 
 def init_workers_logger():
-    global DISTRIB_FORMATTER
+    '''Initialize logger within all workers. Meant to be run as:
+        client.run(init_workers_logger)
+    '''
+    global _DISTRIB_FORMATTER
 
     distrib_logger = logging.getLogger('distributed.worker')
     formatter = logging.Formatter(
@@ -69,50 +28,117 @@ def init_workers_logger():
         datefmt='%H:%M:%S'
     )
 
-    if DISTRIB_FORMATTER is None:
-        DISTRIB_FORMATTER = distrib_logger.handlers[0].formatter
+    if _DISTRIB_FORMATTER is None:
+        _DISTRIB_FORMATTER = distrib_logger.handlers[0].formatter
 
     distrib_logger.handlers[0].setFormatter(formatter)
 
 
 def restore_workers_logger():
-    global DISTRIB_FORMATTER
+    '''Restore logger within all workers. Meant to be run as:
+        client.run(restore_workers_logger)
+
+    Run this after printing worker logs i.e. after:
+        wlogs = client.get_worker_logs()
+        # print entries form wlogs
+
+    '''
+    global _DISTRIB_FORMATTER
 
     distrib_logger = logging.getLogger('distributed.worker')
-    if DISTRIB_FORMATTER is not None:
-        distrib_logger.handlers[0].setFormatter(DISTRIB_FORMATTER)
-        DISTRIB_FORMATTER = None
+    if _DISTRIB_FORMATTER is not None:
+        distrib_logger.handlers[0].setFormatter(_DISTRIB_FORMATTER)
+        _DISTRIB_FORMATTER = None
 
 
-class HijackDaskDistributedLogger(object):
-    '''WARNING: HIJACKING Dask Distributed logger!!! This is NOT a great
-    implementation. Done to capture and display logs in Jupyter.
+_CONFIGLOG = True
 
+
+class MortgagePluginsLoggerMgr(object):
+    '''Logger manager for gQuant mortgage plugins.
+
+    When using this log manager to hijack dask distributed.worker logger
+    (worker is not None), must first initialize worker loggers via:
+        client.run(init_workers_logger)
+    Afer printing out entries from worker logs restore worker loggers via:
+        client.run(restore_workers_logger)
+
+    WARNING: HIJACKING Dask Distributed logger within dask-workers!!! This
+    is NOT a great implementation. Done to capture and display logs in Jupyter.
     TODO: Implement a server/client logger per example:
         https://docs.python.org/3/howto/logging-cookbook.html#sending-and-receiving-logging-events-across-a-network
 
+
     '''
-    def __init__(self, worker, logname):
+
+    def __init__(self, worker=None, logname='mortgage_plugins'):
         if worker is None:
-            logger = get_mortgage_plugins_logger()
+            logger = self._get_mortgage_plugins_logger()
             console_handler = None
         else:
-            # WARNING: HIJACKING Dask Distributed logger!!! This is NOT a great
-            # implementation. Done to capture and display logs in Jupyter.
-            # TODO: Implement a simple server/client logger per example:
-            #     https://docs.python.org/3/howto/logging-cookbook.html#sending-and-receiving-logging-events-across-a-network
+            # WARNING: HIJACKING Dask Distributed logger!!!
 
             logger = logging.getLogger('distributed.worker.' + logname)
 
-            console_handler = config_log_handler(logger, addtimestamp=True)
+            console_handler = self._config_log_handler(
+                logger, propagate=True, addtimestamp=True)
 
         self._logger = logger
         self._console_handler = console_handler
 
+    @staticmethod
+    def _config_log_handler(logger, propagate=True, addtimestamp=False):
+        '''Configure logger handler with streaming to stdout and formatter. Add
+        the handler to the logger.
+        '''
+
+        if addtimestamp:
+            formatter = logging.Formatter(
+                '%(asctime)s.%(msecs)03d %(name)s:%(levelname)s: %(message)s',
+                datefmt='%H:%M:%S'
+            )
+        else:
+            formatter = logging.Formatter(
+                '%(name)s:%(levelname)s: %(message)s')
+
+        console_handler = logging.StreamHandler(sys.stdout)  # console handeler
+        console_handler.setLevel(logging.INFO)
+        console_handler.setFormatter(formatter)
+
+        logger.addHandler(console_handler)
+        logger.setLevel(logging.INFO)
+        logger.propagate = propagate
+
+        # logger.info('CONFIGURING LOGGER')
+
+        return console_handler
+
+    @classmethod
+    def _get_mortgage_plugins_logger(cls):
+        '''Obtain a logger for mortgage plugins. Used when the running process
+        is not a dask-worker.
+        '''
+        logger = logging.getLogger(__name__)
+
+        global _CONFIGLOG
+
+        if _CONFIGLOG:
+            cls._config_log_handler(logger, propagate=False)
+            _CONFIGLOG = False
+
+        # Should only be one handler. With Dask there's a race condition and
+        # could have multiple logging handlers.
+        while len(logger.handlers) > 1:
+            logger.handlers.pop()
+
+        return logger
+
     def get_logger(self):
+        '''Get the logger being managed by instante of this log manager.'''
         return self._logger
 
     def cleanup(self):
+        '''Clean up the logger.'''
         if self._console_handler is not None:
             self._logger.removeHandler(self._console_handler)
 
@@ -130,11 +156,12 @@ def convert(name):
 
 
 class CsvMortgageAcquisitionDataLoader(Node):
-    '''
-    conf: {
-        'csvfile_names': path to mortgage seller names csv datafile
-        'csvfile_acqdata': path to mortgage acquisition csv datafile
-    }
+    '''gQuant task/node to read in a mortgage acquisition CSV file into a cudf
+    dataframe. Configuration requirements:
+        'conf': {
+            'csvfile_names': path to mortgage seller names csv datafile
+            'csvfile_acqdata': path to mortgage acquisition csv datafile
+        }
     '''
 
     cols_dtypes = OrderedDict([
@@ -190,7 +217,7 @@ class CsvMortgageAcquisitionDataLoader(Node):
             pass
 
         logname = convert(self.__class__.__name__)
-        logmgr = HijackDaskDistributedLogger(worker, logname)
+        logmgr = MortgagePluginsLoggerMgr(worker, logname)
         logger = logmgr.get_logger()
 
         worker_name = ''
@@ -230,10 +257,11 @@ class CsvMortgageAcquisitionDataLoader(Node):
 
 
 class CsvMortgagePerformanceDataLoader(Node):
-    '''
-    conf: {
-        'csvfile_perfdata': path to mortgage performance csv datafile
-    }
+    '''gQuant task/node to read in a mortgage performance CSV file into a cudf
+    dataframe. Configuration requirements:
+        'conf': {
+            'csvfile_perfdata': path to mortgage performance csv datafile
+        }
     '''
 
     cols_dtypes = OrderedDict([
@@ -291,7 +319,7 @@ class CsvMortgagePerformanceDataLoader(Node):
             pass
 
         logname = convert(self.__class__.__name__)
-        logmgr = HijackDaskDistributedLogger(worker, logname)
+        logmgr = MortgagePluginsLoggerMgr(worker, logname)
         logger = logmgr.get_logger()
 
         worker_name = ''
@@ -314,7 +342,8 @@ class CsvMortgagePerformanceDataLoader(Node):
 
 
 class CreateEverFeatures(Node):
-    '''
+    '''gQuant task/node to calculate delinquecy status period features.
+    Refer to columns_setup method for the columns produced.
     '''
     def columns_setup(self):
         self.required = OrderedDict([
@@ -347,7 +376,8 @@ class CreateEverFeatures(Node):
 
 
 class CreateDelinqFeatures(Node):
-    '''
+    '''gQuant task/node to calculate delinquecy features.
+    Refer to columns_setup method for the columns produced.
     '''
     def columns_setup(self):
         self.required = OrderedDict([
@@ -409,7 +439,9 @@ class CreateDelinqFeatures(Node):
 
 
 class JoinPerfEverDelinqFeatures(Node):
-    '''
+    '''gQuant task/node to merge delinquecy features. Merges dataframes
+    produced by CreateEverFeatures and CreateDelinqFeatures.
+    Refer to columns_setup method for the columns produced.
     '''
 
     cols_dtypes = {
@@ -500,7 +532,8 @@ class JoinPerfEverDelinqFeatures(Node):
 
 
 class Create12MonFeatures(Node):
-    '''
+    '''gQuant task/node to calculate delinquecy feature over 12 months.
+    Refer to columns_setup method for the columns produced.
     '''
     def columns_setup(self):
         '''
@@ -563,6 +596,9 @@ class Create12MonFeatures(Node):
 
 
 def _null_workaround(df):
+    '''Fix up null entries in dataframes. This is specific to the mortgage
+    workflow.
+    '''
     for column, data_type in df.dtypes.items():
         if str(data_type) == "category":
             df[column] = df[column].astype('int32').fillna(-1)
@@ -573,7 +609,8 @@ def _null_workaround(df):
 
 
 class FinalPerfDelinq(Node):
-    '''
+    '''Merge performance dataframe with calculated features dataframes.
+    Refer to columns_setup method for the columns produced.
     '''
 
     cols_dtypes = dict()
@@ -583,14 +620,6 @@ class FinalPerfDelinq(Node):
     def columns_setup(self):
         '''
         '''
-        # self.require = CsvMortgagePerformanceDataLoader.cols_dtypes
-        # self.addition = JoinPerfEverDelinqFeatures.cols_dtypes
-        #
-        # self.deletion = {
-        #     'timestamp_month': 'int8',
-        #     'timestamp_year': 'int16'
-        # }
-
         self.retention = self.cols_dtypes
 
     @staticmethod
@@ -648,7 +677,8 @@ class FinalPerfDelinq(Node):
 
 
 class JoinFinalPerfAcqClean(Node):
-    '''
+    '''Merge acquisition dataframe with dataframe produced by FinalPerfDelinq.
+    Refer to columns_setup method for the columns produced.
     '''
     _drop_list = [
         'loan_id',
@@ -724,13 +754,19 @@ class JoinFinalPerfAcqClean(Node):
 
 
 def mortgage_gquant_run(run_params_dict):
-    '''
-    Expect run_params_dict ex:
+    '''Using dataframe-flow runs the tasks/workflow specified in the
+    run_params_dict. Expected run_params_dict ex:
         run_params_dict = {
             'replace_spec': replace_spec,
             'task_list': gquant_task_list,
             'out_list': out_list
         }
+
+    gquant_task_list - Mortgage ETL workflow list of tasks. Refer to module
+        mortgage_common function mortgage_etl_workflow_def.
+
+    out_list - Expected to specify one output which should be the final
+        dataframe produced by the mortgage ETL workflow.
 
     :param run_params_dict: Dictionary with parameters and gquant task list to
         run mortgage workflow.
@@ -749,10 +785,13 @@ def mortgage_gquant_run(run_params_dict):
 
 
 def print_ram_usage(worker_name='', logger=None):
+    '''Display host RAM usage on the system using free -m command.'''
     import os
 
+    logmgr = None
     if logger is None:
-        logger = get_mortgage_plugins_logger()
+        logmgr = MortgagePluginsLoggerMgr()
+        logger = logmgr.get_logger()
 
     tot_m, used_m, free_m = \
         map(int, os.popen('free -t -m').readlines()[-1].split()[1:])
@@ -760,18 +799,21 @@ def print_ram_usage(worker_name='', logger=None):
         worker_name + 'HOST RAM (MB) TOTAL {}; USED {}; FREE {}'
         .format(tot_m, used_m, free_m))
 
+    if logmgr is not None:
+        logmgr.cleanup()
+
 
 def mortgage_workflow_runner(mortgage_run_params_dict_list):
-    '''
-    Expect run_params_dict ex:
+    '''Runs the mortgage_gquant_run for each entry in the
+    mortgage_run_params_dict_list. Each entry is a run_params_dict.
+    Expected run_params_dict:
         run_params_dict = {
             'replace_spec': replace_spec,
             'task_list': gquant_task_list,
             'out_list': out_list
         }
 
-    :param run_params_dict: Dictionary with parameters and gquant task list to
-        run mortgage workflow.
+    :param mortgage_run_params_dict_list: List of run_params_dict
 
     '''
     import os  # @Reimport
@@ -790,7 +832,7 @@ def mortgage_workflow_runner(mortgage_run_params_dict_list):
         pass
 
     logname = 'mortgage_workflow_runner'
-    logmgr = HijackDaskDistributedLogger(worker, logname)
+    logmgr = MortgagePluginsLoggerMgr(worker, logname)
     logger = logmgr.get_logger()
 
     worker_name = ''
@@ -846,7 +888,6 @@ def mortgage_workflow_runner(mortgage_run_params_dict_list):
     # del(df_concat)
 
     logger.info(worker_name + 'USING ARROW')
-    # sleep(5)
 
     cpu_df_concat_arrow = final_perf_acq_arrow_concat
     delinq_arrow_col = cpu_df_concat_arrow.column('delinquency_12')
@@ -900,7 +941,8 @@ class MortgageWorkflowRunner(Node):
         pass
 
     def process(self, inputs):
-        logger = get_mortgage_plugins_logger()
+        logmgr = MortgagePluginsLoggerMgr()
+        logger = logmgr.get_logger()
 
         mortgage_run_params_dict_list = \
             self.conf['mortgage_run_params_dict_list']
@@ -910,6 +952,8 @@ class MortgageWorkflowRunner(Node):
 
         mortgage_feat_df_pandas, delinq_df_pandas = \
             mortgage_workflow_runner(mortgage_run_params_dict_list)
+
+        logmgr.cleanup()
 
         return mortgage_feat_df_pandas, delinq_df_pandas
 
@@ -921,7 +965,7 @@ class XgbMortgageTrainer(Node):
         conf: {
             'delete_dataframes': OPTIONAL. Boolean (True or False). Delete the
                 intermediate mortgage dataframes from which an xgboost dmatrix
-                is created. This is to potentially clear up CPU//GPU memory.
+                is created. This is to potentially clear up CPU/GPU memory.
             'xgb_gpu_params': REQUIRED. Dictionary of xgboost trainer
                 parameters.
         }
@@ -941,7 +985,6 @@ class XgbMortgageTrainer(Node):
                 'min_child_weight':  30,
                 'tree_method':       'gpu_hist',
                 'n_gpus':            1,
-                'distributed_dask':  True,
                 'loss':              'ls',
                 # 'objective':         'gpu:reg:linear',
                 'objective':         'reg:squarederror',
@@ -955,6 +998,8 @@ class XgbMortgageTrainer(Node):
         mortgage_feat_df_pandas, delinq_df_pandas = inputs[0]
         These inputs are provided by MortgageWorkflowRunner.
 
+    Outputs:
+        bst - XGBoost trained booster model.
 
     '''
     def columns_setup(self):
@@ -966,7 +1011,8 @@ class XgbMortgageTrainer(Node):
         import gc  # python standard lib garbage collector
         import xgboost as xgb
 
-        logger = get_mortgage_plugins_logger()
+        logmgr = MortgagePluginsLoggerMgr()
+        logger = logmgr.get_logger()
 
         mortgage_feat_df_pandas, delinq_df_pandas = inputs[0]
 
@@ -1003,6 +1049,8 @@ class XgbMortgageTrainer(Node):
             xgb_gpu_params, xgb_dmatrix,
             num_boost_round=xgb_gpu_params['nround'])
 
+        logmgr.cleanup()
+
         return bst
 
 
@@ -1037,13 +1085,12 @@ def finalize_rmm():
 
 
 def print_distributed_dask_hijacked_logs(wlogs, logger, filters=None):
-    '''
+    '''Prints (uses logger.info) the log entries from worker logs
+    (wlogs = client.get_worker_logs()). Filters what is printed based on
+    keywords in the filters. If filters is None then prints everything.
+
     :param filters: A tuple. Even if one entry ('somestr',)
     '''
-    # WARNING: HIJACKING Dask Distributed logger!!! This is NOT a great
-    # implementation. Done to capture and display logs in Jupyter.
-    # TODO: Implement a simple server/client logger per example:
-    #     https://docs.python.org/3/howto/logging-cookbook.html#sending-and-receiving-logging-events-across-a-network
     # print('WORKER LOGS:\n{}'.format(json.dumps(wlogs, indent=2)))
 
     for iworker_log in wlogs.values():
@@ -1071,16 +1118,17 @@ class DaskMortgageWorkflowRunner(Node):
         'use_rmm': OPTIONAL. Boolean (True or False). Use RAPIDS Memory
             Manager.,
         'filter_dask_logger': OPTIONAL. Boolean to display hijacked
-            dask.distributed log.
+            dask.distributed log. If False (default) then doesn't display.
     }
 
+    Format of expected mortgage run params:
         mortgage_run_param_dict = {
             'replace_spec': replace_spec,
             'task_list': gquant_task_list,
             'out_list': out_list
         }
 
-    Returns: dask-distributed Futures where each future hold a tuple:
+    Returns: dask-distributed Futures where each future holds a tuple:
             mortgage_feat_df_pandas, delinq_df_pandas
         The number of futures returned corresponds to the number of workers
         obtained from the client.
@@ -1096,7 +1144,9 @@ class DaskMortgageWorkflowRunner(Node):
 
     def process(self, inputs):
         from dask.distributed import wait
-        logger = get_mortgage_plugins_logger()
+
+        logmgr = MortgagePluginsLoggerMgr()
+        logger = logmgr.get_logger()
 
         filter_dask_logger = self.conf.get('filter_dask_logger')
 
@@ -1142,7 +1192,6 @@ class DaskMortgageWorkflowRunner(Node):
         mortgage_feat_df_delinq_df_pandas_futures = client.map(
             mortgage_workflow_runner,
             mortgage_run_params_dict_list_chunks)
-        # [logger] * nworkers)
         wait(mortgage_feat_df_delinq_df_pandas_futures)
 
         if filter_dask_logger:
@@ -1162,6 +1211,8 @@ class DaskMortgageWorkflowRunner(Node):
         if use_rmm:
             client.run(finalize_rmm)
             client.run(initialize_rmm_no_pool)
+
+        logmgr.cleanup()
 
         return mortgage_feat_df_delinq_df_pandas_futures
 
@@ -1215,6 +1266,8 @@ class DaskXgbMortgageTrainer(Node):
         mortgage_feat_df_delinq_df_pandas_futures = inputs[0]
         These inputs are provided by DaskMortgageWorkflowRunner.
 
+    Outputs:
+        bst - XGBoost trained booster model.
 
     '''
     def columns_setup(self):
@@ -1229,7 +1282,9 @@ class DaskXgbMortgageTrainer(Node):
         from dask.distributed import wait, get_worker
         import dask_xgboost as dxgb_gpu
 
-        logger = get_mortgage_plugins_logger()
+        logmgr = MortgagePluginsLoggerMgr()
+        logger = logmgr.get_logger()
+
         filter_dask_logger = self.conf.get('filter_dask_logger')
 
         client = self.conf['client']
@@ -1248,7 +1303,7 @@ class DaskXgbMortgageTrainer(Node):
             worker = get_worker()
 
             logname = 'make_xgb_dmatrix'
-            logmgr = HijackDaskDistributedLogger(worker, logname)
+            logmgr = MortgagePluginsLoggerMgr(worker, logname)
             logger = logmgr.get_logger()
 
             logger.info('CREATING DMATRIX ON WORKER {}'.format(worker.name))
@@ -1306,5 +1361,7 @@ class DaskXgbMortgageTrainer(Node):
         bst = dxgb_gpu.train(
             client, dxgb_gpu_params, dmatrix_delayed_list, labels,
             num_boost_round=dxgb_gpu_params['nround'])
+
+        logmgr.cleanup()
 
         return bst
