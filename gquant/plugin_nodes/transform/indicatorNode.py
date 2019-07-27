@@ -71,8 +71,6 @@ class IndicatorNode(Node):
                 input_df[out_col] = v
                 out_cols.append(out_col)
         # remove all the na elements, requires cudf>=0.8
-        # import pudb
-        # pudb.set_trace()
         if "remove_na" in self.conf and self.conf["remove_na"]:
             na_element = input_df[out_cols[0]].isna()
             for i in range(1, len(out_cols)):

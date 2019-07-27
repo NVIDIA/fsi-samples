@@ -17,8 +17,9 @@ class DatetimeFilterNode(Node):
         -------
         dataframe
         """
-        beg_date = datetime.datetime.strptime(self.conf['beg'], '%Y-%m-%d')  # noqa: F841
-        end_date = datetime.datetime.strptime(self.conf['end'], '%Y-%m-%d')  # noqa: F841
+        df = inputs[0]
+        beg_date = datetime.datetime.strptime(self.conf['beg'], '%Y-%m-%d')  # noqa: F841, E501
+        end_date = datetime.datetime.strptime(self.conf['end'], '%Y-%m-%d')  # noqa: F841, E501
         return df.query('datetime<@end_date and datetime>=@beg_date')
 
     def columns_setup(self):
