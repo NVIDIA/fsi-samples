@@ -10,7 +10,7 @@ import gquant.dataframe_flow as dff
 
 
 from mortgage_common import (
-    mortgage_workflow_def, generate_mortgage_gquant_run_params_list,
+    mortgage_etl_workflow_def, generate_mortgage_gquant_run_params_list,
     MortgageTaskNames)
 
 
@@ -27,9 +27,10 @@ def main():
     # csvfile_acqdata = os.path.join(acq_data_path, 'Acquisition_2000Q1.txt')
     # csvfile_perfdata = \
     #     os.path.join(perf_data_path, 'Performance_2000Q1.txt_0')
-    # mortgage_workflow_def(csvfile_names, csvfile_acqdata, csvfile_perfdata)
+    # mortgage_etl_workflow_def(
+    #     csvfile_names, csvfile_acqdata, csvfile_perfdata)
 
-    gquant_task_list = mortgage_workflow_def()
+    gquant_task_list = mortgage_etl_workflow_def()
 
     start_year = 2000
     end_year = 2001  # end_year is inclusive

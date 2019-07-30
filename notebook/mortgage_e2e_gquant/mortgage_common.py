@@ -6,6 +6,9 @@ from glob import glob
 
 
 class MortgageTaskNames(object):
+    '''Task names commonly used by scripts for naming tasks when creating
+    a gQuant mortgage workflow.
+    '''
     load_acqdata_task_name = 'acqdata'
     load_perfdata_task_name = 'perfdata'
     ever_feat_task_name = 'ever_features'
@@ -22,8 +25,16 @@ class MortgageTaskNames(object):
     dask_xgb_trainer_task_name = 'dask_xgb_trainer'
 
 
-def mortgage_workflow_def(csvfile_names=None, csvfile_acqdata=None,
-                          csvfile_perfdata=None):
+def mortgage_etl_workflow_def(
+        csvfile_names=None, csvfile_acqdata=None,
+        csvfile_perfdata=None):
+    '''Define the ETL (extract-transform-load) portion of the mortgage
+    workflow.
+
+    :returns: gQuant workflow. Currently a simple list of dictionaries. Each
+        dict specifies a task per TaskSpecSchema.
+    :rtype: list
+    '''
     from gquant.dataframe_flow.node import TaskSpecSchema
 
     _basedir = os.path.dirname(__file__)
@@ -131,7 +142,60 @@ def mortgage_workflow_def(csvfile_names=None, csvfile_acqdata=None,
 def generate_mortgage_gquant_run_params_list(
         mortgage_data_path, start_year, end_year, part_count,
         gquant_task_list):
-    '''
+    '''For the specified years and limit (part_count) to the number of files
+    (performance files), generates a list of run_params_dict.
+        run_params_dict = {
+            'replace_spec': replace_spec,
+            'task_list': gquant_task_list,
+            'out_list': out_list
+        }
+
+    replace_spec - to be passed to Dataframe flow run command's replace option.
+        replace_spec = {
+            MortgageTaskNames.load_acqdata_task_name: {
+                TaskSpecSchema.conf: {
+                    'csvfile_names': csvfile_names,
+                    'csvfile_acqdata': csvfile_acqdata
+                }
+            },
+            MortgageTaskNames.load_perfdata_task_name: {
+                TaskSpecSchema.conf: {
+                    'csvfile_perfdata': csvfile_perfdata
+                }
+            }
+        }
+
+    out_list - Expected to specify one output which should be the final
+        dataframe produced by the mortgage ETL workflow.
+
+    Example:
+        import gquant.dataframe_flow as dff
+        task_list = run_params_dict['task_list']
+        out_list = run_params_dict['out_list']
+        replace_spec = run_params_dict['replace_spec']
+        (final_perf_acq_df,) = dff.run(task_list, out_list, replace_spec)
+
+    :param str mortgage_data_path: Path to mortgage data. Should have a file
+        "names.csv" and two subdirectories "acq" and "perf".
+
+    :param int start_year: Start year is used to traverse the appropriate range
+        of directories with corresponding year(s) in mortgage data.
+
+    :param int end_year: End year is used to traverse the appropriate range
+        of directories with corresponding year(s) in mortgage data.
+
+    :param int part_count: Limit to how many performance files to load. There
+        is a single corresponding acquisition file for year and quarter.
+        Performance files are very large csv files (1GB files) and are broken
+        down i.e. for a given year and quarter you could have several file
+        chunks: *.txt_0, *.txt_1, etc.
+
+    :param gquant_task_list: Mortgage ETL workflow list of tasks. Refer to
+        function mortgage_etl_workflow_def.
+
+    :returns: list of run_params_dict
+    :rtype: list
+
     '''
 
     from gquant.dataframe_flow.node import TaskSpecSchema
