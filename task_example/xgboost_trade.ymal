@@ -167,19 +167,16 @@
     end: 2010-1-1
   inputs:
     - node_backtest
-- id: node_sort3
-  type: SortNode
-  conf:
-    keys:
-      - asset
-      - datetime
+- id: node_portOpt2
+  type: SimpleAveragePortOpt
+  conf: {}
   inputs:
     - node_training_df
 - id: node_sharpe_training
   type: SharpeRatioNode
   conf: {}
   inputs:
-    - node_sort3
+    - node_portOpt2
 - id: node_testing_df
   type: DatetimeFilterNode
   conf:
@@ -187,26 +184,23 @@
     end: 2020-1-1
   inputs:
     - node_backtest
-- id: node_sort4
-  type: SortNode
-  conf:
-    keys:
-      - asset
-      - datetime
+- id: node_portOpt1
+  type: SimpleAveragePortOpt
+  conf: {}
   inputs:
     - node_testing_df
 - id: node_sharpe_testing
   type: SharpeRatioNode
   conf: {}
   inputs:
-    - node_sort4
+    - node_portOpt1
 - id: node_cumlativeReturn_testing
   type: CumReturnNode
   conf: {'points': 300}
   inputs:
-    - node_sort4
+    - node_portOpt1
 - id: node_cumlativeReturn_training
   type: CumReturnNode
   conf: {'points': 300}
   inputs:
-    - node_sort3
+    - node_portOpt2
