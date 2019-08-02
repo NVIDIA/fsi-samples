@@ -6,6 +6,9 @@ from numba import cuda
 import math
 
 
+__all__ = ['XGBoostStrategyNode']
+
+
 @cuda.jit
 def signal_kernel(signal_arr, out_arr, arr_len):
     i = cuda.grid(1)
@@ -36,6 +39,22 @@ def compute_signal(signal):
 
 
 class XGBoostStrategyNode(Node):
+    """
+    This is the Node used to compute trading signal from XGBoost Strategy.
+    It requires the following conf fields:
+        "train_date": a date string of "Y-m-d" format. All the data points
+        before this date is considered as training, otherwise as testing. If
+        not provided, all the data points are considered as training.
+        "xgboost_parameters": a dictionary of any legal parameters for XGBoost
+        models. It overwrites the default parameters used in the process method
+        "no_feature": specifying a list of columns in the input dataframe that
+        should NOT be considered as training features.
+        "target": the column that is considered as "target" in machine learning
+        algorithm
+    It requires the "datetime" column for spliting the data points and adds a
+    new column "signal" to be used for backtesting.
+    The detailed computation steps are listed in the process method's docstring
+    """
 
     def columns_setup(self):
         self.required = {'datetime': 'datetime64[ms]'}
@@ -44,11 +63,15 @@ class XGBoostStrategyNode(Node):
 
     def process(self, inputs):
         """
-        Add technical indicators to the dataframe.
-        All technical indicators are defined in the self.conf
-        "remove_na" in self.conf decides whether we want to remove the NAs
-        from the technical indicators
-
+        The process is doing following things:
+            1. split the data into training and testing based on provided
+               conf['train_date']. If it is not provided, all the data is
+               treated as training data.
+            2. train a XGBoost model based on the training data
+            3. Make predictions for all the data points including training and
+               testing.
+            4. From the prediction of returns, compute the trading signals that
+               can be used in the backtesting.
         Arguments
         -------
          inputs: list
