@@ -62,9 +62,6 @@ EXPOSE 8786
 # RUN source activate rapids  \
 #    && /conda/envs/rapids/bin/jupyter labextension install jupyterlab_vim
 
-RUN cd /rapids && source activate rapids \
-    && conda install -y -c nvidia -c rapidsai -c numba -c conda-forge -c defaults cudf=0.8 python=3.6 cudatoolkit=10.0
-
 
 WORKDIR /
 EOF

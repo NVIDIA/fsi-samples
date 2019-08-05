@@ -1,5 +1,5 @@
 from gquant.dataframe_flow import Node
-# from .returnFeatureNode import ReturnFeatureNode
+import numpy as np
 import gquant.cuindicator as ci
 
 
@@ -75,7 +75,7 @@ class IndicatorNode(Node):
             na_element = input_df[out_cols[0]].isna()
             for i in range(1, len(out_cols)):
                 na_element |= input_df[out_cols[i]].isna()
-            input_df = input_df[~na_element]
+            input_df = input_df.iloc[np.where((~na_element).to_array())[0]]
         return input_df
 
 

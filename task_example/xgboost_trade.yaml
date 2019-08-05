@@ -1,0 +1,206 @@
+- id: node_csvdata
+  type: CsvStockLoader
+  conf:
+    path: ./data/stock_price_hist.csv.gz
+  inputs: []
+- id: node_sort
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    - node_csvdata
+- id: node_addReturn
+  type: ReturnFeatureNode
+  conf: {}
+  inputs:
+    - node_sort
+- id: node_addIndicator
+  type: AssetIndicatorNode
+  conf: {}
+  inputs:
+    - node_addReturn
+- id: node_volumeMean
+  type: AverageNode
+  conf:
+    column: volume
+  inputs: 
+    - node_addIndicator
+- id: node_renameMeanVolume
+  type: RenameNode
+  conf:
+      old: volume
+      new: volume_mean
+  inputs:
+    - node_volumeMean
+- id: node_leftMergeMeanVolume
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_addIndicator
+    - node_renameMeanVolume
+- id: node_maxReturns
+  type: MaxNode
+  conf:
+    column: returns
+  inputs: 
+    - node_addIndicator
+- id: node_renameMaxReturn
+  type: RenameNode
+  conf:
+      old: returns
+      new: returns_max
+  inputs:
+    - node_maxReturns
+- id: node_leftMergeMaxReturn
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_leftMergeMeanVolume
+    - node_renameMaxReturn
+- id: node_minReturns
+  type: MinNode
+  conf:
+    column: returns
+  inputs: 
+    - node_addIndicator
+- id: node_renameMinReturn
+  type: RenameNode
+  conf:
+      old: returns
+      new: returns_min
+  inputs:
+    - node_minReturns
+- id: node_leftMergeMinReturn
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    - node_leftMergeMaxReturn
+    - node_renameMinReturn
+- id: node_filterValue
+  type: ValueFilterNode
+  conf: 
+    - column: volume_mean
+      min: 10.0
+    - column: returns_max
+      max: 10.0
+    - column: returns_min
+      min: -10.0
+  inputs:
+    - node_leftMergeMinReturn
+- id: node_dropColumns
+  type: DropNode
+  conf:
+      columns: 
+        - volume_mean
+        - returns_min
+        - returns_max
+  inputs:
+    - node_filterValue
+- id: node_sort2
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    - node_dropColumns
+- id: node_technical_indicator
+  type: IndicatorNode
+  conf:
+    indicators:
+        - function: port_chaikin_oscillator
+          columns: 
+            - high
+            - low
+            - close
+            - volume
+          args:
+            - 10
+            - 20
+        - function: port_bollinger_bands
+          columns: 
+            - close
+          args:
+            - 10
+          outputs:
+            - b1
+            - b2
+        - function: port_shift
+          columns: 
+            - returns
+          args:
+            - -1
+    remove_na: true
+  inputs:
+    - node_sort2
+- id: node_xgboost_strategy
+  type: XGBoostStrategyNode
+  conf:
+    train_date: 2010-1-1
+    target: SHIFT_-1
+    no_feature:
+        asset: int64
+        datetime: datetime64[ms]
+        volume: float64
+        close: float64
+        open: float64
+        high: float64
+        low: float64
+        returns: float64
+        indicator: int32
+  inputs:
+    - node_technical_indicator
+- id: node_backtest
+  type: SimpleBackTestNode
+  conf: {}
+  inputs: 
+    - node_xgboost_strategy
+- id: node_training_df
+  type: DatetimeFilterNode
+  conf:
+    beg: 1900-1-1
+    end: 2010-1-1
+  inputs:
+    - node_backtest
+- id: node_portOpt2
+  type: SimpleAveragePortOpt
+  conf: {}
+  inputs:
+    - node_training_df
+- id: node_sharpe_training
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    - node_portOpt2
+- id: node_testing_df
+  type: DatetimeFilterNode
+  conf:
+    beg: 2010-1-1
+    end: 2020-1-1
+  inputs:
+    - node_backtest
+- id: node_portOpt1
+  type: SimpleAveragePortOpt
+  conf: {}
+  inputs:
+    - node_testing_df
+- id: node_sharpe_testing
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    - node_portOpt1
+- id: node_cumlativeReturn_testing
+  type: CumReturnNode
+  conf: {'points': 300}
+  inputs:
+    - node_portOpt1
+- id: node_cumlativeReturn_training
+  type: CumReturnNode
+  conf: {'points': 300}
+  inputs:
+    - node_portOpt2
