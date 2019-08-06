@@ -44,9 +44,8 @@ $ git clone https://github.com/rapidsai/gQuant.git
 
 - Build and run the container:
 ```bash
-$ cd gQuant && . build.sh
+$ cd gQuant/docker && . build.sh
 $ docker run --runtime=nvidia --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 gquant/gquant:latest
-$ source activate rapids
 $ bash rapids/notebooks/utils/start-jupyter.sh 
 ```
 
