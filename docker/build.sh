@@ -57,19 +57,21 @@ SHELL ["bash","-c"]
 #
 # Additional python libs
 #
-RUN pip install nxpd graphviz pudb dask_labextension sphinx sphinx_rtd_theme recommonmark numpydoc $CUPY
-RUN conda install -y -c conda-forge python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 \
-    ipywidgets=7.4.2 pytables mkl numexpr
+RUN pip install nxpd $CUPY
+RUN conda install -y -c conda-forge dask-labextension recommonmark numpydoc sphinx_rtd_theme pudb \
+    python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr
 
 #
 # required set up
 #
-RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.38.1 \
-    && jupyter labextension install bqplot@0.4.5 \
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.38.1 --no-build \
+    && jupyter labextension install bqplot@0.4.5 --no-build \
     && mkdir /.local /.jupyter /.config /.cupy  \
     && chmod 777 /.local /.jupyter /.config /.cupy
 
-RUN if [ "$VIM_INSTALL" = "Y" ] || [ "$VIM_INSTALL" = "y" ]; then /conda/envs/rapids/bin/jupyter labextension install jupyterlab_vim@0.10.1 ; fi
+RUN if [ "$VIM_INSTALL" = "Y" ] || [ "$VIM_INSTALL" = "y" ]; then /conda/envs/rapids/bin/jupyter labextension install jupyterlab_vim@0.10.1 --no-build ; fi
+
+RUN jupyter lab build && jupyter lab clean
 
 EXPOSE 8888
 EXPOSE 8787
