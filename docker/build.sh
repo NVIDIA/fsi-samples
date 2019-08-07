@@ -2,35 +2,47 @@
 
 echo "Building gQuant container..."
 
-read -p "Please, press '1' for ubuntu 16.04, or '2' for ubuntu 18.04. [1]/2: " UBUNTU_VERSION
-UBUNTU_VERSION=${UBUNTU_VERSION:-1}
+echo -e "Please, select the option which better fits your system configuration:\n" \
+        " - '1' for Ubuntu 16.04 + cuda 9.2\n" \
+        " - '2' for Ubuntu 16.04 + cuda 10.0\n" \
+        " - '3' for Ubuntu 18.04 + cuda 9.2\n" \
+        " - '4' for Ubuntu 18.04 + cuda 10.0"
 
-if [ "$UBUNTU_VERSION" -eq 2 ]; then
-    echo "UBUNTU 18.04 selected."
-    OS_STR="18.04"
-else
-    echo "UBUNTU 16.04 selected."
-    OS_STR="16.04"
-fi
+read -p "Enter your option and hit return [1]-4: " SYSTEM_CONFIGURATION
 
-read -p "Please, press '1' for cuda 9.2, or '2' for cuda 10.0. [1]/2: " CUDA_VERSION
-CUDA_VERSION=${CUDA_VERSION:-1}
-
-if [ "$CUDA_VERSION" -eq 2 ]; then
-    echo "cuda 10.0 selected."
-    CONTAINER_VER="10.0"
-    CUPY='cupy-cuda100'
-else
-    echo "cuda 9.2 selected."
-    CONTAINER_VER="9.2"
-    CUPY='cupy-cuda92'
-fi
+SYSTEM_CONFIGURATION=${SYSTEM_CONFIGURATION:-1}
+case $SYSTEM_CONFIGURATION in
+    2)
+        echo "Ubuntu 16.04 + cuda 10.0 selected."
+        OS_STR='16.04'
+        CONTAINER_VER='10.0'
+        CUPY='cupy-cuda100'
+        ;;
+    3)
+        echo "Ubuntu 18.04 + cuda 9.2 selected."
+        OS_STR='18.04'
+        CONTAINER_VER='9.2'
+        CUPY='cupy-cuda92'
+        ;;
+    4)
+        echo "Ubuntu 18.04 + cuda 10.0 selected."
+        OS_STR='18.04'
+	CONTAINER_VER='10.0'
+	CUPY='cupy-cuda100'
+        ;;
+    *)
+        echo "Ubuntu 16.04 + cuda 9.2 selected."
+        OS_STR='16.04'
+        CONTAINER_VER='9.2'
+        CUPY='cupy-cuda92'
+        ;;
+esac
 
 CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
 
 read -p "Would you like to install Vim JupyterLab Extension (optional) [N]/y: " VIM_INSTALL
-VIM_INSTALL=${VIM_INSTALL:-N}
 
+VIM_INSTALL=${VIM_INSTALL:-N}
 if [ "$VIM_INSTALL" = "Y" ] || [ "$VIM_INSTALL" = "y" ]; then
     echo "Vim JupyterLab Extension will be installed."
 else
