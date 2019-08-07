@@ -57,9 +57,9 @@ SHELL ["bash","-c"]
 #
 # Additional python libs
 #
-RUN pip install nxpd dask_labextension $CUPY
-RUN conda install -y -c conda-forge recommonmark numpydoc sphinx_rtd_theme pudb python-graphviz \
-    bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr
+RUN pip install nxpd $CUPY
+RUN conda install -y -c conda-forge dask-labextension recommonmark numpydoc sphinx_rtd_theme pudb \
+    python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr
 
 #
 # required set up
