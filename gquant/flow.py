@@ -1,4 +1,4 @@
-from gquant.dataframe_flow import load_workflow, run
+from gquant.dataframe_flow import TaskGraph
 import argparse
 
 
@@ -8,10 +8,13 @@ def main():
     parser.add_argument('-t', '--task', help="the yaml task file")
     parser.add_argument('output', help="the output nodes", nargs='+')
     args = parser.parse_args()
+    import pudb
+    pudb.set_trace()
 
-    obj = load_workflow(args.task)
+    task_graph = TaskGraph.load_workflow(args.task)
     print('output nodes:', args.output)
-    run(obj, args.output)
+    task_graph.run(args.output)
+
 
 if __name__ == "__main__":
     main()
