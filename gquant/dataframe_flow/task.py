@@ -55,6 +55,21 @@ class TaskSpecSchema(object):
         else:
             raise KeyError
 
+    _schema_req_fields = [id, type, conf, inputs]
+
+    @classmethod
+    def validate(cls, task_spec):
+        '''
+        :param task_spec: A dictionary per TaskSpecSchema
+        '''
+        for ifield in cls._schema_req_fields:
+            if ifield not in task_spec:
+                raise KeyError('task spec missing required field: {}'
+                               .format(ifield))
+
+        for task_field, field_val in task_spec.items():
+            cls._typecheck(task_field, field_val)
+
 
 class Task(object):
     ''' A strong typed Task class that is converted from dictionary.
@@ -63,32 +78,20 @@ class Task(object):
     def __init__(self, task_spec):
         self._task_spec = {}  # internal dict
         self._task_spec[TaskSpecSchema.id] = task_spec[TaskSpecSchema.id]
-        TaskSpecSchema._typecheck(TaskSpecSchema.id,
-                                  self._task_spec[TaskSpecSchema.id])
+        TaskSpecSchema.validate(task_spec)
         self._task_spec[TaskSpecSchema.type] = task_spec[TaskSpecSchema.type]
-        TaskSpecSchema._typecheck(TaskSpecSchema.type, self._task_spec['type'])
         self._task_spec[TaskSpecSchema.conf] = task_spec[TaskSpecSchema.conf]
-        TaskSpecSchema._typecheck(TaskSpecSchema.conf,
-                                  self._task_spec[TaskSpecSchema.conf])
         if TaskSpecSchema.filepath in task_spec:
             self._task_spec[TaskSpecSchema.filepath] = task_spec[
                 TaskSpecSchema.filepath]
-            TaskSpecSchema._typecheck(TaskSpecSchema.filepath,
-                                      self._task_spec[TaskSpecSchema.filepath])
         if TaskSpecSchema.load in task_spec:
             self._task_spec[TaskSpecSchema.load] =\
                 task_spec[TaskSpecSchema.load]
-            TaskSpecSchema._typecheck(TaskSpecSchema.load,
-                                      self._task_spec[TaskSpecSchema.load])
         if TaskSpecSchema.save in task_spec:
             self._task_spec[TaskSpecSchema.save] =\
                 task_spec[TaskSpecSchema.save]
-            TaskSpecSchema._typecheck(TaskSpecSchema.save,
-                                      self._task_spec[TaskSpecSchema.save])
         self._task_spec[TaskSpecSchema.inputs] =\
             task_spec[TaskSpecSchema.inputs]
-        TaskSpecSchema._typecheck(TaskSpecSchema.inputs,
-                                  self._task_spec[TaskSpecSchema.inputs])
 
     def __getitem__(self, key):
         return self._task_spec[key]
