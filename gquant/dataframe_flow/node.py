@@ -7,29 +7,7 @@ import dask_cudf
 import dask
 
 
-__all__ = ['Node', 'TaskSpecSchema']
-
-
-class TaskSpecSchema(object):
-    '''Outline fields expected in a dictionary specifying a task node.
-
-    :ivar id: unique id or name for the node
-    :ivar plugin_type: Plugin class i.e. subclass of Node. Specified as string
-        or subclass of Node
-    :ivar conf: Configuration for the plugin i.e. parameterization. This is a
-        dictionary.
-    :ivar modulepath: Path to python module for custom plugin types.
-    :ivar inputs: List of ids of other tasks or an empty list.
-    '''
-
-    uid = 'id'
-    plugin_type = 'type'
-    conf = 'conf'
-    modulepath = 'filepath'
-    inputs = 'inputs'
-
-    # load = 'load'
-    # save = 'save'
+__all__ = ['Node']
 
 
 class Node(object):
@@ -37,11 +15,15 @@ class Node(object):
 
     cache_dir = os.getenv('GQUANT_CACHE_DIR', ".cache")
 
-    def __init__(self, uid, conf, load=False, save=False):
-        self.uid = uid
-        self.conf = conf
-        self.load = load
-        self.save = save
+    def __init__(self, task):
+        from .task import TaskSpecSchema, Task
+        # make sure is is a task object
+        assert isinstance(task, Task)
+        self._task_obj = task  # save the task obj
+        self.uid = task[TaskSpecSchema.id]
+        self.conf = task[TaskSpecSchema.conf]
+        self.load = task.get(TaskSpecSchema.load, False)
+        self.save = task.get(TaskSpecSchema.save, False)
         self.inputs = []
         self.outputs = []
         self.visited = False
@@ -297,6 +279,7 @@ class Node(object):
         return output_df
 
     def __call__(self, inputs):
+        from .task import OUTPUT_ID
         # valide inputs
         Class = type(self)
         cache = Class.cache_dir
@@ -322,7 +305,7 @@ class Node(object):
                 else:
                     output_df = self.process(inputs)
 
-        if self.uid != 'unique_output' and output_df is None:
+        if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         elif (isinstance(output_df, cudf.DataFrame) or
               isinstance(output_df, dask_cudf.DataFrame)
