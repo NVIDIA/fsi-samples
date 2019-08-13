@@ -16,32 +16,35 @@ class Task(object):
 
     def __init__(self, task_spec):
         self._task_spec = {}  # internal dict
-        task_spec_copy = copy.deepcopy(task_spec)
-        TaskSpecSchema.validate(task_spec_copy)
+        TaskSpecSchema.validate(task_spec)
+        # just deepcopy the inputs and conf
         self._task_spec[TaskSpecSchema.task_id] =\
-            task_spec_copy[TaskSpecSchema.task_id]
+            task_spec[TaskSpecSchema.task_id]
         self._task_spec[TaskSpecSchema.node_type] =\
-            task_spec_copy[TaskSpecSchema.node_type]
+            task_spec[TaskSpecSchema.node_type]
         self._task_spec[TaskSpecSchema.conf] =\
-            task_spec_copy[TaskSpecSchema.conf]
-        if TaskSpecSchema.filepath in task_spec_copy:
-            self._task_spec[TaskSpecSchema.filepath] = task_spec_copy[
+            copy.deepcopy(task_spec[TaskSpecSchema.conf])
+        if TaskSpecSchema.filepath in task_spec:
+            self._task_spec[TaskSpecSchema.filepath] = task_spec[
                 TaskSpecSchema.filepath]
-        if TaskSpecSchema.load in task_spec_copy:
+        if TaskSpecSchema.load in task_spec:
             self._task_spec[TaskSpecSchema.load] =\
-                task_spec_copy[TaskSpecSchema.load]
-        if TaskSpecSchema.save in task_spec_copy:
+                task_spec[TaskSpecSchema.load]
+        if TaskSpecSchema.save in task_spec:
             self._task_spec[TaskSpecSchema.save] =\
-                task_spec_copy[TaskSpecSchema.save]
+                task_spec[TaskSpecSchema.save]
         self._task_spec[TaskSpecSchema.inputs] =\
-            task_spec_copy[TaskSpecSchema.inputs]
+            copy.deepcopy(task_spec[TaskSpecSchema.inputs])
 
     def __getitem__(self, key):
         return self._task_spec[key]
 
     def __setitem__(self, key, value):
         TaskSpecSchema._typecheck(key, value)
-        self._task_spec[key] = copy.deepcopy(value)
+        if key == TaskSpecSchema.load:
+            self._task_spec[key] = value
+        else:
+            self._task_spec[key] = copy.deepcopy(value)
 
     def get(self, key, default=None):
         return self._task_spec.get(key, default)
@@ -60,7 +63,7 @@ class Task(object):
         object
             Node instance
         """
-        task_spec = copy.deepcopy(self._task_spec)
+        task_spec = copy.copy(self._task_spec)
         task_spec.update(replace)
 
         node_id = task_spec[TaskSpecSchema.task_id]
