@@ -24,6 +24,7 @@ import unittest
 import cudf
 import gquant.cuindicator as gi
 from gquant.plugin_nodes.transform.indicatorNode import IndicatorNode
+from gquant.dataframe_flow.task import Task
 from .utils import make_orderer
 import numpy as np
 import copy
@@ -80,7 +81,12 @@ class TestIndicatorNode(unittest.TestCase):
     @ordered
     def test_colums(self):
         '''Test node columns requirments'''
-        inN = IndicatorNode("abc", self.conf)
+        node_obj = {"id": "abc",
+                    "type": "IndicatorNode",
+                    "conf": self.conf,
+                    "inputs": []}
+        task = Task(node_obj)
+        inN = IndicatorNode(task)
 
         col = "indicator"
         msg = "bad error: %s is missing" % (col)
@@ -110,26 +116,41 @@ class TestIndicatorNode(unittest.TestCase):
 
     @ordered
     def test_drop(self):
-        '''Test node columns requirments'''
-        inN = IndicatorNode("abc", self.conf)
+        '''Test node columns drop'''
+        node_obj = {"id": "abc",
+                    "type": "IndicatorNode",
+                    "conf": self.conf,
+                    "inputs": []}
+        task = Task(node_obj)
+        inN = IndicatorNode(task)
         o = inN.process([self._cudf_data])
         msg = "bad error: df len %d is not right" % (len(o))
         self.assertTrue(len(o) == 162, msg)
 
         newConf = copy.deepcopy(self.conf)
         newConf['remove_na'] = False
-        inN = IndicatorNode("abc", newConf)
+        node_obj = {"id": "abc",
+                    "type": "IndicatorNode",
+                    "conf": newConf,
+                    "inputs": []}
+        task = Task(node_obj)
+        inN = IndicatorNode(task)
         o = inN.process([self._cudf_data])
         msg = "bad error: df len %d is not right" % (len(o))
         self.assertTrue(len(o) == 200, msg)
 
     @ordered
     def test_signal(self):
-        '''Test node columns requirments'''
+        '''Test signal computation'''
 
         newConf = copy.deepcopy(self.conf)
         newConf['remove_na'] = False
-        inN = IndicatorNode("abc", newConf)
+        node_obj = {"id": "abc",
+                    "type": "IndicatorNode",
+                    "conf": newConf,
+                    "inputs": []}
+        task = Task(node_obj)
+        inN = IndicatorNode(task)
         o = inN.process([self._cudf_data])
         # check chaikin oscillator computation
         r_cudf = gi.chaikin_oscillator(self._cudf_data[:self.half]['high'],

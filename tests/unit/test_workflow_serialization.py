@@ -98,9 +98,10 @@ class TestWorkflowSerialization(unittest.TestCase):
     @ordered
     def test_save_workflow(self):
         '''Test saving a workflow to yaml:'''
-        from gquant.dataframe_flow.workflow import save_workflow
+        from gquant.dataframe_flow import TaskGraph
+        task_graph = TaskGraph(self._task_list)
         workflow_file = os.path.join(self._test_dir, 'test_save_workflow.yaml')
-        save_workflow(self._task_list, workflow_file)
+        task_graph.save_taskgraph(workflow_file)
 
         with open(workflow_file) as wf:
             workflow_str = wf.read()
@@ -123,21 +124,21 @@ class TestWorkflowSerialization(unittest.TestCase):
     @ordered
     def test_load_workflow(self):
         '''Test loading a workflow from yaml:'''
-        from gquant.dataframe_flow.workflow import load_workflow
+        from gquant.dataframe_flow import TaskGraph
         workflow_file = os.path.join(self._test_dir, 'test_save_workflow.yaml')
 
         with open(workflow_file, 'w') as wf:
             wf.write(WORKFLOW_YAML)
 
-        task_list = load_workflow(workflow_file)
+        task_list = TaskGraph.load_taskgraph(workflow_file)
         all_tasks_exist = True
-        for itask in self._task_list:
-            if itask not in task_list:
+        for t in task_list:
+            match = False
+            if t._task_spec in self._task_list:
+                match = True
+            if not match:
                 all_tasks_exist = False
                 break
-
-        # all_tasks_exist = False  # Testing when test fails.
-
         with StringIO() as yf:
             yaml.dump(self._task_list, yf,
                       default_flow_style=False, sort_keys=False)
