@@ -15,26 +15,17 @@ class Task(object):
     '''
 
     def __init__(self, task_spec):
+
         self._task_spec = {}  # internal dict
+
+        # whatever is passed in has to be valid
         TaskSpecSchema.validate(task_spec)
-        # just deepcopy the inputs and conf
-        self._task_spec[TaskSpecSchema.task_id] =\
-            task_spec[TaskSpecSchema.task_id]
-        self._task_spec[TaskSpecSchema.node_type] =\
-            task_spec[TaskSpecSchema.node_type]
+        self._task_spec = copy.copy(task_spec)
+        # deepcopies of inputs can still be done
+        self._task_spec[TaskSpecSchema.inputs] = \
+            copy.deepcopy(task_spec[TaskSpecSchema.inputs])
         self._task_spec[TaskSpecSchema.conf] =\
             copy.deepcopy(task_spec[TaskSpecSchema.conf])
-        if TaskSpecSchema.filepath in task_spec:
-            self._task_spec[TaskSpecSchema.filepath] = task_spec[
-                TaskSpecSchema.filepath]
-        if TaskSpecSchema.load in task_spec:
-            self._task_spec[TaskSpecSchema.load] =\
-                task_spec[TaskSpecSchema.load]
-        if TaskSpecSchema.save in task_spec:
-            self._task_spec[TaskSpecSchema.save] =\
-                task_spec[TaskSpecSchema.save]
-        self._task_spec[TaskSpecSchema.inputs] =\
-            copy.deepcopy(task_spec[TaskSpecSchema.inputs])
 
     def __getitem__(self, key):
         return self._task_spec[key]
