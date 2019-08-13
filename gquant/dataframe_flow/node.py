@@ -6,8 +6,9 @@ import pandas as pd
 import dask_cudf
 import dask
 
+OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
 
-__all__ = ['Node']
+__all__ = ['Node', 'OUTPUT_ID']
 
 
 class Node(object):
@@ -16,11 +17,12 @@ class Node(object):
     cache_dir = os.getenv('GQUANT_CACHE_DIR', ".cache")
 
     def __init__(self, task):
-        from .task import TaskSpecSchema, Task
+        from .taskSpecSchema import TaskSpecSchema
+        from .task import Task
         # make sure is is a task object
         assert isinstance(task, Task)
         self._task_obj = task  # save the task obj
-        self.uid = task[TaskSpecSchema.id]
+        self.uid = task[TaskSpecSchema.task_id]
         self.conf = task[TaskSpecSchema.conf]
         self.load = task.get(TaskSpecSchema.load, False)
         self.save = task.get(TaskSpecSchema.save, False)
@@ -279,7 +281,6 @@ class Node(object):
         return output_df
 
     def __call__(self, inputs):
-        from .task import OUTPUT_ID
         # valide inputs
         Class = type(self)
         cache = Class.cache_dir

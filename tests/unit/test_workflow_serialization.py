@@ -136,8 +136,16 @@ class TestWorkflowSerialization(unittest.TestCase):
             match = False
             for t in task_list:
                 if itask['id'] == t['id']:
-                    match = True
-                    break
+                    if itask['type'] == t['type']\
+                            and itask['inputs'] == t['inputs'] \
+                            and itask['conf'] == t['conf']:
+                        if 'filepath' in itask \
+                                and itask['filepath'] == t['filepath']:
+                            match = True
+                            break
+                        else:
+                            match = True
+                            break
             if not match:
                 all_tasks_exist = False
                 break
