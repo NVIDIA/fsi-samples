@@ -24,8 +24,8 @@ class Task(object):
         # deepcopies of inputs can still be done
         self._task_spec[TaskSpecSchema.inputs] = \
             copy.deepcopy(task_spec[TaskSpecSchema.inputs])
-        self._task_spec[TaskSpecSchema.conf] =\
-            copy.deepcopy(task_spec[TaskSpecSchema.conf])
+        # self._task_spec[TaskSpecSchema.conf] = \
+        #     copy.deepcopy(task_spec[TaskSpecSchema.conf])
 
     def __getitem__(self, key):
         return self._task_spec[key]

@@ -10,10 +10,6 @@ except Exception:
     pass
 
 import json
-# import sys
-# from time import sleep
-# import gc  # garbage collection
-
 
 from dask_cuda import LocalCUDACluster
 from dask.distributed import Client
@@ -32,15 +28,14 @@ def main():
         memory_limit=memory_limit,
         threads_per_worker=threads_per_worker)
     client = Client(cluster)
+    sched_info = client.scheduler_info()
 
     print('CLIENT: {}'.format(client))
-    print('SCHEDULER INFO:\n{}'.format(
-        json.dumps(client.scheduler_info(), indent=2)))
+    print('SCHEDULER INFO:\n{}'.format(json.dumps(sched_info, indent=2)))
 
     # Importing here in case RMM is used later on. Must start client prior
     # to importing cudf stuff if using RMM.
-    from gquant.dataframe_flow.node import TaskSpecSchema
-    import gquant.dataframe_flow as dff
+    from gquant.dataframe_flow import (TaskSpecSchema, TaskGraph)
 
     # workers_names = \
     #     [iw['name'] for iw in client.scheduler_info()['workers'].values()]
@@ -66,7 +61,6 @@ def main():
     end_year = 2001  # end_year is inclusive
     # end_year = 2016  # end_year is inclusive
     # part_count = 16  # the number of data files to train against
-    # part_count = 14  # the number of data files to train against
 
     # create_dmatrix_serially - When False on same node if not enough host RAM
     # then it's a race condition when creating the dmatrix. Make sure enough
@@ -93,9 +87,9 @@ def main():
     filter_dask_logger = False
 
     mortgage_workflow_runner_task = {
-        TaskSpecSchema.uid:
+        TaskSpecSchema.task_id:
             MortgageTaskNames.dask_mortgage_workflow_runner_task_name,
-        TaskSpecSchema.plugin_type: 'DaskMortgageWorkflowRunner',
+        TaskSpecSchema.node_type: 'DaskMortgageWorkflowRunner',
         TaskSpecSchema.conf: {
             'mortgage_run_params_dict_list': mortgage_run_params_dict_list,
             'client': client,
@@ -103,17 +97,8 @@ def main():
             'filter_dask_logger': filter_dask_logger,
         },
         TaskSpecSchema.inputs: [],
-        TaskSpecSchema.modulepath: mortgage_lib_module
+        TaskSpecSchema.filepath: mortgage_lib_module
     }
-
-    # task_list = [mortgage_workflow_runner_task]
-    #
-    # out_list = [MortgageTaskNames.dask_mortgage_workflow_runner_task_name]
-    # ((mortgage_feat_df_delinq_df_pandas_futures),) = \
-    #     dff.run(task_list, out_list)
-    #
-    # print('MORTGAGE_FEAT_DF_DELINQ_DF_PANDAS_FUTURES: ',
-    #       mortgage_feat_df_delinq_df_pandas_futures)
 
     dxgb_gpu_params = {
         'nround': 100,
@@ -140,8 +125,8 @@ def main():
     }
 
     dxgb_trainer_task = {
-        TaskSpecSchema.uid: MortgageTaskNames.dask_xgb_trainer_task_name,
-        TaskSpecSchema.plugin_type: 'DaskXgbMortgageTrainer',
+        TaskSpecSchema.task_id: MortgageTaskNames.dask_xgb_trainer_task_name,
+        TaskSpecSchema.node_type: 'DaskXgbMortgageTrainer',
         TaskSpecSchema.conf: {
             'create_dmatrix_serially': create_dmatrix_serially,
             'delete_dataframes': delete_dataframes,
@@ -152,13 +137,14 @@ def main():
         TaskSpecSchema.inputs: [
             MortgageTaskNames.dask_mortgage_workflow_runner_task_name
         ],
-        TaskSpecSchema.modulepath: mortgage_lib_module
+        TaskSpecSchema.filepath: mortgage_lib_module
     }
 
     task_list = [mortgage_workflow_runner_task, dxgb_trainer_task]
 
     out_list = [MortgageTaskNames.dask_xgb_trainer_task_name]
-    (bst,) = dff.run(task_list, out_list)
+    task_graph = TaskGraph(task_list)
+    (bst,) = task_graph.run(out_list)
 
     print('XGBOOST BOOSTER:\n', bst)
 

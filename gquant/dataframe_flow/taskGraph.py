@@ -31,12 +31,15 @@ class TaskGraph(object):
 
         TaskGraph.__SETUP_YAML_ONCE = True
 
-    def __init__(self, objs=None):
+    def __init__(self, task_spec_list=None):
+        '''
+        :param task_spec_list: List of task-spec dicts per TaskSpecSchema.
+        '''
         self.__task_list = []
         self.__index = 0
-        if objs is not None:
-            for obj in objs:
-                self.__task_list.append(Task(obj))
+        if task_spec_list is not None:
+            for task_spec in task_spec_list:
+                self.__task_list.append(Task(task_spec))
 
     def __len__(self):
         return len(self.__task_list)

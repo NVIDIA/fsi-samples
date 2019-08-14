@@ -2,11 +2,7 @@
 '''
 import os
 
-# import sys
-# from time import sleep
-
-from gquant.dataframe_flow.node import TaskSpecSchema
-import gquant.dataframe_flow as dff
+from gquant.dataframe_flow import (TaskSpecSchema, TaskGraph)
 
 
 from mortgage_common import (
@@ -46,14 +42,14 @@ def main():
     mortgage_lib_module = os.path.join(_basedir, 'mortgage_gquant_plugins.py')
 
     mortgage_workflow_runner_task = {
-        TaskSpecSchema.uid:
+        TaskSpecSchema.task_id:
             MortgageTaskNames.mortgage_workflow_runner_task_name,
-        TaskSpecSchema.plugin_type: 'MortgageWorkflowRunner',
+        TaskSpecSchema.node_type: 'MortgageWorkflowRunner',
         TaskSpecSchema.conf: {
             'mortgage_run_params_dict_list': mortgage_run_params_dict_list
         },
         TaskSpecSchema.inputs: [],
-        TaskSpecSchema.modulepath: mortgage_lib_module
+        TaskSpecSchema.filepath: mortgage_lib_module
     }
 
     # Can be multi-gpu. Set ngpus > 1. This is different than dask xgboost
@@ -85,8 +81,8 @@ def main():
     }
 
     xgb_trainer_task = {
-        TaskSpecSchema.uid: MortgageTaskNames.xgb_trainer_task_name,
-        TaskSpecSchema.plugin_type: 'XgbMortgageTrainer',
+        TaskSpecSchema.task_id: MortgageTaskNames.xgb_trainer_task_name,
+        TaskSpecSchema.node_type: 'XgbMortgageTrainer',
         TaskSpecSchema.conf: {
             'delete_dataframes': False,
             'xgb_gpu_params': xgb_gpu_params
@@ -94,17 +90,18 @@ def main():
         TaskSpecSchema.inputs: [
             MortgageTaskNames.mortgage_workflow_runner_task_name
         ],
-        TaskSpecSchema.modulepath: mortgage_lib_module
+        TaskSpecSchema.filepath: mortgage_lib_module
     }
 
-    task_list = [mortgage_workflow_runner_task, xgb_trainer_task]
+    task_spec_list = [mortgage_workflow_runner_task, xgb_trainer_task]
 
     # out_list = [MortgageTaskNames.mortgage_workflow_runner_task_name]
     # ((mortgage_feat_df_pandas, delinq_df_pandas),) = \
     #     dff.run(task_list, out_list)
 
     out_list = [MortgageTaskNames.xgb_trainer_task_name]
-    (bst,) = dff.run(task_list, out_list)
+    task_graph = TaskGraph(task_spec_list)
+    (bst,) = task_graph.run(out_list)
 
     print('XGBOOST BOOSTER:\n', bst)
 

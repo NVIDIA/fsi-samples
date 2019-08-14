@@ -772,14 +772,15 @@ def mortgage_gquant_run(run_params_dict):
         run mortgage workflow.
 
     '''
-    import gquant.dataframe_flow as dff
+    from gquant.dataframe_flow import TaskGraph
 
     task_list = run_params_dict['task_list']
     out_list = run_params_dict['out_list']
 
     replace_spec = run_params_dict['replace_spec']
+    task_graph = TaskGraph(task_list)
 
-    (final_perf_acq_df,) = dff.run(task_list, out_list, replace_spec)
+    (final_perf_acq_df,) = task_graph.run(out_list, replace_spec)
 
     return final_perf_acq_df
 
@@ -1279,7 +1280,7 @@ class DaskXgbMortgageTrainer(Node):
         import gc  # python standard lib garbage collector
         import xgboost as xgb
         from dask.delayed import delayed
-        from dask.distributed import wait, get_worker
+        from dask.distributed import (wait, get_worker)
         import dask_xgboost as dxgb_gpu
 
         logmgr = MortgagePluginsLoggerMgr()
