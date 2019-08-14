@@ -31,8 +31,8 @@ def mortgage_etl_workflow_def(
     '''Define the ETL (extract-transform-load) portion of the mortgage
     workflow.
 
-    :returns: gQuant workflow. Currently a simple list of dictionaries. Each
-        dict specifies a task per TaskSpecSchema.
+    :returns: gQuant task-spec list. Currently a simple list of dictionaries.
+        Each dict is a task-spec per TaskSpecSchema.
     :rtype: list
     '''
     from gquant.dataframe_flow import TaskSpecSchema
@@ -130,23 +130,23 @@ def mortgage_etl_workflow_def(
         TaskSpecSchema.filepath: mortgage_lib_module
     }
 
-    task_list = [
+    task_spec_list = [
         load_acqdata_task, load_perfdata_task,
         ever_feat_task, delinq_feat_task, join_perf_ever_delinq_feat_task,
         create_12mon_feat_task, final_perf_delinq_task, final_perf_acq_task
     ]
 
-    return task_list
+    return task_spec_list
 
 
 def generate_mortgage_gquant_run_params_list(
         mortgage_data_path, start_year, end_year, part_count,
-        gquant_task_list):
+        gquant_task_spec_list):
     '''For the specified years and limit (part_count) to the number of files
     (performance files), generates a list of run_params_dict.
         run_params_dict = {
             'replace_spec': replace_spec,
-            'task_list': gquant_task_list,
+            'task_spec_list': gquant_task_spec_list,
             'out_list': out_list
         }
 
@@ -169,11 +169,12 @@ def generate_mortgage_gquant_run_params_list(
         dataframe produced by the mortgage ETL workflow.
 
     Example:
-        import gquant.dataframe_flow as dff
-        task_list = run_params_dict['task_list']
+        from gquant.dataframe_flow import TaskGraph
+        task_spec_list = run_params_dict['task_spec_list']
         out_list = run_params_dict['out_list']
         replace_spec = run_params_dict['replace_spec']
-        (final_perf_acq_df,) = dff.run(task_list, out_list, replace_spec)
+        task_graph = TaskGraph(task_spec_list)
+        (final_perf_acq_df,) = task_graph.run(out_list, replace_spec)
 
     :param str mortgage_data_path: Path to mortgage data. Should have a file
         "names.csv" and two subdirectories "acq" and "perf".
@@ -190,7 +191,7 @@ def generate_mortgage_gquant_run_params_list(
         down i.e. for a given year and quarter you could have several file
         chunks: *.txt_0, *.txt_1, etc.
 
-    :param gquant_task_list: Mortgage ETL workflow list of tasks. Refer to
+    :param gquant_task_spec_list: Mortgage ETL workflow list of tasks. Refer to
         function mortgage_etl_workflow_def.
 
     :returns: list of run_params_dict
@@ -244,7 +245,7 @@ def generate_mortgage_gquant_run_params_list(
             run_params_dict = {
                 # 'csvfile_perfdata': csvfile_perfdata,
                 'replace_spec': replace_spec,
-                'task_list': gquant_task_list,
+                'task_spec_list': gquant_task_spec_list,
                 'out_list': out_list
             }
 

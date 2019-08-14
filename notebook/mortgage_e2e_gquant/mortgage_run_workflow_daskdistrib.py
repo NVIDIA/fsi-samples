@@ -55,7 +55,7 @@ def main():
     # mortgage_etl_workflow_def(
     #     csvfile_names, csvfile_acqdata, csvfile_perfdata)
 
-    gquant_task_list = mortgage_etl_workflow_def()
+    gquant_task_spec_list = mortgage_etl_workflow_def()
 
     start_year = 2000
     end_year = 2001  # end_year is inclusive
@@ -79,7 +79,8 @@ def main():
     delete_dataframes = True
 
     mortgage_run_params_dict_list = generate_mortgage_gquant_run_params_list(
-        mortgage_data_path, start_year, end_year, part_count, gquant_task_list)
+        mortgage_data_path, start_year, end_year, part_count,
+        gquant_task_spec_list)
 
     _basedir = os.path.dirname(__file__)
     mortgage_lib_module = os.path.join(_basedir, 'mortgage_gquant_plugins.py')
@@ -140,10 +141,10 @@ def main():
         TaskSpecSchema.filepath: mortgage_lib_module
     }
 
-    task_list = [mortgage_workflow_runner_task, dxgb_trainer_task]
+    task_spec_list = [mortgage_workflow_runner_task, dxgb_trainer_task]
 
     out_list = [MortgageTaskNames.dask_xgb_trainer_task_name]
-    task_graph = TaskGraph(task_list)
+    task_graph = TaskGraph(task_spec_list)
     (bst,) = task_graph.run(out_list)
 
     print('XGBOOST BOOSTER:\n', bst)

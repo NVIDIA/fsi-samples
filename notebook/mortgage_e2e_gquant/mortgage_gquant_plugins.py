@@ -758,12 +758,12 @@ def mortgage_gquant_run(run_params_dict):
     run_params_dict. Expected run_params_dict ex:
         run_params_dict = {
             'replace_spec': replace_spec,
-            'task_list': gquant_task_list,
+            'task_spec_list': gquant_task_spec_list,
             'out_list': out_list
         }
 
-    gquant_task_list - Mortgage ETL workflow list of tasks. Refer to module
-        mortgage_common function mortgage_etl_workflow_def.
+    gquant_task_spec_list - Mortgage ETL workflow list of task-specs. Refer to
+        module mortgage_common function mortgage_etl_workflow_def.
 
     out_list - Expected to specify one output which should be the final
         dataframe produced by the mortgage ETL workflow.
@@ -774,11 +774,11 @@ def mortgage_gquant_run(run_params_dict):
     '''
     from gquant.dataframe_flow import TaskGraph
 
-    task_list = run_params_dict['task_list']
+    task_spec_list = run_params_dict['task_spec_list']
     out_list = run_params_dict['out_list']
 
     replace_spec = run_params_dict['replace_spec']
-    task_graph = TaskGraph(task_list)
+    task_graph = TaskGraph(task_spec_list)
 
     (final_perf_acq_df,) = task_graph.run(out_list, replace_spec)
 
@@ -810,7 +810,7 @@ def mortgage_workflow_runner(mortgage_run_params_dict_list):
     Expected run_params_dict:
         run_params_dict = {
             'replace_spec': replace_spec,
-            'task_list': gquant_task_list,
+            'task_spec_list': gquant_task_spec_list,
             'out_list': out_list
         }
 
@@ -927,7 +927,7 @@ class MortgageWorkflowRunner(Node):
 
         mortgage_run_param_dict = {
             'replace_spec': replace_spec,
-            'task_list': gquant_task_list,
+            'task_spec_list': gquant_task_spec_list,
             'out_list': out_list
         }
 
@@ -1125,7 +1125,7 @@ class DaskMortgageWorkflowRunner(Node):
     Format of expected mortgage run params:
         mortgage_run_param_dict = {
             'replace_spec': replace_spec,
-            'task_list': gquant_task_list,
+            'task_spec_list': gquant_task_spec_list,
             'out_list': out_list
         }
 
