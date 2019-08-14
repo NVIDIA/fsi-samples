@@ -4,6 +4,7 @@ import yaml
 from .node import Node, OUTPUT_ID
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
+import warnings
 
 
 __all__ = ['TaskGraph']
@@ -157,6 +158,15 @@ class TaskGraph(object):
         """
         self.__node_dict = {}
         replace = dict() if replace is None else replace
+
+        # check if there are item in the replace that is not in the graph
+        task_ids = set([task[TaskSpecSchema.task_id] for task in self])
+        for rkey in replace.keys():
+            if rkey not in task_ids:
+                warnings.warn(
+                    'Replace task-id {} not found in task-graph'.format(rkey),
+                    RuntimeWarning)
+
         # instantiate objects
         task_id = TaskSpecSchema.task_id
         for task in self.__task_list:
