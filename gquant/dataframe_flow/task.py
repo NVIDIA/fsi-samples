@@ -24,18 +24,9 @@ class Task(object):
         # deepcopies of inputs can still be done
         self._task_spec[TaskSpecSchema.inputs] = \
             copy.deepcopy(task_spec[TaskSpecSchema.inputs])
-        self._task_spec[TaskSpecSchema.conf] =\
-            copy.deepcopy(task_spec[TaskSpecSchema.conf])
 
     def __getitem__(self, key):
         return self._task_spec[key]
-
-    def __setitem__(self, key, value):
-        TaskSpecSchema._typecheck(key, value)
-        if key == TaskSpecSchema.load:
-            self._task_spec[key] = value
-        else:
-            self._task_spec[key] = copy.deepcopy(value)
 
     def get(self, key, default=None):
         return self._task_spec.get(key, default)
