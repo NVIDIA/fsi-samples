@@ -42,10 +42,40 @@ def ultimate_oscillator_kernel(high_arr, low_arr, close_arr, TR_arr, BP_arr,
 
 
 @cuda.jit
+def port_ultimate_oscillator_kernel(asset_ind, high_arr, low_arr, close_arr,
+                                    TR_arr, BP_arr,
+                                    arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
+            TR_arr[i] = 0
+            BP_arr[i] = 0
+        else:
+            TR = (max(high_arr[i],
+                      close_arr[i - 1]) - min(low_arr[i], close_arr[i - 1]))
+            TR_arr[i] = TR
+            BP = close_arr[i] - min(low_arr[i], close_arr[i - 1])
+            BP_arr[i] = BP
+
+
+@cuda.jit
 def moneyflow_kernel(pp_arr, volume_arr, out_arr, arr_len):
     i = cuda.grid(1)
     if i < arr_len:
         if i == 0:
+            out_arr[i] = 0
+        else:
+            if pp_arr[i] > pp_arr[i - 1]:
+                out_arr[i] = pp_arr[i] * volume_arr[i]
+            else:
+                out_arr[i] = 0.0
+
+
+@cuda.jit
+def port_moneyflow_kernel(asset_ind, pp_arr, volume_arr, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
             out_arr[i] = 0
         else:
             if pp_arr[i] > pp_arr[i - 1]:
@@ -60,6 +90,21 @@ def onbalance_kernel(close_arr, volume_arr, out_arr, arr_len):
     if i < arr_len:
 
         if i == 0:
+            out_arr[i] = 0
+        else:
+            if close_arr[i] - close_arr[i - 1] > 0:
+                out_arr[i] = volume_arr[i]
+            elif close_arr[i] - close_arr[i - 1] == 0:
+                out_arr[i] = 0.0
+            else:
+                out_arr[i] = -volume_arr[i]
+
+
+@cuda.jit
+def port_onbalance_kernel(asset_ind, close_arr, volume_arr, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
             out_arr[i] = 0
         else:
             if close_arr[i] - close_arr[i - 1] > 0:
@@ -90,10 +135,66 @@ def true_range_kernel(high_arr, low_arr, close_arr, out_arr, arr_len):
 
 
 @cuda.jit
+def port_true_range_kernel(asset_ind, high_arr, low_arr, close_arr, out_arr,
+                           arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
+            out_arr[i] = 0
+        else:
+            out_arr[i] = max(high_arr[i],
+                             close_arr[i - 1]) - min(low_arr[i],
+                                                     close_arr[i - 1])
+
+
+@cuda.jit
+def port_mask_kernel(asset_ind, beg, end, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
+            if beg + i >= 0:
+                for j in range(beg + i, min(end + i, arr_len)):
+                    out_arr[j] = math.nan
+            else:
+                for j in range(beg + i + arr_len, min(end + i + arr_len,
+                                                      arr_len)):
+                    out_arr[j] = math.nan
+                for j in range(0, min(end + i, arr_len)):
+                    out_arr[j] = math.nan
+
+
+@cuda.jit
+def port_mask_zero_kernel(asset_ind, beg, end, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
+            if beg + i >= 0:
+                for j in range(beg + i, min(end + i, arr_len)):
+                    out_arr[j] = 0
+            else:
+                for j in range(beg + i + arr_len, min(end + i + arr_len,
+                                                      arr_len)):
+                    out_arr[j] = 0
+                for j in range(0, min(end + i, arr_len)):
+                    out_arr[j] = 0
+
+
+@cuda.jit
 def lowhigh_diff_kernel(high_arr, low_arr, out_arr, arr_len):
     i = cuda.grid(1)
     if i < arr_len:
         if i == 0:
+            out_arr[i] = 0
+        else:
+            out_arr[i] = abs(high_arr[i] - low_arr[i - 1]) - \
+                         abs(low_arr[i] - high_arr[i - 1])
+
+
+@cuda.jit
+def port_lowhigh_diff_kernel(asset_ind, high_arr, low_arr, out_arr, arr_len):
+    i = cuda.grid(1)
+    if i < arr_len:
+        if asset_ind[i] == 1:
             out_arr[i] = 0
         else:
             out_arr[i] = abs(high_arr[i] - low_arr[i - 1]) - \
@@ -221,6 +322,23 @@ def ultimate_osc(high_arr, low_arr, close_arr):
     return TR_arr, BP_arr
 
 
+def port_ultimate_osc(asset_ind, high_arr, low_arr, close_arr):
+    TR_arr = cuda.device_array_like(high_arr)
+    BP_arr = cuda.device_array_like(high_arr)
+    array_len = len(high_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_ultimate_oscillator_kernel[(number_of_blocks,),
+                                    (number_of_threads,)](asset_ind,
+                                                          high_arr,
+                                                          low_arr,
+                                                          close_arr,
+                                                          TR_arr,
+                                                          BP_arr,
+                                                          array_len)
+    return TR_arr, BP_arr
+
+
 def abs_arr(in_arr):
     out_arr = cuda.device_array_like(in_arr)
     array_len = len(in_arr)
@@ -243,6 +361,45 @@ def true_range(high_arr, low_arr, close_arr):
                                                                  out_arr,
                                                                  array_len)
     return out_arr
+
+
+def port_true_range(asset_indicator, high_arr, low_arr, close_arr):
+    out_arr = cuda.device_array_like(high_arr)
+    array_len = len(high_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_true_range_kernel[(number_of_blocks,),
+                           (number_of_threads,)](asset_indicator,
+                                                 high_arr,
+                                                 low_arr,
+                                                 close_arr,
+                                                 out_arr,
+                                                 array_len)
+    return out_arr
+
+
+def port_mask_nan(asset_indicator, input_arr, beg, end):
+    array_len = len(input_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_mask_kernel[(number_of_blocks,),
+                     (number_of_threads,)](asset_indicator,
+                                           beg,
+                                           end,
+                                           input_arr,
+                                           array_len)
+
+
+def port_mask_zero(asset_indicator, input_arr, beg, end):
+    array_len = len(input_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_mask_zero_kernel[(number_of_blocks,),
+                          (number_of_threads,)](asset_indicator,
+                                                beg,
+                                                end,
+                                                input_arr,
+                                                array_len)
 
 
 def average_price(high_arr, low_arr, close_arr):
@@ -270,6 +427,20 @@ def money_flow(pp_arr, volume_arr):
     return out_arr
 
 
+def port_money_flow(asset_ind, pp_arr, volume_arr):
+    out_arr = cuda.device_array_like(pp_arr)
+    array_len = len(pp_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_moneyflow_kernel[(number_of_blocks,),
+                          (number_of_threads,)](asset_ind,
+                                                pp_arr,
+                                                volume_arr,
+                                                out_arr,
+                                                array_len)
+    return out_arr
+
+
 def onbalance_volume(close_arr, volume_arr):
     out_arr = cuda.device_array_like(close_arr)
     array_len = len(close_arr)
@@ -282,6 +453,20 @@ def onbalance_volume(close_arr, volume_arr):
     return out_arr
 
 
+def port_onbalance_volume(asset_ind, close_arr, volume_arr):
+    out_arr = cuda.device_array_like(close_arr)
+    array_len = len(close_arr)
+    number_of_blocks = (array_len + (
+        number_of_threads - 1)) // number_of_threads
+    port_onbalance_kernel[(number_of_blocks,),
+                          (number_of_threads,)](asset_ind,
+                                                close_arr,
+                                                volume_arr,
+                                                out_arr,
+                                                array_len)
+    return out_arr
+
+
 def lowhigh_diff(high_arr, low_arr):
     out_arr = cuda.device_array_like(high_arr)
     array_len = len(high_arr)
@@ -291,6 +476,20 @@ def lowhigh_diff(high_arr, low_arr):
                                                                    low_arr,
                                                                    out_arr,
                                                                    array_len)
+    return out_arr
+
+
+def port_lowhigh_diff(asset_ind, high_arr, low_arr):
+    out_arr = cuda.device_array_like(high_arr)
+    array_len = len(high_arr)
+    number_of_blocks = \
+        (array_len + (number_of_threads - 1)) // number_of_threads
+    port_lowhigh_diff_kernel[(number_of_blocks,),
+                             (number_of_threads,)](asset_ind,
+                                                   high_arr,
+                                                   low_arr,
+                                                   out_arr,
+                                                   array_len)
     return out_arr
 
 

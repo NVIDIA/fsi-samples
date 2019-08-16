@@ -6,42 +6,26 @@ import pandas as pd
 import dask_cudf
 import dask
 
+OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
 
-__all__ = ['Node', 'TaskSpecSchema']
-
-
-class TaskSpecSchema(object):
-    '''Outline fields expected in a dictionary specifying a task node.
-
-    :ivar id: unique id or name for the node
-    :ivar plugin_type: Plugin class i.e. subclass of Node. Specified as string
-        or subclass of Node
-    :ivar conf: Configuration for the plugin i.e. parameterization. This is a
-        dictionary.
-    :ivar modulepath: Path to python module for custom plugin types.
-    :ivar inputs: List of ids of other tasks or an empty list.
-    '''
-
-    uid = 'id'
-    plugin_type = 'type'
-    conf = 'conf'
-    modulepath = 'filepath'
-    inputs = 'inputs'
-
-    # load = 'load'
-    # save = 'save'
+__all__ = ['Node', 'OUTPUT_ID']
 
 
 class Node(object):
     __metaclass__ = abc.ABCMeta
 
-    cache_dir = ".cache"
+    cache_dir = os.getenv('GQUANT_CACHE_DIR', ".cache")
 
-    def __init__(self, uid, conf, load=False, save=False):
-        self.uid = uid
-        self.conf = conf
-        self.load = load
-        self.save = save
+    def __init__(self, task):
+        from .taskSpecSchema import TaskSpecSchema
+        from .task import Task
+        # make sure is is a task object
+        assert isinstance(task, Task)
+        self._task_obj = task  # save the task obj
+        self.uid = task[TaskSpecSchema.task_id]
+        self.conf = task[TaskSpecSchema.conf]
+        self.load = task.get(TaskSpecSchema.load, False)
+        self.save = task.get(TaskSpecSchema.save, False)
         self.inputs = []
         self.outputs = []
         self.visited = False
@@ -177,6 +161,7 @@ class Node(object):
         if not isinstance(input_df, cudf.DataFrame) and \
            not isinstance(input_df, dask_cudf.DataFrame):
             return True
+
         i_cols = input_df.columns
         if len(i_cols) != len(ref):
             print("expect %d columns, only see %d columns"
@@ -184,22 +169,41 @@ class Node(object):
             print("ref:", ref)
             print("columns", i_cols)
             raise Exception("not valid for node %s" % (self.uid))
+
         for col in ref.keys():
             if col not in i_cols:
                 print("error for node %s, %s is not in the required input df"
                       % (self.uid, col))
                 return False
+
             if ref[col] is None:
                 continue
+
+            err_msg = "for node {} type {}, column {} type {} "\
+                "does not match expected type {}".format(
+                    self.uid, type(self), col, input_df[col].dtype,
+                    ref[col])
+
             if ref[col] == 'category':
-                d_type = pd.core.dtypes.dtypes.CategoricalDtype()
+                # comparing pandas.core.dtypes.dtypes.CategoricalDtype to
+                # numpy.dtype causes TypeError. Instead, let's compare
+                # after converting all types to their string representation
+                # d_type_tuple = (pd.core.dtypes.dtypes.CategoricalDtype(),)
+                d_type_tuple = (str(pd.core.dtypes.dtypes.CategoricalDtype()),)
+            elif ref[col] == 'date':
+                # Cudf read_csv doesn't understand 'datetime64[ms]' even
+                # though it reads the data in as 'datetime64[ms]', but
+                # expects 'date' as dtype specified passed to read_csv.
+                d_type_tuple = ('datetime64[ms]', 'date',)
             else:
-                d_type = np.dtype(ref[col])
-            if (input_df[col].dtype != d_type):
-                print("error for node %s, column %s type %s "
-                      "does not match type %s"
-                      % (self.uid, col, input_df[col].dtype, ref[col]))
+                d_type_tuple = (str(np.dtype(ref[col])),)
+
+            if (str(input_df[col].dtype) not in d_type_tuple):
+                print("ERROR: {}".format(err_msg))
+                # Maybe raise an exception here and have the caller
+                # try/except the validation routine.
                 return False
+
         return True
 
     def __input_ready(self):
@@ -302,7 +306,7 @@ class Node(object):
                 else:
                     output_df = self.process(inputs)
 
-        if self.uid != 'unique_output' and output_df is None:
+        if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         elif (isinstance(output_df, cudf.DataFrame) or
               isinstance(output_df, dask_cudf.DataFrame)

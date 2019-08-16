@@ -33,7 +33,6 @@ class CumReturnNode(Node):
             label = self.conf['label']
         num_points = self.conf['points']
         stride = max(len(input_df) // num_points, 1)
-        print('cumulative return', len(input_df), stride)
         date_co = DateScale()
         linear_co = LinearScale()
         yax = Axis(label='Cumulative return', scale=linear_co,

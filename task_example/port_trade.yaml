@@ -1,87 +1,87 @@
-- id: node_csvdata
+- id:  load_csv_data
   type: CsvStockLoader
   conf:
     path: ./data/stock_price_hist.csv.gz
   inputs: []
-- id: node_sort
+- id: sort
   type: SortNode
   conf:
     keys:
       - asset
       - datetime
   inputs:
-    - node_csvdata
-- id: node_addReturn
+    -  load_csv_data
+- id: add_return
   type: ReturnFeatureNode
   conf: {}
   inputs:
-    - node_sort
-- id: node_addIndicator
+    - sort
+- id: add_indicator
   type: AssetIndicatorNode
   conf: {}
   inputs:
-    - node_addReturn
-- id: node_volumeMean
+    - add_return
+- id: volume_mean
   type: AverageNode
   conf:
     column: volume
   inputs: 
-    - node_addIndicator
-- id: node_renameMeanVolume
+    - add_indicator
+- id: rename_mean_volume
   type: RenameNode
   conf:
       old: volume
       new: volume_mean
   inputs:
-    - node_volumeMean
-- id: node_leftMergeMeanVolume
+    - volume_mean
+- id: left_merge_mean_volume
   type: LeftMergeNode
   conf:
     column: asset
   inputs:
-    - node_addIndicator
-    - node_renameMeanVolume
-- id: node_maxReturns
+    - add_indicator
+    - rename_mean_volume
+- id: max_returns
   type: MaxNode
   conf:
     column: returns
   inputs: 
-    - node_addIndicator
-- id: node_renameMaxReturn
+    - add_indicator
+- id: rename_max_return
   type: RenameNode
   conf:
       old: returns
       new: returns_max
   inputs:
-    - node_maxReturns
-- id: node_leftMergeMaxReturn
+    - max_returns
+- id: left_merge_max_return
   type: LeftMergeNode
   conf:
     column: asset
   inputs:
-    - node_leftMergeMeanVolume
-    - node_renameMaxReturn
-- id: node_minReturns
+    - left_merge_mean_volume
+    - rename_max_return
+- id: min_returns
   type: MinNode
   conf:
     column: returns
   inputs: 
-    - node_addIndicator
-- id: node_renameMinReturn
+    - add_indicator
+- id: rename_min_return
   type: RenameNode
   conf:
       old: returns
       new: returns_min
   inputs:
-    - node_minReturns
-- id: node_leftMergeMinReturn
+    - min_returns
+- id: left_merge_min_return
   type: LeftMergeNode
   conf:
     column: asset
   inputs:
-    - node_leftMergeMaxReturn
-    - node_renameMinReturn
-- id: node_filterValue
+    - left_merge_max_return
+    - rename_min_return
+- id: filter_value
   type: ValueFilterNode
   conf: 
     - column: volume_mean
@@ -91,8 +91,8 @@
     - column: returns_min
       min: -10.0
   inputs:
-    - node_leftMergeMinReturn
-- id: node_dropColumns
+    - left_merge_min_return
+- id: drop_columns
   type: DropNode
   conf:
       columns: 
@@ -104,40 +104,39 @@
         - low
         - volume
   inputs:
-    - node_filterValue
-- id: node_sort2
+    - filter_value
+- id: sort_2
   type: SortNode
   conf:
     keys:
       - asset
       - datetime
   inputs:
-    - node_dropColumns
-- id: node_exp_strategy
+    - drop_columns
+- id: exp_strategy
   type: PortExpMovingAverageStrategyNode
   conf:
       fast: 5
       slow: 20
   inputs:
-    - node_sort2
-- id: node_backtest
+    - sort_2
+- id: backtest
   type: SimpleBackTestNode
   conf: {}
   inputs: 
-    - node_exp_strategy
-- id: node_portfolioOpt
+    - exp_strategy
+- id: portfolio_opt
   type: SimpleAveragePortOpt
   conf: {}
   inputs: 
-    - node_backtest
-- id: node_sharpeRatio
+    - backtest
+- id: sharpe_ratio
   type: SharpeRatioNode
   conf: {}
   inputs:
-    - node_portfolioOpt
-- id: node_cumlativeReturn
+    - portfolio_opt
+- id: cumlative_return
   type: CumReturnNode
   conf: {'points': 300}
   inputs:
-    - node_portfolioOpt
-
+    - portfolio_opt

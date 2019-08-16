@@ -29,7 +29,6 @@ class BarPlotNode(Node):
         stock = inputs[0]
         num_points = self.conf['points']
         stride = max(len(stock) // num_points, 1)
-        print('bar plot', len(stock), stride)
         label = 'stock'
         if 'label' in self.conf:
             label = self.conf['label']
