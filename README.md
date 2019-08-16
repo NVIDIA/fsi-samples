@@ -51,4 +51,4 @@ $ bash rapids/notebooks/utils/start-jupyter.sh
 
 ### Example notebooks
 
-Example notebooks, tutorial showcasing, can be found in __notebook__ folder.
+Example notebooks, tutorial showcasing, can be found in __notebooks__ folder.
