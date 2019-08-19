@@ -1,10 +1,14 @@
 from collections import OrderedDict
 import networkx as nx
+import nxpd
+import warnings
 import yaml
+
 from .node import Node, OUTPUT_ID
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-import warnings
+
+
 
 
 __all__ = ['TaskGraph']
@@ -86,7 +90,7 @@ class TaskGraph(object):
             self.__find_roots(i, inputs, consider_load)
 
     @staticmethod
-    def load_taskgraph(filename):
+    def load(filename):
         """
         load the yaml file to TaskGraph object
 
@@ -106,7 +110,7 @@ class TaskGraph(object):
         t = TaskGraph(obj)
         return t
 
-    def save_taskgraph(self, filename):
+    def save(self, filename):
         """
         Write a list of tasks i.e. taskgraph to a yaml file.
 
@@ -134,24 +138,49 @@ class TaskGraph(object):
         with open(filename, 'w') as fh:
             yaml.dump(tlist_od, fh, default_flow_style=False)
 
-    def viz_graph(self):
+    def draw(self, format='ipynb'):
         """
-        Generate the visulization of the graph in the JupyterLab
+        Draw the task graph using pydot and graphviz.
+
+        Arguments
+        -------
+        format: string
+            Output format. 'ipynb' for JupyterLab
+        Returns
+        -------
+        IPython.core.display.Image
+            Object containing the task graph in JupyterLab format
+        """
+        if format != 'ipynb':
+            warnings.warn("Unknown '{}' format".format(format), RuntimeWarning)
+
+            return
+
+        return nxpd.draw(self.to_nxgraph(), show='ipynb')
+
+
+    def to_nxgraph(self):
+        """
+        Convert the task graph to a NetworkX DiGraph object.
 
         Returns
         -----
-        nx.DiGraph
+        networkx.DiGraph object
         """
+
         G = nx.DiGraph()
+
         # instantiate objects
         for o in self.__task_list:
             for i in o[TaskSpecSchema.inputs]:
                 G.add_edge(i, o[TaskSpecSchema.task_id])
+
         return G
+
 
     def build(self, replace=None):
         """
-        compute the graph structure of the nodes. It will set the input and
+        Compute the graph structure of the nodes. It will set the input and
         output nodes for each of the node
 
         Arguments

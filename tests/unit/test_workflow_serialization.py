@@ -101,7 +101,7 @@ class TestWorkflowSerialization(unittest.TestCase):
         from gquant.dataframe_flow import TaskGraph
         task_graph = TaskGraph(self._task_list)
         workflow_file = os.path.join(self._test_dir, 'test_save_workflow.yaml')
-        task_graph.save_taskgraph(workflow_file)
+        task_graph.save(workflow_file)
 
         with open(workflow_file) as wf:
             workflow_str = wf.read()
@@ -130,7 +130,7 @@ class TestWorkflowSerialization(unittest.TestCase):
         with open(workflow_file, 'w') as wf:
             wf.write(WORKFLOW_YAML)
 
-        task_list = TaskGraph.load_taskgraph(workflow_file)
+        task_list = TaskGraph.load(workflow_file)
         all_tasks_exist = True
         for t in task_list:
             match = False
