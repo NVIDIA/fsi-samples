@@ -156,7 +156,7 @@ def kernel(in_arr, weight_arr, out_arr, window,
 
 
 def fractional_diff(input_arr, d=0.5, floor=1e-3, min_periods=None,
-                    thread_tile=48, number_of_threads=1024):
+                    thread_tile=2, number_of_threads=512):
     """
     The fractional difference computation method.
 
