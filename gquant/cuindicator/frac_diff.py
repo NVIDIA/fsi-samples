@@ -2,6 +2,7 @@ import numba
 import cmath
 import numpy as np
 from numba import cuda
+from gquant.cuindicator.util import port_mask_nan
 
 
 def get_weights_floored(d, num_k, floor=1e-3):
@@ -179,8 +180,8 @@ def fractional_diff(input_arr, d=0.5, floor=1e-3, min_periods=None,
 
     Returns
     -------
-    numba.cuda.DeviceNDArray
-        the computed fractional difference array
+    (numba.cuda.DeviceNDArray, np.array)
+        the computed fractional difference array and the weight array tuple
 
     """
     if isinstance(input_arr, numba.cuda.cudadrv.devicearray.DeviceNDArray):
@@ -192,7 +193,8 @@ def fractional_diff(input_arr, d=0.5, floor=1e-3, min_periods=None,
     weights = get_weights_floored(d=d,
                                   num_k=len(input_arr),
                                   floor=floor)[::-1, 0]
-    weights = numba.cuda.to_device(np.ascontiguousarray(weights))
+    weights_out = np.ascontiguousarray(weights)
+    weights = numba.cuda.to_device(weights_out)
 
     window = len(weights)
 
@@ -225,17 +227,46 @@ def fractional_diff(input_arr, d=0.5, floor=1e-3, min_periods=None,
                                    array_len,
                                    thread_tile,
                                    min_periods)
-    return gpu_out
+    return gpu_out, weights_out
 
 
-np.random.seed(3)
-num = np.random.rand(10000000)
-arr = cuda.to_device(num)
-f = fractional_diff(arr, d=0.3, floor=1e-4, thread_tile=2, number_of_threads=1024)
+def port_fractional_diff(asset_indicator, input_arr, d=0.5, floor=1e-3,
+                         min_periods=None, thread_tile=2,
+                         number_of_threads=512):
+    """
+    Calculate the fractional differencing signal for all the financial
+    assets indicated by asset_indicator.
 
-#print(f'compile Time {end-start} s')
 
-f = fractional_diff(arr, d=0.5, floor=1e-4, thread_tile=2, number_of_threads=1024)
+    Arguments:
+    -------
+      asset_indicator: cudf.Series
+        the integer indicator array to indicate the start of the different
+        asset
+      input_arr: numba.cuda.DeviceNDArray or cudf.Series
+        the input array to compute the fractional difference
+      d: float
+        the differencing value. range from 0 to 1
+      floor: float
+        minimum value for the weights for computational efficiency.
+      min_periods: int
+        default the lengths of the weights. Need at least min_periods of
+        non-na elements to get fractional difference value
+      thread_tile: int
+        each thread will be responsible for `thread_tile` number of
+        elements in window computation
+      number_of_threads: int
+        number of threads in a block for CUDA computation
 
-#print(f'no compile Time {end-start} s')
-
+    Returns
+    -------
+    (numba.cuda.DeviceNDArray, np.array)
+        the computed fractional difference array and the weight array tuple
+    """
+    out, weights = fractional_diff(input_arr, d=d, floor=floor,
+                                   min_periods=min_periods,
+                                   thread_tile=thread_tile,
+                                   number_of_threads=number_of_threads)
+    port_mask_nan(asset_indicator.data.to_gpu_array(), out, 0,
+                  len(weights) - 1)
+    return out, weights

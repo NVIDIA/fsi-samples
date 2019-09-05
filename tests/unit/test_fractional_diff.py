@@ -22,7 +22,8 @@ pytest -v tests/unit/test_fractional_diff.py
 import pandas as pd
 import unittest
 import cudf
-from gquant.cuindicator import fractional_diff, get_weights_floored
+from gquant.cuindicator import (fractional_diff, get_weights_floored,
+                                port_fractional_diff)
 import numpy as np
 from .utils import make_orderer, error_function
 
@@ -79,16 +80,39 @@ class TestFracDiff(unittest.TestCase):
         self._pandas_data = pdf
         self._cudf_data = df
 
+        # data set for multiple assets
+        size = 200
+        half = size // 2
+        self.size = size
+        self.half = half
+        np.random.seed(10)
+        random_array = np.random.rand(size)
+        indicator = np.zeros(size, dtype=np.int32)
+        indicator[0] = 1
+        indicator[half] = 1
+        df2 = cudf.dataframe.DataFrame()
+        df2['in'] = random_array
+        df2['indicator'] = indicator
+
+        pdf_low = pd.DataFrame()
+        pdf_high = pd.DataFrame()
+        pdf_low['in'] = random_array[0:half]
+        pdf_high['in'] = random_array[half:]
+
+        self._cudf_data_m = df2
+        self._plow_data = pdf_low
+        self._phigh_data = pdf_high
+
     def tearDown(self):
         pass
 
     @ordered
     def test_fractional_diff(self):
         '''Test frac diff method'''
-        for d_val in [0.1, 0.3, 0.5, 0.8, 1.0]:
+        for d_val in [0.1, 0.5, 1.0]:
             for floor_val in [1e-3, 1e-4]:
-                gres = fractional_diff(self._cudf_data['in'], d=d_val,
-                                       floor=floor_val)
+                gres, weights = fractional_diff(self._cudf_data['in'], d=d_val,
+                                                floor=floor_val)
                 pres, weights = frac_diff(self._pandas_data, d=d_val,
                                           floor=floor_val)
                 length = weights.size
@@ -97,6 +121,37 @@ class TestFracDiff(unittest.TestCase):
                 err = abs(g_array - p_array).max()
                 msg = "bad error %f\n" % (err,)
                 self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+    @ordered
+    def test_multi_fractional_diff(self):
+        '''Test frac diff method'''
+        d_val = 0.5
+        floor_val = 1e-3
+        gres, weights = port_fractional_diff(self._cudf_data_m['indicator'],
+                                             self._cudf_data_m['in'], d=d_val,
+                                             floor=floor_val)
+        pres, weights = frac_diff(self._plow_data, d=d_val,
+                                  floor=floor_val)
+        length = weights.size
+        g_array = (np.array(gres)[length-1:self.half-1])
+        # make sure nan is set at the begining
+        self.assertTrue(np.isnan(np.array(gres)[:length-1]).all())
+        p_array = (pres[0].values)
+        err = abs(g_array - p_array).max()
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
+
+        pres, weights = frac_diff(self._phigh_data, d=d_val,
+                                  floor=floor_val)
+        length = weights.size
+        g_array = (np.array(gres)[self.half+length-1:-1])
+        # make sure nan is set at the begining
+        self.assertTrue(np.isnan(
+            np.array(gres)[self.half:self.half+length-1]).all())
+        p_array = (pres[0].values)
+        err = abs(g_array - p_array).max()
+        msg = "bad error %f\n" % (err,)
+        self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
 
 if __name__ == '__main__':
