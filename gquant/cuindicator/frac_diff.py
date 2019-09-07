@@ -4,6 +4,8 @@ import numpy as np
 from numba import cuda
 from gquant.cuindicator.util import port_mask_nan
 
+__all__ = ["fractional_diff", "get_weights_floored", "port_fractional_diff"]
+
 
 def get_weights_floored(d, num_k, floor=1e-3):
     r"""Calculate weights ($w$) for each lag ($k$) through

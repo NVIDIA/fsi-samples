@@ -25,7 +25,8 @@ import cudf
 from gquant.cuindicator import (fractional_diff, get_weights_floored,
                                 port_fractional_diff)
 import numpy as np
-from .utils import make_orderer, error_function
+from .utils import make_orderer
+import warnings
 
 ordered, compare = make_orderer()
 unittest.defaultTestLoader.sortTestMethodsUsing = compare
@@ -51,13 +52,15 @@ def frac_diff(df, d, floor=1e-3):
     # Blank fractionally differenced series to be filled
     df_fd = []
 
-    # Slide window of time series, to calculated fractionally differenced values
+    # Slide window of time series,
+    # to calculated fractionally differenced values
     # per window
     for idx in range(weights_window_size, df.shape[0]):
         # Dot product of weights and original values
         # to get fractionally differenced values
-        date_idx = df.index[idx]
-        df_fd.append(np.dot(weights.T, df.iloc[idx - weights_window_size:idx]).item())
+        # date_idx = df.index[idx]
+        df_fd.append(np.dot(weights.T,
+                            df.iloc[idx - weights_window_size:idx]).item())
 
     # Return FD values and weights
     df_fd = pd.DataFrame(df_fd)
@@ -68,6 +71,7 @@ def frac_diff(df, d, floor=1e-3):
 class TestFracDiff(unittest.TestCase):
 
     def setUp(self):
+        warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
         array_len = int(1e4)
         random_array = np.random.rand(array_len)
         df = cudf.dataframe.DataFrame()
