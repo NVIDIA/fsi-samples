@@ -1,4 +1,4 @@
-- id: node_csvdata
+- id: load_csv_data
   type: CsvStockLoader
   conf:
     path: ./data/stock_price_hist.csv.gz
@@ -8,7 +8,7 @@
   conf:
     asset: 22123
   inputs: 
-    - node_csvdata
+    - load_csv_data
 - id: node_sort
   type: SortNode
   conf:

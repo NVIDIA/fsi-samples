@@ -38,7 +38,7 @@ case $SYSTEM_CONFIGURATION in
         ;;
 esac
 
-CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
+CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.9-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
 
 read -p "Would you like to install Vim JupyterLab Extension (optional) [N]/y: " VIM_INSTALL
 
@@ -69,21 +69,26 @@ SHELL ["bash","-c"]
 #
 # Additional python libs
 #
-RUN pip install nxpd $CUPY
-RUN conda install -y -c conda-forge dask-labextension recommonmark numpydoc sphinx_rtd_theme pudb \
+RUN source activate rapids \ 
+    && pip install nxpd $CUPY
+
+RUN source activate rapids \ 
+    && conda install -y -c conda-forge dask-labextension recommonmark numpydoc sphinx_rtd_theme pudb \
     python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr
 
 #
 # required set up
 #
-RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.38.1 --no-build \
+RUN source activate rapids \ 
+    && jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.38.1 --no-build \
     && jupyter labextension install bqplot@0.4.5 --no-build \
     && mkdir /.local /.jupyter /.config /.cupy  \
     && chmod 777 /.local /.jupyter /.config /.cupy
 
 RUN if [ "$VIM_INSTALL" = "Y" ] || [ "$VIM_INSTALL" = "y" ]; then /conda/envs/rapids/bin/jupyter labextension install jupyterlab_vim@0.10.1 --no-build ; fi
 
-RUN jupyter lab build && jupyter lab clean
+RUN source activate rapids \ 
+    && jupyter lab build && jupyter lab clean
 
 EXPOSE 8888
 EXPOSE 8787

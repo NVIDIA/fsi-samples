@@ -61,14 +61,14 @@ class IndicatorNode(Node):
             if 'args' in indicator:
                 ar = indicator['args']
             v = fun(*(parallel+data+ar))
-            if isinstance(v, tuple):
-                v = v[0]
             if isinstance(v, tuple) and 'outputs' in indicator:
                 for out in indicator['outputs']:
                     out_col = self._compose_name(indicator, [out])
                     input_df[out_col] = getattr(v, out)
                     out_cols.append(out_col)
             else:
+                if isinstance(v, tuple):
+                    v = v[0]
                 out_col = self._compose_name(indicator, [])
                 input_df[out_col] = v
                 out_cols.append(out_col)
