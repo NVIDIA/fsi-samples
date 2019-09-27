@@ -5,7 +5,7 @@ from bqplot import Axis, LinearScale, DateScale, Figure, OHLC, Bars, Tooltip
 class BarPlotNode(Node):
 
     def columns_setup(self):
-        self.required = {"datetime": "datetime64[ms]",
+        self.required = {"datetime": "date",
                          "open": "float64",
                          "close": "float64",
                          "high": "float64",
