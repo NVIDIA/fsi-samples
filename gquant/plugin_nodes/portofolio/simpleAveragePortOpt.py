@@ -28,5 +28,6 @@ class SimpleAveragePortOpt(Node):
         port.columns = ['datetime', 'strategy_returns']
         return port
 
+
 if __name__ == "__main__":
     pass
