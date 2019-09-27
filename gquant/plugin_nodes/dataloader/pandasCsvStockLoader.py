@@ -11,7 +11,7 @@ class PandasCsvStockLoader(Node):
 
     def columns_setup(self):
         self.required = {}
-        self.addition = {"datetime": "date",
+        self.addition = {"datetime": "datetime64[ms]",
                          "asset": "int64",
                          "volume": "float64",
                          "close": "float64",

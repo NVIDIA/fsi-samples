@@ -6,7 +6,7 @@ import dask_cudf
 class CumReturnNode(Node):
 
     def columns_setup(self):
-        self.required = {"datetime": "date",
+        self.required = {"datetime": "datetime64[ms]",
                          "strategy_returns": "float64"}
 
         self.retention = {}

@@ -145,7 +145,7 @@
     target: SHIFT_-1
     no_feature:
         asset: int64
-        datetime: date
+        datetime: datetime64[ms]
         volume: float64
         close: float64
         open: float64

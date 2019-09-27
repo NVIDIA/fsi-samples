@@ -4,10 +4,10 @@ from gquant.dataframe_flow import Node
 class SimpleAveragePortOpt(Node):
 
     def columns_setup(self):
-        self.required = {"datetime": "date",
+        self.required = {"datetime": "datetime64[ms]",
                          "strategy_returns": "float64",
                          "asset": "int64"}
-        self.retention = {"datetime": "date",
+        self.retention = {"datetime": "datetime64[ms]",
                           "strategy_returns": "float64"}
 
     def process(self, inputs):
