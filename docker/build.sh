@@ -64,7 +64,7 @@ cat > $D_FILE <<EOF
 FROM $CONTAINER
 USER root
 
-ADD ./gQuant /rapids/
+ADD ./gQuant /rapids/gQuant
 
 RUN apt-get update && apt-get install -y libfontconfig1 libxrender1
 
@@ -102,7 +102,7 @@ EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
 
-WORKDIR /
+WORKDIR /rapids
 EOF
 
 docker build -f $D_FILE -t $D_CONT .
