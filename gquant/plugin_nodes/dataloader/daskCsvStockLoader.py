@@ -7,7 +7,7 @@ class DaskCsvStockLoader(Node):
 
     def columns_setup(self):
         self.required = {}
-        self.addition = {"datetime": "date",
+        self.addition = {"datetime": "datetime64[ms]",
                          "asset": "int64",
                          "volume": "float64",
                          "close": "float64",
@@ -31,8 +31,7 @@ class DaskCsvStockLoader(Node):
         dask_cudf.DataFrame
         """
 
-        gdf = dask_cudf.read_csv(self.conf['path']+'/*.csv',
-                                 parse_dates=['datetime'])
+        gdf = dask_cudf.read_csv(self.conf['path']+'/*.csv')
         return gdf
 
 
