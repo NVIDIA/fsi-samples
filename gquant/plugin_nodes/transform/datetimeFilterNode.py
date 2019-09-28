@@ -37,7 +37,7 @@ class DatetimeFilterNode(Node):
                                     'end_date': end_date})
 
     def columns_setup(self):
-        self.required = {"datetime": "datetime64[ms]"}
+        self.required = {"datetime": "date"}
 
 
 if __name__ == "__main__":
