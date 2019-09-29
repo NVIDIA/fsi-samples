@@ -57,7 +57,7 @@ class XGBoostStrategyNode(Node):
     """
 
     def columns_setup(self):
-        self.required = {'datetime': 'datetime64[ms]'}
+        self.required = {'datetime': 'date'}
         self.retention = self.conf['no_feature']
         self.retention['signal'] = 'float64'
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         'train_date': '2010-1-1',
         'target': 'SHIFT_-1',
         'no_feature': {'asset': 'int64',
-                       'datetime': 'datetime64[ms]',
+                       'datetime': 'date',
                        'volume': 'float64',
                        'close': 'float64',
                        'open': 'float64',

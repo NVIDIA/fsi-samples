@@ -5,7 +5,7 @@ from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
 class LinePlotNode(Node):
 
     def columns_setup(self):
-        self.required = {"datetime": "datetime64[ms]"}
+        self.required = {"datetime": "date"}
         self.retentation = {}
 
     def process(self, inputs):

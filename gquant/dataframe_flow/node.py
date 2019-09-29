@@ -119,15 +119,19 @@ class Node(object):
             required = self.__translate_column(self.required)
             for i in inputs:
                 for k in required:
-                    if k not in i or required[k] != i[k]:
-                        if k not in i:
-                            print("error for node %s, "
-                                  "missing required column %s" % (self.uid, k))
-                        elif required[k] != i[k]:
+                    if k not in i:
+                        print("error for node %s, "
+                              "missing required column %s" % (self.uid, k))
+                        raise Exception("not valid input")
+                    if required[k] != i[k]:
+                        # special case for 'date'
+                        if (required[k] == 'date' and i[k]
+                           in ('datetime64[ms]', 'date', 'datetime64[ns]')):
+                            continue
+                        else:
                             print("error for node %s, "
                                   "type %s mismatch %s"
                                   % (self.uid, required[k], i[k]))
-                        raise Exception("not valid input")
 
         combined = {}
         for i in inputs:
@@ -194,7 +198,7 @@ class Node(object):
                 # Cudf read_csv doesn't understand 'datetime64[ms]' even
                 # though it reads the data in as 'datetime64[ms]', but
                 # expects 'date' as dtype specified passed to read_csv.
-                d_type_tuple = ('datetime64[ms]', 'date',)
+                d_type_tuple = ('datetime64[ms]', 'date', 'datetime64[ns]')
             else:
                 d_type_tuple = (str(np.dtype(ref[col])),)
 
