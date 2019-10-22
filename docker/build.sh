@@ -38,7 +38,7 @@ case $SYSTEM_CONFIGURATION in
         ;;
 esac
 
-CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.9-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
+CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.10-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
 
 read -p "Would you like to install Vim JupyterLab Extension (optional) [N]/y: " VIM_INSTALL
 
@@ -74,7 +74,7 @@ SHELL ["bash","-c"]
 # Additional python libs
 #
 RUN source activate rapids \ 
-    && pip install nxpd $CUPY 
+    && pip install nxpd $CUPY networkx==1.11
 
 RUN source activate rapids \
     && cd /rapids/gQuant \

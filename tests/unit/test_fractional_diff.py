@@ -74,7 +74,7 @@ class TestFracDiff(unittest.TestCase):
         warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
         array_len = int(1e4)
         random_array = np.random.rand(array_len)
-        df = cudf.dataframe.DataFrame()
+        df = cudf.DataFrame()
         df['in'] = random_array
 
         pdf = pd.DataFrame()
@@ -94,7 +94,7 @@ class TestFracDiff(unittest.TestCase):
         indicator = np.zeros(size, dtype=np.int32)
         indicator[0] = 1
         indicator[half] = 1
-        df2 = cudf.dataframe.DataFrame()
+        df2 = cudf.DataFrame()
         df2['in'] = random_array
         df2['indicator'] = indicator
 
