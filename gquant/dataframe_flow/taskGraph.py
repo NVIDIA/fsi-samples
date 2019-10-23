@@ -41,6 +41,16 @@ class TaskGraph(object):
             for task_spec in task_spec_list:
                 self.__task_list.append(Task(task_spec))
 
+    def extend(self, task_spec_list=None):
+        '''
+        Add more task-spec dicts to the graph
+
+        :param task_spec_list: List of task-spec dicts per TaskSpecSchema.
+        '''
+        if task_spec_list is not None:
+            for task_spec in task_spec_list:
+                self.__task_list.append(Task(task_spec))
+
     def __len__(self):
         return len(self.__task_list)
 

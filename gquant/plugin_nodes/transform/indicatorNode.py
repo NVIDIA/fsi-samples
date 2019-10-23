@@ -67,6 +67,8 @@ class IndicatorNode(Node):
                     input_df[out_col] = getattr(v, out)
                     out_cols.append(out_col)
             else:
+                if isinstance(v, tuple):
+                    v = v[0]
                 out_col = self._compose_name(indicator, [])
                 input_df[out_col] = v
                 out_cols.append(out_col)

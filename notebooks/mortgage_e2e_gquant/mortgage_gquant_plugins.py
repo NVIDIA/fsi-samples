@@ -572,15 +572,15 @@ class Create12MonFeatures(Node):
                 ['loan_id', 'josh_mody_n'], method='hash', as_index=False)\
                 .agg({'delinquency_12': 'max', 'upb_12': 'min'})
 
-            tmpdf['delinquency_12'] = \
-                (tmpdf['max_delinquency_12'] > 3).astype('int32')
-            tmpdf.drop_column('max_delinquency_12')
-
-            tmpdf['delinquency_12'] += \
-                (tmpdf['min_upb_12'] == 0).astype('int32')
-
-            tmpdf['upb_12'] = tmpdf['min_upb_12']
-            tmpdf.drop_column('min_upb_12')
+#            tmpdf['delinquency_12'] = \
+#                (tmpdf['max_delinquency_12'] > 3).astype('int32')
+#            tmpdf.drop_column('max_delinquency_12')
+#
+#            tmpdf['delinquency_12'] += \
+#                (tmpdf['min_upb_12'] == 0).astype('int32')
+#
+#            tmpdf['upb_12'] = tmpdf['min_upb_12']
+#            tmpdf.drop_column('min_upb_12')
 
             tmpdf['timestamp_year'] = \
                 (((tmpdf['josh_mody_n'] * n_months) + 24000 + (y - 1)) / 12)\
