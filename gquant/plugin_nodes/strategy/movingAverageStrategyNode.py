@@ -77,6 +77,7 @@ class MovingAverageStrategyNode(Node):
         input_df = input_df.dropna()
         return input_df
 
+
 if __name__ == "__main__":
     from gquant.dataloader.csvStockLoader import CsvStockLoader
     from gquant.transform.assetFilterNode import AssetFilterNode

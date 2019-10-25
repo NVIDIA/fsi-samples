@@ -1,5 +1,4 @@
 from gquant.dataframe_flow import Node
-import numpy as np
 import gquant.cuindicator as ci
 
 

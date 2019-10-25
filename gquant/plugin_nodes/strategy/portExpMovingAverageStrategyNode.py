@@ -129,6 +129,7 @@ class CpuPortExpMovingAverageStrategyNode(PortExpMovingAverageStrategyNode):
         input_df = input_df.groupby("asset").apply(fun)
         return input_df.dropna(subset=['signal'])
 
+
 if __name__ == "__main__":
     from gquant.dataloader.csvStockLoader import CsvStockLoader
     from gquant.transform.assetFilterNode import AssetFilterNode

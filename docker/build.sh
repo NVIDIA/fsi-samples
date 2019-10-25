@@ -40,14 +40,6 @@ esac
 
 CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.10-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
 
-read -p "Would you like to install Vim JupyterLab Extension (optional) [N]/y: " VIM_INSTALL
-
-VIM_INSTALL=${VIM_INSTALL:-N}
-if [ "$VIM_INSTALL" = "Y" ] || [ "$VIM_INSTALL" = "y" ]; then
-    echo "Vim JupyterLab Extension will be installed."
-else
-    echo "Vim JupyterLab Extension will not be installed."
-fi
 
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
 D_CONT=${D_CONT:='gquant/gquant:latest'}
@@ -74,7 +66,7 @@ SHELL ["bash","-c"]
 # Additional python libs
 #
 RUN source activate rapids \ 
-    && pip install nxpd $CUPY networkx==1.11
+    && pip install $CUPY
 
 RUN source activate rapids \
     && cd /rapids/gQuant \
@@ -82,7 +74,8 @@ RUN source activate rapids \
 
 RUN source activate rapids \ 
     && conda install -y -c conda-forge dask-labextension recommonmark numpydoc sphinx_rtd_theme pudb \
-    python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr
+    python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr \
+    pydot
 
 #
 # required set up
@@ -92,8 +85,6 @@ RUN source activate rapids \
     && jupyter labextension install bqplot@0.4.5 --no-build \
     && mkdir /.local /.jupyter /.config /.cupy  \
     && chmod 777 /.local /.jupyter /.config /.cupy
-
-RUN if [ "$VIM_INSTALL" = "Y" ] || [ "$VIM_INSTALL" = "y" ]; then /conda/envs/rapids/bin/jupyter labextension install jupyterlab_vim@0.10.1 --no-build ; fi
 
 RUN source activate rapids \ 
     && jupyter lab build && jupyter lab clean
