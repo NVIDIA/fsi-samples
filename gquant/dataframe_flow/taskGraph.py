@@ -269,3 +269,21 @@ class TaskGraph(object):
         # clean the results afterwards
         output_node.input_df = {}
         return tuple(results)
+
+    def draw(self, show=None, fmt='png'):
+        nx_graph = self.viz_graph()
+        to_pydot = nx.drawing.nx_pydot.to_pydot
+        pdot = to_pydot(nx_graph)
+        pdot_out = pdot.create(format=fmt)
+
+        if show in ('ipynb',):
+            from IPython.display import display
+            if fmt in ('svg',):
+                from IPython.display import SVG as Image
+            else:
+                from IPython.display import Image
+
+            plt = Image(pdot_out)
+            display(plt)
+        else:
+            return pdot_out

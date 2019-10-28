@@ -4,7 +4,7 @@ import cudf
 import xgboost as xgb
 from numba import cuda
 import math
-
+import numpy as np
 
 __all__ = ['XGBoostStrategyNode']
 
@@ -13,10 +13,10 @@ __all__ = ['XGBoostStrategyNode']
 def signal_kernel(signal_arr, out_arr, arr_len):
     i = cuda.grid(1)
     if i == 0:
-        out_arr[i] = math.inf
+        out_arr[i] = np.nan
     if i < arr_len - 1:
         if math.isnan(signal_arr[i]):
-            out_arr[i + 1] = math.inf
+            out_arr[i + 1] = np.nan
         elif signal_arr[i] < 0.0:
             # shift 1 time to make sure no peeking into the future
             out_arr[i + 1] = -1.0
@@ -93,7 +93,6 @@ class XGBoostStrategyNode(Node):
                 'scale_pos_weight':  2,
                 'min_child_weight':  30,
                 'tree_method':       'gpu_hist',
-                'n_gpus':            1,
                 'distributed_dask':  True,
                 'loss':              'ls',
                 # 'objective':         'gpu:reg:linear',
@@ -126,7 +125,7 @@ class XGBoostStrategyNode(Node):
         signal = compute_signal(prediction)
         input_df['signal'] = signal
         # remove the bad datapints
-        input_df = input_df.query('signal<10')
+        input_df = input_df.dropna()
         remaining = list(self.conf['no_feature'].keys()) + ['signal']
         return input_df[remaining]
 

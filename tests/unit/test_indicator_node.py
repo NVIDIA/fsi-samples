@@ -53,7 +53,7 @@ class TestIndicatorNode(unittest.TestCase):
         indicator = np.zeros(size, dtype=np.int32)
         indicator[0] = 1
         indicator[half] = 1
-        df = cudf.dataframe.DataFrame()
+        df = cudf.DataFrame()
         df['in'] = random_array
         df['open'] = open_array
         df['close'] = close_array

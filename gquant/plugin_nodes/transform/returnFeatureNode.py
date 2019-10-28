@@ -72,6 +72,7 @@ class CpuReturnFeatureNode(ReturnFeatureNode):
         input_df = input_df.groupby('asset').apply(clean)
         return input_df.dropna()
 
+
 if __name__ == "__main__":
     from gquant.dataloader.csvStockLoader import CsvStockLoader
 

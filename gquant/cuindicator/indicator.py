@@ -604,10 +604,10 @@ def port_relative_strength_index(asset_indicator, high_arr, low_arr, n):
                           low_arr.data.to_gpu_array())
     UpI_s = shift(UpI, 1)
     UpI_s[0] = 0
-    UpI_s = cudf.Series(UpI_s) * (1.0 - asset_indicator)
+    UpI_s = cudf.Series(UpI_s) * (1.0 - asset_indicator.reset_index(drop=True))
     DoI_s = shift(DoI, 1)
     DoI_s[0] = 0
-    DoI_s = cudf.Series(DoI_s) * (1.0 - asset_indicator)
+    DoI_s = cudf.Series(DoI_s) * (1.0 - asset_indicator.reset_index(drop=True))
     PosDI = PEwm(n, UpI_s, asset_indicator).mean()
     NegDI = PEwm(n, DoI_s, asset_indicator).mean()
     RSI = division(PosDI, summation(PosDI, NegDI))
