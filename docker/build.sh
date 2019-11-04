@@ -2,43 +2,56 @@
 
 echo "Building gQuant container..."
 
-echo -e "Please, select the option which better fits your system configuration:\n" \
-        " - '1' for Ubuntu 16.04 + cuda 9.2\n" \
-        " - '2' for Ubuntu 16.04 + cuda 10.0\n" \
-        " - '3' for Ubuntu 18.04 + cuda 9.2\n" \
-        " - '4' for Ubuntu 18.04 + cuda 10.0"
+echo -e "\nPlease, select your operating system:\n" \
+     " - '1' for Ubuntu 16.04\n" \
+     " - '2' for Ubuntu 18.04\n" \
+     " - '3' for CentOS"
 
-read -p "Enter your option and hit return [1]-4: " SYSTEM_CONFIGURATION
+read -p "Enter your option and hit return [1]-3: " OPERATING_SYSTEM
 
-SYSTEM_CONFIGURATION=${SYSTEM_CONFIGURATION:-1}
-case $SYSTEM_CONFIGURATION in
+OPERATING_SYSTEM=${OPERATING_SYSTEM:-1}
+case $OPERATING_SYSTEM in
     2)
-        echo "Ubuntu 16.04 + cuda 10.0 selected."
-        OS_STR='16.04'
-        CONTAINER_VER='10.0'
-        CUPY='cupy-cuda100'
-        ;;
+	echo "Ubuntu 18.04 selected."
+	OS_STR="ubuntu18.04"
+	;;
     3)
-        echo "Ubuntu 18.04 + cuda 9.2 selected."
-        OS_STR='18.04'
-        CONTAINER_VER='9.2'
-        CUPY='cupy-cuda92'
-        ;;
-    4)
-        echo "Ubuntu 18.04 + cuda 10.0 selected."
-        OS_STR='18.04'
-	CONTAINER_VER='10.0'
-	CUPY='cupy-cuda100'
-        ;;
+	echo "CentOS selected."
+	OS_STR="centos7"
+	;;
     *)
-        echo "Ubuntu 16.04 + cuda 9.2 selected."
-        OS_STR='16.04'
-        CONTAINER_VER='9.2'
-        CUPY='cupy-cuda92'
-        ;;
+	echo "Ubuntu 16.04 selected."
+	OS_STR="ubuntu16.04"
+	;;
 esac
 
-CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.10-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
+echo -e "\nPlease, select your cuda version:\n" \
+     " - '1' for cuda 9.2\n" \
+     " - '2' for cuda 10.0\n" \
+     " - '3' for cuda 10.1.2"
+
+read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
+
+CUDA_VERSION=${CUDA_VERSION:-1}
+case $CUDA_VERSION in
+    2)
+	echo "cuda 10.0 selected."
+	CONTAINER_VER='10.0'
+	CUPY='cupy-cuda100'
+	;;
+    3)
+	echo "cuda 10.1.2 selected."
+	CONTAINER_VER='10.1'
+	CUPY='cupy-cuda101'
+	;;
+    *)
+	echo "cuda 9.2 selected."
+	CONTAINER_VER='9.2'
+	CUPY='cupy-cuda92'
+	;;
+esac
+
+CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.10-cuda${CONTAINER_VER}-runtime-${OS_STR}"
 
 
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
