@@ -50,7 +50,7 @@ source activate gdf
 conda list
 
 logger "Install dependencies"
-conda install -y "cudf=$MINOR_VERSION" "dask-cudf=$MINOR_VERSION" networkx "bqplot=0.11.5" xgboost
+conda install -y "cudf=${RAPIDS_VERSION:-0.10}" "dask-cudf=${RAPIDS_VERSION:-0.10}" networkx "bqplot=0.11.5" xgboost
 
 logger "Check versions..."
 python --version

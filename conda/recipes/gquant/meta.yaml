@@ -6,6 +6,7 @@
 {% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
 {% set git_revision_count=environ.get('GIT_DESCRIBE_NUMBER', 0) %}
 {% set py_version=environ.get('CONDA_PY', 36) %}
+{% set py_version=environ.get('RAPIDS_VERSION', '0.10') %}
 package:
   name: gquant
   version: {{ version }}
@@ -18,6 +19,7 @@ build:
   string: py{{ py_version }}_{{ git_revision_count }}
   script_env:
     - VERSION_SUFFIX
+    - RAPIDS_VERSION
 
 requirements:
   build:
@@ -25,8 +27,8 @@ requirements:
     - setuptools
   run:
     - python x.x
-    - cudf ={{ minor_version }}
-    - dask-cudf ={{ minor_version }}
+    - cudf ={{ rapids_version }}
+    - dask-cudf ={{ rapids_version }}
     - networkx
     - bqplot=0.11.5
     - xgboost
