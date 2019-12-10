@@ -1,24 +1,99 @@
-import abc
-import numpy as np
 import os
-import cudf
+import warnings
+import abc
 import pandas as pd
-import dask_cudf
-import dask
+import cudf
 
-OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
+from .task import Task
+from .taskSpecSchema import TaskSpecSchema
+from .portsSpecSchema import PortsSpecSchema
 
-__all__ = ['Node', 'OUTPUT_ID']
+from ._node import _Node
 
 
-class Node(object):
-    __metaclass__ = abc.ABCMeta
+__all__ = ['Node']
 
-    cache_dir = os.getenv('GQUANT_CACHE_DIR', ".cache")
+
+class _PortsMixin(object):
+    '''Mixed class must have (doesn't have to implement i.e. relies on
+    NotImplementedError) "ports_setup" method otherwise raises AttributeError.
+    '''
+    def _using_ports(self):
+        '''Check if the :meth:`ports_setup` is implemented. If it is return
+        True otherwise return False i.e. ports API or no-ports API.
+        '''
+        try:
+            _ = self.ports_setup()
+            has_ports = True
+        except NotImplementedError:
+            has_ports = False
+        return has_ports
+
+    def __get_io_port(self, io=None, full_port_spec=False):
+        input_ports, output_ports = self.ports_setup()
+        if io in ('in',):
+            io_ports = input_ports
+        else:
+            io_ports = output_ports
+
+        if io_ports is None:
+            io_ports = dict()
+
+        if not full_port_spec:
+            io_ports = list(io_ports.keys())
+
+        return io_ports
+
+    def _get_input_ports(self, full_port_spec=False):
+        return self.__get_io_port(io='in', full_port_spec=full_port_spec)
+
+    def _get_output_ports(self, full_port_spec=False):
+        return self.__get_io_port(io='out', full_port_spec=full_port_spec)
+
+
+class Node(_PortsMixin, _Node):
+    '''Base class for implementing gQuant plugins i.e. nodes. A node processes
+    tasks within a gQuant task graph.
+
+    If one desires to use ports API then must implement the following method:
+
+        :meth: ports_setup
+            Defines ports for the node. Refer to ports_setup docstring for
+            further details.
+
+    A node implementation must override the following methods:
+
+        :meth: columns_setup
+            Define expected columns in dataframe processing. If
+            inputs/outputs are not dataframes then implement a pass through
+            without details. Ex.:
+                def columns_setup(self):
+                    pass
+            When processing dataframes define expected columns. Ex.:
+                # non-port API
+                def columns_setup(self):
+                    self.required = {'x': 'float64',
+                                     'y': 'float64'}
+
+                # ports API
+                def columns_setup(self):
+                    self.required = {
+                        'iport0_name': {'x': 'float64',
+                                        'y': 'float64'}
+                        'iport1_name': some_dict,
+                        etc.
+                    }
+            Refer to columns_setup docstring for further details.
+
+        :meth: process
+            Main functionaliy or processing logic of the Node. Refer to
+            process docstring for further details.
+
+    '''
+
+    cache_dir = '.cache'
 
     def __init__(self, task):
-        from .taskSpecSchema import TaskSpecSchema
-        from .task import Task
         # make sure is is a task object
         assert isinstance(task, Task)
         self._task_obj = task  # save the task obj
@@ -26,39 +101,64 @@ class Node(object):
         self.conf = task[TaskSpecSchema.conf]
         self.load = task.get(TaskSpecSchema.load, False)
         self.save = task.get(TaskSpecSchema.save, False)
-        self.inputs = []
-        self.outputs = []
-        self.visited = False
-        self.input_df = {}
-        self.input_columns = {}
-        self.output_columns = {}
-        self.clear_input = True
-        self.required = None
-        self.addition = None
-        self.deletion = None
+
+        self.required = {}
+        self.addition = {}
+        self.deletion = {}
+        # Retention must be None instead of empty dict. This replaces anything
+        # set by required/addition/retention. An empty dict is a valid setting
+        # for retention therefore use None instead of empty dict.
         self.retention = None
-        self.rename = None
+        self.rename = {}
         self.delayed_process = False
         # customized the column setup
         self.columns_setup()
 
-    def __translate_column(self, columns):
-        output = {}
-        for k in columns:
-            types = columns[k]
-            if types is not None and types.startswith("@"):
-                types = self.conf[types[1:]]
-            if k.startswith("@"):
-                field_name = k[1:]
-                v = self.conf[field_name]
-                if isinstance(v, str):
-                    output[v] = types
-                elif isinstance(v, list):
-                    for item in v:
-                        output[item] = None
-            else:
-                output[k] = types
-        return output
+        if self._using_ports():
+            PortsSpecSchema.validate_ports(self.ports_setup())
+
+    def ports_setup(self):
+        """Virtual method for specifying inputs/outputs ports. Implement if
+        desire to use ports API for Nodes in a TaskGraph. Leave un-implemented
+        for non-ports API.
+
+        Must return an instance of NodePorts that adheres to PortsSpecSchema.
+        Refer to PortsSpecSchema and NodePorts in module:
+            gquant.dataframe_flow.portsSpecSchema
+
+        Ex. empty no-ports but still implement ports API.
+            node_ports = NodePorts()
+            return node_ports
+
+        Ex. ports for inputs and outputs. (typical case)
+            inports = {
+                'iport0_name': {
+                    PortsSpecSchema.port_type: cudf.DataFrame
+                },
+                'iport1_name': {
+                    PortsSpecSchema.port_type: cudf.DataFrame,
+                    PortsSpecSchema.optional: True
+                }
+            }
+
+            outports = {
+                'oport0_name': {
+                    PortsSpecSchema.port_type: cudf.DataFrame
+                },
+                'oport1_name': {
+                    PortsSpecSchema.port_type: cudf.DataFrame,
+                    PortsSpecSchema.optional: True
+                }
+            }
+
+            node_ports = NodePorts(inports=inports, outports=outports)
+            return node_ports
+
+        :return: Node ports
+        :rtype: NodePorts
+
+        """
+        raise NotImplementedError
 
     @abc.abstractmethod
     def columns_setup(self):
@@ -99,231 +199,14 @@ class Node(object):
         `self.conf` variable.
 
         """
-        self.required = None
-        self.addition = None
-        self.deletion = None
+        self.required = {}
+        self.addition = {}
+        self.deletion = {}
+        # Retention must be None instead of empty dict. This replaces anything
+        # set by required/addition/retention. An empty dict is a valid setting
+        # for retention therefore use None instead of empty dict.
         self.retention = None
-        self.rename = None
-
-    def columns_flow(self):
-        """
-        Flow the graph to determine the input output dataframe column names and
-        types.
-        """
-        if not self.__input_columns_ready():
-            return
-        inputs = self.__get_input_columns()
-
-        # check required columns are their
-        if self.required is not None:
-            required = self.__translate_column(self.required)
-            for i in inputs:
-                for k in required:
-                    if k not in i:
-                        print("error for node %s, "
-                              "missing required column %s" % (self.uid, k))
-                        raise Exception("not valid input")
-                    if required[k] != i[k]:
-                        # special case for 'date'
-                        if (required[k] == 'date' and i[k]
-                           in ('datetime64[ms]', 'date', 'datetime64[ns]')):
-                            continue
-                        else:
-                            print("error for node %s, "
-                                  "type %s mismatch %s"
-                                  % (self.uid, required[k], i[k]))
-
-        combined = {}
-        for i in inputs:
-            combined.update(i)
-
-        # compute the output columns
-        output = combined
-        if self.addition is not None:
-            output.update(self.__translate_column(self.addition))
-        if self.deletion is not None:
-            for key in self.__translate_column(self.deletion).keys():
-                del output[key]
-        if self.retention is not None:
-            output = self.__translate_column(self.retention)
-        if self.rename is not None:
-            replacement = self.__translate_column(self.rename)
-            for key in replacement.keys():
-                if key not in output:
-                    print("error for node %s, "
-                          "missing required column %s" % (self.uid, key))
-                    raise Exception("not valid replacement column")
-                types = output[key]
-                del output[key]
-                output[replacement[key]] = types
-        self.output_columns = output
-        for o in self.outputs:
-            o.__set_input_column(self, self.output_columns)
-            o.columns_flow()
-
-    def __valide(self, input_df, ref):
-        if not isinstance(input_df, cudf.DataFrame) and \
-           not isinstance(input_df, dask_cudf.DataFrame):
-            return True
-
-        i_cols = input_df.columns
-        if len(i_cols) != len(ref):
-            print("expect %d columns, only see %d columns"
-                  % (len(ref), len(i_cols)))
-            print("ref:", ref)
-            print("columns", i_cols)
-            raise Exception("not valid for node %s" % (self.uid))
-
-        for col in ref.keys():
-            if col not in i_cols:
-                print("error for node %s, %s is not in the required input df"
-                      % (self.uid, col))
-                return False
-
-            if ref[col] is None:
-                continue
-
-            err_msg = "for node {} type {}, column {} type {} "\
-                "does not match expected type {}".format(
-                    self.uid, type(self), col, input_df[col].dtype,
-                    ref[col])
-
-            if ref[col] == 'category':
-                # comparing pandas.core.dtypes.dtypes.CategoricalDtype to
-                # numpy.dtype causes TypeError. Instead, let's compare
-                # after converting all types to their string representation
-                # d_type_tuple = (pd.core.dtypes.dtypes.CategoricalDtype(),)
-                d_type_tuple = (str(pd.core.dtypes.dtypes.CategoricalDtype()),)
-            elif ref[col] == 'date':
-                # Cudf read_csv doesn't understand 'datetime64[ms]' even
-                # though it reads the data in as 'datetime64[ms]', but
-                # expects 'date' as dtype specified passed to read_csv.
-                d_type_tuple = ('datetime64[ms]', 'date', 'datetime64[ns]')
-            else:
-                d_type_tuple = (str(np.dtype(ref[col])),)
-
-            if (str(input_df[col].dtype) not in d_type_tuple):
-                print("ERROR: {}".format(err_msg))
-                # Maybe raise an exception here and have the caller
-                # try/except the validation routine.
-                return False
-
-        return True
-
-    def __input_ready(self):
-        if not isinstance(self.load, bool) or self.load:
-            return True
-        for i in self.inputs:
-            if i not in self.input_df:
-                return False
-        return True
-
-    def __input_columns_ready(self):
-        for i in self.inputs:
-            if i not in self.input_columns:
-                return False
-        return True
-
-    def __get_input_df(self):
-        input_df = []
-        if not isinstance(self.load, bool) or self.load:
-            return input_df
-        for i in self.inputs:
-            input_df.append(self.input_df[i])
-        return input_df
-
-    def __get_input_columns(self):
-        input_columns = []
-        for i in self.inputs:
-            input_columns.append(self.input_columns[i])
-        return input_columns
-
-    def __set_input_df(self, parent, df):
-        self.input_df[parent] = df
-
-    def __set_input_column(self, parent, columns):
-        self.input_columns[parent] = columns
-
-    def flow(self):
-        """
-        flow from this node to do computation.
-            * it will check all the input dataframe are ready or not
-            * calls its process function to manipulate the input dataframes
-            * set the resulting dataframe to the children nodes as inputs
-            * flow each of the chidren nodes
-        """
-        if not self.__input_ready():
-            return
-        inputs = self.__get_input_df()
-        output_df = self.__call__(inputs)
-        if self.clear_input:
-            self.input_df = {}
-        for o in self.outputs:
-            o.__set_input_df(self, output_df)
-            o.flow()
-
-    def __make_copy(self, i):
-        if isinstance(i, cudf.DataFrame):
-            return i.copy(deep=False)
-        elif isinstance(i, dask_cudf.DataFrame):
-            return i.copy()
-        else:
-            return i
-
-    def load_cache(self, filename):
-        """
-        defines the behavior of how to load the cache file from the `filename`.
-        Node can override this method.
-
-        Arguments
-        -------
-        filename: str
-            filename of the cache file
-
-        """
-        output_df = cudf.read_hdf(filename, key=self.uid)
-        return output_df
-
-    def __call__(self, inputs):
-        # valide inputs
-        Class = type(self)
-        cache = Class.cache_dir
-        inputs = [self.__make_copy(i) for i in inputs]
-        if not isinstance(self.load, bool) or self.load:
-            if isinstance(self.load, bool):
-                output_df = self.load_cache(cache+'/'+self.uid+'.hdf5')
-            else:
-                output_df = self.load
-        else:
-            if not self.delayed_process:
-                output_df = self.process(inputs)
-            else:
-                # handle the dask dataframe automatically
-                # use the to_delayed interface
-                # TODO, currently only handles first input is dask_cudf df
-                i_df = inputs[0]
-                rest = inputs[1:]
-                if isinstance(i_df,  dask_cudf.DataFrame):
-                    d_fun = dask.delayed(self.process)
-                    output_df = dask_cudf.from_delayed([
-                        d_fun([item] + rest) for item in i_df.to_delayed()])
-                else:
-                    output_df = self.process(inputs)
-
-        if self.uid != OUTPUT_ID and output_df is None:
-            raise Exception("None output")
-        elif (isinstance(output_df, cudf.DataFrame) or
-              isinstance(output_df, dask_cudf.DataFrame)
-              ) and len(output_df) == 0:
-            raise Exception("empty output")
-        elif not self.__valide(output_df, self.output_columns):
-            raise Exception("not valid output")
-
-        if self.save:
-            os.makedirs(cache, exist_ok=True)
-            output_df.to_hdf(cache+'/'+self.uid+'.hdf5', key=self.uid)
-
-        return output_df
+        self.rename = {}
 
     @abc.abstractmethod
     def process(self, inputs):
@@ -333,12 +216,141 @@ class Node(object):
 
         Arguments
         -------
-         inputs: list
-            list of input dataframes. dataframes order in the list matters
+        inputs: list or dictionary
+            Depending on if ports_setup is implemented or not i.e. ports API
+            or no-ports API, the inputs is a list (no ports API) or a
+            dictionary (ports API).
+            NO PORTS:
+                list of input dataframes. dataframes order in the list matters
+                Ex: inputs = [df0, df1, df2, etc.]
+                Within the context of connected nodes in a task-graph a
+                task spec specifies inputs as a list of task-ids of input
+                tasks. During task-graph run the inputs setup for process
+                will be a list of outputs from those tasks (corresponding
+                to task-spec task-ids ) in the order set in the task-spec.
+                Ex.:
+                    TaskSpecSchema.inputs: [
+                        some_task_id,
+                        some_other_task_id,
+                        etc.
+                    ]
+                Within the process access the dataframes (data inputs) as:
+                    df0 = inputs[0] # from some_task_id
+                    df1 = inputs[1] # from some_other_task_id
+                    etc.
+            PORTS:
+                dictionary keyed by port name as defined in ports_setup.
+                Ex.:
+                    inputs = {
+                        iport0: df0,
+                        iport1: df1,
+                        etc.
+                    }
+                The difference with no-ports case is that the task-spec
+                for inputs is a dictionary keyed by port names with values
+                being task-ids of input tasks "." port output of the input
+                tasks. Ex.:
+                    TaskSpecSchema.inputs: {
+                        iport0: some_task_id.some_oport,
+                        iport1: some_other_task_id.some_oport,
+                        etc.
+                    }
+                Within the process access the dataframes (data inputs) as:
+                    df0 = inputs[iport0] # from some_task_id some_oport
+                    df1 = inputs[iport1] # from some_other_task_id some_oport
+                    etc.
+
         Returns
         -------
         dataframe
-            the processed dataframe
+            The output can be anything representable in python. Typically it's
+            a processed dataframe.
+            NO PORTS:
+                Return some dataframe or output. Ex.:
+                    df = cudf.DataFrame()  # or maybe it can from an input
+                    # do some calculations and populate df.
+                    return df
+            PORTS:
+                Mostly the same as NO PORTS but must return a dictionary keyed
+                by output ports (as defined in ports_setup). Ex.:
+                    df = cudf.DataFrame()  # or maybe it can from an input
+                    # do some calculations and populate df.
+                    return {oport: df}
         """
         output = None
         return output
+
+    def load_cache(self, filename=None):
+        """
+        Defines the behavior of how to load the cache file from the `filename`.
+        Node can override this method. Default implementation assumes cudf
+        dataframes.
+
+        Arguments
+        -------
+        filename: str
+            filename of the cache file. Leave as none to use default.
+
+        """
+        cache_dir = os.getenv('GQUANT_CACHE_DIR', self.cache_dir)
+        if filename is None:
+            filename = cache_dir + '/' + self.uid + '.hdf5'
+
+        if self._using_ports():
+            output_df = {}
+            with pd.HDFStore(filename, mode='r') as hf:
+                for oport, pspec in \
+                        self._get_output_ports(full_port_spec=True).items():
+                    ptype = pspec.get(PortsSpecSchema.port_type)
+                    ptype = [ptype] if not isinstance(ptype, list) else ptype
+                    key = '{}/{}'.format(self.uid, oport)
+                    # check hdf store for the key
+                    if key not in hf:
+                        raise Exception(
+                            'The task "{}" port "{}" key "{}" not found in '
+                            'the hdf file "{}". Cannot load from cache.'
+                            .format(self.uid, oport, filename)
+                        )
+                    if cudf.DataFrame not in ptype:
+                        warnings.warn(
+                            RuntimeWarning,
+                            'Task "{}" port "{}" port type is not set to '
+                            'cudf.DataFrame. Attempting to load port data '
+                            'with cudf.read_hdf.'.format(self.uid, oport))
+                    output_df[oport] = cudf.read_hdf(hf, key)
+        else:
+            output_df = cudf.read_hdf(filename, key=self.uid)
+
+        return output_df
+
+    def save_cache(self, output_df):
+        '''Defines the behavior for how to save the output of a node to
+        filesystem cache. Default implementation assumes cudf dataframes.
+
+        :param output_df: The output from :meth:`process`. For saving to hdf
+            requires that the dataframe(s) have `to_hdf` method.
+        '''
+        cache_dir = os.getenv('GQUANT_CACHE_DIR', self.cache_dir)
+        os.makedirs(cache_dir, exist_ok=True)
+        filename = cache_dir + '/' + self.uid + '.hdf5'
+        if self._using_ports():
+            with pd.HDFStore(filename, mode='w') as hf:
+                for oport, odf in output_df.items():
+                    # check for to_hdf attribute
+                    if not hasattr(odf, 'to_hdf'):
+                        raise Exception(
+                            'Task "{}" port "{}" output object is missing '
+                            '"to_hdf" attribute. Cannot save to cache.'
+                            .format(self.uid, oport))
+
+                    dtype = '{}'.format(type(odf)).lower()
+                    if 'dataframe' not in dtype:
+                        warnings.warn(
+                            RuntimeWarning,
+                            'Task "{}" port "{}" port type is not a dataframe.'
+                            ' Attempting to save to hdf with "to_hdf" method.'
+                            .format(self.uid, oport))
+                    key = '{}/{}'.format(self.uid, oport)
+                    odf.to_hdf(hf, key, format='table', data_columns=True)
+        else:
+            output_df.to_hdf(filename, key=self.uid)
