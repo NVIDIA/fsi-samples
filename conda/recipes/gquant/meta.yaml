@@ -1,0 +1,46 @@
+# Copyright (c) 2019, NVIDIA CORPORATION.
+
+# Usage:
+#   conda build -c conda-forge -c defaults .
+{% set version = environ.get('GIT_DESCRIBE_TAG', '0.0.0.dev').lstrip('v') + environ.get('VERSION_SUFFIX', '') %}
+{% set minor_version =  version.split('.')[0] + '.' + version.split('.')[1] %}
+{% set git_revision_count=environ.get('GIT_DESCRIBE_NUMBER', 0) %}
+{% set py_version=environ.get('CONDA_PY', 36) %}
+{% set py_version=environ.get('RAPIDS_VERSION', '0.10') %}
+package:
+  name: gquant
+  version: {{ version }}
+
+source:
+  path: ../../..
+
+build:
+  number: {{ git_revision_count }}
+  string: py{{ py_version }}_{{ git_revision_count }}
+  script_env:
+    - VERSION_SUFFIX
+    - RAPIDS_VERSION
+
+requirements:
+  build:
+    - python x.x
+    - setuptools
+  run:
+    - python x.x
+    - cudf ={{ rapids_version }}
+    - dask-cudf ={{ rapids_version }}
+    - networkx
+    - bqplot=0.11.5
+    - xgboost
+
+test:
+  imports:
+    - gquant
+    - gquant.dataframe_flow
+
+
+about:
+  home: http://rapids.ai/
+  license: Apache-2.0
+  license_file: ../../../LICENSE
+  summary: gquant library
