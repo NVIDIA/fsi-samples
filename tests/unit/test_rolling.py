@@ -37,7 +37,7 @@ class TestRolling(unittest.TestCase):
         self.average_window = 300
         random_array = np.random.rand(array_len)
 
-        df = cudf.dataframe.DataFrame()
+        df = cudf.DataFrame()
         df['in'] = random_array
 
         pdf = pd.DataFrame()
