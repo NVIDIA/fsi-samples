@@ -1,5 +1,4 @@
-from .node import Node
-
+from ._node import _Node
 
 __all__ = ['TaskSpecSchema']
 
@@ -20,6 +19,7 @@ class TaskSpecSchema(object):
     conf = 'conf'
     filepath = 'filepath'
     inputs = 'inputs'
+    # outputs = 'outputs'
     load = 'load'
     save = 'save'
 
@@ -28,21 +28,26 @@ class TaskSpecSchema(object):
         if (schema_field == cls.task_id):
             assert isinstance(value, str)
         elif schema_field == cls.node_type:
-            assert (isinstance(value, str) or issubclass(value, Node))
+            assert (isinstance(value, str) or issubclass(value, _Node))
         elif schema_field == cls.conf:
             assert (isinstance(value, dict) or isinstance(value, list))
         elif schema_field == cls.filepath:
             assert isinstance(value, str)
         elif schema_field == cls.inputs:
-            assert isinstance(value, list)
+            assert (isinstance(value, list) or isinstance(value, dict))
             for item in value:
                 assert isinstance(item, str)
+        # elif schema_field == cls.outputs:
+        #     assert isinstance(value, list)
+        #     for item in value:
+        #         assert isinstance(item, str)
         elif schema_field == cls.load:
             pass
         elif schema_field == cls.save:
             assert isinstance(value, bool)
         else:
-            raise KeyError
+            raise KeyError('Uknown schema field "{}" in the task spec.'.format(
+                schema_field))
 
     _schema_req_fields = [task_id, node_type, conf, inputs]
 

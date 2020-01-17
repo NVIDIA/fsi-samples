@@ -2,16 +2,17 @@ import gquant.cuindicator as ci
 from gquant.dataframe_flow import Node
 from numba import cuda
 import math
+import numpy as np
 
 
 @cuda.jit
 def moving_average_signal_kernel(ma_fast, ma_slow, out_arr, arr_len):
     i = cuda.grid(1)
     if i == 0:
-        out_arr[i] = math.inf
+        out_arr[i] = np.nan
     if i < arr_len - 1:
         if math.isnan(ma_slow[i]) or math.isnan(ma_fast[i]):
-            out_arr[i + 1] = math.inf
+            out_arr[i + 1] = np.nan
         elif ma_fast[i] - ma_slow[i] > 0.00001:
             # shift 1 time to make sure no peeking into the future
             out_arr[i + 1] = -1.0
@@ -73,8 +74,9 @@ class MovingAverageStrategyNode(Node):
         input_df['ma_slow'] = input_df['ma_slow'].fillna(0.0)
         input_df['ma_fast'] = fast
         input_df['ma_fast'] = input_df['ma_fast'].fillna(0.0)
-        input_df = input_df.query('signal<10')  # remove the bad datapints
+        input_df = input_df.dropna()
         return input_df
+
 
 if __name__ == "__main__":
     from gquant.dataloader.csvStockLoader import CsvStockLoader

@@ -1,7 +1,8 @@
 from collections import OrderedDict
 import networkx as nx
 import yaml
-from .node import Node, OUTPUT_ID
+from .node import Node
+from ._node_flow import OUTPUT_ID
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 import warnings
@@ -35,39 +36,65 @@ class TaskGraph(object):
         '''
         :param task_spec_list: List of task-spec dicts per TaskSpecSchema.
         '''
-        self.__task_list = []
-        self.__index = 0
-        if task_spec_list is not None:
-            for task_spec in task_spec_list:
-                self.__task_list.append(Task(task_spec))
+        self.__task_list = {}
+        self.__index = None
 
-    def extend(self, task_spec_list=None):
+        error_msg = 'Task-id "{}" already in the task graph. Set '\
+                    'replace=True to replace existing task with extended task.'
+
+        self.__extend(task_spec_list=task_spec_list, replace=False,
+                      error_msg=error_msg)
+
+    def __extend(self, task_spec_list=None, replace=False, error_msg=None):
+        tspec_list = dict() if task_spec_list is None else task_spec_list
+
+        if error_msg is None:
+            error_msg = 'Task-id "{}" already in the task graph. Set '\
+                        'replace=True to replace existing task.'
+
+        for tspec in tspec_list:
+            task = Task(tspec)
+            task_id = task[TaskSpecSchema.task_id]
+            if task_id in self.__task_list and not replace:
+                raise Exception(error_msg.format(task_id))
+            self.__task_list[task_id] = task
+
+    def extend(self, task_spec_list=None, replace=False):
         '''
         Add more task-spec dicts to the graph
 
         :param task_spec_list: List of task-spec dicts per TaskSpecSchema.
         '''
-        if task_spec_list is not None:
-            for task_spec in task_spec_list:
-                self.__task_list.append(Task(task_spec))
+
+        error_msg = 'Task-id "{}" already in the task graph. Set '\
+                    'replace=True to replace existing task with extended task.'
+
+        self.__extend(task_spec_list=task_spec_list, replace=replace,
+                      error_msg=error_msg)
+
+    def __contains__(self, task_id):
+        return True if task_id in self.__task_list else False
 
     def __len__(self):
         return len(self.__task_list)
 
     def __iter__(self):
         self.__index = 0
+        self.__tlist = list(self.__task_list.values())
         return self
 
     def __next__(self):
-        if self.__index == len(self.__task_list):
+        idx = self.__index
+        if idx is None or idx == len(self.__tlist):
+            self.__index = None
             raise StopIteration
-        obj = self.__task_list[self.__index]
-        self.__index += 1
-        return obj
+        task = self.__tlist[idx]
+        self.__index = idx + 1
+        return task
 
     def __find_roots(self, node, inputs, consider_load=True):
         """
-        find the root nodes that the `node` dependes on
+        find the root nodes that the `node` depends on
 
         Arguments
         -------
@@ -86,14 +113,18 @@ class TaskGraph(object):
         if (node.visited):
             return
         node.visited = True
+
         if len(node.inputs) == 0:
             inputs.append(node)
             return
+
         if consider_load and node.load:
             inputs.append(node)
             return
-        for i in node.inputs:
-            self.__find_roots(i, inputs, consider_load)
+
+        for node_in in node.inputs:
+            inode = node_in['from_node']
+            self.__find_roots(inode, inputs, consider_load)
 
     @staticmethod
     def load_taskgraph(filename):
@@ -132,7 +163,7 @@ class TaskGraph(object):
 
         # we want -id to be first in the resulting yaml file.
         tlist_od = []  # task list ordered
-        for task in self.__task_list:
+        for task in self:
             tod = OrderedDict([(TaskSpecSchema.task_id, 'idholder'),
                                (TaskSpecSchema.node_type, 'typeholder'),
                                (TaskSpecSchema.conf, 'confholder'),
@@ -144,7 +175,7 @@ class TaskGraph(object):
         with open(filename, 'w') as fh:
             yaml.dump(tlist_od, fh, default_flow_style=False)
 
-    def viz_graph(self):
+    def viz_graph(self, show_ports=False):
         """
         Generate the visulization of the graph in the JupyterLab
 
@@ -154,9 +185,44 @@ class TaskGraph(object):
         """
         G = nx.DiGraph()
         # instantiate objects
-        for o in self.__task_list:
-            for i in o[TaskSpecSchema.inputs]:
-                G.add_edge(i, o[TaskSpecSchema.task_id])
+        for itask in self:
+            task_inputs = itask[TaskSpecSchema.inputs]
+            to_task = itask[TaskSpecSchema.task_id]
+            for iport_or_tid in task_inputs:
+                # iport_or_tid: it is either to_port or task id (tid) b/c
+                #     if using ports API task_inputs is a dictionary otherwise
+                #     task_inputs is a list.
+                taskin_and_oport = task_inputs[iport_or_tid] \
+                    if isinstance(task_inputs, dict) else iport_or_tid
+                isplit = taskin_and_oport.split('.')
+                from_task = isplit[0]
+                from_port = isplit[1] if len(isplit) > 1 else None
+                if show_ports and from_port is not None:
+                    to_port = iport_or_tid
+                    common_tip = taskin_and_oport
+                    G.add_edge(from_task, common_tip, label=from_port)
+                    G.add_edge(common_tip, to_task, label=to_port)
+                    tnode = G.nodes[common_tip]
+                    tnode.update({
+                        # 'label': '',
+                        'shape': 'point'})
+                else:
+                    G.add_edge(from_task, to_task)
+
+            # draw output ports
+            if show_ports:
+                task_node = itask.get_node_obj()
+                if not task_node._using_ports():
+                    continue
+                # task_outputs = itask.get(TaskSpecSchema.outputs, [])
+                for pout in task_node._get_output_ports():
+                    out_tip = '{}.{}'.format(
+                        itask[TaskSpecSchema.task_id], pout)
+                    G.add_edge(to_task, out_tip, label=pout)
+                    tnode = G.nodes[out_tip]
+                    tnode.update({
+                        # 'label': '',
+                        'shape': 'point'})
         return G
 
     def build(self, replace=None):
@@ -180,19 +246,41 @@ class TaskGraph(object):
                     'Replace task-id {} not found in task-graph'.format(rkey),
                     RuntimeWarning)
 
-        # instantiate objects
-        task_id = TaskSpecSchema.task_id
-        for task in self.__task_list:
-            node = task.get_node_obj(replace.get(task[task_id], {}))
-            self.__node_dict[task[task_id]] = node
+        # instantiate node objects
+        for task in self:
+            task_id = task[TaskSpecSchema.task_id]
+            node = task.get_node_obj(replace.get(task_id), tgraph_mixin=True)
+            self.__node_dict[task_id] = node
 
         # build the graph
         for task_id in self.__node_dict:
             node = self.__node_dict[task_id]
-            for input_id in node._task_obj[TaskSpecSchema.inputs]:
+            task_inputs = node._task_obj[TaskSpecSchema.inputs]
+            for input_idx, input_key in enumerate(task_inputs):
+                if node._using_ports():
+                    # node_inputs should be a dict with entries:
+                    #     {iport: taskid.oport}
+                    input_task = task_inputs[input_key].split('.')
+                    dst_port = input_key
+                else:
+                    input_task = input_key.split('.')
+                    dst_port = input_idx
+
+                input_id = input_task[0]
+                src_port = input_task[1] if len(input_task) > 1 else None
+
                 input_node = self.__node_dict[input_id]
-                node.inputs.append(input_node)
-                input_node.outputs.append(node)
+                node.inputs.append({
+                    'from_node': input_node,
+                    'from_port': src_port,
+                    'to_port': dst_port
+                })
+                # input_node.outputs.append(node)
+                input_node.outputs.append({
+                    'to_node': node,
+                    'to_port': dst_port,
+                    'from_port': src_port
+                })
 
         # this part is to do static type checks
         raw_inputs = []
@@ -233,39 +321,95 @@ class TaskGraph(object):
             the results corresponding to the outputs list
         """
         replace = dict() if replace is None else replace
+
         self.build(replace)
-        output_task = Task({TaskSpecSchema.task_id: OUTPUT_ID,
-                            TaskSpecSchema.conf: {},
-                            TaskSpecSchema.node_type: "dumpy",
-                            TaskSpecSchema.inputs: []})
-        output_node = Node(output_task)
+
+        class OutputCollector(Node):
+            def columns_setup(self):
+                super().columns_setup()
+
+            def process(self, inputs):
+                return super().process(inputs)
+
+        output_task = Task({
+            TaskSpecSchema.task_id: OUTPUT_ID,
+            TaskSpecSchema.conf: {},
+            TaskSpecSchema.node_type: OutputCollector,
+            TaskSpecSchema.inputs: []
+        })
+
+        outputs_collector_node = output_task.get_node_obj(tgraph_mixin=True)
+
         # want to save the intermediate results
-        output_node.clear_input = False
+        outputs_collector_node.clear_input = False
         results = []
-        results_obj = []
-        for o in outputs:
-            o_obj = self.__node_dict[o]
-            results_obj.append(o_obj)
-            output_node.inputs.append(o_obj)
-            o_obj.outputs.append(output_node)
+        results_task_ids = []
+        for task_id in outputs:
+            nodeid_oport = task_id.split('.')
+            nodeid = nodeid_oport[0]
+            oport = nodeid_oport[1] if len(nodeid_oport) > 1 else None
+            onode = self.__node_dict[nodeid]
+            results_task_ids.append(task_id)
+            dummy_port = task_id
+            outputs_collector_node.inputs.append({
+                'from_node': onode,
+                'from_port': oport,
+                'to_port': dummy_port
+            })
+            onode.outputs.append({
+                'to_node': outputs_collector_node,
+                'to_port': dummy_port,
+                'from_port': oport
+            })
 
         inputs = []
-        self.__find_roots(output_node, inputs, consider_load=True)
+        self.__find_roots(outputs_collector_node, inputs, consider_load=True)
         # now clean up the graph, removed the node that is not used for
         # computation
         for key in self.__node_dict:
-            current_obj = self.__node_dict[key]
-            if not current_obj.visited:
-                for i in current_obj.inputs:
-                    i.outputs.remove(current_obj)
-                current_obj.inputs = []
+            node_check_visit = self.__node_dict[key]
+            if not node_check_visit.visited:
+                for inode_info in node_check_visit.inputs:
+                    inode = inode_info['from_node']
+                    oport = inode_info['from_port']
+                    iport = inode_info['to_port']
+                    onode_info = {
+                        'to_node': node_check_visit,
+                        'to_port': iport,
+                        'from_port': oport
+                    }
+                    inode.outputs.remove(onode_info)
+                node_check_visit.inputs = []
 
         for i in inputs:
             i.flow()
 
-        for r_obj in results_obj:
-            results.append(output_node.input_df[r_obj])
+        results_dfs_dict = outputs_collector_node.input_df
+        for task_id in results_task_ids:
+            results.append(results_dfs_dict[task_id])
 
         # clean the results afterwards
-        output_node.input_df = {}
+        outputs_collector_node.input_df = {}
         return tuple(results)
+
+    def to_pydot(self, show_ports=False):
+        nx_graph = self.viz_graph(show_ports=show_ports)
+        to_pydot = nx.drawing.nx_pydot.to_pydot
+        pdot = to_pydot(nx_graph)
+        return pdot
+
+    def draw(self, show=None, fmt='png', show_ports=False):
+        pdot = self.to_pydot(show_ports)
+        pdot_out = pdot.create(format=fmt)
+
+        if show in ('ipynb',):
+            from IPython.display import display
+            if fmt in ('svg',):
+                from IPython.display import SVG as Image  # @UnusedImport
+            else:
+                from IPython.display import Image  # @Reimport
+
+            plt = Image(pdot_out)
+            display(plt)
+        else:
+            return pdot_out

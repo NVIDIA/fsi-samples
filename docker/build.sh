@@ -51,8 +51,7 @@ case $CUDA_VERSION in
 	;;
 esac
 
-CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.11-cuda${CONTAINER_VER}-runtime-${OS_STR}"
-
+CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.10-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
 
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
 D_CONT=${D_CONT:="gquant/gquant:${OS_STR}"}
@@ -81,6 +80,7 @@ SHELL ["bash","-c"]
 #
 RUN source activate rapids \ 
     && pip install $CUPY
+
 RUN source activate rapids \
     && cd /rapids/gQuant \
     && pip install .

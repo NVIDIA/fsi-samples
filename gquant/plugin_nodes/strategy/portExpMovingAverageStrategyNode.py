@@ -11,10 +11,10 @@ import numpy as np
 def moving_average_signal_kernel(ma_fast, ma_slow, out_arr, arr_len):
     i = cuda.grid(1)
     if i == 0:
-        out_arr[i] = math.inf
+        out_arr[i] = np.nan
     if i < arr_len - 1:
         if math.isnan(ma_slow[i]) or math.isnan(ma_fast[i]):
-            out_arr[i + 1] = math.inf
+            out_arr[i + 1] = np.nan
         elif ma_fast[i] - ma_slow[i] > 0.00001:
             # shift 1 time to make sure no peeking into the future
             out_arr[i + 1] = -1.0
@@ -85,7 +85,8 @@ class PortExpMovingAverageStrategyNode(Node):
         input_df['exp_ma_fast'] = fast
         input_df['exp_ma_fast'] = input_df['exp_ma_fast'].fillna(0.0)
         # remove the bad datapints
-        input_df = input_df.query('signal<10 and indicator == 0')
+        input_df = input_df.dropna()
+        input_df = input_df.query('indicator == 0')
         return input_df
 
 
@@ -127,6 +128,7 @@ class CpuPortExpMovingAverageStrategyNode(PortExpMovingAverageStrategyNode):
         fun = partial(cpu_exp_moving_average, n_fast=n_fast, n_slow=n_slow)
         input_df = input_df.groupby("asset").apply(fun)
         return input_df.dropna(subset=['signal'])
+
 
 if __name__ == "__main__":
     from gquant.dataloader.csvStockLoader import CsvStockLoader

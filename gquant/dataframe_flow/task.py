@@ -1,13 +1,13 @@
+import os
 import importlib
 import copy
-from .node import Node
 from .taskSpecSchema import TaskSpecSchema
-import os
+from ._node import _Node
+
 
 __all__ = ['Task']
 
 DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
-MODLIB = importlib.import_module(DEFAULT_MODULE)
 
 
 class Task(object):
@@ -31,7 +31,7 @@ class Task(object):
     def get(self, key, default=None):
         return self._task_spec.get(key, default)
 
-    def get_node_obj(self, replace=None):
+    def get_node_obj(self, replace=None, tgraph_mixin=False):
         """
         instantiate a node instance for this task given the replacement setup
 
@@ -45,6 +45,8 @@ class Task(object):
         object
             Node instance
         """
+        replace = dict() if replace is None else replace
+
         task_spec = copy.copy(self._task_spec)
         task_spec.update(replace)
 
@@ -62,14 +64,40 @@ class Task(object):
                 spec.loader.exec_module(mod)
                 NodeClass = getattr(mod, node_type)
             else:
-                global MODLIB
+                global DEFAULT_MODULE
+                plugmod = os.getenv('GQUANT_PLUGIN_MODULE', DEFAULT_MODULE)
+                # MODLIB = importlib.import_module(DEFAULT_MODULE)
+                MODLIB = importlib.import_module(plugmod)
                 NodeClass = getattr(MODLIB, node_type)
-        elif issubclass(node_type, Node):
+        elif issubclass(node_type, _Node):
             NodeClass = node_type
         else:
-            raise "Not supported"
+            raise Exception("Node type not supported: {}".format(node_type))
 
-        node = NodeClass(task)
+        assert issubclass(NodeClass, _Node), \
+            'Node-type is not a subclass of "Node" class.'
+
+        if tgraph_mixin:
+            from ._node_flow import NodeTaskGraphMixin
+
+            class NodeInTaskGraph(NodeTaskGraphMixin, NodeClass):
+                def __init__(self, task):
+                    NodeClass.__init__(self, task)
+                    NodeTaskGraphMixin.__init__(self)
+
+                def __repr__(self):
+                    '''Override repr to show the name and path of the plugin
+                    node class.'''
+                    return '<{} {}.{} object at {}>'.format(
+                        self.__class__.__name__,
+                        NodeClass.__module__,
+                        NodeClass.__name__,
+                        hex(id(self)))
+
+            node = NodeInTaskGraph(task)
+        else:
+            node = NodeClass(task)
+
         return node
 
 
