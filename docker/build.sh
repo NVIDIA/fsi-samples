@@ -51,7 +51,7 @@ case $CUDA_VERSION in
 	;;
 esac
 
-CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.10-cuda${CONTAINER_VER}-runtime-ubuntu${OS_STR}"
+CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.11-cuda${CONTAINER_VER}-runtime-${OS_STR}"
 
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
 D_CONT=${D_CONT:="gquant/gquant:${OS_STR}"}
