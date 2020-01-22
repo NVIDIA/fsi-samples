@@ -8,7 +8,7 @@ SHELL ["bash","-c"]
 #
 RUN pip install cupy-cuda101
 
-RUN conda install -y -c rapidsai -c nvidia -c numba -c conda-forge cudf=0.11 cudatoolkit=10.1 dask-cudf=0.11
+RUN conda install -y -c rapidsai -c nvidia -c conda-forge cudf=0.11 cudatoolkit=10.1 dask-cudf=0.11 dask-cuda=0.11 jupyterlab=0.35.4
 
 #RUN conda install -y -c pytorch ignite 
 RUN pip install pytorch-ignite
