@@ -225,7 +225,7 @@ class TaskGraph(object):
                         'shape': 'point'})
         return G
 
-    def build(self, replace=None):
+    def build(self, replace=None, profile=False):
         """
         compute the graph structure of the nodes. It will set the input and
         output nodes for each of the node
@@ -249,7 +249,8 @@ class TaskGraph(object):
         # instantiate node objects
         for task in self:
             task_id = task[TaskSpecSchema.task_id]
-            node = task.get_node_obj(replace.get(task_id), tgraph_mixin=True)
+            node = task.get_node_obj(replace.get(task_id), profile,
+                                     tgraph_mixin=True)
             self.__node_dict[task_id] = node
 
         # build the graph
@@ -304,7 +305,7 @@ class TaskGraph(object):
             out_str += k + ": " + str(self.__node_dict[k]) + "\n"
         return out_str
 
-    def run(self, outputs, replace=None):
+    def run(self, outputs, replace=None, profile=False):
         """
         Flow the dataframes in the graph to do the data science computations.
 
@@ -314,6 +315,8 @@ class TaskGraph(object):
             a list of the leaf node IDs for which to return the final results
         replace: list
             a dict that defines the conf parameters replacement
+        profile: Boolean
+            whether profile the processing time of the nodes or not
 
         Returns
         -----
@@ -322,7 +325,7 @@ class TaskGraph(object):
         """
         replace = dict() if replace is None else replace
 
-        self.build(replace)
+        self.build(replace, profile)
 
         class OutputCollector(Node):
             def columns_setup(self):

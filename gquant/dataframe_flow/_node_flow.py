@@ -654,7 +654,7 @@ class NodeTaskGraphMixin(object):
         # https://docs.dask.org/en/latest/dataframe-api.html#dask.dataframe.DataFrame.persist
         # Otherwise process will run several times.
         for inputs_ in inputs_dly.values():
-            output_df_dly = dask.delayed(self.process)(inputs_)
+            output_df_dly = dask.delayed(self.decorate_process())(inputs_)
             output_df_dly_per = output_df_dly.persist()
             for oport in self._get_output_ports():
                 oport_out = dask.delayed(get_pout)(
@@ -671,6 +671,20 @@ class NodeTaskGraphMixin(object):
             output_df[oport] = dask_cudf.from_delayed(outputs_dly[oport])
 
         return output_df
+
+    def decorate_process(self):
+        import time
+        def timer(*argv):
+            start = time.time()
+            result = self.process(*argv)
+            end = time.time()
+            print('id:%s process time:%.3f' % (self.uid, end-start))
+            return result
+        if self.profile:
+            return timer
+        else:
+            return self.process
+
 
     def __call__(self, inputs_data):
         if self._using_ports():
@@ -689,14 +703,14 @@ class NodeTaskGraphMixin(object):
                 output_df = self.load
         else:
             if not self.delayed_process:
-                output_df = self.process(inputs)
+                output_df = self.decorate_process()(inputs)
             else:
                 if self._using_ports():
                     use_delayed = self.__check_dly_processing_prereq(inputs)
                     if use_delayed:
                         output_df = self.__delayed_call(inputs)
                     else:
-                        output_df = self.process(inputs)
+                        output_df = self.decorate_process()(inputs)
                 else:
                     # handle the dask dataframe automatically
                     # use the to_delayed interface
@@ -704,12 +718,12 @@ class NodeTaskGraphMixin(object):
                     i_df = inputs[0]
                     rest = inputs[1:]
                     if isinstance(i_df, dask_cudf.DataFrame):
-                        d_fun = dask.delayed(self.process)
+                        d_fun = dask.delayed(self.decorate_process())
                         output_df = dask_cudf.from_delayed([
                             d_fun([item] + rest)
                             for item in i_df.to_delayed()])
                     else:
-                        output_df = self.process(inputs)
+                        output_df = self.decorate_process()(inputs)
 
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
