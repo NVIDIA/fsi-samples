@@ -13,6 +13,10 @@ RUN conda install -y -c rapidsai -c nvidia -c conda-forge cudf=0.11 cudatoolkit=
 #RUN conda install -y -c pytorch ignite 
 RUN pip install pytorch-ignite
 
+RUN conda install -y nodejs
+
+RUN jupyter labextension install @ijmbarr/jupyterlab_spellchecker
+
 RUN mkdir /.local /.jupyter /.config /.cupy  && chmod 777 /.local /.jupyter /.config /.cupy
 
 # RUN cp -r /usr/lib/python3.6/dist-packages/tensorrt /opt/conda/lib/python3.6/site-packages/tensorrt
