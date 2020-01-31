@@ -1,7 +1,7 @@
 CUDA_HOME ?= /usr/local/cuda/
 NVCC ?= nvcc -O3 -DGPUTIMING # -lineinfo
 
-INCLUDES ?= -I$(CUDA_HOME)/include -I$(CUDA_HOME)/samples/common/inc
+INCLUDES ?= -I$(CUDA_HOME)/include -I.
 
 LIBS ?= -L$(CUDA_HOME)/lib64 -lcudart -lcurand 
 
