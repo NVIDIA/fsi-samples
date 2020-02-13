@@ -678,7 +678,7 @@ class NodeTaskGraphMixin(object):
             start = time.time()
             result = self.process(*argv)
             end = time.time()
-            print('id:%s process time:%.3f' % (self.uid, end-start))
+            print('id:%s process time:%.3fs' % (self.uid, end-start))
             return result
         if self.profile:
             return timer
