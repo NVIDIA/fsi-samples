@@ -113,14 +113,13 @@ class XGBoostStrategyNode(Node):
         train_cols = set(model_df.columns) - set(
             self.conf['no_feature'].keys())
         train_cols = list(train_cols - set([self.conf['target']]))
-        pd_model = model_df.to_pandas()
-        train = pd_model[train_cols]
-        target = pd_model[self.conf['target']]
-        dmatrix = xgb.DMatrix(train, target)
+        train = model_df[train_cols]
+        target = model_df[self.conf['target']]
+        dmatrix = xgb.DMatrix(train, label=target)
         bst = xgb.train(dxgb_params, dmatrix,
                         num_boost_round=dxgb_params['nround'])
         # make inferences
-        infer_dmatrix = xgb.DMatrix(input_df.to_pandas()[train_cols])
+        infer_dmatrix = xgb.DMatrix(input_df[train_cols])
         prediction = cudf.Series(bst.predict(infer_dmatrix)).astype('float64')
         signal = compute_signal(prediction)
         input_df['signal'] = signal

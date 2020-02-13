@@ -31,7 +31,7 @@ class Task(object):
     def get(self, key, default=None):
         return self._task_spec.get(key, default)
 
-    def get_node_obj(self, replace=None, tgraph_mixin=False):
+    def get_node_obj(self, replace=None, profile=False, tgraph_mixin=False):
         """
         instantiate a node instance for this task given the replacement setup
 
@@ -39,6 +39,8 @@ class Task(object):
         -------
         replace: dict
             conf parameters replacement
+        profile: Boolean
+            profile the node computation
 
         Returns
         -----
@@ -97,7 +99,7 @@ class Task(object):
             node = NodeInTaskGraph(task)
         else:
             node = NodeClass(task)
-
+        node.profile = profile
         return node
 
 
