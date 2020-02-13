@@ -66,7 +66,7 @@ cp ../LICENSE ./gQuant
 rsync -av --progress ../notebooks ./gQuant --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
 
 gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
-D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}_${OS_STR}_${CUDA_VERSION}_${RAPIDS_VERSION}"}
+D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}_${OS_STR}_${CONTAINER_VER}_${RAPIDS_VERSION}"}
 
 cat > $D_FILE <<EOF
 FROM $CONTAINER
