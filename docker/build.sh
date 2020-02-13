@@ -32,6 +32,8 @@ echo -e "\nPlease, select your cuda version:\n" \
 
 read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
 
+RAPIDS_VERSION="0.11"
+
 CUDA_VERSION=${CUDA_VERSION:-1}
 case $CUDA_VERSION in
     2)
@@ -51,10 +53,9 @@ case $CUDA_VERSION in
 	;;
 esac
 
-CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:0.11-cuda${CONTAINER_VER}-runtime-${OS_STR}"
+CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:${RAPIDS_VERSION}-cuda${CONTAINER_VER}-runtime-${OS_STR}"
 
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
-D_CONT=${D_CONT:="gquant/gquant:${OS_STR}"}
 
 mkdir -p gQuant
 cp -r ../gquant ./gQuant
@@ -63,6 +64,9 @@ cp ../setup.cfg ./gQuant
 cp ../setup.py ./gQuant
 cp ../LICENSE ./gQuant
 rsync -av --progress ../notebooks ./gQuant --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
+
+gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
+D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}_${OS_STR}_${CUDA_VERSION}_${RAPIDS_VERSION}"}
 
 cat > $D_FILE <<EOF
 FROM $CONTAINER
