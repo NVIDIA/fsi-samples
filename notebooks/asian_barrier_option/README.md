@@ -24,5 +24,5 @@ This tutorial is organized as following notebooks
 1. [Use Python GPU libraries to accelerate the Monte Carlo pricing on the GPU](./mc_pricing.ipynb)
 2. [Use the Monte Carlo pricing dynamic dataset to train an Option Pricing Neural Network Model](./deep_learning_option_1.ipynb)
 3. [Use the Monte Carlo pricing staic dataset to train an Option Pricing Neural Network Model and do inference](./deep_learning_option_2.ipynb)
-4. [Train an Asian Barrier Option Pricing Neural Network Model with NeMo](./deep_learning_option_nemo.ipynb)
+4. [Train an Asian Barrier Option Pricing Neural Network Model with NeMo](./deep_learning_nemo.ipynb)
 5. [Accelerate the Option Pricing Neural Network Model inference with TensorRT](./tensorrt.ipynb)
