@@ -24,7 +24,7 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS}  \
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated-declarations")
 
-set(BERT_LIBS
+set(ELU_LIBS
     cudart
     cublas
     nvinfer
@@ -60,10 +60,10 @@ add_library(my_plugins SHARED
 
 target_link_libraries(my_plugins
     common
-    ${BERT_LIBS}
+    ${ELU_LIBS}
 )
 
 target_link_libraries(common
-    ${BERT_LIBS}
+    ${ELU_LIBS}
 )
 
