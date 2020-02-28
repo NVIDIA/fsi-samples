@@ -28,6 +28,8 @@ RUN mkdir /.local /.jupyter /.config /.cupy  && chmod 777 /.local /.jupyter /.co
 # At the same step, also install TRT pip reqs
 WORKDIR /tmp/pipReqs
 RUN pip install pycuda pillow
+# NeMo toolkit
+RUN pip install nemo-toolkit==0.9.0
 
 
 EXPOSE 8888

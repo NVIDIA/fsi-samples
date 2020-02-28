@@ -1,6 +1,7 @@
 
 ## Asian Barrier Options Pricing using GPU Acceleration
 
+``
 
 ### Introduction
 
@@ -18,6 +19,18 @@ Asian Barrier Option is a mixture of [Asian Option](https://en.wikipedia.org/wik
    * [Down-and-in](https://www.investopedia.com/terms/d/daio.asp): spot price starts above the barrier level and has to move down for the option to become activated.
 
 Without loss of generality, in this tutorial we will use the [Down-and-Out Call Discretized Asian Barrier Option](https://ieeexplore.ieee.org/document/6327776/metrics#metrics) as an example. The option will be void if the average price of the underlying asset goes below the barrier. The asset Spot Price `S` is usually modeled as [Geometric Brownian motion](https://en.wikipedia.org/wiki/Geometric_Brownian_motion), which has 3 free parameters:- [Spot Price](https://www.investopedia.com/terms/s/spotprice.asp), [Percent Volatility](https://www.investopedia.com/terms/v/volatility.asp) and the [Percent Drift](https://en.wikipedia.org/wiki/Stochastic_drift). The price of the option will be the expected profit at the maturity discount to the current value.
+
+### Perlimiary 
+
+You need to build a docker image to run the examples. 
+
+```bash
+cd docker
+build -f Dockerfile -t option .
+# launch your nvidia docker container and expose the port for Jupyterlab
+```
+
+### Outline 
 
 This tutorial is organized as following notebooks
 

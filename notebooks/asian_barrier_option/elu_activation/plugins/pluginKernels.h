@@ -23,7 +23,7 @@
 #include <pluginUtil.h>
 #include <vector>
 
-namespace bert
+namespace elu
 {
 
 template <typename T, unsigned TPB>

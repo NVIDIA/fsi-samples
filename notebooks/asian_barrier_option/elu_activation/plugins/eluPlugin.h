@@ -21,10 +21,7 @@
 #include <string>
 #include <vector>
 
-namespace bert
-{
-
-namespace test
+namespace elu
 {
 
 // One of the preferred ways of making TensorRT to be able to see
@@ -101,6 +98,5 @@ private:
     static std::vector<nvinfer1::PluginField> mPluginAttributes;
     std::string mNamespace;
 };
-}
 }
 #endif // TRT_GELU_PLUGIN_H

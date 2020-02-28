@@ -22,7 +22,7 @@
 #include "common.h"
 #include <cub/cub.cuh>
 
-namespace bert
+namespace elu
 {
 
 constexpr uint32_t BDIM = 0; // batch dimension

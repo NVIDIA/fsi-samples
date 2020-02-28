@@ -26,10 +26,7 @@
 
 using namespace nvinfer1;
 
-namespace bert
-{
-
-namespace test
+namespace elu
 {
 
 // constants for approximating the normal cdf
@@ -291,6 +288,5 @@ void EluPluginDynamicCreator::setPluginNamespace(const char* libNamespace)
 const char* EluPluginDynamicCreator::getPluginNamespace() const
 {
     return mNamespace.c_str();
-}
 }
 }
