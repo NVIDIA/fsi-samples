@@ -4,13 +4,19 @@ from typing import Iterable
 
 from gquant._common import _namedtuple_with_defaults
 
-__all__ = ['PortsSpecSchema', 'NodePorts']
+__all__ = ['PortsSpecSchema', 'NodePorts', 'ConfSchema']
 
 
 _NodePorts = _namedtuple_with_defaults(
     '_NodePorts',
     ['inports', 'outports'],
     {'inports': dict(), 'outports': dict()}
+)
+
+_ConfSchema = _namedtuple_with_defaults(
+    '_ConfSchema',
+    ['json', 'ui'],
+    {'json': dict(), 'ui': dict()}
 )
 
 
@@ -52,6 +58,28 @@ class NodePorts(_NodePorts):
     port spec is a dictionary with keys/fields per PortsSpecSchema class.
 
     '''
+
+
+class ConfSchema(_ConfSchema):
+    ''' ConfSchema must be defined for Node conf JSON.
+
+    :ivar json: Dictionary defining port specs for input ports
+    :ivar ui: Dictionary defining port specs for output ports
+
+    Empty dicts default:
+        confSchema = ConfSchema()
+        confSchema.json and confSchema.ui are empty dicts
+    Examples:
+        const schema = {
+          type: "boolean",
+          enum: [true, false]
+        };
+
+        const uiSchema={
+          "ui:enumDisabled": [true],
+        };
+        confSchema = ConfSchema(json=schema, ui=uiSchema)
+     '''
 
 
 class PortsSpecSchema(object):

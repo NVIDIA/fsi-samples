@@ -161,6 +161,25 @@ class Node(_PortsMixin, _Node):
         """
         raise NotImplementedError
 
+    def conf_schema(self):
+        """Virtual method for specifying configuration schema. Implement if
+        desire to use the UI client to help fill the conf forms.
+
+        The schema standard is specified by
+        [JSON Schema](https://json-schema.org/)
+
+        The UI Client side uses this [open source React component]
+        (https://github.com/rjsf-team/react-jsonschema-form)
+
+        To learn how to write JSON schema, please refer to this [document]
+        (https://react-jsonschema-form.readthedocs.io/en/latest/).
+
+        :return: Conf Schema
+        :rtype: ConfSchema
+
+        """
+        raise NotImplementedError
+
     @abc.abstractmethod
     def columns_setup(self):
         """

@@ -68,6 +68,7 @@ cp ../LICENSE ./gQuant
 cp ../download_data.sh ./gQuant
 rsync -av --progress ../notebooks ./gQuant --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
 
+USERID=$(id -u)
 gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
 D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}_${OS_STR}_${CONTAINER_VER}_${RAPIDS_VERSION}"}
 
@@ -90,7 +91,7 @@ RUN source activate rapids \
     && cd /rapids/gQuant \
     && pip install .
 RUN source activate rapids \ 
-    && conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets pytables mkl numexpr pydot
+    && conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets pytables mkl numexpr pydot flask pylint flake8 autopep8
 #
 # required set up
 #
@@ -101,9 +102,27 @@ RUN source activate rapids \
     && chmod 777 /.local /.jupyter /.config /.cupy
 RUN source activate rapids \ 
     && jupyter lab build && jupyter lab clean
+
+RUN apt-get install -y locales-all
+ENV LC_ALL="en_US.utf8"
 EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
+
+ARG USERNAME=quant
+ARG USER_UID=$USERID
+ARG USER_GID=\$USER_UID
+
+# Create the user
+RUN groupadd --gid \$USER_GID \$USERNAME \
+    && useradd --uid \$USER_UID --gid \$USER_GID -m \$USERNAME \
+    && apt-get update \
+    && apt-get install -y sudo \
+    && echo \$USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/\$USERNAME \
+    && chmod 0440 /etc/sudoers.d/\$USERNAME
+
+USER \$USERNAME
+
 WORKDIR /rapids
 ENTRYPOINT /bin/bash -c 'source activate rapids; /bin/bash'
 EOF
