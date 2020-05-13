@@ -25,10 +25,10 @@ def moving_average_signal_kernel(ma_fast, ma_slow, out_arr, arr_len):
 def port_exponential_moving_average(stock_df, n_fast, n_slow):
     ma_slow = ci.port_exponential_moving_average(stock_df['indicator'],
                                                  stock_df['close'],
-                                                 n_slow).data.to_gpu_array()
+                                                 n_slow).to_gpu_array()
     ma_fast = ci.port_exponential_moving_average(stock_df['indicator'],
                                                  stock_df['close'],
-                                                 n_fast).data.to_gpu_array()
+                                                 n_fast).to_gpu_array()
     out_arr = cuda.device_array_like(ma_fast)
     number_of_threads = 256
     array_len = len(stock_df)

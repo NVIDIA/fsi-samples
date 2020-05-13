@@ -4,10 +4,11 @@ from numba import cuda
 import numpy as np
 
 
-def mask_returns(indicator):
-    for i in range(cuda.threadIdx.x, indicator.size, cuda.blockDim.x):
+def mask_returns(close, indicator):
+    print(len(close), cuda.threadIdx.x, cuda.blockDim.x, len(indicator))
+    for i in range(cuda.threadIdx.x, len(close), cuda.blockDim.x):
         if i == 0:
-            indicator[i] = 1
+            indicator[i] = np.nan
         else:
             indicator[i] = 0
 
@@ -40,14 +41,15 @@ class ReturnFeatureNode(Node):
         dataframe
         """
         input_df = inputs[0]
-        input_df['returns'] = ci.rate_of_change(input_df['close'], 2) \
-            .fillna(0.0)
+        input_df = input_df.reset_index().drop('index')
+        val = ci.rate_of_change(input_df['close'], 2).fillna(0.0)
+        input_df['returns'] = val
         input_df = input_df.groupby(["asset"], method='cudf') \
             .apply_grouped(mask_returns,
-                           incols=[],
-                           outcols={'indicator': 'int32'},
-                           tpb=256)
-        return input_df.query('indicator == 0 ').drop('indicator')
+                           incols=['close'],
+                           outcols={'indicator': 'int64'},
+                           tpb=1)
+        return input_df.dropna().drop('indicator')
 
 
 class CpuReturnFeatureNode(ReturnFeatureNode):

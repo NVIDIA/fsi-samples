@@ -58,7 +58,7 @@ class TestTaskGraphAPI(unittest.TestCase):
         import cudf
 
         # warmup
-        s = cudf.Series([1, 2, 3, None, 4])
+        s = cudf.Series([1, 2, 3, None, 4], nan_as_null=False)
         del(s)
         gc.collect()
 

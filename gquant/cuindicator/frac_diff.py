@@ -189,7 +189,7 @@ def fractional_diff(input_arr, d=0.5, floor=1e-3, min_periods=None,
     if isinstance(input_arr, numba.cuda.cudadrv.devicearray.DeviceNDArray):
         gpu_in = input_arr
     else:
-        gpu_in = input_arr.data.to_gpu_array()
+        gpu_in = input_arr.to_gpu_array()
 
     # compute the weights for the fractional difference
     weights = get_weights_floored(d=d,
@@ -269,6 +269,6 @@ def port_fractional_diff(asset_indicator, input_arr, d=0.5, floor=1e-3,
                                    min_periods=min_periods,
                                    thread_tile=thread_tile,
                                    number_of_threads=number_of_threads)
-    port_mask_nan(asset_indicator.data.to_gpu_array(), out, 0,
+    port_mask_nan(asset_indicator.to_gpu_array(), out, 0,
                   len(weights) - 1)
     return out, weights

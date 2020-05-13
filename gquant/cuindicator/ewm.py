@@ -95,7 +95,7 @@ class Ewm(object):
         if isinstance(input_arr, numba.cuda.cudadrv.devicearray.DeviceNDArray):
             self.gpu_in = input_arr
         else:
-            self.gpu_in = input_arr.data.to_gpu_array()
+            self.gpu_in = input_arr.to_gpu_array()
         if min_periods is None:
             self.min_periods = span
         else:

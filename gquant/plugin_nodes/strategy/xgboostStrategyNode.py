@@ -25,7 +25,7 @@ def signal_kernel(signal_arr, out_arr, arr_len):
 
 
 def compute_signal(signal):
-    signal_arr = signal.data.to_gpu_array()
+    signal_arr = signal.to_gpu_array()
     out_arr = cuda.device_array_like(signal_arr)
     number_of_threads = 256
     array_len = len(signal)
@@ -120,7 +120,7 @@ class XGBoostStrategyNode(Node):
                         num_boost_round=dxgb_params['nround'])
         # make inferences
         infer_dmatrix = xgb.DMatrix(input_df[train_cols])
-        prediction = cudf.Series(bst.predict(infer_dmatrix)).astype('float64')
+        prediction = cudf.Series(bst.predict(infer_dmatrix), nan_as_null=False).astype('float64')
         signal = compute_signal(prediction)
         input_df['signal'] = signal
         # remove the bad datapints

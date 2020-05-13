@@ -149,8 +149,8 @@ class NumbaDistanceNode(Node):
         # df['distance_numba'] = 0.0
         darr = cuda.device_array(len(df))
         distance_kernel[(number_of_blocks,), (number_of_threads,)](
-            df['x'].to_gpu_array(),
-            df['y'].to_gpu_array(),
+            df['x'.to_gpu_array(),
+            df['y'.to_gpu_array(),
             darr,
             len(df))
         df['distance_numba'] = darr

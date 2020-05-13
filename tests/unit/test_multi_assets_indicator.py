@@ -95,7 +95,7 @@ class TestMultipleAssets(unittest.TestCase):
         self._cudf_data['ewma'] = PEwm(3,
                                        self._cudf_data['in'],
                                        self._cudf_data[
-                                           'indicator'].data.to_gpu_array(),
+                                           'indicator'].to_gpu_array(),
                                        thread_tile=2,
                                        number_of_threads=2).mean()
         gpu_array = self._cudf_data['ewma']
@@ -118,8 +118,8 @@ class TestMultipleAssets(unittest.TestCase):
         '''Test portfolio macd method'''
         n_fast = 10
         n_slow = 20
-        r = gi.port_macd(self._cudf_data['indicator'].data.to_gpu_array(),
-                         self._cudf_data['close'].data.to_gpu_array(),
+        r = gi.port_macd(self._cudf_data['indicator'].to_gpu_array(),
+                         self._cudf_data['close'].to_gpu_array(),
                          n_fast,
                          n_slow)
         cpu_result = ti.macd(self._plow_data, n_fast, n_slow)

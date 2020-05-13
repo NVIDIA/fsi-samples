@@ -94,7 +94,7 @@ class PEwm(object):
         if isinstance(input_arr, numba.cuda.cudadrv.devicearray.DeviceNDArray):
             self.gpu_in = input_arr
         else:
-            self.gpu_in = input_arr.data.to_gpu_array()
+            self.gpu_in = input_arr.to_gpu_array()
         if min_periods is None:
             self.min_periods = span
         else:
@@ -114,7 +114,7 @@ class PEwm(object):
                       numba.cuda.cudadrv.devicearray.DeviceNDArray):
             self.asset_indicator = asset_indicator
         else:
-            self.asset_indicator = asset_indicator.data.to_gpu_array()
+            self.asset_indicator = asset_indicator.to_gpu_array()
 
     def apply(self, method):
         gpu_out = numba.cuda.device_array_like(self.gpu_in)

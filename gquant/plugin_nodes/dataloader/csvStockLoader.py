@@ -29,18 +29,17 @@ class CsvStockLoader(Node):
         -------
         cudf.DataFrame
         """
-
-        df = pd.read_csv(self.conf['path'],
-                         converters={'DTE': lambda x: pd.Timestamp(str(x))})
-        df = df[['DTE', 'OPEN',
-                 'CLOSE', 'HIGH',
-                 'LOW', 'SM_ID', 'VOLUME']]
+        df = cudf.read_csv(self.conf['path'])
+        # extract the year, month, day
+        ymd = df['DTE'].astype('str').str.extract('(\d\d\d\d)(\d\d)(\d\d)')
+        # construct the standard datetime str
+        df['DTE'] = ymd[0].str.cat(ymd[1],'-').str.cat(ymd[2], '-').astype('datetime64[ms]')
+        df = df[['DTE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'SM_ID', 'VOLUME']]
         df['VOLUME'] /= 1000
-        output = cudf.from_pandas(df)
         # change the names
-        output.columns = ['datetime', 'open', 'close', 'high',
+        df.columns = ['datetime', 'open', 'close', 'high',
                           'low', "asset", 'volume']
-        return output
+        return df
 
 
 if __name__ == "__main__":
