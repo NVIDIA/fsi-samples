@@ -1,0 +1,34 @@
+- id: rnn_train
+  type: ContextCompositeNode
+  conf:
+    input: []
+    output:
+      - inference.torch_tensor
+      - eval_data.out_nm
+    context:
+      num_layer:
+        type: number
+        value: 2
+        map:
+          - node_id: encoder
+            xpath: encoder.conf.encoder_n_layers
+          - node_id: decoder
+            xpath: decoder.conf.decoder_n_layers
+          - node_id: greedy_decoder
+            xpath: greedy_decoder.conf.decoder_n_layers
+      drop_out:
+        type: number
+        value: 0.1
+        map:
+          - node_id: encoder
+            xpath: encoder.conf.dropout
+          - node_id: decoder
+            xpath: decoder.conf.dropout
+    taskgraph: taskgraphs/nemo_examples/chatbot_example.gq.yaml
+  inputs: {}
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: rnn_train.inference@torch_tensor
+    in2: rnn_train.eval_data@out_nm

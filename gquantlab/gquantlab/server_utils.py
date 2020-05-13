@@ -1,5 +1,6 @@
 from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow import Node
+from gquant.plugin_nodes.nemo_util.nemoBaseNode import NeMoBase
 from gquant.dataframe_flow.task import Task
 from gquant.dataframe_flow._node_flow import OUTPUT_TYPE, OUTPUT_ID
 from gquant.dataframe_flow import TaskSpecSchema
@@ -92,6 +93,7 @@ def get_nodes(task_graph):
                 num = max(int(port[2:]), num)
             inputs.append({'name': 'in'+str(num+1), "type": ["any"]})
             out_node['inputs'] = inputs
+    task_graph.nemo_cleanup()
     return {'nodes': nodes, 'edges': edges}
 
 
@@ -190,7 +192,7 @@ def add_nodes():
             all_nodes[item[0]] = []
             for node in inspect.getmembers(item[1]):
                 if inspect.isclass(node[1]):
-                    task = {'id': 'random',
+                    task = {'id': 'node_'+str(uuid.uuid4()),
                             'type': node[0],
                             'conf': {},
                             'inputs': []}
@@ -208,9 +210,11 @@ def add_nodes():
         for node in inspect.getmembers(mod):
             if node[1] == Node:
                 continue
+            if node[1] == NeMoBase:
+                continue
             if inspect.isclass(node[1]):
                 if issubclass(node[1], Node):
-                    task = {'id': 'node_'+str(uuid.uuid4())[:8],
+                    task = {'id': 'node_'+str(uuid.uuid4()),
                             'type': node[0],
                             'conf': {},
                             'inputs': [],

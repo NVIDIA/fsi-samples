@@ -1,6 +1,6 @@
 from collections import OrderedDict
 import networkx as nx
-import yaml
+import ruamel.yaml
 from .node import Node
 from ._node_flow import OUTPUT_ID, OUTPUT_TYPE
 from .task import Task
@@ -8,33 +8,9 @@ from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import NodePorts, ConfSchema
 import warnings
 import copy
-
+import traceback
 
 __all__ = ['TaskGraph', 'OutputCollector']
-
-
-class NoDatesSafeLoader(yaml.SafeLoader):
-    @classmethod
-    def remove_implicit_resolver(cls, tag_to_remove):
-        """
-        Remove implicit resolvers for a particular tag
-
-        Takes care not to modify resolvers in super classes.
-
-        We want to load datetimes as strings, not dates, because we
-        go on to serialise as json which doesn't have the advanced types
-        of yaml, and leads to incompatibilities down the track.
-        """
-        if 'yaml_implicit_resolvers' not in cls.__dict__:
-            cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
-
-        for first_letter, mappings in cls.yaml_implicit_resolvers.items():
-            tag = [(tag, regexp) for tag,
-                   regexp in mappings if tag != tag_to_remove]
-            cls.yaml_implicit_resolvers[first_letter] = tag
-
-
-NoDatesSafeLoader.remove_implicit_resolver('tag:yaml.org,2002:timestamp')
 
 
 class OutputCollector(Node):
@@ -115,7 +91,7 @@ class TaskGraph(object):
         def represent_dict_order(dumper, data):
             return dumper.represent_mapping('tag:yaml.org,2002:map',
                                             data.items())
-        yaml.add_representer(OrderedDict, represent_dict_order)
+        ruamel.yaml.add_representer(OrderedDict, represent_dict_order)
 
         TaskGraph.__SETUP_YAML_ONCE = True
 
@@ -233,7 +209,10 @@ class TaskGraph(object):
         """
 
         with open(filename) as f:
-            obj = yaml.load(f, Loader=NoDatesSafeLoader)
+            yaml = ruamel.yaml.YAML(typ='safe')
+            yaml.constructor.yaml_constructors[u'tag:yaml.org,2002:timestamp'] = \
+                yaml.constructor.yaml_constructors[u'tag:yaml.org,2002:str']
+            obj = yaml.load(f)
         t = TaskGraph(obj)
         return t
 
@@ -269,7 +248,7 @@ class TaskGraph(object):
         # we want -id to be first in the resulting yaml file.
         tlist_od = self.export_task_speclist()
         with open(filename, 'w') as fh:
-            yaml.dump(tlist_od, fh, default_flow_style=False)
+            ruamel.yaml.dump(tlist_od, fh, default_flow_style=False)
 
     def viz_graph(self, show_ports=False):
         """
@@ -526,10 +505,24 @@ class TaskGraph(object):
         # clean the results afterwards
         outputs_collector_node.input_df = {}
         result = Results(results)
+        ####
+        # this is for nemo work around, to clean up the nemo graph
+        self.nemo_cleanup()
+        ####
         if formated:
             return formated_result(result)
         else:
             return result
+    
+    def nemo_cleanup(self, clean_module=False):
+        import nemo
+        nf = nemo.core.NeuralModuleFactory.get_default_factory()
+        if nf is not None:
+            nf.reset_trainer()
+            if clean_module:
+                state = nemo.utils.app_state.AppState()
+                state._module_registry.clear()
+                state.active_graph.modules.clear()
 
     def run(self, outputs=None, replace=None, profile=False, formated=False):
         """
@@ -550,11 +543,21 @@ class TaskGraph(object):
             the results corresponding to the outputs list
         """
         if formated:
-            import ipywidgets
-            out = ipywidgets.Output(layout={'border': '1px solid black'})
-            cap_run = out.capture(clear_output=True)(self._run)
-            result = cap_run(outputs=outputs, replace=replace,
-                             profile=profile, formated=formated)
+            # cap_run = out.capture(clear_output=True)(self._run)
+            # result = cap_run(outputs=outputs, replace=replace,
+            #                 profile=profile, formated=formated)
+            try:
+                err = ""
+                result = None
+                result = self._run(outputs=outputs, replace=replace,
+                                   profile=profile, formated=formated)
+            except Exception:
+                err = traceback.format_exc()
+            finally:
+                import ipywidgets
+                out = ipywidgets.Output(layout={'border': '1px solid black'})
+                print(err)
+                out.append_stderr(err)
             if result is None:
                 result = ipywidgets.Tab()
             result.set_title(len(result.children), 'std output')

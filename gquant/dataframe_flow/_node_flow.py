@@ -55,6 +55,16 @@ class NodeTaskGraphMixin(object):
             _get_output_ports
     '''
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        if 'input_df' in state:
+            del state['input_df']
+        # print('state', state)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
     def __init__(self):
         self.inputs = []
         self.outputs = []
@@ -278,8 +288,14 @@ class NodeTaskGraphMixin(object):
                         cudf.DataFrame in expected_type and \
                         dask_cudf.DataFrame not in expected_type:
                     expected_type.extend([dask_cudf.DataFrame])
+                
+                match = False
+                for expected in expected_type:
+                    if issubclass(out_type, expected):
+                        match = True
+                        break
 
-                if out_type not in expected_type:
+                if not match:
                     raise Exception(
                         'Node "{}" output port "{}" produced wrong type '
                         '"{}". Expected type "{}"'
@@ -580,8 +596,11 @@ class NodeTaskGraphMixin(object):
             ports = from_node.ports_setup()
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
-            types = get_type(ports.outports[from_port_name]['type'])
-            output[to_port_name] = types
+            if from_port_name in ports.outports:
+                types = get_type(ports.outports[from_port_name]['type'])
+                output[to_port_name] = types
+            else:
+                continue
         return output
 
     def decorate_process(self):

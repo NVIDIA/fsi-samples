@@ -11,9 +11,15 @@ from .renameNode import RenameNode
 from .assetIndicatorNode import AssetIndicatorNode
 from .dropNode import DropNode
 from .indicatorNode import IndicatorNode
+from .normalizationNode import NormalizationNode
+from .addSignIndicator import AddSignIndicatorNode
+from .linearEmbedding import LinearEmbeddingNode
+from .onehotEncoding import OneHotEncodingNode
 
 __all__ = ["AverageNode", "AssetFilterNode", "LeftMergeNode",
            "ReturnFeatureNode", "SortNode",
            "DatetimeFilterNode", "MinNode", "MaxNode",
            "ValueFilterNode", "RenameNode", "AssetIndicatorNode",
-           "DropNode", "IndicatorNode"]
+           "DropNode", "IndicatorNode", "NormalizationNode",
+           "AddSignIndicatorNode", "LinearEmbeddingNode",
+           "OneHotEncodingNode"]

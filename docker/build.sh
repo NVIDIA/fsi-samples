@@ -110,7 +110,7 @@ EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
 RUN apt-get update
-RUN apt-get install -y curl git net-tools iproute2 vim wget locales-all build-essential libfontconfig1 libxrender1 \
+RUN apt-get install -y curl git net-tools iproute2 vim wget locales-all build-essential libfontconfig1 libxrender1 rsync libsndfile1 ffmpeg \
         && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /.local /.jupyter /.config /.cupy \
@@ -140,7 +140,7 @@ RUN wget \
     && conda init
 
 RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
-    -c defaults rapids=$RAPIDS_VERSION python=3.7 cudatoolkit=$CUDA_STR
+    -c defaults rapids=$RAPIDS_VERSION cudatoolkit=$CUDA_STR python=3.7
 
 RUN conda install -y -c conda-forge jupyterlab 
 
@@ -161,6 +161,19 @@ RUN jupyter labextension install jupyterlab-nvdashboard
 RUN pip install dask_labextension
 RUN jupyter labextension install dask-labextension
 RUN jupyter serverextension enable dask_labextension
+
+## install the jsonpath lib
+RUN pip install jsonpath-ng ray[tune] Cython
+
+## install the NemO
+WORKDIR /home/quant/
+RUN git clone https://github.com/NVIDIA/NeMo.git 
+WORKDIR /home/quant/NeMo
+RUN sed -i 's/numba<=0.48/numba==0.49.1/g' requirements/requirements_asr.txt
+RUN bash reinstall.sh
+
+RUN conda install -y ruamel.yaml
+
 RUN mkdir -p /home/quant/gQuant
 WORKDIR /home/quant/gQuant
 $INSTALL_GQUANT

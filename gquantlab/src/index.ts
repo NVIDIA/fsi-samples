@@ -431,19 +431,48 @@ function activateFun(
   const addNodeMenu = new Menu({ commands });
   addNodeMenu.title.label = 'Add Nodes';
   addNodeMenu.title.mnemonic = 4;
+  const subMenuDict: { [key: string]: Menu } = {};
   const allNodes = requestAPI<any>('all_nodes');
   allNodes.then((allNodes: IAllNodes) => {
     for (const k in allNodes) {
-      const submenu = new Menu({ commands });
-      submenu.title.label = k;
-      submenu.title.mnemonic = 0;
+      const splits = k.split('.');
+      let subMenu: Menu = null;
+      for (let i = 0; i < splits.length; i++) {
+        const key = splits.slice(0, i + 1).join('.');
+        if (key in subMenuDict) {
+          subMenu = subMenuDict[key];
+        } else {
+          subMenu = new Menu({ commands });
+          subMenu.title.label = splits[i];
+          subMenu.title.mnemonic = 0;
+          subMenuDict[key] = subMenu;
+          if (i > 0) {
+            // add this submenu to parent
+            const parentKey = splits.slice(0, i).join('.');
+            const pMenu = subMenuDict[parentKey];
+            pMenu.addItem({
+              type: 'submenu',
+              submenu: subMenu
+            });
+          } else {
+            addNodeMenu.addItem({
+              type: 'submenu',
+              submenu: subMenu
+            });
+          }
+        }
+      }
+
+      //const submenu = new Menu({ commands });
+      //submenu.title.label = k;
+      //submenu.title.mnemonic = 0;
       for (let i = 0; i < allNodes[k].length; i++) {
         const name = allNodes[k][i].type;
         const args = {
           name: name,
           node: (allNodes[k][i] as unknown) as ReadonlyJSONObject
         };
-        submenu.addItem({
+        subMenu.addItem({
           command: COMMAND_ADD_NODE,
           args: args
         });
@@ -455,10 +484,10 @@ function activateFun(
           });
         }
       }
-      addNodeMenu.addItem({
-        type: 'submenu',
-        submenu: submenu
-      });
+      // addNodeMenu.addItem({
+      //   type: 'submenu',
+      //   submenu: submenu
+      // });
     }
   });
 
