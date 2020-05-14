@@ -5,10 +5,10 @@ import numpy as np
 
 
 def mask_returns(close, indicator):
-    print(len(close), cuda.threadIdx.x, cuda.blockDim.x, len(indicator))
+    # print(len(close), cuda.threadIdx.x, cuda.blockDim.x, len(indicator))
     for i in range(cuda.threadIdx.x, len(close), cuda.blockDim.x):
         if i == 0:
-            indicator[i] = np.nan
+            indicator[i] = 1
         else:
             indicator[i] = 0
 
@@ -42,14 +42,15 @@ class ReturnFeatureNode(Node):
         """
         input_df = inputs[0]
         input_df = input_df.reset_index().drop('index')
-        val = ci.rate_of_change(input_df['close'], 2).fillna(0.0)
+        val = ci.rate_of_change(
+            input_df['close'], 2).nans_to_nulls().fillna(0.0)
         input_df['returns'] = val
         input_df = input_df.groupby(["asset"], method='cudf') \
             .apply_grouped(mask_returns,
                            incols=['close'],
                            outcols={'indicator': 'int64'},
                            tpb=1)
-        return input_df.nans_to_nulls().dropna().drop('indicator')
+        return input_df.query('indicator == 0').drop('indicator')
 
 
 class CpuReturnFeatureNode(ReturnFeatureNode):
