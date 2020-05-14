@@ -435,7 +435,7 @@ def port_average_directional_movement_index(asset_indicator,
     """
     UpI, DoI = upDownMove(high_arr.to_gpu_array(),
                           low_arr.to_gpu_array())
-    tr = port_true_range(asset_indicato.to_gpu_array(),
+    tr = port_true_range(asset_indicator.to_gpu_array(),
                          high_arr.to_gpu_array(),
                          low_arr.to_gpu_array(),
                          close_arr.to_gpu_array())
@@ -483,12 +483,12 @@ def port_vortex_indicator(asset_indicator, high_arr, low_arr, close_arr, n):
     :param n: time steps to do EWM average
     :return:  Vortex Indicator in cudf.Series
     """
-    TR = port_true_range(asset_indicato.to_gpu_array(),
+    TR = port_true_range(asset_indicator.to_gpu_array(),
                          high_arr.to_gpu_array(),
                          low_arr.to_gpu_array(),
                          close_arr.to_gpu_array())
 
-    VM = port_lowhigh_diff(asset_indicato.to_gpu_array(),
+    VM = port_lowhigh_diff(asset_indicator.to_gpu_array(),
                            high_arr.to_gpu_array(),
                            low_arr.to_gpu_array())
 

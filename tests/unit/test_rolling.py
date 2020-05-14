@@ -57,37 +57,37 @@ class TestRolling(unittest.TestCase):
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).mean()
         cpu_result = self._pandas_data[
             'in'].rolling(self.average_window).mean()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).max()
         cpu_result = self._pandas_data['in'].rolling(self.average_window).max()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).min()
         cpu_result = self._pandas_data['in'].rolling(self.average_window).min()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).sum()
         cpu_result = self._pandas_data['in'].rolling(self.average_window).sum()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).std()
         cpu_result = self._pandas_data['in'].rolling(self.average_window).std()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
         gpu_result = Rolling(self.average_window, self._cudf_data['in']).var()
         cpu_result = self._pandas_data['in'].rolling(self.average_window).var()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 
@@ -98,7 +98,7 @@ class TestRolling(unittest.TestCase):
         cpu_result = self._pandas_data[
             'in'].ewm(span=self.average_window,
                       min_periods=self.average_window).mean()
-        err = error_function(cudf.Series(gpu_result), cpu_result, nan_as_null=False)
+        err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 

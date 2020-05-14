@@ -71,7 +71,7 @@ class IndicatorNode(Node):
                 input_df[out_col] = v
         # remove all the na elements, requires cudf>=0.8
         if "remove_na" in self.conf and self.conf["remove_na"]:
-            input_df = input_df.dropna()
+            input_df = input_df.nans_to_nulls().dropna()
         return input_df
 
 

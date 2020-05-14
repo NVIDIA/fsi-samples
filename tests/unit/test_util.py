@@ -66,7 +66,7 @@ class TestUtil(unittest.TestCase):
         for window in [-1, -2, -3, 1, 2, 3]:
             gpu_result = shift(self._cudf_data['in'], window)
             cpu_result = self._pandas_data['in'].shift(window)
-            err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result, nan_as_null=False)
+            err = error_function(cudf.Series(gpu_result, nan_as_null=False), cpu_result)
             msg = "bad error %f\n" % (err,)
             self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
 

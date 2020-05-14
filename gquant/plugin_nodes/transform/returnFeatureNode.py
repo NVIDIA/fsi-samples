@@ -49,7 +49,7 @@ class ReturnFeatureNode(Node):
                            incols=['close'],
                            outcols={'indicator': 'int64'},
                            tpb=1)
-        return input_df.dropna().drop('indicator')
+        return input_df.nans_to_nulls().dropna().drop('indicator')
 
 
 class CpuReturnFeatureNode(ReturnFeatureNode):
