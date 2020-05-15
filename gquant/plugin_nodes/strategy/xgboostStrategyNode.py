@@ -81,13 +81,13 @@ class XGBoostStrategyNode(Node):
         dataframe
         """
         dxgb_params = {
-                'nround':        100,
                 'max_depth':         8,
                 'max_leaves':        2 ** 8,
                 'tree_method':       'gpu_hist',
                 'objective':         'reg:squarederror',
                 'grow_policy':       'lossguide',
         }
+        num_of_rounds = 100
         if 'xgboost_parameters' in self.conf:
             dxgb_params.update(self.conf['xgboost_parameters'])
         input_df = inputs[0]
@@ -103,7 +103,7 @@ class XGBoostStrategyNode(Node):
         target = model_df[self.conf['target']]
         dmatrix = xgb.DMatrix(train, label=target)
         bst = xgb.train(dxgb_params, dmatrix,
-                        num_boost_round=dxgb_params['nround'])
+                        num_boost_round=num_of_rounds)
         # make inferences
         infer_dmatrix = xgb.DMatrix(input_df[train_cols])
         prediction = cudf.Series(bst.predict(infer_dmatrix), nan_as_null=False).astype('float64')
