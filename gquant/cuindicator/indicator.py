@@ -155,7 +155,8 @@ def bollinger_bands(close_arr, n):
     b2 = division(summation(substract(close_arr_gpu, MA), scale(MSD, 2.0)),
                   MSD_4)
     out = collections.namedtuple('Bollinger', 'b1 b2')
-    return out(b1=cudf.Series(b1, nan_as_null=False), b2=cudf.Series(b2, nan_as_null=False))
+    return out(b1=cudf.Series(b1, nan_as_null=False),
+               b2=cudf.Series(b2, nan_as_null=False))
 
 
 def port_bollinger_bands(asset_indicator, close_arr, n):
@@ -179,7 +180,8 @@ def port_bollinger_bands(asset_indicator, close_arr, n):
     b2 = division(summation(substract(close_arr_gpu, MA), scale(MSD, 2.0)),
                   MSD_4)
     out = collections.namedtuple('Bollinger', 'b1 b2')
-    return out(b1=cudf.Series(b1, nan_as_null=False), b2=cudf.Series(b2, nan_as_null=False))
+    return out(b1=cudf.Series(b1, nan_as_null=False),
+               b2=cudf.Series(b2, nan_as_null=False))
 
 
 def trix(close_arr, n):
@@ -224,7 +226,8 @@ def macd(close_arr, n_fast, n_slow):
     MACDsign = Ewm(average_window, MACD).mean()
     MACDdiff = substract(MACD, MACDsign)
     out = collections.namedtuple('MACD', 'MACD MACDsign MACDdiff')
-    return out(MACD=cudf.Series(MACD, nan_as_null=False), MACDsign=cudf.Series(MACDsign, nan_as_null=False),
+    return out(MACD=cudf.Series(MACD, nan_as_null=False),
+               MACDsign=cudf.Series(MACDsign, nan_as_null=False),
                MACDdiff=cudf.Series(MACDdiff, nan_as_null=False))
 
 
@@ -244,7 +247,8 @@ def port_macd(asset_indicator, close_arr, n_fast, n_slow):
     MACDsign = PEwm(average_window, MACD, asset_indicator).mean()
     MACDdiff = substract(MACD, MACDsign)
     out = collections.namedtuple('MACD', 'MACD MACDsign MACDdiff')
-    return out(MACD=cudf.Series(MACD, nan_as_null=False), MACDsign=cudf.Series(MACDsign, nan_as_null=False),
+    return out(MACD=cudf.Series(MACD, nan_as_null=False),
+               MACDsign=cudf.Series(MACDsign, nan_as_null=False),
                MACDdiff=cudf.Series(MACDdiff, nan_as_null=False))
 
 
@@ -444,7 +448,8 @@ def port_average_directional_movement_index(asset_indicator,
     NegDI = division(PEwm(n, DoI, asset_indicator).mean(), ATR)
     NORM = division(abs_arr(substract(PosDI, NegDI)), summation(PosDI, NegDI))
     port_mask_nan(asset_indicator.to_gpu_array(), NORM, -1, 0)
-    ADX = cudf.Series(PEwm(n_ADX, NORM, asset_indicator).mean(), nan_as_null=False)
+    ADX = cudf.Series(PEwm(n_ADX, NORM, asset_indicator).mean(),
+                      nan_as_null=False)
     return ADX
 
 
@@ -604,10 +609,16 @@ def port_relative_strength_index(asset_indicator, high_arr, low_arr, n):
                           low_arr.to_gpu_array())
     UpI_s = shift(UpI, 1)
     UpI_s[0] = 0
-    UpI_s = cudf.Series(UpI_s, nan_as_null=False) * (1.0 - asset_indicator.reset_index(drop=True))
+    UpI_s = cudf.Series(UpI_s,
+                        nan_as_null=False) * (1.0
+                                              - asset_indicator.reset_index(
+                                                  drop=True))
     DoI_s = shift(DoI, 1)
     DoI_s[0] = 0
-    DoI_s = cudf.Series(DoI_s, nan_as_null=False) * (1.0 - asset_indicator.reset_index(drop=True))
+    DoI_s = cudf.Series(DoI_s,
+                        nan_as_null=False) * (1.0
+                                              - asset_indicator.reset_index(
+                                                  drop=True))
     PosDI = PEwm(n, UpI_s, asset_indicator).mean()
     NegDI = PEwm(n, DoI_s, asset_indicator).mean()
     RSI = division(PosDI, summation(PosDI, NegDI))
@@ -701,7 +712,9 @@ def chaikin_oscillator(high_arr, low_arr, close_arr, volume_arr, n1, n2):
     """
     ad = (2.0 * close_arr - high_arr - low_arr) / (
         high_arr - low_arr) * volume_arr
-    Chaikin = cudf.Series(Ewm(n1, ad).mean(), nan_as_null=False) - cudf.Series(Ewm(n2, ad).mean(), nan_as_null=False)
+    Chaikin = cudf.Series(Ewm(n1, ad).mean(),
+                          nan_as_null=False) - cudf.Series(Ewm(n2, ad).mean(),
+                                                           nan_as_null=False)
     return Chaikin
 
 

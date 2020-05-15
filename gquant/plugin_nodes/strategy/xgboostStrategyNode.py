@@ -106,7 +106,8 @@ class XGBoostStrategyNode(Node):
                         num_boost_round=num_of_rounds)
         # make inferences
         infer_dmatrix = xgb.DMatrix(input_df[train_cols])
-        prediction = cudf.Series(bst.predict(infer_dmatrix), nan_as_null=False).astype('float64')
+        prediction = cudf.Series(bst.predict(infer_dmatrix),
+                                 nan_as_null=False).astype('float64')
         signal = compute_signal(prediction)
         input_df['signal'] = signal
         # remove the bad datapints

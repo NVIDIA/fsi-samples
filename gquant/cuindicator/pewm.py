@@ -48,8 +48,8 @@ def get_ewm_kernel(method):
         for j in range(0, average_length - 1, block_size):
             if (((tx + j) < average_length - 1) and
                     (starting_id - average_length + 1 + tx + j >= 0)):
-                        shared[tx + j] = \
-                            in_arr[starting_id - average_length + 1 + tx + j]
+                shared[tx + j] = \
+                    in_arr[starting_id - average_length + 1 + tx + j]
         cuda.syncthreads()
         # slice the shared memory for each threads
         start_shared = tx * thread_tile

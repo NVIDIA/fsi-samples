@@ -41,7 +41,7 @@ class ReturnFeatureNode(Node):
         dataframe
         """
         input_df = inputs[0]
-        input_df = input_df.reset_index().drop('index')
+        input_df = input_df.reset_index(drop=True)
         val = ci.rate_of_change(
             input_df['close'], 2).nans_to_nulls().fillna(0.0)
         input_df['returns'] = val

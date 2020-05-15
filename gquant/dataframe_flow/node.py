@@ -113,7 +113,7 @@ class Node(_PortsMixin, _Node):
         self.delayed_process = False
         # customized the column setup
         self.columns_setup()
-        self.profile = False # by default, do not profile
+        self.profile = False  # by default, do not profile
 
         if self._using_ports():
             PortsSpecSchema.validate_ports(self.ports_setup())
@@ -310,7 +310,7 @@ class Node(_PortsMixin, _Node):
                         raise Exception(
                             'The task "{}" port "{}" key "{}" not found in '
                             'the hdf file "{}". Cannot load from cache.'
-                            .format(self.uid, oport, filename)
+                            .format(self.uid, oport, key, filename)
                         )
                     if cudf.DataFrame not in ptype:
                         warnings.warn(

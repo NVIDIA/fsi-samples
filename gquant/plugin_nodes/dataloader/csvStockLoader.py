@@ -1,6 +1,5 @@
 from gquant.dataframe_flow import Node
 import cudf
-import pandas as pd
 
 
 class CsvStockLoader(Node):
@@ -31,14 +30,16 @@ class CsvStockLoader(Node):
         """
         df = cudf.read_csv(self.conf['path'])
         # extract the year, month, day
-        ymd = df['DTE'].astype('str').str.extract('(\d\d\d\d)(\d\d)(\d\d)')
+        ymd = df['DTE'].astype('str').str.extract(r'(\d\d\d\d)(\d\d)(\d\d)')
         # construct the standard datetime str
-        df['DTE'] = ymd[0].str.cat(ymd[1],'-').str.cat(ymd[2], '-').astype('datetime64[ms]')
+        df['DTE'] = ymd[0].str.cat(ymd[1],
+                                   '-').str.cat(ymd[2],
+                                                '-').astype('datetime64[ms]')
         df = df[['DTE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'SM_ID', 'VOLUME']]
         df['VOLUME'] /= 1000
         # change the names
-        df.columns = ['datetime', 'open', 'close', 'high',
-                          'low', "asset", 'volume']
+        df.columns = ['datetime', 'open', 'close',
+                      'high', 'low', "asset", 'volume']
         return df
 
 

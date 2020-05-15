@@ -39,7 +39,7 @@ class AssetIndicatorNode(Node):
         """
 
         input_df = inputs[0]
-        input_df = input_df.reset_index().drop('index')
+        input_df = input_df.reset_index(drop=True)
         input_df = input_df.groupby(["asset"], method='cudf') \
             .apply_grouped(indicator_fun,
                            incols=[],

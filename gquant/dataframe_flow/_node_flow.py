@@ -674,6 +674,7 @@ class NodeTaskGraphMixin(object):
 
     def decorate_process(self):
         import time
+
         def timer(*argv):
             start = time.time()
             result = self.process(*argv)
@@ -684,7 +685,6 @@ class NodeTaskGraphMixin(object):
             return timer
         else:
             return self.process
-
 
     def __call__(self, inputs_data):
         if self._using_ports():
