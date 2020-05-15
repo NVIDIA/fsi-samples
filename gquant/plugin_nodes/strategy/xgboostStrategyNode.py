@@ -81,26 +81,12 @@ class XGBoostStrategyNode(Node):
         dataframe
         """
         dxgb_params = {
-                'nround':            100,
+                'nround':        100,
                 'max_depth':         8,
                 'max_leaves':        2 ** 8,
-                'alpha':             0.9,
-                'eta':               0.1,
-                'gamma':             0.1,
-                'learning_rate':     0.1,
-                'subsample':         1,
-                'reg_lambda':        1,
-                'scale_pos_weight':  2,
-                'min_child_weight':  30,
                 'tree_method':       'gpu_hist',
-                'distributed_dask':  True,
-                'loss':              'ls',
-                # 'objective':         'gpu:reg:linear',
                 'objective':         'reg:squarederror',
-                'max_features':      'auto',
-                'criterion':         'friedman_mse',
                 'grow_policy':       'lossguide',
-                'verbose':           True
         }
         if 'xgboost_parameters' in self.conf:
             dxgb_params.update(self.conf['xgboost_parameters'])

@@ -50,6 +50,7 @@ class IndicatorNode(Node):
         dataframe
         """
         input_df = inputs[0]
+        input_df = input_df.reset_index().drop('index')
         indicators = self.conf['indicators']
         for indicator in indicators:
             fun = getattr(ci, indicator['function'])
