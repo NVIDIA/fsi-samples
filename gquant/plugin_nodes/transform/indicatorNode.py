@@ -50,7 +50,6 @@ class IndicatorNode(Node):
         dataframe
         """
         input_df = inputs[0]
-        input_df = input_df.reset_index(drop=True)
         indicators = self.conf['indicators']
         for indicator in indicators:
             fun = getattr(ci, indicator['function'])
@@ -63,12 +62,15 @@ class IndicatorNode(Node):
             if isinstance(v, tuple) and 'outputs' in indicator:
                 for out in indicator['outputs']:
                     out_col = self._compose_name(indicator, [out])
-                    input_df[out_col] = getattr(v, out)
+                    val = getattr(v, out)
+                    val.index = input_df.index
+                    input_df[out_col] = val
                     # out_cols.append(out_col)
             else:
                 if isinstance(v, tuple):
                     v = v[0]
                 out_col = self._compose_name(indicator, [])
+                v.index = input_df.index
                 input_df[out_col] = v
         # remove all the na elements, requires cudf>=0.8
         if "remove_na" in self.conf and self.conf["remove_na"]:
