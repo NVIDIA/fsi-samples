@@ -43,11 +43,17 @@ class ReturnFeatureNode(Node):
         shifted = input_df['close'].shift(1)
         input_df['returns'] = (input_df['close'] - shifted) / shifted
         input_df['returns'] = input_df['returns'].fillna(0.0)
-        input_df = input_df.groupby(["asset"], method='cudf') \
+        # TODO fix it in the future
+        # this is a bug with groupby, this is a workaround
+        # you don't really need to reset_index to make groupby work
+        indicator = input_df.reset_index(drop=True).groupby(["asset"],
+                                                            method='cudf') \
             .apply_grouped(mask_returns,
                            incols=['close'],
-                           outcols={'indicator': 'int64'},
-                           tpb=1)
+                           outcols={'indicator': 'int32'},
+                           tpb=256)['indicator']
+        indicator.index = input_df.index
+        input_df['indicator'] = indicator
         return input_df.query('indicator == 0').drop('indicator')
 
 

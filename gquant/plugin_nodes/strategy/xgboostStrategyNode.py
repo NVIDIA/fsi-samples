@@ -109,6 +109,7 @@ class XGBoostStrategyNode(Node):
         prediction = cudf.Series(bst.predict(infer_dmatrix),
                                  nan_as_null=False).astype('float64')
         signal = compute_signal(prediction)
+        signal = cudf.Series(signal, index=input_df.index)
         input_df['signal'] = signal
         # remove the bad datapints
         input_df = input_df.dropna()

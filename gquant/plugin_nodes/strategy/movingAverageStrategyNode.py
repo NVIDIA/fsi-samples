@@ -3,6 +3,7 @@ from gquant.dataframe_flow import Node
 from numba import cuda
 import math
 import numpy as np
+import cudf
 
 
 @cuda.jit
@@ -69,6 +70,9 @@ class MovingAverageStrategyNode(Node):
         n_fast = self.conf['fast']
         n_slow = self.conf['slow']
         signal, slow, fast = moving_average_signal(input_df, n_fast, n_slow)
+        signal = cudf.Series(signal, index=input_df.index)
+        slow = cudf.Series(slow, index=input_df.index)
+        fast = cudf.Series(fast, index=input_df.index)
         input_df['signal'] = signal
         input_df['ma_slow'] = slow
         input_df['ma_slow'] = input_df['ma_slow'].fillna(0.0)

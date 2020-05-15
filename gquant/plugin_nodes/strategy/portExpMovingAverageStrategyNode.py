@@ -5,6 +5,7 @@ from numba import cuda
 from functools import partial
 import math
 import numpy as np
+import cudf
 
 
 @cuda.jit
@@ -79,6 +80,9 @@ class PortExpMovingAverageStrategyNode(Node):
         signal, slow, fast = port_exponential_moving_average(input_df,
                                                              n_fast,
                                                              n_slow)
+        signal = cudf.Series(signal, index=input_df.index)
+        slow = cudf.Series(slow, index=input_df.index)
+        fast = cudf.Series(fast, index=input_df.index)
         input_df['signal'] = signal
         input_df['exp_ma_slow'] = slow
         input_df['exp_ma_slow'] = input_df['exp_ma_slow'].fillna(0.0)
