@@ -101,6 +101,7 @@ EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
 WORKDIR /rapids
+ENTRYPOINT bash
 EOF
 
 docker build -f $D_FILE -t $D_CONT .
