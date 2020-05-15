@@ -1,5 +1,4 @@
 from gquant.dataframe_flow import Node
-import gquant.cuindicator as ci
 from numba import cuda
 import numpy as np
 
@@ -41,10 +40,9 @@ class ReturnFeatureNode(Node):
         dataframe
         """
         input_df = inputs[0]
-        input_df = input_df.reset_index(drop=True)
-        val = ci.rate_of_change(
-            input_df['close'], 2).nans_to_nulls().fillna(0.0)
-        input_df['returns'] = val
+        shifted = input_df['close'].shift(1)
+        input_df['returns'] = (input_df['close'] - shifted) / shifted
+        input_df['returns'] = input_df['returns'].fillna(0.0)
         input_df = input_df.groupby(["asset"], method='cudf') \
             .apply_grouped(mask_returns,
                            incols=['close'],
