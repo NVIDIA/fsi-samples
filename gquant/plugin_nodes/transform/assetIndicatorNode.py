@@ -39,17 +39,9 @@ class AssetIndicatorNode(Node):
         """
 
         input_df = inputs[0]
-        # TODO fix it in the future
-        # this is a bug with groupby, this is a workaround
-        # you don't really need to reset_index to make groupby work
-        indicator = input_df.reset_index(drop=True).groupby(["asset"],
-                                                            method='cudf') \
-            .apply_grouped(indicator_fun,
-                           incols=[],
-                           outcols={'indicator': 'int32'},
-                           tpb=256)['indicator']
-        indicator.index = input_df.index
-        input_df['indicator'] = indicator
+        input_df['indicator'] = (input_df['asset'] -
+                                 input_df['asset'].shift(1)).fillna(1)
+        input_df['indicator'] = (input_df['indicator'] != 0).astype('int32')
         return input_df
 
 
