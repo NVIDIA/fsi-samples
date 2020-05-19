@@ -25,7 +25,7 @@ def signal_kernel(signal_arr, out_arr, arr_len):
 
 
 def compute_signal(signal):
-    signal_arr = signal.data.to_gpu_array()
+    signal_arr = signal.to_gpu_array()
     out_arr = cuda.device_array_like(signal_arr)
     number_of_threads = 256
     array_len = len(signal)
@@ -81,27 +81,13 @@ class XGBoostStrategyNode(Node):
         dataframe
         """
         dxgb_params = {
-                'nround':            100,
                 'max_depth':         8,
                 'max_leaves':        2 ** 8,
-                'alpha':             0.9,
-                'eta':               0.1,
-                'gamma':             0.1,
-                'learning_rate':     0.1,
-                'subsample':         1,
-                'reg_lambda':        1,
-                'scale_pos_weight':  2,
-                'min_child_weight':  30,
                 'tree_method':       'gpu_hist',
-                'distributed_dask':  True,
-                'loss':              'ls',
-                # 'objective':         'gpu:reg:linear',
                 'objective':         'reg:squarederror',
-                'max_features':      'auto',
-                'criterion':         'friedman_mse',
                 'grow_policy':       'lossguide',
-                'verbose':           True
         }
+        num_of_rounds = 100
         if 'xgboost_parameters' in self.conf:
             dxgb_params.update(self.conf['xgboost_parameters'])
         input_df = inputs[0]
@@ -117,11 +103,13 @@ class XGBoostStrategyNode(Node):
         target = model_df[self.conf['target']]
         dmatrix = xgb.DMatrix(train, label=target)
         bst = xgb.train(dxgb_params, dmatrix,
-                        num_boost_round=dxgb_params['nround'])
+                        num_boost_round=num_of_rounds)
         # make inferences
         infer_dmatrix = xgb.DMatrix(input_df[train_cols])
-        prediction = cudf.Series(bst.predict(infer_dmatrix)).astype('float64')
+        prediction = cudf.Series(bst.predict(infer_dmatrix),
+                                 nan_as_null=False).astype('float64')
         signal = compute_signal(prediction)
+        signal = cudf.Series(signal, index=input_df.index)
         input_df['signal'] = signal
         # remove the bad datapints
         input_df = input_df.dropna()

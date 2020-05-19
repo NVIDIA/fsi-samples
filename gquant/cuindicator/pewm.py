@@ -48,8 +48,8 @@ def get_ewm_kernel(method):
         for j in range(0, average_length - 1, block_size):
             if (((tx + j) < average_length - 1) and
                     (starting_id - average_length + 1 + tx + j >= 0)):
-                        shared[tx + j] = \
-                            in_arr[starting_id - average_length + 1 + tx + j]
+                shared[tx + j] = \
+                    in_arr[starting_id - average_length + 1 + tx + j]
         cuda.syncthreads()
         # slice the shared memory for each threads
         start_shared = tx * thread_tile
@@ -94,7 +94,7 @@ class PEwm(object):
         if isinstance(input_arr, numba.cuda.cudadrv.devicearray.DeviceNDArray):
             self.gpu_in = input_arr
         else:
-            self.gpu_in = input_arr.data.to_gpu_array()
+            self.gpu_in = input_arr.to_gpu_array()
         if min_periods is None:
             self.min_periods = span
         else:
@@ -114,7 +114,7 @@ class PEwm(object):
                       numba.cuda.cudadrv.devicearray.DeviceNDArray):
             self.asset_indicator = asset_indicator
         else:
-            self.asset_indicator = asset_indicator.data.to_gpu_array()
+            self.asset_indicator = asset_indicator.to_gpu_array()
 
     def apply(self, method):
         gpu_out = numba.cuda.device_array_like(self.gpu_in)

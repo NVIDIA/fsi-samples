@@ -3,6 +3,7 @@ from gquant.dataframe_flow import Node
 from numba import cuda
 import math
 import numpy as np
+import cudf
 
 
 @cuda.jit
@@ -22,9 +23,9 @@ def moving_average_signal_kernel(ma_fast, ma_slow, out_arr, arr_len):
 
 def moving_average_signal(stock_df, n_fast, n_slow):
     ma_slow = ci.moving_average(stock_df['close'],
-                                n_slow).data.to_gpu_array()
+                                n_slow).to_gpu_array()
     ma_fast = ci.moving_average(stock_df['close'],
-                                n_fast).data.to_gpu_array()
+                                n_fast).to_gpu_array()
     out_arr = cuda.device_array_like(ma_fast)
     array_len = len(ma_slow)
     number_of_threads = 256
@@ -69,6 +70,9 @@ class MovingAverageStrategyNode(Node):
         n_fast = self.conf['fast']
         n_slow = self.conf['slow']
         signal, slow, fast = moving_average_signal(input_df, n_fast, n_slow)
+        signal = cudf.Series(signal, index=input_df.index)
+        slow = cudf.Series(slow, index=input_df.index)
+        fast = cudf.Series(fast, index=input_df.index)
         input_df['signal'] = signal
         input_df['ma_slow'] = slow
         input_df['ma_slow'] = input_df['ma_slow'].fillna(0.0)

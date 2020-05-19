@@ -674,6 +674,7 @@ class NodeTaskGraphMixin(object):
 
     def decorate_process(self):
         import time
+
         def timer(*argv):
             start = time.time()
             result = self.process(*argv)
@@ -685,23 +686,21 @@ class NodeTaskGraphMixin(object):
         else:
             return self.process
 
-
     def __call__(self, inputs_data):
-        if self._using_ports():
-            # nodes with ports take dictionary as inputs
-            inputs = {iport: self.__make_copy(data_input)
-                      for iport, data_input in inputs_data.items()}
-        else:
-            # nodes without ports take list as inputs
-            inputs = [self.__make_copy(data_input)
-                      for data_input in inputs_data.values()]
-
         if self.load:
             if isinstance(self.load, bool):
                 output_df = self.load_cache()
             else:
                 output_df = self.load
         else:
+            if self._using_ports():
+                # nodes with ports take dictionary as inputs
+                inputs = {iport: self.__make_copy(data_input)
+                          for iport, data_input in inputs_data.items()}
+            else:
+                # nodes without ports take list as inputs
+                inputs = [self.__make_copy(inputs_data[ient['to_port']])
+                          for ient in self.inputs]
             if not self.delayed_process:
                 output_df = self.decorate_process()(inputs)
             else:

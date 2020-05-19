@@ -1,11 +1,11 @@
 from gquant.dataframe_flow import Node
-import gquant.cuindicator as ci
 from numba import cuda
 import numpy as np
 
 
-def mask_returns(indicator):
-    for i in range(cuda.threadIdx.x, indicator.size, cuda.blockDim.x):
+def mask_returns(close, indicator):
+    # print(len(close), cuda.threadIdx.x, cuda.blockDim.x, len(indicator))
+    for i in range(cuda.threadIdx.x, len(close), cuda.blockDim.x):
         if i == 0:
             indicator[i] = 1
         else:
@@ -40,14 +40,14 @@ class ReturnFeatureNode(Node):
         dataframe
         """
         input_df = inputs[0]
-        input_df['returns'] = ci.rate_of_change(input_df['close'], 2) \
-            .fillna(0.0)
-        input_df = input_df.groupby(["asset"], method='cudf') \
-            .apply_grouped(mask_returns,
-                           incols=[],
-                           outcols={'indicator': 'int32'},
-                           tpb=256)
-        return input_df.query('indicator == 0 ').drop('indicator')
+        shifted = input_df['close'].shift(1)
+        input_df['returns'] = (input_df['close'] - shifted) / shifted
+        input_df['returns'] = input_df['returns'].fillna(0.0)
+        input_df['indicator'] = (input_df['asset'] -
+                                 input_df['asset'].shift(1)).fillna(1)
+        input_df['indicator'] = (input_df['indicator'] != 0).astype('int32')
+        input_df['indicator'][input_df['indicator'] == 1] = None
+        return input_df.dropna(subset=['indicator']).drop('indicator')
 
 
 class CpuReturnFeatureNode(ReturnFeatureNode):

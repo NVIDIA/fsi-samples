@@ -149,15 +149,15 @@ class NumbaDistanceNode(Node):
         # df['distance_numba'] = 0.0
         darr = cuda.device_array(len(df))
         distance_kernel[(number_of_blocks,), (number_of_threads,)](
-            df['x'].to_gpu_array(),
-            df['y'].to_gpu_array(),
+            df['x'],
+            df['y'],
             darr,
             len(df))
         df['distance_numba'] = darr
         return {'distance_df': df}
 
 
-raw_kernel = cupy.RawKernel(r'''
+kernel_string = r'''
     extern "C" __global__
     void compute_distance(const double* x, const double* y,
             double* distance, int arr_len) {
@@ -166,7 +166,7 @@ raw_kernel = cupy.RawKernel(r'''
         distance[tid] = sqrt(x[tid]*x[tid] + y[tid]*y[tid]);
         }
     }
-''', 'compute_distance')
+'''
 
 
 class CupyDistanceNode(Node):
@@ -201,6 +201,10 @@ class CupyDistanceNode(Node):
         }
         self.delayed_process = True
 
+    def get_kernel(self):
+        raw_kernel = cupy.RawKernel(kernel_string, 'compute_distance')
+        return raw_kernel
+
     def process(self, inputs):
         df = inputs['points_df_in']
         cupy_x = cupy.asarray(df['x'])
@@ -208,7 +212,7 @@ class CupyDistanceNode(Node):
         number_of_threads = 16
         number_of_blocks = (len(df) - 1) // number_of_threads + 1
         dis = cupy.ndarray(len(df), dtype=cupy.float64)
-        raw_kernel((number_of_blocks,), (number_of_threads,),
+        self.get_kernel()((number_of_blocks,), (number_of_threads,),
                    (cupy_x, cupy_y, dis, len(df)))
         df['distance_cupy'] = dis
 

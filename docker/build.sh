@@ -32,24 +32,21 @@ echo -e "\nPlease, select your cuda version:\n" \
 
 read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
 
-RAPIDS_VERSION="0.11"
+RAPIDS_VERSION="0.13"
 
 CUDA_VERSION=${CUDA_VERSION:-1}
 case $CUDA_VERSION in
     2)
 	echo "cuda 10.0 selected."
 	CONTAINER_VER='10.0'
-	CUPY='cupy-cuda100'
 	;;
     3)
 	echo "cuda 10.1.2 selected."
 	CONTAINER_VER='10.1'
-	CUPY='cupy-cuda101'
 	;;
     *)
 	echo "cuda 9.2 selected."
 	CONTAINER_VER='9.2'
-	CUPY='cupy-cuda92'
 	;;
 esac
 
@@ -82,8 +79,6 @@ SHELL ["bash","-c"]
 #
 # Additional python libs
 #
-RUN source activate rapids \ 
-    && pip install $CUPY
 
 RUN source activate rapids \
     && cd /rapids/gQuant \
@@ -106,6 +101,7 @@ EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
 WORKDIR /rapids
+ENTRYPOINT /bin/bash -c 'source activate rapids; /bin/bash'
 EOF
 
 docker build -f $D_FILE -t $D_CONT .
