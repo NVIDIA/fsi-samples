@@ -39,11 +39,9 @@ class AssetIndicatorNode(Node):
         """
 
         input_df = inputs[0]
-        input_df = input_df.groupby(["asset"], method='cudf') \
-            .apply_grouped(indicator_fun,
-                           incols=[],
-                           outcols={'indicator': 'int32'},
-                           tpb=256)
+        input_df['indicator'] = (input_df['asset'] -
+                                 input_df['asset'].shift(1)).fillna(1)
+        input_df['indicator'] = (input_df['indicator'] != 0).astype('int32')
         return input_df
 
 

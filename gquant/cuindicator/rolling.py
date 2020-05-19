@@ -108,7 +108,7 @@ class Rolling(object):
         if isinstance(input_arr, numba.cuda.cudadrv.devicearray.DeviceNDArray):
             self.gpu_in = input_arr
         else:
-            self.gpu_in = input_arr.data.to_gpu_array()
+            self.gpu_in = input_arr.to_gpu_array()
         if min_periods is None:
             self.min_periods = window + forward_window
         else:
@@ -128,7 +128,7 @@ class Rolling(object):
 
     def apply(self, method):
         gpu_out = numba.cuda.device_array_like(self.gpu_in)
-        # gpu_out = cudf.Series(gpu_out)
+        # gpu_out = cudf.Series(gpu_out, nan_as_null=False)
         kernel = get_rolling_kernel(method)
         kernel[(self.number_of_blocks,),
                (self.number_of_threads,),

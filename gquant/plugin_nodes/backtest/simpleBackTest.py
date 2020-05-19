@@ -25,6 +25,7 @@ class SimpleBackTestNode(Node):
         input_df['strategy_returns'] = input_df['signal'] * input_df['returns']
         return input_df
 
+
 if __name__ == "__main__":
     from gquant.dataloader.csvStockLoader import CsvStockLoader
     from gquant.transform.assetFilterNode import AssetFilterNode

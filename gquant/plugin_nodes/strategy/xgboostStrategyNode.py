@@ -4,7 +4,7 @@ import cudf
 import xgboost as xgb
 from numba import cuda
 import math
-
+import numpy as np
 
 __all__ = ['XGBoostStrategyNode']
 
@@ -13,10 +13,10 @@ __all__ = ['XGBoostStrategyNode']
 def signal_kernel(signal_arr, out_arr, arr_len):
     i = cuda.grid(1)
     if i == 0:
-        out_arr[i] = math.inf
+        out_arr[i] = np.nan
     if i < arr_len - 1:
         if math.isnan(signal_arr[i]):
-            out_arr[i + 1] = math.inf
+            out_arr[i + 1] = np.nan
         elif signal_arr[i] < 0.0:
             # shift 1 time to make sure no peeking into the future
             out_arr[i + 1] = -1.0
@@ -25,7 +25,7 @@ def signal_kernel(signal_arr, out_arr, arr_len):
 
 
 def compute_signal(signal):
-    signal_arr = signal.data.to_gpu_array()
+    signal_arr = signal.to_gpu_array()
     out_arr = cuda.device_array_like(signal_arr)
     number_of_threads = 256
     array_len = len(signal)
@@ -81,28 +81,13 @@ class XGBoostStrategyNode(Node):
         dataframe
         """
         dxgb_params = {
-                'nround':            100,
                 'max_depth':         8,
                 'max_leaves':        2 ** 8,
-                'alpha':             0.9,
-                'eta':               0.1,
-                'gamma':             0.1,
-                'learning_rate':     0.1,
-                'subsample':         1,
-                'reg_lambda':        1,
-                'scale_pos_weight':  2,
-                'min_child_weight':  30,
                 'tree_method':       'gpu_hist',
-                'n_gpus':            1,
-                'distributed_dask':  True,
-                'loss':              'ls',
-                # 'objective':         'gpu:reg:linear',
                 'objective':         'reg:squarederror',
-                'max_features':      'auto',
-                'criterion':         'friedman_mse',
                 'grow_policy':       'lossguide',
-                'verbose':           True
         }
+        num_of_rounds = 100
         if 'xgboost_parameters' in self.conf:
             dxgb_params.update(self.conf['xgboost_parameters'])
         input_df = inputs[0]
@@ -114,19 +99,20 @@ class XGBoostStrategyNode(Node):
         train_cols = set(model_df.columns) - set(
             self.conf['no_feature'].keys())
         train_cols = list(train_cols - set([self.conf['target']]))
-        pd_model = model_df.to_pandas()
-        train = pd_model[train_cols]
-        target = pd_model[self.conf['target']]
-        dmatrix = xgb.DMatrix(train, target)
+        train = model_df[train_cols]
+        target = model_df[self.conf['target']]
+        dmatrix = xgb.DMatrix(train, label=target)
         bst = xgb.train(dxgb_params, dmatrix,
-                        num_boost_round=dxgb_params['nround'])
+                        num_boost_round=num_of_rounds)
         # make inferences
-        infer_dmatrix = xgb.DMatrix(input_df.to_pandas()[train_cols])
-        prediction = cudf.Series(bst.predict(infer_dmatrix)).astype('float64')
+        infer_dmatrix = xgb.DMatrix(input_df[train_cols])
+        prediction = cudf.Series(bst.predict(infer_dmatrix),
+                                 nan_as_null=False).astype('float64')
         signal = compute_signal(prediction)
+        signal = cudf.Series(signal, index=input_df.index)
         input_df['signal'] = signal
         # remove the bad datapints
-        input_df = input_df.query('signal<10')
+        input_df = input_df.dropna()
         remaining = list(self.conf['no_feature'].keys()) + ['signal']
         return input_df[remaining]
 
