@@ -6,7 +6,7 @@ install_requires = []
 
 setup(
     name='gquant',
-    version='0.3',
+    version='0.4',
     description='gquant - RAPIDS Financial Services Algorithms',
     author='NVIDIA Corporation',
     packages=find_packages(include=['gquant', 'gquant.*']),

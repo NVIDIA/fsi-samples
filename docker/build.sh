@@ -28,9 +28,10 @@ esac
 echo -e "\nPlease, select your cuda version:\n" \
      " - '1' for cuda 9.2\n" \
      " - '2' for cuda 10.0\n" \
-     " - '3' for cuda 10.1.2"
+     " - '3' for cuda 10.1.2\n" \
+     " - '4' for cuda 10.2"
 
-read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
+read -p "Enter your option and hit return [1]-4: " CUDA_VERSION
 
 RAPIDS_VERSION="0.13"
 
@@ -43,6 +44,10 @@ case $CUDA_VERSION in
     3)
 	echo "cuda 10.1.2 selected."
 	CONTAINER_VER='10.1'
+	;;
+    4)
+	echo "cuda 10.2 selected."
+	CONTAINER_VER='10.2'
 	;;
     *)
 	echo "cuda 9.2 selected."
@@ -60,6 +65,7 @@ cp -r ../task_example ./gQuant
 cp ../setup.cfg ./gQuant
 cp ../setup.py ./gQuant
 cp ../LICENSE ./gQuant
+cp ../download_data.sh ./gQuant
 rsync -av --progress ../notebooks ./gQuant --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
 
 gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
@@ -84,15 +90,13 @@ RUN source activate rapids \
     && cd /rapids/gQuant \
     && pip install .
 RUN source activate rapids \ 
-    && conda install -y -c conda-forge dask-labextension recommonmark numpydoc sphinx_rtd_theme pudb \
-    python-graphviz bqplot=0.11.5 nodejs=11.11.0 jupyterlab=0.35.4 ipywidgets=7.4.2 pytables mkl numexpr \
-    pydot
+    && conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets pytables mkl numexpr pydot
 #
 # required set up
 #
 RUN source activate rapids \ 
-    && jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.38.1 --no-build \
-    && jupyter labextension install bqplot@0.4.5 --no-build \
+    && jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build \
+    && jupyter labextension install bqplot --no-build \
     && mkdir /.local /.jupyter /.config /.cupy  \
     && chmod 777 /.local /.jupyter /.config /.cupy
 RUN source activate rapids \ 
