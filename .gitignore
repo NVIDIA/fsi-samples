@@ -7,3 +7,5 @@ dist/
 build/
 gquant.egg-info/
 *.swp
+docker/Dockerfile.Rapids
+docker/gQuant
