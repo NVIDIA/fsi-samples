@@ -14,7 +14,7 @@ def get_para_widgets():
                                             continuous_update=False,
                                             orientation='horizontal',
                                             readout=True)
-    para_selector_widgets = [para_selector]                    
+    para_selector_widgets = [para_selector]
     return para_selector_widgets
 
 def get_parameters(stock_df, para_selector_widgets):
@@ -22,6 +22,8 @@ def get_parameters(stock_df, para_selector_widgets):
     return  (stock_df["high"], stock_df["low"], stock_df["close"], widget.value[0], widget.value[1])
 
 def process_outputs(output, stock_df):
+    output.index = stock_df.index
+
     stock_df['out'] = output
     stock_df['out'] = stock_df['out'].fillna(0)
     return stock_df
@@ -32,8 +34,8 @@ def create_figure(stock, dt_scale, sc, color_id, f, indicator_figure_height, fig
     new_line = Lines(x=stock.datetime, y=stock['out'], scales={'x': dt_scale, 'y': sc_co}, colors=[CATEGORY20[color_id[0]]])
     new_fig = Figure(marks=[new_line], axes=[ax_y])
     new_fig.layout.height = indicator_figure_height
-    new_fig.layout.width = figure_width                    
+    new_fig.layout.width = figure_width
     figs = [new_line]
     # add new figure
-    add_new_indicator(new_fig)     
+    add_new_indicator(new_fig)
     return figs

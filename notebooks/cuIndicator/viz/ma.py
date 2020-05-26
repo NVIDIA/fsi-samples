@@ -8,13 +8,15 @@ from gquant.cuindicator import moving_average as indicator_fun
 def get_para_widgets():
     para_selector = widgets.IntSlider(min=2, max=60, description="avg periods")
     para_selector_widgets = [para_selector]
-    
+
     return para_selector_widgets
 
 def get_parameters(stock_df, para_selector_widgets):
     return (stock_df["close"],) + tuple([w.value for w in para_selector_widgets])
 
 def process_outputs(output, stock_df):
+    output.index = stock_df.index
+
     stock_df['out'] = output
     stock_df['out'] = stock_df['out'].fillna(math.inf)
     return stock_df
