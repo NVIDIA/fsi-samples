@@ -38,8 +38,8 @@ class LinePlotNode(Node):
             col_name = line['column']
             label_name = line['label']
             color = line['color']
-            line = Lines(x=input_df['datetime'][::stride],
-                         y=input_df[col_name][::stride],
+            line = Lines(x=input_df['datetime'][::stride].to_array(),
+                         y=input_df[col_name][::stride].to_array(),
                          scales={'x': date_co, 'y': linear_co}, colors=[color],
                          labels=[label_name], display_legend=True)
             lines.append(line)

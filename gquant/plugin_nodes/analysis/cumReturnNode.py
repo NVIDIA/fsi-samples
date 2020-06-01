@@ -39,8 +39,8 @@ class CumReturnNode(Node):
                    orientation='vertical')
         xax = Axis(label='Time', scale=date_co, orientation='horizontal')
         panzoom_main = PanZoom(scales={'x': [date_co]})
-        line = Lines(x=input_df['datetime'][::stride],
-                     y=(input_df['strategy_returns'].cumsum())[::stride],
+        line = Lines(x=input_df['datetime'][::stride].to_array(),
+                     y=(input_df['strategy_returns'].cumsum())[::stride].to_array(),
                      scales={'x': date_co, 'y': linear_co},
                      colors=['blue'], labels=[label], display_legend=True)
         new_fig = Figure(marks=[line], axes=[yax, xax], title='P & L',
