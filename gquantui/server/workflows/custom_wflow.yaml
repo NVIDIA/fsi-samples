@@ -3,32 +3,32 @@
   conf:
     npts: 1000
   inputs: {}
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py
 - id: distributed_points
   type: DistributedNode
   conf:
     npartitions: 4
   inputs:
     points_df_in: points_task.points_df_out
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py
 - id: distance_by_cudf
   type: DistanceNode
   conf: {}
   inputs:
     points_df_in: distributed_points.points_ddf_out
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py
 - id: distance_by_numba
   type: NumbaDistanceNode
   conf: {}
   inputs:
     points_df_in: distributed_points.points_ddf_out
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py
 - id: distance_by_cupy
   type: CupyDistanceNode
   conf: {}
   inputs:
     points_df_in: distributed_points.points_ddf_out
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py
 - id: verify_cudf_to_numba
   type: VerifyNode
   conf:
@@ -37,7 +37,7 @@
   inputs:
     df1: distance_by_cudf.distance_df
     df2: distance_by_numba.distance_df
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py
 - id: verify_cudf_to_cupy
   type: VerifyNode
   conf:
@@ -46,4 +46,4 @@
   inputs:
     df1: distance_by_cudf.distance_df
     df2: distance_by_cupy.distance_df
-  filepath: custom_port_nodes.py
+  filepath: modules/custom_port_nodes.py

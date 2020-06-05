@@ -4,14 +4,13 @@ export function handleMouseUp(that) {
     return function (d) {
         console.log('mouse up');
         d3.event.stopPropagation();
+        d3.event.preventDefault();
         let groupName = d3.select(this.parentNode).attr('group');
         if (that.starting) {
             let toId = d3.select(this.parentNode).datum().id;
             groupName = d3.select(this.parentNode).attr('group');
-            let toPort =  Object.keys(d)[0];
-            console.log('starting',that.starting, groupName);
+            let toPort =  Object.keys(d)[0].split('.')[1];
             if (groupName === "outputs") {
-                console.log('here', groupName);
                 if (that.starting.groupName === "inputs") {
                     let newEdge = {
                         "from": toId + "." + toPort,
@@ -27,6 +26,7 @@ export function handleMouseUp(that) {
                     }
                     let output = that.configFile();
                     let jsonString = JSON.stringify(output);
+                    that.drawLinks();
                     that.updateInputs(jsonString);
                     //that.props.setChartState({'edges': that.props.edges})
                     //let links = that.edgeData();
@@ -35,14 +35,12 @@ export function handleMouseUp(that) {
                 }
             }
             else {
-                console.log('there', groupName);
                 if (that.starting.groupName === "outputs") {
                     let newEdge = {
                         "from": that.starting.from,
                         "to": toId + "." + toPort
                     };
                     let position = that.props.edges.findIndex((d) => d.from === newEdge.from && d.to === newEdge.to);
-                    console.log(newEdge, position);
                     if (position >= 0) {
                         that.props.edges.splice(position, 1);
                     }
@@ -51,6 +49,7 @@ export function handleMouseUp(that) {
                     }
                     let output = that.configFile();
                     let jsonString = JSON.stringify(output);
+                    that.drawLinks();
                     that.updateInputs(jsonString);
                     //that.props.setChartState({'edges': that.props.edges})
                     // links = edges.map(edge_map);
@@ -67,14 +66,14 @@ export function handleMouseDown(that){
     return function (d){
         console.log('mouse down');
         d3.event.stopPropagation();
-        let nodeId = d3.select(this.parentNode).datum().id;
+        d3.event.preventDefault();
         let groupName = d3.select(this.parentNode).attr('group');
-        let portStr = nodeId + "." + Object.keys(d)[0];
+        let portStr = Object.keys(d)[0];
 
         //if (!that.starting) {
             let fromId = d3.select(this.parentNode).datum().id;
             groupName = d3.select(this.parentNode).attr('group');
-            let fromPort = Object.keys(d)[0];
+            let fromPort = Object.keys(d)[0].split('.')[1];
             that.starting = { 'from': fromId + "." + fromPort, "groupName": groupName };
        // }
         if (groupName === "inputs") {
@@ -86,6 +85,7 @@ export function handleMouseDown(that){
                 that.props.edges.splice(index, 1);
                     let output = that.configFile();
                     let jsonString = JSON.stringify(output);
+                    that.drawLinks();
                     that.updateInputs(jsonString);
 
                 //that.props.setChartState({'edges': that.props.edges})
@@ -102,6 +102,7 @@ export function handleMouseDown(that){
                 that.props.edges.splice(index, 1);
                     let output = that.configFile();
                     let jsonString = JSON.stringify(output);
+                    that.drawLinks();
                     that.updateInputs(jsonString);
                 //that.props.setChartState({'edges': that.props.edges})
                 // links = edges.map(edge_map);

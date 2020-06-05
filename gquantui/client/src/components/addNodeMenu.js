@@ -36,6 +36,7 @@ class AddNodeMenu extends React.Component {
             if (found) {
                 result['x'] = this.props.nodeX;
                 result['y'] = this.props.nodeY;
+                result['id'] = Math.random().toString(36).substring(2, 15);
                 this.props.currentNodes.push(result);
                 this.props.setChartState({'nodes':this.props.currentNodes});
                 this.props.setMenuState({'opacity': 0, x: -1000, y:-1000});

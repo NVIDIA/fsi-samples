@@ -17,6 +17,7 @@ import { drag } from '../dragHandler';
 import { handleMouseDown, handleMouseUp } from '../connectionHandler';
 import AddNodeMenu from './addNodeMenu';
 import NodeEditor from './nodeEditor';
+import { validConnection } from '../validator';
 
 class Chart extends React.Component {
 
@@ -45,6 +46,34 @@ class Chart extends React.Component {
       nodeY: 0,
       nodeDatum: null
     }
+    this.inputPorts = [];
+    this.outputPorts = [];
+    this.inputRequriements = {};
+    this.outputColumns = {};
+  }
+
+  portMap(that) {
+    this.inputPorts = [];
+    this.outputPorts = [];
+    this.inputRequriements = {};
+    this.outputColumns = {};
+    this.props.nodes.forEach((d)=>{
+      let nodeId = d.id;
+      d.inputs.forEach((k)=>{
+        this.inputPorts.push(nodeId+"."+k);
+      });
+      d.outputs.forEach((k)=>{
+        this.outputPorts.push(nodeId+"."+k);
+      });
+      let keys = Object.keys(d.required);
+      keys.forEach((k)=>{
+        this.inputRequriements[nodeId+"."+k] = d.required[k];
+      });
+      keys = Object.keys(d.output_columns);
+      keys.forEach((k)=>{
+        this.outputColumns[nodeId+"."+k] = d.output_columns[k];
+      });
+    });
   }
 
   translateCorr(port_str, from = false) {
@@ -97,6 +126,7 @@ class Chart extends React.Component {
       .attr("font-family", "sans-serif")
       .attr("font-size", "14")
       .attr("text-anchor", "end")
+      .style('border-style', "solid")
       .on("mouseleave", handleMouseLeft(this))
       .on("mousemove", handleMouseMoved(this))
       .on("click", handleClicked(this))
@@ -119,6 +149,105 @@ class Chart extends React.Component {
       .attr("stroke", "red")
       .selectAll("line");
 
+  }
+
+  drawCircles(){
+    var ports_input = this.bars.selectAll('g').filter((d, i) => i === 0)
+      .data((d, i) => [d])
+      .join('g')
+      .attr("transform", (d, i) => `translate(0, ${this.textHeight})`)
+      .attr("group", "inputs");
+
+    ports_input.selectAll("circle")
+      .data((d) =>{ 
+        let data = [];
+        for ( let i = 0; i < d.inputs.length; i++ ){
+          if (d.inputs[i] in d.required){
+            data.push({
+              [d.id+'.'+d.inputs[i]]: d.required[d.inputs[i]]
+            })
+          }
+          else{
+            data.push({
+              [d.id+'.'+d.inputs[i]]: {}
+            })
+          }
+        }
+        return data;
+      })
+      .join("circle")
+      .attr("fill", (d) => {
+        if (!this.starting){
+          return "blue";
+        }
+        let key = Object.keys(d)[0];
+        if (validConnection(this)(this.starting.from, key)) {
+          return "blue";
+        }
+        else {
+          return "white";
+        }
+      })
+      .attr("cx", 0)
+      .attr("cy", (d, i) => (i + 0.4) * this.circleHeight)
+      .attr("r", this.circleRadius)
+      .on('mouseover', handleMouseOver(this))
+      .on('mouseout', handleMouseOut(this))
+      .on('mousedown', handleMouseDown(this))
+      .on('mouseup', handleMouseUp(this));
+    var ports_output = this.bars.selectAll("g").filter((d, i) => i === 1)
+      .data((d, i) => [d])
+      .join('g')
+      .attr("transform", (d, i) => `translate(${d.width}, ${this.textHeight})`)
+      .attr("group", "outputs");
+
+    ports_output.selectAll("circle")
+      .data((d) =>{
+        let data = [];
+        for ( let i = 0; i < d.outputs.length; i++ ){
+          if (d.outputs[i] in d.output_columns){
+            data.push({
+              [d.id+'.'+d.outputs[i]]: d.output_columns[d.outputs[i]]
+            })
+          }
+          else{
+            data.push({
+              [d.id+'.'+d.outputs[i]]: {}
+            })
+          }
+        }
+        return data;
+      })
+      .join("circle")
+      .attr("fill", (d) => {
+        if (!this.starting){
+          return "green";
+        }
+        let key = Object.keys(d)[0];
+        if (validConnection(this)(this.starting.from, key)) {
+          return "green";
+        }
+        else {
+          return "white";
+        }
+      })
+      .attr("cx", 0)
+      .attr("cy", (d, i) => (i + 0.4) * this.circleHeight)
+      .attr("r", this.circleRadius)
+      .on('mouseover', handleMouseOver(this))
+      .on('mouseout', handleMouseOut(this))
+      .on('mousedown', handleMouseDown(this))
+      .on('mouseup', handleMouseUp(this));
+  }
+
+  drawLinks(){
+   this.link = this.link
+      .data(this.edgeData())
+      .join('line')
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
   }
 
   componentDidUpdate() {
@@ -172,85 +301,12 @@ class Chart extends React.Component {
       .on('mouseout', handleDeHighlight(this))
       .on('click', handleEdit(this));
 
-
-    var ports_input = this.bars.selectAll('g').filter((d, i) => i === 0)
-      .data((d, i) => [d])
-      .join('g')
-      .attr("transform", (d, i) => `translate(0, ${this.textHeight})`)
-      .attr("group", "inputs");
-
-    ports_input.selectAll("circle")
-      .data((d) =>{ 
-        let data = [];
-        for ( let i = 0; i < d.inputs.length; i++ ){
-          if (d.inputs[i] in d.required){
-            data.push({
-              [d.inputs[i]]: d.required[d.inputs[i]]
-            })
-          }
-          else{
-            data.push({
-              [d.inputs[i]]: {}
-            })
-          }
-        }
-        return data;
-      })
-      .join("circle")
-      .attr("fill", "blue")
-      .attr("cx", 0)
-      .attr("cy", (d, i) => (i + 0.4) * this.circleHeight)
-      .attr("r", this.circleRadius)
-      .on('mouseover', handleMouseOver(this))
-      .on('mouseout', handleMouseOut(this))
-      .on('mousedown', handleMouseDown(this))
-      .on('mouseup', handleMouseUp(this));
-
-    var ports_output = this.bars.selectAll("g").filter((d, i) => i === 1)
-      .data((d, i) => [d])
-      .join('g')
-      .attr("transform", (d, i) => `translate(${d.width}, ${this.textHeight})`)
-      .attr("group", "outputs");
-
-    ports_output.selectAll("circle")
-      .data((d) =>{
-        let data = [];
-        for ( let i = 0; i < d.outputs.length; i++ ){
-          if (d.outputs[i] in d.output_columns){
-            data.push({
-              [d.outputs[i]]: d.output_columns[d.outputs[i]]
-            })
-          }
-          else{
-            data.push({
-              [d.outputs[i]]: {}
-            })
-          }
-        }
-        return data;
-      })
-      .join("circle")
-      .attr("fill", "green")
-      .attr("cx", 0)
-      .attr("cy", (d, i) => (i + 0.4) * this.circleHeight)
-      .attr("r", this.circleRadius)
-      .on('mouseover', handleMouseOver(this))
-      .on('mouseout', handleMouseOut(this))
-      .on('mousedown', handleMouseDown(this))
-      .on('mouseup', handleMouseUp(this));
-
-    this.link = this.link
-      .data(this.edgeData())
-      .join('line')
-      .attr("x1", d => d.source.x)
-      .attr("y1", d => d.source.y)
-      .attr("x2", d => d.target.x)
-      .attr("y2", d => d.target.y);
-
+    this.drawCircles();
+    this.drawLinks();
   }
 
   reLayout(){
-    this.props.layout(this.props.nodes, this.props.edges);
+    this.props.layout(this.props.nodes, this.props.edges, this.transform);
   }
 
   updateInputs(json){
@@ -259,10 +315,9 @@ class Chart extends React.Component {
       headers: { 'Content-Type': 'application/json' },
       body: json
   };
-  fetch('http://localhost:8787/recalculate', requestOptions)
+  fetch(process.env.REACT_APP_RECAL_URL, requestOptions)
       .then(response => response.json())
       .then(data => {
-        console.log(data.nodes);
         let newNode = {};
         data.nodes.forEach((d)=>{
           newNode[d.id] = {
@@ -271,8 +326,10 @@ class Chart extends React.Component {
           }
         });
         this.props.nodes.forEach((d)=>{
-          d.required = newNode[d.id].required;
-          d.output_columns = newNode[d.id].output_columns;
+          if (d.id in newNode) {
+            d.required = newNode[d.id].required;
+            d.output_columns = newNode[d.id].output_columns;
+          }
         });
         this.props.setChartState({'nodes':this.props.nodes, 'edges':this.props.edges});
       });
@@ -325,23 +382,28 @@ class Chart extends React.Component {
   }
 
   render() {
+    const divStyle = {
+      'borderStyle': 'solid'
+    };
+
+    this.portMap();
     console.log('rendering');
     if (this.state.addMenu) {
-      return (<div ref={this.myRef} >
+      return (<div ref={this.myRef} style={divStyle}>
         {this.props.allNodes &&
           <AddNodeMenu allNodes={this.props.allNodes} x={this.state.x} y={this.state.y} nodeX={this.state.nodeX} nodeY={this.state.nodeY} opacity={this.state.opacity} setChartState={this.props.setChartState} currentNodes={this.props.nodes}
             setMenuState={this.setState.bind(this)}
           />}
           <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
-          <button onClick={this.configFile.bind(this)}>Workflow</button>
+          <button onClick={this.downloadConf.bind(this)}>Workflow</button>
       </div>);
     }
     else {
-      return (<div ref={this.myRef} >
+      return (<div ref={this.myRef}  style={divStyle}>
         <NodeEditor x={this.state.x} y={this.state.y} nodeX={this.state.nodeX} nodeY={this.state.nodeY} opacity={this.state.opacity} nodeDatum={this.state.nodeDatum} setChartState={this.props.setChartState}
         nodes={this.props.nodes} edges={this.props.edges} setMenuState={this.setState.bind(this)} />
         <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
-        <button onClick={this.configFile.bind(this)}>Workflow</button>
+        <button onClick={this.downloadConf.bind(this)}>Workflow</button>
       </div>);
     }
   }

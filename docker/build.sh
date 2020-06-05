@@ -103,7 +103,7 @@ RUN source activate rapids \
 RUN source activate rapids \ 
     && jupyter lab build && jupyter lab clean
 
-RUN apt-get install -y locales-all
+RUN apt-get install -y locales-all build-essential vim
 ENV LC_ALL="en_US.utf8"
 EXPOSE 8888
 EXPOSE 8787

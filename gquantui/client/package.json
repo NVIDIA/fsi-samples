@@ -13,6 +13,7 @@
     "d3-dag": "^0.3.5",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
+    "react-keyed-file-browser": "^1.9.0",
     "react-scripts": "3.4.1",
     "typescript": "^3.9.3",
     "yaml": "^1.10.0"
@@ -37,5 +38,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "fibers": "^5.0.0",
+    "node-sass": "^4.14.1",
+    "sass": "^1.26.8"
   }
 }

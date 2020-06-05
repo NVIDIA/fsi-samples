@@ -41,6 +41,7 @@ export function handleMouseMoved(that) {
             .attr("y1", that.starting && point.y)
             .attr("x2", that.mouse && x)
             .attr("y2", that.mouse && y);
+        that.drawCircles();
     }
 }
 
@@ -51,13 +52,37 @@ export function handleMouseLeft(that) {
 }
 
 export function handleMouseOver(that) {
+    function constructTable(d) {
+        let key = Object.keys(d)[0];
+        let header = `<div>Port: ${key.split(".")[1]}</div>`;
+        let columnObj = d[key];
+        let columnKeys = Object.keys(columnObj);
+        if (columnKeys.length > 0) {
+            header += "<table>";
+            header += "<tr>";
+            header += "<th>Name</th>";
+            for (let i = 0; i < columnKeys.length; i++) {
+                header += `<th>${columnKeys[i]}</th>`;
+            }
+            header += "</tr>";
+            header += "<tr>";
+            header += "<th>Type</th>";
+            for (let i = 0; i < columnKeys.length; i++) {
+                header += `<td>${columnObj[columnKeys[i]]}</td>`;
+            }
+            header += "</tr>";
+            header += "</table>";
+        }
+        return header;
+    }
+
     return function (d) {
         that.tooltip.transition()
             .delay(30)
             .duration(200)
             .style("opacity", 1);
 //        that.tooltip.html(JSON.stringify(d))
-        that.tooltip.html(JSON.stringify(d))
+        that.tooltip.html(constructTable(d))
             .style("left", (d3.event.pageX + 25) + "px")
             .style("top", (d3.event.pageY) + "px");
         //add this
