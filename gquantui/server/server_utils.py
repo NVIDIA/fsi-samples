@@ -195,5 +195,5 @@ def load_all_yamls():
     all_files = pathlib.Path('workflows').glob('*.yaml')
     return [{"key": f.name,
              "size": f.stat().st_size,
-             "modified": dt.fromtimestamp(f.stat().st_mtime).isoformat()} 
-             for f in all_files]
+             "modified": dt.fromtimestamp(f.stat().st_mtime).isoformat()}
+            for f in all_files]
