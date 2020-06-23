@@ -46,24 +46,27 @@ class Chart extends React.Component {
       nodeY: 0,
       nodeDatum: null
     }
-    this.inputPorts = [];
-    this.outputPorts = [];
+    this.inputPorts = new Set();
+    this.outputPorts = new Set();
     this.inputRequriements = {};
     this.outputColumns = {};
+    this.portTypes = {};
   }
 
   portMap(that) {
-    this.inputPorts = [];
-    this.outputPorts = [];
+    this.inputPorts = new Set();
+    this.outputPorts = new Set();
     this.inputRequriements = {};
     this.outputColumns = {};
     this.props.nodes.forEach((d)=>{
       let nodeId = d.id;
       d.inputs.forEach((k)=>{
-        this.inputPorts.push(nodeId+"."+k.name);
+        this.inputPorts.add(nodeId+"."+k.name);
+        this.portTypes[nodeId+"."+k.name]=k.type;
       });
       d.outputs.forEach((k)=>{
-        this.outputPorts.push(nodeId+"."+k.name);
+        this.outputPorts.add(nodeId+"."+k.name);
+        this.portTypes[nodeId+"."+k.name]=k.type;
       });
       let keys = Object.keys(d.required);
       keys.forEach((k)=>{
@@ -163,13 +166,19 @@ class Chart extends React.Component {
         let data = [];
         for ( let i = 0; i < d.inputs.length; i++ ){
           if (d.inputs[i].name in d.required){
+            let portInfo = {};
+            portInfo['content'] = d.required[d.inputs[i].name];
+            portInfo['portType'] = d.inputs[i].type;
             data.push({
-              [d.id+'.'+d.inputs[i].name]: d.required[d.inputs[i].name]
+              [d.id+'.'+d.inputs[i].name]: portInfo
             })
           }
           else{
+            let portInfo = {};
+            portInfo['content'] = {};
+            portInfo['portType'] = d.inputs[i].type;
             data.push({
-              [d.id+'.'+d.inputs[i].name]: {}
+              [d.id+'.'+d.inputs[i].name]: portInfo
             })
           }
         }
@@ -206,13 +215,19 @@ class Chart extends React.Component {
         let data = [];
         for ( let i = 0; i < d.outputs.length; i++ ){
           if (d.outputs[i].name in d.output_columns){
+            let portInfo = {};
+            portInfo['content'] = d.output_columns[d.outputs[i].name];
+            portInfo['portType'] = d.outputs[i].type;
             data.push({
-              [d.id+'.'+d.outputs[i].name]: d.output_columns[d.outputs[i].name]
+              [d.id+'.'+d.outputs[i].name]: portInfo
             })
           }
           else{
+            let portInfo = {};
+            portInfo['content'] = {};
+            portInfo['portType'] = d.outputs[i].type;
             data.push({
-              [d.id+'.'+d.outputs[i].name]: {}
+              [d.id+'.'+d.outputs[i].name]: portInfo
             })
           }
         }

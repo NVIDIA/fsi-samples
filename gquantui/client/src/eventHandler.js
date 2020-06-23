@@ -20,7 +20,6 @@ export function handleClicked(that) {
 export function handleMouseMoved(that) {
     return function (d) {
         let [x, y] = d3.mouse(this);
-        //console.log(d3.event);
         that.mouse = { x, y };
         that.mousePage = { 'x': d3.event.clientX, 'y': d3.event.clientY };
         let point = null;
@@ -55,12 +54,14 @@ export function handleMouseOver(that) {
     function constructTable(d) {
         let key = Object.keys(d)[0];
         let header = `<div>Port: ${key.split(".")[1]}</div>`;
-        let columnObj = d[key];
+        let portType = d[key].portType;
+        header += `<div>Port Type:${portType}</div>`;
+        let columnObj = d[key].content;
         let columnKeys = Object.keys(columnObj);
         if (columnKeys.length > 0) {
             header += "<table>";
             header += "<tr>";
-            header += "<th>Name</th>";
+            header += "<th>Column Name</th>";
             for (let i = 0; i < columnKeys.length; i++) {
                 header += `<th>${columnKeys[i]}</th>`;
             }

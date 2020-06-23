@@ -65,13 +65,15 @@ class DistanceNode(Node):
     def ports_setup(self):
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type: cudf.DataFrame
+                PortsSpecSchema.port_type: [cudf.DataFrame,
+                                            dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type: cudf.DataFrame
+                PortsSpecSchema.port_type: [cudf.DataFrame,
+                                            dask_cudf.DataFrame]
             }
         }
 
@@ -129,13 +131,15 @@ class NumbaDistanceNode(Node):
     def ports_setup(self):
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type: cudf.DataFrame
+                PortsSpecSchema.port_type: [cudf.DataFrame,
+                                            dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type: cudf.DataFrame
+                PortsSpecSchema.port_type: [cudf.DataFrame,
+                                            dask_cudf.DataFrame]
             }
         }
 
@@ -200,13 +204,15 @@ class CupyDistanceNode(Node):
     def ports_setup(self):
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type: cudf.DataFrame
+                PortsSpecSchema.port_type:[cudf.DataFrame,
+                                            dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type: cudf.DataFrame
+                PortsSpecSchema.port_type:[cudf.DataFrame,
+                                            dask_cudf.DataFrame]
             }
         }
 
