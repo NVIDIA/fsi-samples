@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import { validConnection } from './validator';
 
 export function handleMouseUp(that) {
     return function (d) {
@@ -22,7 +23,10 @@ export function handleMouseUp(that) {
                         that.props.edges.splice(position, 1);
                     }
                     else {
-                        that.props.edges.push(newEdge);
+                        // only make the connection if it is valid
+                        if (validConnection(that)(newEdge.from, newEdge.to)) {
+                            that.props.edges.push(newEdge);
+                        }
                     }
                     let output = that.configFile();
                     let jsonString = JSON.stringify(output);
@@ -45,7 +49,10 @@ export function handleMouseUp(that) {
                         that.props.edges.splice(position, 1);
                     }
                     else {
-                        that.props.edges.push(newEdge);
+                        // only make the connection if it is valid
+                        if (validConnection(that)(newEdge.from, newEdge.to)) {
+                            that.props.edges.push(newEdge);
+                        }
                     }
                     let output = that.configFile();
                     let jsonString = JSON.stringify(output);

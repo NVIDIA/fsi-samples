@@ -98,23 +98,35 @@ openWorkflow(file){
 }
 
   render() {
-    
+    let style = {
+      "float": "left",
+      "display": "block",
+      "width": "20%"
+    }
+    let style2 = {
+      "float": "left",
+      "display": "block",
+      "width": "80%"
+    }
+   
     return (<div>
+      <div style={style}>
+      <FileBrowser
+        files={this.state.files}
+        icons={Icons.FontAwesome(4)}
+        detailRenderer={DetailView}
+        detailRendererProps={{ handleOpen: this.openWorkflow.bind(this) }}
+      />
+      </div>
+      <div style={style2}>
       <Chart nodes={this.state.nodes}
-      edges={this.state.edges}
-      setChartState={this.setState.bind(this)}
-      width={this.props.width}
-      height={this.props.height}
-      allNodes={this.state.allNodes}
-      layout={this.layout.bind(this)} />
-      <div style={{width: '400px'}}>
-  <FileBrowser
-    files={this.state.files}
-    icons={Icons.FontAwesome(4)}
-    detailRenderer={DetailView}
-    detailRendererProps={{handleOpen:this.openWorkflow.bind(this)}}
-  />
-</div>
+        edges={this.state.edges}
+        setChartState={this.setState.bind(this)}
+        width={this.props.width}
+        height={this.props.height}
+        allNodes={this.state.allNodes}
+        layout={this.layout.bind(this)} />
+      </div>
   </div>
       );
   }

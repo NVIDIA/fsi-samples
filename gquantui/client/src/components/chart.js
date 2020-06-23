@@ -60,10 +60,10 @@ class Chart extends React.Component {
     this.props.nodes.forEach((d)=>{
       let nodeId = d.id;
       d.inputs.forEach((k)=>{
-        this.inputPorts.push(nodeId+"."+k);
+        this.inputPorts.push(nodeId+"."+k.name);
       });
       d.outputs.forEach((k)=>{
-        this.outputPorts.push(nodeId+"."+k);
+        this.outputPorts.push(nodeId+"."+k.name);
       });
       let keys = Object.keys(d.required);
       keys.forEach((k)=>{
@@ -82,14 +82,14 @@ class Chart extends React.Component {
     let output_port = splits[1];
     let node_obj = this.props.nodes.filter((d) => d.id === node_id)[0];
     if (from) {
-      let index = node_obj.outputs.indexOf(output_port);
+      let index = node_obj.outputs.findIndex((d)=>d.name===output_port);
       let x = node_obj.x + node_obj.width;
       let y = node_obj.y + (index + 0.4) * this.circleHeight + this.textHeight;
       let point = { 'x': x, 'y': y, 'id': node_id };
       return point;
     }
     else {
-      let index = node_obj.inputs.indexOf(output_port);
+      let index = node_obj.inputs.findIndex((d)=>d.name===output_port);
       let x = node_obj.x;
       let y = node_obj.y + (index + 0.4) * this.circleHeight + this.textHeight;
       let point = { 'x': x, 'y': y, 'id': node_id };
@@ -162,14 +162,14 @@ class Chart extends React.Component {
       .data((d) =>{ 
         let data = [];
         for ( let i = 0; i < d.inputs.length; i++ ){
-          if (d.inputs[i] in d.required){
+          if (d.inputs[i].name in d.required){
             data.push({
-              [d.id+'.'+d.inputs[i]]: d.required[d.inputs[i]]
+              [d.id+'.'+d.inputs[i].name]: d.required[d.inputs[i].name]
             })
           }
           else{
             data.push({
-              [d.id+'.'+d.inputs[i]]: {}
+              [d.id+'.'+d.inputs[i].name]: {}
             })
           }
         }
@@ -205,14 +205,14 @@ class Chart extends React.Component {
       .data((d) =>{
         let data = [];
         for ( let i = 0; i < d.outputs.length; i++ ){
-          if (d.outputs[i] in d.output_columns){
+          if (d.outputs[i].name in d.output_columns){
             data.push({
-              [d.id+'.'+d.outputs[i]]: d.output_columns[d.outputs[i]]
+              [d.id+'.'+d.outputs[i].name]: d.output_columns[d.outputs[i].name]
             })
           }
           else{
             data.push({
-              [d.id+'.'+d.outputs[i]]: {}
+              [d.id+'.'+d.outputs[i].name]: {}
             })
           }
         }
@@ -310,6 +310,9 @@ class Chart extends React.Component {
   }
 
   updateInputs(json){
+    /**
+     * send the taskgraph to backend to run the column-flow logics so all the output types and names are computed
+     */
    const requestOptions = {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -336,6 +339,9 @@ class Chart extends React.Component {
   }
 
   configFile() {
+    /**
+     * get the gqaunt task graph, which is a list of tasks 
+     */
     let connection_info = {};
     for (let i = 0; i < this.props.edges.length; i++) {
       let children = this.props.edges[i].to.split('.')[0];
@@ -383,7 +389,7 @@ class Chart extends React.Component {
 
   render() {
     const divStyle = {
-      'borderStyle': 'solid'
+//      'borderStyle': 'solid'
     };
 
     this.portMap();
@@ -394,16 +400,20 @@ class Chart extends React.Component {
           <AddNodeMenu allNodes={this.props.allNodes} x={this.state.x} y={this.state.y} nodeX={this.state.nodeX} nodeY={this.state.nodeY} opacity={this.state.opacity} setChartState={this.props.setChartState} currentNodes={this.props.nodes}
             setMenuState={this.setState.bind(this)}
           />}
+          <div>
           <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
-          <button onClick={this.downloadConf.bind(this)}>Workflow</button>
+          <button onClick={this.downloadConf.bind(this)}>Download</button>
+          </div>
       </div>);
     }
     else {
       return (<div ref={this.myRef}  style={divStyle}>
         <NodeEditor x={this.state.x} y={this.state.y} nodeX={this.state.nodeX} nodeY={this.state.nodeY} opacity={this.state.opacity} nodeDatum={this.state.nodeDatum} setChartState={this.props.setChartState}
         nodes={this.props.nodes} edges={this.props.edges} setMenuState={this.setState.bind(this)} />
+        <div>
         <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
-        <button onClick={this.downloadConf.bind(this)}>Workflow</button>
+        <button onClick={this.downloadConf.bind(this)}>Download</button>
+        </div>
       </div>);
     }
   }

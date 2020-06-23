@@ -10,6 +10,37 @@ import uuid
 from datetime import datetime as dt
 
 
+def format_port(port):
+    """
+    compute the right port type str
+
+    Arguments
+    -------
+    port: input/output port object
+
+    Returns
+    -------
+    list
+        a list of ports with name and type
+    """
+    all_ports = []
+    for key in port:
+        one_port = {}
+        one_port['name'] = key
+        port_type = port[key]['type']
+        if isinstance(port_type, list):
+            types = []
+            for t in port_type:
+                type_name = t.__module__+'.'+t.__name__
+                types.append(type_name)
+            one_port['type'] = types
+        else:
+            type_name = port_type.__module__+'.'+port_type.__name__
+            one_port['type'] = [type_name]
+        all_ports.append(one_port)
+    return all_ports
+
+
 def get_node_obj(node):
     """
     It is a private function to convert a Node instance into a dictionary for
@@ -28,7 +59,7 @@ def get_node_obj(node):
     ports = node.ports_setup()
     schema = node.conf_schema()
     typeName = node._task_obj.get('type')
-    width = max(max(len(node.uid), len(typeName))* 10, 100)
+    width = max(max(len(node.uid), len(typeName)) * 10, 100)
     conf = node._task_obj.get('conf')
     out_node = {'width': width,
                 'id': node.uid,
@@ -36,8 +67,8 @@ def get_node_obj(node):
                 'schema': schema.json,
                 'ui': schema.ui,
                 'conf': conf,
-                'inputs': list(ports.inports.keys()),
-                'outputs': list(ports.outports.keys())}
+                'inputs': format_port(ports.inports),
+                'outputs': format_port(ports.outports)}
     out_node['required'] = node.required
     out_node['output_columns'] = {}
     if node._task_obj.get('filepath'):
