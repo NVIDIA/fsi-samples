@@ -83,6 +83,7 @@ componentDidMount() {
   }
 
 openWorkflow(file){
+  this.setState({ filename: file});
   console.log('open', file);
   let payload = JSON.stringify({filename: file});
   const requestOptions = {
@@ -125,6 +126,7 @@ openWorkflow(file){
         width={this.props.width}
         height={this.props.height}
         allNodes={this.state.allNodes}
+        filename={this.state.filename?this.state.filename:"unname.yaml"}
         layout={this.layout.bind(this)} />
       </div>
   </div>

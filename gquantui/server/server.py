@@ -32,6 +32,16 @@ def recalculate():
     return jsonify(r)
 
 
+@app.route('/save', methods=['POST'])
+def save():
+    content = request.get_json(silent=True)
+    print(content)
+    filename = content['filename']
+    with open('workflows/'+filename, 'w') as f:
+        f.write(content['content'])
+    return workflows()
+
+
 @app.route('/workflows')
 def workflows():
     r = load_all_yamls()

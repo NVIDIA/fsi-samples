@@ -1,23 +1,12 @@
 import React from 'react';
 import SearchBar from './searchBar';
-import NodeTable from './nodeTable';
 import styled from '@emotion/styled';
 
 class AddNodeMenu extends React.Component {
     constructor(props) {
       super(props);
-      this.state = {
-        filterText: '',
-      };
-      this.handleFilterTextChange = this.handleFilterTextChange.bind(this);
       this.handleClicked = this.handleClicked.bind(this);
     }
-
-    handleFilterTextChange(filterText) {
-        this.setState({
-          filterText: filterText
-        });
-     }
 
     handleClicked(d) {
         if (d.target.tagName==='TD'){
@@ -44,6 +33,7 @@ class AddNodeMenu extends React.Component {
         }
      }
   
+          //<NodeTable  key="random3" allNodes={this.props.allNodes} filterText={this.state.filterText} onClick={this.handleClicked}/>
     render() {
         let x = (this.props.x + 25) + 'px';
         let y = (this.props.y) + 'px';
@@ -59,8 +49,10 @@ class AddNodeMenu extends React.Component {
         `
       return (
         <Menu>
-          <SearchBar filterText={this.state.filterText} onFilterTextChange={this.handleFilterTextChange}/>
-          <NodeTable allNodes={this.props.allNodes} filterText={this.state.filterText} onClick={this.handleClicked}/>
+          <SearchBar
+          allNodes={this.props.allNodes}
+          handleClicked={this.handleClicked}
+          />
         </Menu>
       );
     }

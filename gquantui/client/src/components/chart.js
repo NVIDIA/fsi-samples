@@ -1,6 +1,7 @@
 import React from 'react';
 import * as d3 from "d3";
 import YAML from 'yaml';
+import Moment from 'moment';
 
 import {
     handleMouseOver,
@@ -18,6 +19,9 @@ import { handleMouseDown, handleMouseUp } from '../connectionHandler';
 import AddNodeMenu from './addNodeMenu';
 import NodeEditor from './nodeEditor';
 import { validConnection } from '../validator';
+import styled from '@emotion/styled';
+
+const Input = styled.input``;
 
 class Chart extends React.Component {
 
@@ -389,6 +393,10 @@ class Chart extends React.Component {
     return output;
   }
 
+  handleNameChange(event){
+    this.props.setChartState({filename: event.target.value});
+  }
+
   downloadConf(){
     let output = this.configFile();
     let jsonString = JSON.stringify(output);
@@ -397,37 +405,63 @@ class Chart extends React.Component {
     const element = document.createElement("a");
     const file = new Blob([yamlText], {type: 'text/plain'});
     element.href = URL.createObjectURL(file);
-    element.download = "output.yaml";
+    element.download = this.props.filename;
     document.body.appendChild(element); // Required for this to work in FireFox
     element.click();
   }
 
+  saveConf(){
+    let output = this.configFile();
+    let jsonString = JSON.stringify(output);
+    this.updateInputs(jsonString);
+    let yamlText = YAML.stringify(output);
+
+    let payload = {'filename': this.props.filename,
+                   "content": yamlText}
+
+   const requestOptions = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+  };
+  fetch(process.env.REACT_APP_SAVE_URL, requestOptions)
+      .then(response => response.json())
+      .then(workflows => {
+      let mapedWorkflows = workflows.map((d)=>{
+        d['modified'] = Moment(d.modified);
+        return d;
+      })
+      this.props.setChartState({files: mapedWorkflows});
+      });
+  }
+
   render() {
-    const divStyle = {
-//      'borderStyle': 'solid'
-    };
 
     this.portMap();
     console.log('rendering');
     if (this.state.addMenu) {
-      return (<div ref={this.myRef} style={divStyle}>
+      return (<div ref={this.myRef}>
         {this.props.allNodes &&
           <AddNodeMenu allNodes={this.props.allNodes} x={this.state.x} y={this.state.y} nodeX={this.state.nodeX} nodeY={this.state.nodeY} opacity={this.state.opacity} setChartState={this.props.setChartState} currentNodes={this.props.nodes}
             setMenuState={this.setState.bind(this)}
           />}
           <div>
+          <Input type="text" value={this.props.filename} onChange={this.handleNameChange.bind(this)}/>
           <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
           <button onClick={this.downloadConf.bind(this)}>Download</button>
+          <button onClick={this.saveConf.bind(this)}>Save</button>
           </div>
       </div>);
     }
     else {
-      return (<div ref={this.myRef}  style={divStyle}>
+      return (<div ref={this.myRef}>
         <NodeEditor x={this.state.x} y={this.state.y} nodeX={this.state.nodeX} nodeY={this.state.nodeY} opacity={this.state.opacity} nodeDatum={this.state.nodeDatum} setChartState={this.props.setChartState}
         nodes={this.props.nodes} edges={this.props.edges} setMenuState={this.setState.bind(this)} />
         <div>
+        <Input  type="text" value={this.props.filename} onChange={this.handleNameChange.bind(this)}/>
         <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
         <button onClick={this.downloadConf.bind(this)}>Download</button>
+        <button onClick={this.saveConf.bind(this)}>Save</button>
         </div>
       </div>);
     }
