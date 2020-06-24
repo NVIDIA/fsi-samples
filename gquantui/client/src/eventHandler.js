@@ -24,12 +24,7 @@ export function handleMouseMoved(that) {
         that.mousePage = { 'x': d3.event.clientX, 'y': d3.event.clientY };
         let point = null;
         if (that.starting) {
-            if (that.starting.groupName === "outputs") {
-                point = that.translateCorr(that.starting.from, true);
-            }
-            else {
-                point = that.translateCorr(that.starting.from, false);
-            }
+            point = that.starting.point;
         }
         let transform = d3.zoomTransform(this);
         [x, y] = transform.invert([x, y]);
@@ -40,8 +35,7 @@ export function handleMouseMoved(that) {
             .attr("y1", that.starting && point.y)
             .attr("x2", that.mouse && x)
             .attr("y2", that.mouse && y);
-        that.drawCircles();
-    }
+        }
 }
 
 export function handleMouseLeft(that) {
@@ -99,9 +93,10 @@ export function handleMouseOver(that) {
 
 export function handleMouseOut(that) {
     return function (d) {
-        that.tooltip.transition()
-            .duration(100)
-            .style("opacity", 0);
+        that.tooltip
+            .style("opacity", 0)
+            .style("left", (-1000) + "px")
+            .style("top", (-1000) + "px");
         //add this
         const selection = d3.select(this);
         selection

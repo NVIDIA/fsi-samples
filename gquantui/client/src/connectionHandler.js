@@ -18,7 +18,6 @@ export function handleMouseUp(that) {
                         "to": that.starting.from
                     };
                     let position = that.props.edges.findIndex((d) => d.from === newEdge.from && d.to === newEdge.to);
-                    console.log(newEdge, position);
                     if (position >= 0) {
                         that.props.edges.splice(position, 1);
                     }
@@ -66,6 +65,7 @@ export function handleMouseUp(that) {
             }
             that.starting = null;
         }
+    that.drawCircles();
     }
 }
 
@@ -82,6 +82,7 @@ export function handleMouseDown(that){
             groupName = d3.select(this.parentNode).attr('group');
             let fromPort = Object.keys(d)[0].split('.')[1];
             that.starting = { 'from': fromId + "." + fromPort, "groupName": groupName };
+
        // }
         if (groupName === "inputs") {
             //inputs, to in edges
@@ -117,5 +118,13 @@ export function handleMouseDown(that){
                 //     .join("line");
             }
         }
+        if (that.starting.groupName === "outputs") {
+            that.starting['point'] = that.translateCorr(that.starting.from, true);
+        }
+        else {
+            that.starting['point'] = that.translateCorr(that.starting.from, false);
+        }
+
+    that.drawCircles();
     }
 }
