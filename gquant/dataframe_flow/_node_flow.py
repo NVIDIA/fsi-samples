@@ -673,9 +673,9 @@ class NodeTaskGraphMixin(object):
         return output_df
 
     def decorate_process(self):
-        import time
 
         def timer(*argv):
+            import time
             start = time.time()
             result = self.process(*argv)
             end = time.time()
