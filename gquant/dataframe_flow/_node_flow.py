@@ -508,6 +508,9 @@ class NodeTaskGraphMixin(object):
                 else:
                     df = output_df
 
+            if isinstance(df, dask_cudf.DataFrame):
+                df = df.persist()
+
             onode.__set_input_df(iport, df)
 
             onode.flow()

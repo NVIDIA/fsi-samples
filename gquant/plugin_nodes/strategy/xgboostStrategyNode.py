@@ -9,6 +9,30 @@ import dask
 __all__ = ['XGBoostStrategyNode']
 
 
+def predict(cudf_df, tree_booster, train_cols):
+    infer_dmatrix = xgb.DMatrix(cudf_df[train_cols])
+    prediction = cudf.Series(tree_booster.predict(infer_dmatrix),
+                             nan_as_null=False,
+                             index=cudf_df.index
+                             ).astype('float64')
+    cudf_df['signal'] = prediction
+    # here we need to remove the first day of prediction
+    cudf_df['tmp'] = (cudf_df['asset'] -
+                      cudf_df['asset'].shift(1)).fillna(1)
+    cudf_df['tmp'] = (cudf_df['tmp'] != 0).astype('int32')
+    tmp = cudf_df['tmp']
+    cudf_df['tmp'] = tmp.where(tmp != 1, None)
+    cudf_df = cudf_df.dropna(subset=['tmp'])
+    cudf_df = cudf_df.drop('tmp')
+    return cudf_df
+
+
+def delay_predict(delayed, tree_booster, train_cols):
+    # get the dask_cudf obj
+    cudf_df = dask.compute(delayed)[0]
+    return predict(cudf_df, tree_booster, train_cols)
+
+
 class XGBoostStrategyNode(Node):
     """
     This is the Node used to compute trading signal from XGBoost Strategy.
@@ -82,27 +106,8 @@ class XGBoostStrategyNode(Node):
                                  num_boost_round=num_of_rounds)
 
             tree_booster = bst['booster']
-
-            def predict(dask_df):
-                cudf_df = dask_df
-                infer_dmatrix = xgb.DMatrix(cudf_df[train_cols])
-                prediction = cudf.Series(tree_booster.predict(infer_dmatrix),
-                                         nan_as_null=False,
-                                         index=cudf_df.index
-                                         ).astype('float64')
-                cudf_df['signal'] = prediction
-                # here we need to remove the first day of prediction
-                cudf_df['tmp'] = (cudf_df['asset'] -
-                                  cudf_df['asset'].shift(1)).fillna(1)
-                cudf_df['tmp'] = (cudf_df['tmp'] != 0).astype('int32')
-                # cudf_df['tmp'][cudf_df['tmp'] == 1] = None
-                tmp = cudf_df['tmp']
-                cudf_df['tmp'] = tmp.where(tmp != 1, None)
-                cudf_df = cudf_df.dropna(subset=['tmp'])
-                cudf_df = cudf_df.drop('tmp')
-                return cudf_df
-            delayed_fun = dask.delayed(predict)
-            delayedObj = [delayed_fun(dask_cudf.from_delayed(delayed)) for delayed in input_df.to_delayed()] # noqa E501
+            delayed_fun = dask.delayed(delay_predict)
+            delayedObj = [delayed_fun(delayed, tree_booster, train_cols) for delayed in input_df.to_delayed()] # noqa E501
             input_df = dask_cudf.from_delayed(delayedObj)
 
         elif isinstance(input_df, cudf.DataFrame):
@@ -115,22 +120,7 @@ class XGBoostStrategyNode(Node):
             dmatrix = xgb.DMatrix(train, label=target)
             bst = xgb.train(dxgb_params, dmatrix,
                             num_boost_round=num_of_rounds)
-            # make inferences
-            infer_dmatrix = xgb.DMatrix(input_df[train_cols])
-
-            prediction = cudf.Series(bst.predict(infer_dmatrix),
-                                     nan_as_null=False,
-                                     index=input_df.index).astype('float64')
-            input_df['signal'] = prediction
-            # here we need to remove the first day of prediction
-            input_df['tmp'] = (input_df['asset'] -
-                               input_df['asset'].shift(1)).fillna(1)
-            input_df['tmp'] = (input_df['tmp'] != 0).astype('int32')
-            # input_df['tmp'][input_df['tmp'] == 1] = None
-            tmp = input_df['tmp']
-            input_df['tmp'] = tmp.where(tmp != 1, None)
-            input_df = input_df.dropna(subset=['tmp'])
-            input_df = input_df.drop('tmp')
+            input_df = predict(input_df, bst, train_cols)
 
         # convert the signal to trading action
         # 1 is buy and -1 is sell
