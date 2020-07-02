@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "gquantui/server"
+		},
+		{
+			"path": "gquantui/client"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}
