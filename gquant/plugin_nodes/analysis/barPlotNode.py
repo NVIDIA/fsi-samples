@@ -1,5 +1,8 @@
 from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, OHLC, Bars, Tooltip
+import cupy as cp
+import cudf
+import dask_cudf
 
 
 class BarPlotNode(Node):
@@ -39,16 +42,33 @@ class BarPlotNode(Node):
         ax_y = Axis(label='Price', scale=sc, orientation='vertical',
                     tick_format='0.0f')
         # Construct the marks
-        ohlc = OHLC(x=stock['datetime'][::stride],
-                    y=stock[['open', 'high', 'low', 'close']]
-                    .as_gpu_matrix()[::stride, :],
-                    marker='candle', scales={'x': dt_scale, 'y': sc},
-                    format='ohlc', stroke='blue',
-                    display_legend=True, labels=[label])
-        bar = Bars(x=stock['datetime'][::stride],
-                   y=stock['volume'][::stride],
-                   scales={'x': dt_scale, 'y': sc2},
-                   padding=0.2)
+        if (isinstance(stock,
+                       cudf.DataFrame) or isinstance(stock,
+                                                     dask_cudf.DataFrame)):
+            ohlc = OHLC(x=stock['datetime'][::stride].to_array(),
+                        y=cp.asnumpy(stock[['open',
+                                            'high',
+                                            'low',
+                                            'close']].values[::stride, :]),
+                        marker='candle', scales={'x': dt_scale, 'y': sc},
+                        format='ohlc', stroke='blue',
+                        display_legend=True, labels=[label])
+            bar = Bars(x=stock['datetime'][::stride].to_array(),
+                       y=stock['volume'][::stride].to_array(),
+                       scales={'x': dt_scale, 'y': sc2},
+                       padding=0.2)
+        else:
+            ohlc = OHLC(x=stock['datetime'][::stride],
+                        y=stock[['open',
+                                 'high',
+                                 'low', 'close']].values[::stride, :],
+                        marker='candle', scales={'x': dt_scale, 'y': sc},
+                        format='ohlc', stroke='blue',
+                        display_legend=True, labels=[label])
+            bar = Bars(x=stock['datetime'][::stride],
+                       y=stock['volume'][::stride],
+                       scales={'x': dt_scale, 'y': sc2},
+                       padding=0.2)
         def_tt = Tooltip(fields=['x', 'y'], formats=['%Y-%m-%d', '.2f'])
         bar.tooltip = def_tt
         bar.interactions = {

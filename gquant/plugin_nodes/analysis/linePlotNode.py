@@ -1,5 +1,7 @@
 from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
+import cudf
+import dask_cudf
 
 
 class LinePlotNode(Node):
@@ -38,10 +40,21 @@ class LinePlotNode(Node):
             col_name = line['column']
             label_name = line['label']
             color = line['color']
-            line = Lines(x=input_df['datetime'][::stride],
-                         y=input_df[col_name][::stride],
-                         scales={'x': date_co, 'y': linear_co}, colors=[color],
-                         labels=[label_name], display_legend=True)
+            if (isinstance(input_df,
+                           cudf.DataFrame) or isinstance(input_df,
+                                                         dask_cudf.DataFrame)):
+                line = Lines(x=input_df['datetime'][::stride].to_array(),
+                             y=input_df[col_name][::stride].to_array(),
+                             scales={'x': date_co, 'y': linear_co},
+                             colors=[color],
+                             labels=[label_name], display_legend=True)
+            else:
+                line = Lines(x=input_df['datetime'][::stride],
+                             y=input_df[col_name][::stride],
+                             scales={'x': date_co, 'y': linear_co},
+                             colors=[color],
+                             labels=[label_name], display_legend=True)
+
             lines.append(line)
         new_fig = Figure(marks=lines, axes=[yax, xax],
                          title=self.conf['title'], interaction=panzoom_main)
