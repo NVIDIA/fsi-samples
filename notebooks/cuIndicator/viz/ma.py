@@ -22,7 +22,7 @@ def process_outputs(output, stock_df):
     return stock_df
 
 def create_figure(stock, dt_scale, sc, color_id, f, indicator_figure_height, figure_width, add_new_indicator):
-    line = Lines(x=stock.datetime, y=stock['out'], scales={'x': dt_scale, 'y': sc}, colors=[CATEGORY20[color_id[0]]])
+    line = Lines(x=stock.datetime.to_array(), y=stock['out'].to_array(), scales={'x': dt_scale, 'y': sc}, colors=[CATEGORY20[color_id[0]]])
     figs = [line]
     f.marks = f.marks + figs
     return figs
