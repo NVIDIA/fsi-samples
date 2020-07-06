@@ -1,6 +1,6 @@
 import ipywidgets as widgets
 from bqplot import Axis, Figure, LinearScale, Lines
-from gquant.cuindicator import macd as indicator_fun # noqa #F401
+from gquant.cuindicator import macd as indicator_fun  # noqa #F401
 
 
 def get_para_widgets():

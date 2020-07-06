@@ -3,6 +3,7 @@ import importlib
 import copy
 from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
+import sys
 
 
 __all__ = ['Task']
@@ -63,6 +64,7 @@ class Task(object):
                 spec = importlib.util.spec_from_file_location(node_id,
                                                               modulepath)
                 mod = importlib.util.module_from_spec(spec)
+                sys.modules[spec.name] = mod
                 spec.loader.exec_module(mod)
                 NodeClass = getattr(mod, node_type)
             else:
