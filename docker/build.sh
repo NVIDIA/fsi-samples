@@ -33,7 +33,7 @@ echo -e "\nPlease, select your cuda version:\n" \
 
 read -p "Enter your option and hit return [1]-4: " CUDA_VERSION
 
-RAPIDS_VERSION="0.13"
+RAPIDS_VERSION="0.14"
 
 CUDA_VERSION=${CUDA_VERSION:-1}
 case $CUDA_VERSION in
