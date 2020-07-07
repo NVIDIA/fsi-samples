@@ -3,7 +3,7 @@ import importlib
 import copy
 from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
-import sys
+from pathlib import Path
 
 
 __all__ = ['Task']
@@ -63,8 +63,10 @@ class Task(object):
             if modulepath is not None:
                 spec = importlib.util.spec_from_file_location(node_id,
                                                               modulepath)
+                modulename = Path(modulepath).stem
+                spec = importlib.util.spec_from_file_location(
+                    modulename, modulepath)
                 mod = importlib.util.module_from_spec(spec)
-                sys.modules[spec.name] = mod
                 spec.loader.exec_module(mod)
                 NodeClass = getattr(mod, node_type)
             else:
