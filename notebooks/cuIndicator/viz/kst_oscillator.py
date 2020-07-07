@@ -13,9 +13,7 @@ def get_para_widgets():
 
 def get_parameters(stock_df, para_selector_widgets):
     param = [w.value for w in para_selector_widgets]
-    print(param)
     param_grp = [param[0] + i for i in range(8)]
-    print(param_grp)
     return (stock_df["close"], param_grp[0], param_grp[1],
             param_grp[2], param_grp[3],
             param_grp[4], param_grp[5], param_grp[6], param_grp[7])

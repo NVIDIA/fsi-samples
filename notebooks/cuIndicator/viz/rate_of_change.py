@@ -20,7 +20,6 @@ def process_outputs(output, stock_df):
     output.index = stock_df.index
     stock_df['out'] = output
     stock_df['out'] = output.fillna(0)
-    print(stock_df['out'])
     return stock_df
 
 
