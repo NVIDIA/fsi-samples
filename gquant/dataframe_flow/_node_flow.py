@@ -124,6 +124,41 @@ class NodeTaskGraphMixin(object):
 
         return output
 
+    def __delayed_call_noports(self, inputs):
+
+        def get_pout(df_out):
+            '''Used for delayed unpacking.'''
+            if isinstance(df_out, cudf.DataFrame):
+                # Needed for the same reason as __make_copy. To prevent columns
+                # addition in the input data frames. In python everything is
+                # by reference value and dataframes are mutable.
+                # Handle the case when dask_cudf.DataFrames are source frames
+                # which appear as cudf.DataFrame in a dask-delayed function.
+                return df_out.copy(deep=False)
+
+            return df_out
+
+        # handle the dask dataframe automatically
+        # use the to_delayed interface
+        # TODO, currently only handles first input is dask_cudf df
+        i_df = inputs[0]
+        rest = inputs[1:]
+        if isinstance(i_df, dask_cudf.DataFrame):
+            output_df_dly_list = []
+            for input_dly in i_df.to_delayed():
+                inputs_ = [input_dly] + rest
+                output_df_dly = dask.delayed(self.decorate_process())(inputs_)
+                output_df_dly_per = output_df_dly.persist()
+                df_out = dask.delayed(get_pout)(output_df_dly_per)
+                output_df_dly_list.append(df_out.persist())
+
+            output_df = dask_cudf.from_delayed(output_df_dly_list)
+
+        else:
+            output_df = self.decorate_process()(inputs)
+
+        return output_df
+
     def columns_flow(self):
         """
         Flow the graph to determine the input output dataframe column names and
@@ -406,7 +441,7 @@ class NodeTaskGraphMixin(object):
                 cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
 
                 if out_type in cudf_types_tuple:
-                    if len(out_val) == 0 and out_optional:
+                    if len(out_val.columns) == 0 and out_optional:
                         continue
 
                 if out_type in cudf_types_tuple:
@@ -438,6 +473,10 @@ class NodeTaskGraphMixin(object):
 
             if iport not in self.input_columns:
                 return False
+
+        if (self._using_ports() and len(self._get_input_ports(
+        )) != 0 and len(self.inputs) == 0):
+            return False
 
         return True
 
@@ -673,9 +712,9 @@ class NodeTaskGraphMixin(object):
         return output_df
 
     def decorate_process(self):
-        import time
 
         def timer(*argv):
+            import time
             start = time.time()
             result = self.process(*argv)
             end = time.time()
@@ -711,18 +750,7 @@ class NodeTaskGraphMixin(object):
                     else:
                         output_df = self.decorate_process()(inputs)
                 else:
-                    # handle the dask dataframe automatically
-                    # use the to_delayed interface
-                    # TODO, currently only handles first input is dask_cudf df
-                    i_df = inputs[0]
-                    rest = inputs[1:]
-                    if isinstance(i_df, dask_cudf.DataFrame):
-                        d_fun = dask.delayed(self.decorate_process())
-                        output_df = dask_cudf.from_delayed([
-                            d_fun([item] + rest)
-                            for item in i_df.to_delayed()])
-                    else:
-                        output_df = self.decorate_process()(inputs)
+                    output_df = self.__delayed_call_noports(inputs)
 
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")

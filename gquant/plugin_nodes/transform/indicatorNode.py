@@ -5,6 +5,7 @@ import gquant.cuindicator as ci
 class IndicatorNode(Node):
 
     def columns_setup(self):
+        self.delayed_process = True
         self.required = {'indicator': 'int32'}
         self.addition = {}
         indicators = self.conf['indicators']

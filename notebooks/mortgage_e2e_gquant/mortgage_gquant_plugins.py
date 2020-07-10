@@ -226,8 +226,8 @@ class CsvMortgageAcquisitionDataLoader(Node):
 
         col_names_path = self.conf['csvfile_names']
         cols_dtypes = OrderedDict([
-            ('seller_name', 'category'),
-            ('new', 'category'),
+            ('seller_name', 'int32'),
+            ('new', 'int32'),
         ])
         cols = list(cols_dtypes.keys())
         dtypes = list(cols_dtypes.values())
@@ -601,10 +601,12 @@ def _null_workaround(df):
     '''
     for column, data_type in df.dtypes.items():
         if str(data_type) == "category":
-            df[column] = df[column].astype('int32').fillna(-1)
+            df[column] = df[column]\
+                .astype('int32').fillna(np.dtype(np.int32).type(-1))
         if str(data_type) in \
                 ['int8', 'int16', 'int32', 'int64', 'float32', 'float64']:
-            df[column] = df[column].fillna(np.dtype(data_type).type(-1))
+            df[column] = df[column]\
+                .fillna(np.dtype(data_type).type(-1)).astype(data_type)
     return df
 
 
@@ -706,8 +708,8 @@ class JoinFinalPerfAcqClean(Node):
         if itype in ('float64', 'int32', 'int64',):
             cols_dtypes[icol] = 'float32'
 
-    # The only exception is delinquency_12 which remains int32
-    cols_dtypes.update({'delinquency_12': 'int32'})
+    # The only exception is delinquency_12 which becomes int8
+    cols_dtypes.update({'delinquency_12': 'int8'})
 
     for col in _drop_list:
         cols_dtypes.pop(col)
@@ -718,20 +720,27 @@ class JoinFinalPerfAcqClean(Node):
         self.retention = self.cols_dtypes
 
     @classmethod
-    def __last_mile_cleaning(cls, df):
+    def __last_mile_cleaning(cls, df, cols_to_keep=tuple()):
         drop_list = cls._drop_list
         for column in drop_list:
+            if column in cols_to_keep:
+                continue
+            if column not in df.columns:
+                continue
             df.drop_column(column)
+
         for col, dtype in df.dtypes.iteritems():
             if str(dtype) == 'category':
                 df[col] = df[col].cat.codes
             df[col] = df[col].astype('float32')
-        df['delinquency_12'] = df['delinquency_12'] > 0
-        df['delinquency_12'] = \
-            df['delinquency_12'].fillna(False).astype('int32')
+
+        if 'delinquency_12' in df.columns:
+            df['delinquency_12'] = df['delinquency_12'] > 0
+            df['delinquency_12'] = \
+                df['delinquency_12'].fillna(False).astype('int8')
+
         for column in df.columns:
-            df[column] = \
-                df[column].fillna(np.dtype(str(df[column].dtype)).type(-1))
+            df[column] = df[column].fillna(-1)
 
         # return df.to_arrow(preserve_index=False)
         return df
@@ -744,6 +753,13 @@ class JoinFinalPerfAcqClean(Node):
 
         perf_df = _null_workaround(perf_df)
         acq_df = _null_workaround(acq_df)
+
+        cols_to_keep = ('loan_id', 'seller_name',)
+        perf_df = self.__last_mile_cleaning(perf_df, cols_to_keep=cols_to_keep)
+        # cleaning acq_df causes out of memory error during merge!? rapids 0.14
+        # acq_df = self.__last_mile_cleaning(acq_df, cols_to_keep=cols_to_keep)
+
+        acq_df['seller_name'] = acq_df['seller_name'].astype('category')
 
         perf_acq_df = perf_df.merge(
             acq_df, how='left', on=['loan_id'], type='hash')
@@ -1061,28 +1077,24 @@ class XgbMortgageTrainer(Node):
 # This is needed if distributing workflows to workers.
 
 def initialize_rmm_pool():
-    from librmm_cffi import librmm_config as rmm_cfg
-
-    rmm_cfg.use_pool_allocator = True
-    # set to 2GiB. Default is 1/2 total GPU memory
-    # rmm_cfg.initial_pool_size = 2 << 30
-    # rmm_cfg.initial_pool_size = 2 << 5
-    # rmm_cfg.initial_pool_size = 2 << 33
-    import cudf
-    return cudf.rmm.initialize()
+    import rmm
+    return rmm.reinitialize(
+        pool_allocator=True,  # default is False
+        managed_memory=False
+    )
 
 
 def initialize_rmm_no_pool():
-    from librmm_cffi import librmm_config as rmm_cfg
-
-    rmm_cfg.use_pool_allocator = False
-    import cudf
-    return cudf.rmm.initialize()
+    import rmm
+    return rmm.reinitialize(
+        pool_allocator=False,  # default is False
+        managed_memory=False
+    )
 
 
 def finalize_rmm():
-    import cudf
-    return cudf.rmm.finalize()
+    import rmm
+    return rmm.rmm.librmm.rmm_finalize()
 
 
 def print_distributed_dask_hijacked_logs(wlogs, logger, filters=None):
@@ -1298,6 +1310,8 @@ class DaskXgbMortgageTrainer(Node):
 
         mortgage_feat_df_delinq_df_pandas_futures = inputs[0]
 
+        # TODO: Update to xgb.dask.DaskDMatrix and xgb.dask.train API. Refer to
+        #       https://medium.com/rapids-ai/a-new-official-dask-api-for-xgboost-e8b10f3d1eb7
         def make_xgb_dmatrix(
                 mortgage_feat_df_delinq_df_pandas_tuple,
                 delete_dataframes=None):

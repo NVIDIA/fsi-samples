@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
 import dask_cudf
+import cudf
 
 
 class CumReturnNode(Node):
@@ -39,10 +40,21 @@ class CumReturnNode(Node):
                    orientation='vertical')
         xax = Axis(label='Time', scale=date_co, orientation='horizontal')
         panzoom_main = PanZoom(scales={'x': [date_co]})
-        line = Lines(x=input_df['datetime'][::stride],
-                     y=(input_df['strategy_returns'].cumsum())[::stride],
-                     scales={'x': date_co, 'y': linear_co},
-                     colors=['blue'], labels=[label], display_legend=True)
+        if (isinstance(input_df,
+                       cudf.DataFrame) or isinstance(input_df,
+                                                     dask_cudf.DataFrame)):
+            line = Lines(x=input_df['datetime'][::stride].to_array(),
+                         y=(input_df[
+                             'strategy_returns'].cumsum())[
+                                 ::stride].to_array(),
+                         scales={'x': date_co, 'y': linear_co},
+                         colors=['blue'], labels=[label], display_legend=True)
+        else:
+            line = Lines(x=input_df['datetime'][::stride],
+                         y=(input_df[
+                             'strategy_returns'].cumsum())[::stride],
+                         scales={'x': date_co, 'y': linear_co},
+                         colors=['blue'], labels=[label], display_legend=True)
         new_fig = Figure(marks=[line], axes=[yax, xax], title='P & L',
                          interaction=panzoom_main)
         return new_fig
