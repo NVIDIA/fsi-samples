@@ -55,6 +55,30 @@ case $CUDA_VERSION in
 	;;
 esac
 
+read -p "Enable dev model [y/n]:" DEV_MODE
+case $DEV_MODE in
+    y)
+	echo "Enable dev mode"
+    read -r -d '' INSTALL_CODE_SERVER<< EOM
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+RUN apt-get install -y net-tools iproute2
+EOM
+    read -r -d '' INSTALL_CODE_EXTENSION<< EOM
+RUN code-server --install-extension ms-python.python@2020.5.86806
+RUN code-server --install-extension vscodevim.vim
+RUN code-server --install-extension firefox-devtools.vscode-firefox-debug
+RUN code-server --install-extension dbaeumer.vscode-eslint
+EOM
+	;;
+    *)
+	echo "Disalbe dev mode"
+    INSTALL_CODE_EXTENSION=""
+    INSTALL_CODE_SERVER=""
+	;;
+esac
+
+
+
 CONTAINER="nvcr.io/nvidia/rapidsai/rapidsai:${RAPIDS_VERSION}-cuda${CONTAINER_VER}-runtime-${OS_STR}"
 
 D_FILE=${D_FILE:='Dockerfile.Rapids'}
@@ -108,7 +132,6 @@ ENV LC_ALL="en_US.utf8"
 EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
-
 ARG USERNAME=quant
 ARG USER_UID=$USERID
 ARG USER_GID=\$USER_UID
@@ -121,7 +144,9 @@ RUN groupadd --gid \$USER_GID \$USERNAME \
     && echo \$USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/\$USERNAME \
     && chmod 0440 /etc/sudoers.d/\$USERNAME
 
+$INSTALL_CODE_SERVER
 USER \$USERNAME
+$INSTALL_CODE_EXTENSION
 
 WORKDIR /rapids
 ENTRYPOINT /bin/bash -c 'source activate rapids; /bin/bash'

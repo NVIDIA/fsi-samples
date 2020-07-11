@@ -10,5 +10,15 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.pythonPath": "/opt/conda/envs/rapids/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/opt/conda/envs/rapids/bin/autopep8",
+        "python.linting.flake8Path": "/opt/conda/envs/rapids/bin/flake8",
+        "python.linting.pylintPath": "/opt/conda/envs/rapids/bin/pylint",
+        "python.testing.pytestPath": "/opt/conda/envs/rapids/bin/pytest"
+    }
+
 }
