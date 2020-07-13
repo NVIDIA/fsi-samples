@@ -1,0 +1,53 @@
+FROM nvidia/cuda:10.2-cudnn8-devel-ubuntu18.04
+EXPOSE 8888
+EXPOSE 8787
+EXPOSE 8786
+RUN apt-get update
+RUN curl -fsSL https://code-server.dev/install.sh | sh 
+RUN apt-get install -y git net-tools iproute2 vim wget locales-all build-essential\
+        && rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /.local /.jupyter /.config /.cupy \
+    && chmod 777 /.local /.jupyter /.config /.cupy
+
+ARG USERNAME=quant
+ARG USER_UID=1000
+ARG USER_GID=$USER_UID
+
+
+# Create the user
+RUN groupadd --gid $USER_GID $USERNAME     && useradd --uid $USER_UID --gid $USER_GID -m $USERNAME     && apt-get update     && apt-get install -y sudo     && echo $USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USERNAME     && chmod 0440 /etc/sudoers.d/$USERNAME
+
+############ here is done for user gquant #########
+USER $USERNAME
+
+ENV PATH="/home/quant/miniconda3/bin:${PATH}"
+ENV LC_ALL="en_US.utf8"
+ARG PATH="/home/quant/miniconda3/bin:${PATH}"
+
+WORKDIR /home/quant
+RUN wget \
+    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
+    && bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh \
+    && conda init
+
+RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
+    -c defaults rapids=0.14 python=3.7
+
+RUN conda install -y -c conda-forge jupyterlab
+
+RUN conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets \
+    pytables mkl numexpr pydot flask pylint flake8 autopep8
+
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build  
+RUN jupyter labextension install bqplot --no-build  
+#RUN jupyter labextension install jupyterlab-nvdashboard --no-build  
+RUN jupyter lab build && jupyter lab clean
+
+RUN code-server --install-extension ms-python.python@2020.5.86806
+RUN code-server --install-extension vscodevim.vim
+RUN code-server --install-extension firefox-devtools.vscode-firefox-debug
+RUN code-server --install-extension dbaeumer.vscode-eslint
+RUN conda init
+ENTRYPOINT code-server --bind-addr=0.0.0.0:8080 --auth none
