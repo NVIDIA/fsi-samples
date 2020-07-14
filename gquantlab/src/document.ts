@@ -21,6 +21,10 @@ export class ContentHandler {
     this.context.model.contentChanged.connect(this._onContentChanged, this);
   }
 
+  public emit(): void {
+    this._onContentChanged();
+  }
+
   private _onContentChanged(): void {
     console.log('content chagned');
     const refreshContent = async (): Promise<void> => {
@@ -44,10 +48,41 @@ export class ContentHandler {
   }
 }
 
+export interface IPort {
+  name: string;
+  type: string[];
+}
+
+export interface INode {
+  parentIds?: string[];
+  width?: number;
+  x?: number;
+  y?: number;
+  id: string;
+  type: string;
+  schema: any;
+  ui: any;
+  conf: any;
+  inputs: IPort[];
+  outputs: IPort[];
+  filepath?: string;
+  required: any;
+  output_columns: any;
+}
+
+export interface IEdge {
+  from: string;
+  to: string;
+}
+
 export interface IChartInput {
-  allNodes: [];
-  nodes: [];
-  edges: [];
+  allNodes: IAllNodes;
+  nodes: INode[];
+  edges: IEdge[];
+}
+
+export interface IAllNodes {
+  [key: string]: INode[];
 }
 
 export class GquantWidget extends DocumentWidget<MainView> {
