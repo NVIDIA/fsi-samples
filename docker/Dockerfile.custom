@@ -45,9 +45,10 @@ RUN jupyter labextension install bqplot --no-build
 #RUN jupyter labextension install jupyterlab-nvdashboard --no-build  
 RUN jupyter lab build && jupyter lab clean
 
-RUN code-server --install-extension ms-python.python@2020.5.86806
+RUN code-server --install-extension ms-python.python
 RUN code-server --install-extension vscodevim.vim
 RUN code-server --install-extension firefox-devtools.vscode-firefox-debug
 RUN code-server --install-extension dbaeumer.vscode-eslint
+RUN code-server --install-extension esbenp.prettier-vscode
 RUN conda init
 ENTRYPOINT code-server --bind-addr=0.0.0.0:8080 --auth none

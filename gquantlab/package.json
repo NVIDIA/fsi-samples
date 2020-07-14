@@ -24,7 +24,7 @@
     "type": "git",
     "url": "https://github.com/rapidsai/gQuant/gquantlab.git"
   },
-  "scripts": { 
+  "scripts": {
     "build": "jlpm run build:lib",
     "build:labextension": "cd gquantlab && rimraf labextension && mkdirp labextension && cd labextension && npm pack ../..",
     "build:lib": "tsc",
@@ -33,7 +33,6 @@
     "clean:lib": "rimraf lib tsconfig.tsbuildinfo",
     "clean:labextension": "rimraf gquantlab/labextension",
     "clean:all": "jlpm run clean:lib && jlpm run clean:labextension",
-
     "eslint": "eslint . --ext .ts,.tsx --fix",
     "eslint:check": "eslint . --ext .ts,.tsx",
     "prepare": "jlpm run clean && jlpm run build",
@@ -41,17 +40,28 @@
   },
   "dependencies": {
     "@jupyterlab/application": "^2.0.0",
+    "@jupyterlab/apputils": "^2.1.1",
     "@jupyterlab/coreutils": "^4.0.0",
-    "@jupyterlab/services": "^5.0.0"
-
+    "@jupyterlab/docregistry": "^2.1.2",
+    "@jupyterlab/filebrowser": "^2.1.2",
+    "@jupyterlab/launcher": "^2.1.1",
+    "@jupyterlab/mainmenu": "^2.1.1",
+    "@jupyterlab/services": "^5.0.0",
+    "@lumino/coreutils": "^1.5.2",
+    "@lumino/widgets": "^1.13.2",
+    "@emotion/core": "^10.0.28",
+    "@emotion/styled": "^10.0.27",
+    "@rjsf/core": "^2.0.1",
+    "d3": "^5.16.0",
+    "d3-dag": "^0.3.5"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^2.25.0",
     "@typescript-eslint/parser": "^2.25.0",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.1",
-    "eslint-plugin-prettier": "^3.1.2", 
-    "mkdirp": "^1.0.3", 
+    "eslint-plugin-prettier": "^3.1.2",
+    "mkdirp": "^1.0.3",
     "prettier": "1.16.4",
     "rimraf": "^2.6.1",
     "typescript": "~3.7.0"
@@ -59,17 +69,17 @@
   "sideEffects": [
     "style/*.css"
   ],
-  "jupyterlab": { 
+  "jupyterlab": {
     "discovery": {
-        "server": {
-          "managers": [
-            "pip"
-          ],
-          "base": {
-            "name": "gquantlab"
-          }
+      "server": {
+        "managers": [
+          "pip"
+        ],
+        "base": {
+          "name": "gquantlab"
         }
-    }, 
+      }
+    },
     "extension": true
   }
 }
