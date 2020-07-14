@@ -34,7 +34,7 @@ def setup_handlers(web_app):
     base_url = web_app.settings["base_url"]
 
     # load all the graphs given the input gq.yaml file contents
-    route_pattern0 = url_path_join(base_url, "gquantlab", "get_example")
+    route_pattern0 = url_path_join(base_url, "gquantlab", "load_graph")
     route_pattern1 = url_path_join(base_url, "gquantlab", "all_nodes")
     print(route_pattern0)
     handlers = [(route_pattern0, RouteHandlerLoadGraph), (route_pattern1, RouteHandlerLoadAllNodes)]

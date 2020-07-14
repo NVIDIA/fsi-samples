@@ -8,6 +8,8 @@ import inspect
 from gquant.dataframe_flow import Node
 import uuid
 from datetime import datetime as dt
+import sys
+sys.path.append('modules') # noqa E262
 
 
 def format_port(port):
@@ -164,6 +166,7 @@ def add_nodes():
         dictionary of all the nodes that can be added in the client
     """
     all_modules = load_all_modules()
+    print(all_modules)
     # not implemented yet for gQuant
     # for item in inspect.getmembers(plugin_nodes):
     #     if inspect.ismodule(item[1]):
