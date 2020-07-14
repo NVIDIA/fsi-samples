@@ -18,7 +18,8 @@
     "strict": true,
     "strictNullChecks": false,
     "target": "es2017",
+    "allowJs": true,
     "types": []
   },
-  "include": ["src/*"]
+  "include": ["src/*"] // , "src/gquant/components/*", "src/gquant/*"
 }

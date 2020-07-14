@@ -39,6 +39,8 @@
     "watch": "tsc -w"
   },
   "dependencies": {
+    "@emotion/core": "^10.0.28",
+    "@emotion/styled": "^10.0.27",
     "@jupyterlab/application": "^2.0.0",
     "@jupyterlab/apputils": "^2.1.1",
     "@jupyterlab/coreutils": "^4.0.0",
@@ -48,10 +50,10 @@
     "@jupyterlab/mainmenu": "^2.1.1",
     "@jupyterlab/services": "^5.0.0",
     "@lumino/coreutils": "^1.5.2",
+    "@lumino/signaling": "^1.4.2",
     "@lumino/widgets": "^1.13.2",
-    "@emotion/core": "^10.0.28",
-    "@emotion/styled": "^10.0.27",
     "@rjsf/core": "^2.0.1",
+    "@types/d3": "^5.7.2",
     "d3": "^5.16.0",
     "d3-dag": "^0.3.5"
   },
