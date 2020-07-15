@@ -2,3 +2,13 @@
     position: fixed;
     background-color: gray;
 }
+
+.confeditor {
+      text-align: left;
+      padding: 10px;
+      position: fixed;
+      background-color: yellowgreen;
+      opacity: 0;
+      left: 0;
+      top: 0;
+}

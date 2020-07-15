@@ -18,7 +18,7 @@ import {
 import { drag } from './dragHandler';
 import { handleMouseDown, handleMouseUp } from './connectionHandler';
 // import AddNodeMenu from './addNodeMenu';
-// import NodeEditor from './nodeEditor';
+import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IAllNodes, IEdge } from './document';
 //import styled from '@emotion/styled';
@@ -613,6 +613,23 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     console.log('rendering');
     if (this.state.addMenu) {
       return <div ref={this.myRef} />;
+    } else {
+      return (
+        <div ref={this.myRef}>
+          <NodeEditor
+            x={this.state.x}
+            y={this.state.y}
+            nodeX={this.state.nodeX}
+            nodeY={this.state.nodeY}
+            opacity={this.state.opacity}
+            nodeDatum={this.state.nodeDatum}
+            setChartState={this.props.setChartState}
+            nodes={this.props.nodes}
+            edges={this.props.edges}
+            setMenuState={this.setState.bind(this)}
+          />
+        </div>
+      );
     }
   }
 }
