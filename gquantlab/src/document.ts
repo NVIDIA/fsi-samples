@@ -36,6 +36,7 @@ export class ContentHandler {
     const refreshContent = async (): Promise<void> => {
       await this.context.ready;
       const yamlContent = this.context.model.toString();
+      console.log('model path', this.context.path);
       const objContent = YAML.parse(yamlContent);
       const jsonString = JSON.stringify(objContent);
       // this.context.model.contentChanged.connect(this._onContentChanged, this);

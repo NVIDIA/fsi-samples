@@ -53,7 +53,7 @@ function activateFun(
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
 
   /**
-   * Whether there is an active DrawIO editor.
+   * Whether there is an active graph editor
    */
   function isEnabled(): boolean {
     return (
@@ -136,8 +136,8 @@ function activateFun(
   });
 
   commands.addCommand('gquant:export-yaml', {
-    label: 'Export diagram as SVG',
-    caption: 'Export diagram as SVG',
+    label: 'Create an empty Taskgraph',
+    caption: 'Create an empty Taskgraph',
     execute: () => {
       const cwd = browserFactory.defaultBrowser.model.path;
       return createNewTaskgraph(cwd);

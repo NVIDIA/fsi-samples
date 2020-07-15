@@ -91,8 +91,8 @@ export function handleMouseOver(that: Chart): Function {
       .duration(200)
       .style('opacity', 1);
     //        that.tooltip.html(JSON.stringify(d))
-    const transform = d3.zoomTransform(this);
-    const [x, y] = transform.invert([that.mouse.x, that.mouse.y]);
+    // const transform = d3.zoomTransform(this);
+    // const [x, y] = transform.invert([that.mouse.x, that.mouse.y]);
     that.tooltip
       .html(constructTable(d))
       //      .style('left', that.mouse.x + 25 + 'px')

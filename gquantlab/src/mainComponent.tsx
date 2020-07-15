@@ -13,6 +13,7 @@ export class MainView extends ReactWidget {
   constructor(contentHandler: ContentHandler) {
     super();
     this._contentHandler = contentHandler;
+    this.addClass('jp-GQuant');
   }
 
   protected onResize(msg: Widget.ResizeMessage): void {

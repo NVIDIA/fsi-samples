@@ -12,8 +12,8 @@ import {
   handleMouseMoved,
   handleHighlight,
   handleDeHighlight,
-  handleEdit,
-  handleRightClick
+  handleEdit
+  //  handleRightClick
 } from './eventHandler';
 import { drag } from './dragHandler';
 import { handleMouseDown, handleMouseUp } from './connectionHandler';
@@ -22,8 +22,9 @@ import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IAllNodes, IEdge } from './document';
 import { exportWorkFlowNodes } from './chartEngine';
+import { ContextMenu, Menu } from '@lumino/widgets';
+import { CommandRegistry } from '@lumino/commands';
 //import styled from '@emotion/styled';
-
 //const Input = styled.input``;
 interface IPortInfo {
   [key: string]: any;
@@ -61,7 +62,7 @@ interface IChartProp {
 
 export class Chart extends React.Component<IChartProp, IChartState> {
   myRef: React.RefObject<HTMLDivElement>;
-  mouse: any;
+  mouse: { x: number; y: number };
   mousePage: { x: number; y: number };
   starting: { groupName: string; from: string; point: IPoint };
   tooltip: any;
@@ -202,7 +203,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .on('mouseleave', handleMouseLeft(this))
       .on('mousemove', handleMouseMoved(this))
       .on('click', handleClicked(this))
-      .on('contextmenu', handleRightClick(this))
+      //      .on('contextmenu', handleRightClick(this))
       .call(zoom.bind(this));
 
     //d3.select("body").on("keydown", handleKey(this));
@@ -456,6 +457,50 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     });
   }
 
+  createMenu(): void {
+    const commands = new CommandRegistry();
+    const contextMenu = new ContextMenu({ commands });
+
+    for (const k in this.props.allNodes) {
+      const submenu = new Menu({ commands });
+      submenu.title.label = k;
+      submenu.title.mnemonic = 0;
+      for (let i = 0; i < this.props.allNodes[k].length; i++) {
+        const name = this.props.allNodes[k][i].type;
+        const commandName = 'addnode:' + name;
+        commands.addCommand(commandName, {
+          label: name,
+          mnemonic: 1,
+          execute: () => {
+            const result: INode = JSON.parse(
+              JSON.stringify(this.props.allNodes[k][i])
+            );
+            result.id = Math.random()
+              .toString(36)
+              .substring(2, 15);
+            result.x = this.mouse.x;
+            result.y = this.mouse.y;
+            this.props.nodes.push(result);
+            this.props.setChartState({ nodes: this.props.nodes });
+            console.log(name);
+          }
+        });
+        submenu.addItem({ command: commandName });
+      }
+      contextMenu.addItem({
+        type: 'submenu',
+        submenu: submenu,
+        selector: '.jp-GQuant'
+      });
+    }
+
+    document.addEventListener('contextmenu', (event: MouseEvent) => {
+      if (contextMenu.open(event)) {
+        event.preventDefault();
+      }
+    });
+  }
+
   configFile(): INode[] {
     return exportWorkFlowNodes(this.props.nodes, this.props.edges);
   }
@@ -566,6 +611,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
 
   render(): JSX.Element {
     this.portMap();
+    this.createMenu();
     if (this.svg) {
       this.svg
         .attr('width', this.props.width ? this.props.width : 100)
