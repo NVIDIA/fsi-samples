@@ -166,14 +166,3 @@ export class ChartEngine extends React.Component<IProps, IState> {
     );
   }
 }
-
-// <Chart
-//   nodes={this.state.nodes}
-//   edges={this.state.edges}
-//   setChartState={this.setState.bind(this)}
-//   width={this.props.width}
-//   height={this.props.height}
-//   allNodes={this.state.allNodes}
-//   filename={this.state.filename ? this.state.filename : 'unname.yaml'}
-//   layout={this.layout.bind(this)}
-// />

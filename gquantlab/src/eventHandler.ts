@@ -16,8 +16,6 @@ export function handleClicked(that: Chart) {
         opacity: 1,
         x: that.mousePage.x,
         y: that.mousePage.y,
-        nodeX: that.mouse.x,
-        nodeY: that.mouse.y,
         addMenu: false,
         nodeDatum: nodeDatum
       });
@@ -137,27 +135,5 @@ export function handleDeHighlight(that: Chart) {
   return function(d: any): void {
     d3.select(this).style('cursor', 'default');
     d3.select(this.parentNode).attr('stroke', null);
-  };
-}
-
-export function handleRightClick(that: Chart) {
-  return function(d: any): void {
-    const transform = d3.zoomTransform(this);
-    const [x, y] = transform.invert([that.mouse.x, that.mouse.y]);
-    d3.event.preventDefault();
-    that.setState({
-      opacity: 1,
-      x: that.mousePage.x,
-      y: that.mousePage.y,
-      nodeX: x,
-      nodeY: y,
-      addMenu: true
-    });
-  };
-}
-
-export function handleEdit(that: Chart) {
-  return function(d: any): void {
-    //        that.setState({'opacity':1, 'x':that.mousePage.x, 'y':that.mousePage.y, 'nodeX': that.mouse.x, 'nodeY': that.mouse.y, 'addMenu': false});
   };
 }

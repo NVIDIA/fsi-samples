@@ -12,7 +12,6 @@ import {
   handleMouseMoved,
   handleHighlight,
   handleDeHighlight,
-  handleEdit
   //  handleRightClick
 } from './eventHandler';
 import { drag } from './dragHandler';
@@ -45,8 +44,6 @@ interface IChartState {
   x: number;
   y: number;
   opacity: number;
-  nodeX: number;
-  nodeY: number;
   nodeDatum: any;
 }
 
@@ -102,8 +99,6 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       x: -1000,
       y: -1000,
       opacity: 0,
-      nodeX: 0,
-      nodeY: 0,
       nodeDatum: null
     };
     this.inputPorts = new Set();
@@ -366,8 +361,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .attr('width', (d: { w: number; h: number }) => d.w)
       .attr('height', (d: { w: number; h: number }) => d.h)
       .on('mouseover', handleHighlight(this, 'red', 'pointer'))
-      .on('mouseout', handleDeHighlight(this))
-      .on('click', handleEdit(this));
+      .on('mouseout', handleDeHighlight(this));
 
     this.bars
       .selectAll('rect')
@@ -413,8 +407,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .attr('dx', '-1.00em')
       .text((d: { w: number; text: string }, i: number) => d.text)
       .on('mouseover', handleHighlight(this, 'red', 'pointer'))
-      .on('mouseout', handleDeHighlight(this))
-      .on('click', handleEdit(this));
+      .on('mouseout', handleDeHighlight(this));
 
     this.drawCircles();
     this.drawLinks();
@@ -634,8 +627,6 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           <NodeEditor
             x={this.state.x}
             y={this.state.y}
-            nodeX={this.state.nodeX}
-            nodeY={this.state.nodeY}
             opacity={this.state.opacity}
             nodeDatum={this.state.nodeDatum}
             setChartState={this.props.setChartState}

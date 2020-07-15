@@ -5,8 +5,6 @@ import { INode, IEdge } from './document';
 interface IProp {
   x: number;
   y: number;
-  nodeX: number;
-  nodeY: number;
   opacity: number;
   nodeDatum: any;
   setChartState: Function;
