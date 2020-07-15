@@ -1,8 +1,9 @@
 import * as d3 from 'd3';
 import { validConnection } from './validator';
 import { IEdge } from './document';
+import { Chart } from './chart';
 
-export function handleMouseUp(that: any) {
+export function handleMouseUp(that: Chart) {
   return function(d: any): void {
     console.log('mouse up');
     d3.event.stopPropagation();
@@ -72,7 +73,7 @@ export function handleMouseUp(that: any) {
   };
 }
 
-export function handleMouseDown(that: any) {
+export function handleMouseDown(that: Chart) {
   return function(d: any): void {
     console.log('mouse down');
     d3.event.stopPropagation();
@@ -85,7 +86,11 @@ export function handleMouseDown(that: any) {
     const fromId = datum.id;
     groupName = d3.select(this.parentNode).attr('group');
     const fromPort = Object.keys(d)[0].split('.')[1];
-    that.starting = { from: fromId + '.' + fromPort, groupName: groupName };
+    that.starting = {
+      from: fromId + '.' + fromPort,
+      groupName: groupName,
+      point: null
+    };
 
     // }
     if (groupName === 'inputs') {
@@ -94,7 +99,8 @@ export function handleMouseDown(that: any) {
       if (index >= 0) {
         that.starting = {
           from: that.props.edges[index].from,
-          groupName: 'outputs'
+          groupName: 'outputs',
+          point: null
         };
         that.props.edges.splice(index, 1);
         const output = that.configFile();
@@ -115,7 +121,8 @@ export function handleMouseDown(that: any) {
       if (index >= 0) {
         that.starting = {
           from: that.props.edges[index].to,
-          groupName: 'inputs'
+          groupName: 'inputs',
+          point: null
         };
         that.props.edges.splice(index, 1);
         const output = that.configFile();

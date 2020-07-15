@@ -61,8 +61,8 @@ interface IChartProp {
 export class Chart extends React.Component<IChartProp, IChartState> {
   myRef: React.RefObject<HTMLDivElement>;
   mouse: any;
-  mousePage: any;
-  starting: any;
+  mousePage: { x: number; y: number };
+  starting: { groupName: string; from: string; point: IPoint };
   tooltip: any;
   textHeight: number;
   circleHeight: number;
@@ -172,8 +172,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .select(this.myRef.current)
       .append('div')
       .attr('class', 'tooltip')
-      .style('opacity', 0)
-      .style('position', 'absolute');
+      .style('opacity', 0);
 
     const zoom = d3
       .zoom()
@@ -343,7 +342,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .attr('y2', (d: IMappedEdge) => d.target.y);
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(): void {
     this.bars = this.bars
       .data(this.props.nodes)
       .join('g')

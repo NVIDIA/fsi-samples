@@ -36,6 +36,13 @@ export class ChartEngine extends React.Component<IProps, IState> {
     );
   }
 
+  componentWillUnmount(): void {
+    this.props.contentHandler.contentChanged.disconnect(
+      this.contentChangeHandler,
+      this
+    );
+  }
+
   contentChangeHandler(sender: ContentHandler, inputs: IChartInput): void {
     const layoutNodes = this.updateLayout(inputs.nodes, inputs.edges, null);
     this.setState({

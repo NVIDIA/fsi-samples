@@ -7,6 +7,7 @@ import { MainView } from './mainComponent';
 import { requestAPI } from './gquantlab';
 import YAML from 'yaml';
 import { Signal, ISignal } from '@lumino/signaling';
+import { MainAreaWidget } from '@jupyterlab/apputils';
 
 export class ContentHandler {
   context: DocumentRegistry.Context;
@@ -85,8 +86,8 @@ export interface IAllNodes {
   [key: string]: INode[];
 }
 
-export class GquantWidget extends DocumentWidget<MainView> {
-  constructor(options: DocumentWidget.IOptions<MainView>) {
+export class GquantWidget extends DocumentWidget<MainAreaWidget> {
+  constructor(options: DocumentWidget.IOptions<MainAreaWidget>) {
     super({ ...options });
     this.context = options['context'];
   }
@@ -110,6 +111,8 @@ export class GquantFactory extends ABCWidgetFactory<
 
   protected createNewWidget(context: DocumentRegistry.Context): GquantWidget {
     const contentHandler = new ContentHandler(context);
-    return new GquantWidget({ context, content: new MainView(contentHandler) });
+    const mainView = new MainView(contentHandler);
+    const widget = new MainAreaWidget<MainView>({ content: mainView });
+    return new GquantWidget({ context, content: widget });
   }
 }

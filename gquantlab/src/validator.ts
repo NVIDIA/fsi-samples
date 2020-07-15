@@ -1,4 +1,5 @@
 import { IEdge } from './document';
+import { Chart } from './chart';
 
 function valid(required: any, outputs: any): boolean {
   const keys = Object.keys(required);
@@ -11,7 +12,7 @@ function valid(required: any, outputs: any): boolean {
   return true;
 }
 
-export function validConnection(that: any) {
+export function validConnection(that: Chart) {
   return function(from: string, to: string): any {
     if (from === to) {
       return true;

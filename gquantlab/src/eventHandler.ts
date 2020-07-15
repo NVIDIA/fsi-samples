@@ -1,8 +1,9 @@
 import * as d3 from 'd3';
+import { Chart } from './chart';
 /**
  * @this string
  */
-export function handleClicked(that: any) {
+export function handleClicked(that: Chart) {
   return function(d: any): void {
     // this should be svg dom
     // that should be the class instance
@@ -29,7 +30,7 @@ export function handleClicked(that: any) {
   };
 }
 
-export function handleMouseMoved(that: any) {
+export function handleMouseMoved(that: Chart) {
   return function(d: any): void {
     let [x, y] = d3.mouse(this);
     that.mouse = { x, y };
@@ -39,7 +40,10 @@ export function handleMouseMoved(that: any) {
       point = that.starting.point;
     }
     const transform = d3.zoomTransform(this);
+    //console.log('m', x, y);
     [x, y] = transform.invert([x, y]);
+    //console.log('m_p', that.mousePage.x, that.mousePage.y);
+    //console.log('t_m', x, y);
     that.mouseLink = that.mouseLink
       .data(that.starting ? ['ab'] : [])
       .join('line')
@@ -50,13 +54,13 @@ export function handleMouseMoved(that: any) {
   };
 }
 
-export function handleMouseLeft(that: any) {
+export function handleMouseLeft(that: Chart) {
   return function(d: any): void {
     this.mouse = null;
   };
 }
 
-export function handleMouseOver(that: any): Function {
+export function handleMouseOver(that: Chart): Function {
   function constructTable(d: any): string {
     const key = Object.keys(d)[0];
     let header = `<div>Port: ${key.split('.')[1]}</div>`;
@@ -90,10 +94,16 @@ export function handleMouseOver(that: any): Function {
       .duration(200)
       .style('opacity', 1);
     //        that.tooltip.html(JSON.stringify(d))
+    const transform = d3.zoomTransform(this);
+    const [x, y] = transform.invert([that.mouse.x, that.mouse.y]);
+    console.log('non transformed', that.mouse.x, that.mouse.y);
+    console.log('transformed', x, y);
     that.tooltip
       .html(constructTable(d))
-      .style('left', d3.event.pageX + 25 + 'px')
-      .style('top', d3.event.pageY + 'px');
+      //      .style('left', that.mouse.x + 25 + 'px')
+      //     .style('top', that.mouse.y + 'px');
+      .style('left', that.mousePage.x + 25 + 'px')
+      .style('top', that.mousePage.y + 'px');
     //add this
     const selection = d3.select(this);
     selection
@@ -105,7 +115,7 @@ export function handleMouseOver(that: any): Function {
   };
 }
 
-export function handleMouseOut(that: any) {
+export function handleMouseOut(that: Chart) {
   return function(d: any): void {
     that.tooltip
       .style('opacity', 0)
@@ -121,21 +131,21 @@ export function handleMouseOut(that: any) {
   };
 }
 
-export function handleHighlight(that: any, color: string, style: string) {
+export function handleHighlight(that: Chart, color: string, style: string) {
   return function(d: any): void {
     d3.select(this).style('cursor', style);
     d3.select(this.parentNode).attr('stroke', color);
   };
 }
 
-export function handleDeHighlight(that: any) {
+export function handleDeHighlight(that: Chart) {
   return function(d: any): void {
     d3.select(this).style('cursor', 'default');
     d3.select(this.parentNode).attr('stroke', null);
   };
 }
 
-export function handleRightClick(that: any) {
+export function handleRightClick(that: Chart) {
   return function(d: any): void {
     const transform = d3.zoomTransform(this);
     const [x, y] = transform.invert([that.mouse.x, that.mouse.y]);
@@ -151,7 +161,7 @@ export function handleRightClick(that: any) {
   };
 }
 
-export function handleEdit(that: any) {
+export function handleEdit(that: Chart) {
   return function(d: any): void {
     //        that.setState({'opacity':1, 'x':that.mousePage.x, 'y':that.mousePage.y, 'nodeX': that.mouse.x, 'nodeY': that.mouse.y, 'addMenu': false});
   };
