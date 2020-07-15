@@ -186,11 +186,14 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.svg = d3
       .select(this.myRef.current)
       .append('svg')
-      .attr('width', this.props.width + 200)
-      .attr('height', this.props.height + 200)
+      .attr('width', this.props.width ? this.props.width : 100)
+      .attr('height', this.props.height ? this.props.height : 100)
       .attr(
         'viewBox',
-        `0 0 ${this.props.width + 300} ${this.props.height + 300}`
+        `0 0 ${(this.props.width ? this.props.width : 0) + 300} ${(this.props
+          .height
+          ? this.props.height
+          : 0) + 300}`
       )
       .attr('font-family', 'sans-serif')
       .attr('font-size', '14')
@@ -595,6 +598,19 @@ export class Chart extends React.Component<IChartProp, IChartState> {
 
   render(): JSX.Element {
     this.portMap();
+    if (this.svg) {
+      this.svg
+        .attr('width', this.props.width ? this.props.width : 100)
+        .attr('height', this.props.height ? this.props.height : 100)
+        .attr(
+          'viewBox',
+          `0 0 ${(this.props.width ? this.props.width : 0) + 300} ${(this.props
+            .height
+            ? this.props.height
+            : 0) + 300}`
+        );
+    }
+
     console.log('rendering');
     if (this.state.addMenu) {
       return <div ref={this.myRef} />;
