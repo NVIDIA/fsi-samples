@@ -1,5 +1,6 @@
 import React from 'react';
 import * as d3 from 'd3';
+import { requestAPI } from './gquantlab';
 // import YAML from 'yaml';
 // import Moment from 'moment';
 
@@ -419,37 +420,38 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.props.layout(this.props.nodes, this.props.edges, this.transform);
   }
 
-  // updateInputs(json) {
-  //   /**
-  //    * send the taskgraph to backend to run the column-flow logics so all the output types and names are computed
-  //    */
-  //   const requestOptions = {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: json
-  //   };
-  //   fetch(process.env.REACT_APP_RECAL_URL, requestOptions)
-  //     .then(response => response.json())
-  //     .then(data => {
-  //       let newNode = {};
-  //       data.nodes.forEach(d => {
-  //         newNode[d.id] = {
-  //           required: d.required,
-  //           output_columns: d.output_columns
-  //         };
-  //       });
-  //       this.props.nodes.forEach(d => {
-  //         if (d.id in newNode) {
-  //           d.required = newNode[d.id].required;
-  //           d.output_columns = newNode[d.id].output_columns;
-  //         }
-  //       });
-  //       this.props.setChartState({
-  //         nodes: this.props.nodes,
-  //         edges: this.props.edges
-  //       });
-  //     });
-  // }
+  updateInputs(json: string): void {
+    /**
+     * send the taskgraph to backend to run the column-flow logics so all the output types and names are computed
+     */
+    const workflows = requestAPI<any>('load_graph', {
+      body: json,
+      method: 'POST'
+    });
+
+    workflows.then((data: any) => {
+      const newNode: {
+        [key: string]: { required: any; outputColumns: any };
+      } = {};
+      data.nodes.forEach((d: INode) => {
+        newNode[d.id] = {
+          required: d.required,
+          outputColumns: d.output_columns
+        };
+      });
+      this.props.nodes.forEach((d: INode) => {
+        if (d.id in newNode) {
+          d.required = newNode[d.id].required;
+          // eslint-disable-next-line @typescript-eslint/camelcase
+          d.output_columns = newNode[d.id].outputColumns;
+        }
+      });
+      this.props.setChartState({
+        nodes: this.props.nodes,
+        edges: this.props.edges
+      });
+    });
+  }
 
   configFile(): INode[] {
     /**
