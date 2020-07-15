@@ -93,25 +93,44 @@ export class ChartEngine extends React.Component<IProps, IState> {
     if (nodes.length === 0) {
       return nodes;
     }
-    const connectionInfo: { [key: string]: string[] } = {};
+    const connectionInfoCtoP: { [key: string]: string[] } = {}; // mapping from children to parents
+    const connectionInfoPtoC: { [key: string]: string[] } = {}; // mapping from children to parents
+
     for (let i = 0; i < edges.length; i++) {
-      const children = edges[i].to.split('.')[0];
+      const child = edges[i].to.split('.')[0];
       const parent = edges[i].from.split('.')[0];
-      if (children in connectionInfo) {
-        if (connectionInfo[children].findIndex(d => d === parent) < 0) {
-          connectionInfo[children].push(parent);
+      if (child in connectionInfoCtoP) {
+        if (connectionInfoCtoP[child].findIndex(d => d === parent) < 0) {
+          connectionInfoCtoP[child].push(parent);
         }
       } else {
-        connectionInfo[children] = [parent];
+        connectionInfoCtoP[child] = [parent];
+      }
+      if (parent in connectionInfoPtoC) {
+        if (connectionInfoPtoC[parent].findIndex(d => d === child) < 0) {
+          connectionInfoPtoC[parent].push(child);
+        }
+      } else {
+        connectionInfoPtoC[parent] = [child];
       }
     }
 
-    const data = nodes.map((d: INode) => {
-      if (d['id'] in connectionInfo) {
-        d['parentIds'] = connectionInfo[d['id']];
+    const dataWithParentsId = nodes.map((d: INode) => {
+      if (d['id'] in connectionInfoCtoP) {
+        d['parentIds'] = connectionInfoCtoP[d['id']];
+      } else {
+        d['parentIds'] = [];
       }
       return d;
     });
+
+    const data = dataWithParentsId.filter(
+      (d: INode) => d.id in connectionInfoCtoP || d.id in connectionInfoPtoC
+    );
+    const dataIslands = nodes.filter(
+      (d: INode) =>
+        !(d.id in connectionInfoCtoP) && !(d.id in connectionInfoPtoC)
+    );
     const dagData = d4.dagStratify()(data);
     d4
       .sugiyama()
@@ -131,7 +150,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       }
       return;
     });
-    return data;
+    return [...data, ...dataIslands];
   }
 
   layout(nodes: INode[], edges: IEdge[], transform: any): void {

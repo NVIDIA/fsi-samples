@@ -11,7 +11,7 @@ import {
   handleClicked,
   handleMouseMoved,
   handleHighlight,
-  handleDeHighlight,
+  handleDeHighlight
   //  handleRightClick
 } from './eventHandler';
 import { drag } from './dragHandler';
@@ -194,7 +194,6 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .attr('font-family', 'sans-serif')
       .attr('font-size', '14')
       .attr('text-anchor', 'end')
-      .style('border-style', 'solid')
       .on('mouseleave', handleMouseLeft(this))
       .on('mousemove', handleMouseMoved(this))
       .on('click', handleClicked(this))
@@ -453,7 +452,22 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   createMenu(): void {
     const commands = new CommandRegistry();
     const contextMenu = new ContextMenu({ commands });
-
+    const layoutCommand = 'gquant:AutoLayout';
+    commands.addCommand(layoutCommand, {
+      label: 'Auto Layout',
+      mnemonic: 1,
+      execute: () => {
+        this.reLayout();
+      }
+    });
+    contextMenu.addItem({
+      command: layoutCommand,
+      selector: '.jp-GQuant'
+    });
+    contextMenu.addItem({
+      type: 'separator',
+      selector: '.jp-GQuant'
+    });
     for (const k in this.props.allNodes) {
       const submenu = new Menu({ commands });
       submenu.title.label = k;
