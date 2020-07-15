@@ -21,6 +21,7 @@ import { handleMouseDown, handleMouseUp } from './connectionHandler';
 import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IAllNodes, IEdge } from './document';
+import { exportWorkFlowNodes } from './chartEngine';
 //import styled from '@emotion/styled';
 
 //const Input = styled.input``;
@@ -456,39 +457,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   }
 
   configFile(): INode[] {
-    /**
-     * get the gqaunt task graph, which is a list of tasks
-     */
-    const connectionInfo: { [key: string]: { [key: string]: any } } = {};
-    for (let i = 0; i < this.props.edges.length; i++) {
-      const children = this.props.edges[i].to.split('.')[0];
-      const childrenPort = this.props.edges[i].to.split('.')[1];
-      if (children in connectionInfo) {
-        connectionInfo[children][childrenPort] = this.props.edges[i].from;
-      } else {
-        connectionInfo[children] = {
-          [childrenPort]: this.props.edges[i].from
-        };
-      }
-    }
-    const output: INode[] = [];
-    for (let i = 0; i < this.props.nodes.length; i++) {
-      const node = this.props.nodes[i];
-      const element: any = {};
-      element['id'] = node.id;
-      element['type'] = node.type;
-      element['conf'] = node.conf;
-      if (node.id in connectionInfo) {
-        element['inputs'] = connectionInfo[node.id];
-      } else {
-        element['inputs'] = {};
-      }
-      if ('filepath' in node) {
-        element['filepath'] = node.filepath;
-      }
-      output.push(element);
-    }
-    return output;
+    return exportWorkFlowNodes(this.props.nodes, this.props.edges);
   }
 
   // handleNameChange(event) {

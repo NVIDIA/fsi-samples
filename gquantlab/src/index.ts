@@ -118,7 +118,7 @@ function activateFun(
       .then(model => {
         //let wdg = app.shell.currentWidget as any;
         // wdg.getSVG()
-        model.content = 'abc';
+        model.content = '';
         model.format = 'text';
         app.serviceManager.contents.save(model.path, model);
       });

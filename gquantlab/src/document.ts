@@ -19,7 +19,12 @@ export class ContentHandler {
 
   constructor(context: DocumentRegistry.Context) {
     this.context = context;
-    this.context.model.contentChanged.connect(this._onContentChanged, this);
+    //this.context.model.contentChanged.connect(this._onContentChanged, this);
+    this.emit();
+  }
+
+  public update(content: string): void {
+    this.context.model.fromString(content);
   }
 
   public emit(): void {
@@ -33,7 +38,7 @@ export class ContentHandler {
       const yamlContent = this.context.model.toString();
       const objContent = YAML.parse(yamlContent);
       const jsonString = JSON.stringify(objContent);
-      this.context.model.contentChanged.connect(this._onContentChanged, this);
+      // this.context.model.contentChanged.connect(this._onContentChanged, this);
       const allNodes = await requestAPI<any>('all_nodes');
       const workflows = await requestAPI<any>('load_graph', {
         body: jsonString,

@@ -40,10 +40,7 @@ export function handleMouseMoved(that: Chart) {
       point = that.starting.point;
     }
     const transform = d3.zoomTransform(this);
-    //console.log('m', x, y);
     [x, y] = transform.invert([x, y]);
-    //console.log('m_p', that.mousePage.x, that.mousePage.y);
-    //console.log('t_m', x, y);
     that.mouseLink = that.mouseLink
       .data(that.starting ? ['ab'] : [])
       .join('line')
@@ -96,8 +93,6 @@ export function handleMouseOver(that: Chart): Function {
     //        that.tooltip.html(JSON.stringify(d))
     const transform = d3.zoomTransform(this);
     const [x, y] = transform.invert([that.mouse.x, that.mouse.y]);
-    console.log('non transformed', that.mouse.x, that.mouse.y);
-    console.log('transformed', x, y);
     that.tooltip
       .html(constructTable(d))
       //      .style('left', that.mouse.x + 25 + 'px')

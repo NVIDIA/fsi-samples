@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
+import { Chart } from './chart';
 
-export function drag(setState: Function, that: any): any {
+export function drag(setState: Function, that: Chart): any {
   let offsetX = 0;
   let offsetY = 0;
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import * as d4 from 'd3-dag';
+import YAML from 'yaml';
 
 import {
   IEdge,
@@ -20,6 +21,42 @@ interface IState {
   nodes: INode[];
   edges: IEdge[];
   allNodes: IAllNodes;
+}
+
+export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
+  /**
+   * get the gqaunt task graph, which is a list of tasks
+   */
+  const connectionInfo: { [key: string]: { [key: string]: any } } = {};
+  for (let i = 0; i < edges.length; i++) {
+    const children = edges[i].to.split('.')[0];
+    const childrenPort = edges[i].to.split('.')[1];
+    if (children in connectionInfo) {
+      connectionInfo[children][childrenPort] = edges[i].from;
+    } else {
+      connectionInfo[children] = {
+        [childrenPort]: edges[i].from
+      };
+    }
+  }
+  const output: INode[] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    const element: any = {};
+    element['id'] = node.id;
+    element['type'] = node.type;
+    element['conf'] = node.conf;
+    if (node.id in connectionInfo) {
+      element['inputs'] = connectionInfo[node.id];
+    } else {
+      element['inputs'] = {};
+    }
+    if ('filepath' in node) {
+      element['filepath'] = node.filepath;
+    }
+    output.push(element);
+  }
+  return output;
 }
 
 export class ChartEngine extends React.Component<IProps, IState> {
@@ -105,13 +142,22 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
+  updateWorkFlow(state: IState): void {
+    this.setState(state);
+    if (state.edges && state.nodes) {
+      const output = exportWorkFlowNodes(state.nodes, state.edges);
+      const yamlText = YAML.stringify(output);
+      this.props.contentHandler.update(yamlText);
+    }
+  }
+
   render(): JSX.Element {
     console.log('chart engine render');
     return (
       <Chart
         nodes={this.state.nodes}
         edges={this.state.edges}
-        setChartState={this.setState.bind(this)}
+        setChartState={this.updateWorkFlow.bind(this)}
         width={this.props.width}
         height={this.props.height}
         allNodes={this.state.allNodes}
