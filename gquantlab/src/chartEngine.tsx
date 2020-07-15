@@ -1,6 +1,6 @@
 import React from 'react';
 import * as d4 from 'd3-dag';
-//import Chart from './chart';
+
 import {
   IEdge,
   INode,
@@ -8,6 +8,7 @@ import {
   IChartInput,
   ContentHandler
 } from './document';
+import { Chart } from './chart';
 
 interface IProps {
   height: number;
@@ -100,11 +101,15 @@ export class ChartEngine extends React.Component<IProps, IState> {
   render(): JSX.Element {
     console.log('chart engine render');
     return (
-      <div>
-        <p>{JSON.stringify(this.state.allNodes)}</p>
-        <p>{JSON.stringify(this.state.nodes)}</p>
-        <p>{JSON.stringify(this.state.edges)}</p>
-      </div>
+      <Chart
+        nodes={this.state.nodes}
+        edges={this.state.edges}
+        setChartState={this.setState.bind(this)}
+        width={this.props.width}
+        height={this.props.height}
+        allNodes={this.state.allNodes}
+        layout={this.layout.bind(this)}
+      />
     );
   }
 }
