@@ -10,6 +10,19 @@ for the server extension and a NPM package named `gquantlab`
 for the frontend extension.
 
 
+## Build the dev container
+In the gQuant root direction
+```bash
+docker build docker/Dockerfile.custom -t gquantDevelop .
+```
+Launch your development container, make sure mounting your gQuant directory
+to the container and open `8080` and `8888` ports.
+
+The code-server will automatically starts and hosts at port `8080`. Set the 
+folder to the root directory of gQuant to start the development.
+
+
+
 ## Requirements
 
 * JupyterLab >= 2.0
