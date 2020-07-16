@@ -10,6 +10,10 @@ export class MainView extends ReactWidget {
   private _height: number;
   private _width: number;
 
+  public get contentHandler(): ContentHandler {
+    return this._contentHandler;
+  }
+
   constructor(contentHandler: ContentHandler) {
     super();
     this._contentHandler = contentHandler;
@@ -29,7 +33,7 @@ export class MainView extends ReactWidget {
       <div>
         <UseSignal
           signal={this._contentHandler.contentChanged}
-          initialArgs={{ allNodes: {}, nodes: [], edges: [] }}
+          initialArgs={{ nodes: [], edges: [] }}
         >
           {(_, args): JSX.Element => {
             return (

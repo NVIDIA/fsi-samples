@@ -12,6 +12,19 @@ import { MainAreaWidget } from '@jupyterlab/apputils';
 export class ContentHandler {
   context: DocumentRegistry.Context;
   private _contentChanged = new Signal<ContentHandler, IChartInput>(this);
+  // create a signal that emits the added node command
+  private _nodeAdded = new Signal<ContentHandler, INode>(this);
+
+  // create a signal that emits the relayout command
+  private _reLayout = new Signal<ContentHandler, void>(this);
+
+  get reLayoutSignal(): ISignal<ContentHandler, void> {
+    return this._reLayout;
+  }
+
+  get nodeAddedSignal(): ISignal<ContentHandler, INode> {
+    return this._nodeAdded;
+  }
 
   get contentChanged(): ISignal<ContentHandler, IChartInput> {
     return this._contentChanged;
@@ -40,13 +53,11 @@ export class ContentHandler {
       const objContent = YAML.parse(yamlContent);
       const jsonString = JSON.stringify(objContent);
       // this.context.model.contentChanged.connect(this._onContentChanged, this);
-      const allNodes = await requestAPI<any>('all_nodes');
       const workflows = await requestAPI<any>('load_graph', {
         body: jsonString,
         method: 'POST'
       });
       this._contentChanged.emit({
-        allNodes: allNodes,
         nodes: workflows['nodes'],
         edges: workflows['edges']
       });
@@ -83,7 +94,6 @@ export interface IEdge {
 }
 
 export interface IChartInput {
-  allNodes: IAllNodes;
   nodes: INode[];
   edges: IEdge[];
 }
@@ -92,10 +102,16 @@ export interface IAllNodes {
   [key: string]: INode[];
 }
 
-export class GquantWidget extends DocumentWidget<MainAreaWidget> {
-  constructor(options: DocumentWidget.IOptions<MainAreaWidget>) {
+export class GquantWidget extends DocumentWidget<MainAreaWidget<MainView>> {
+  constructor(options: DocumentWidget.IOptions<MainAreaWidget<MainView>>) {
     super({ ...options });
     this.context = options['context'];
+  }
+
+  get contentHandler(): ContentHandler {
+    const mainAreaWidget = this.content;
+    const mainView = mainAreaWidget.content;
+    return mainView.contentHandler;
   }
 
   readonly context: DocumentRegistry.Context;

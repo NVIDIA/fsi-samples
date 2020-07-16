@@ -11,13 +11,16 @@ import { ILauncher } from '@jupyterlab/launcher';
 import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import { Token } from '@lumino/coreutils';
-// import { requestAPI } from './gquantlab';
+
+import { requestAPI } from './gquantlab';
+
 import {
   ICommandPalette,
   IWidgetTracker,
   WidgetTracker
 } from '@jupyterlab/apputils';
-import { GquantWidget, GquantFactory } from './document';
+import { GquantWidget, GquantFactory, IAllNodes } from './document';
+import { Menu } from '@lumino/widgets';
 
 const FACTORY = 'GQUANTLAB';
 
@@ -145,6 +148,72 @@ function activateFun(
     isEnabled
   });
 
+  commands.addCommand('gquant:reLayout', {
+    label: 'Taskgraph Nodes Auto Layout',
+    caption: 'Taskgraph Nodes Auto Layout',
+    mnemonic: 0,
+    execute: () => {
+      const wdg = app.shell.currentWidget as any;
+      wdg.contentHandler.reLayoutSignal.emit();
+    },
+    isEnabled
+  });
+
+  app.contextMenu.addItem({
+    command: 'docmanager:save',
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    command: 'filebrowser:download',
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    command: 'gquant:reLayout',
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    type: 'separator',
+    selector: '.jp-GQuant'
+  });
+
+  const allNodes = requestAPI<any>('all_nodes');
+  allNodes.then((allNodes: IAllNodes) => {
+    for (const k in allNodes) {
+      const submenu = new Menu({ commands });
+      submenu.title.label = k;
+      submenu.title.mnemonic = 0;
+      for (let i = 0; i < allNodes[k].length; i++) {
+        const name = allNodes[k][i].type;
+        const commandName = 'addnode:' + name;
+        commands.addCommand(commandName, {
+          label: 'Add ' + name,
+          mnemonic: 1,
+          execute: () => {
+            const wdg = app.shell.currentWidget as any;
+            wdg.contentHandler.nodeAddedSignal.emit(allNodes[k][i]);
+          },
+          isEnabled
+        });
+        submenu.addItem({ command: commandName });
+        if (palette) {
+          const args = { format: 'YAML', label: 'YAML', isPalette: true };
+          palette.addItem({
+            command: commandName,
+            category: 'Add New Nodes',
+            args: args
+          });
+        }
+      }
+      app.contextMenu.addItem({
+        type: 'submenu',
+        submenu: submenu,
+        selector: '.jp-GQuant'
+      });
+    }
+  });
   // Add a launcher item if the launcher is available.
   if (launcher) {
     launcher.add({
@@ -165,6 +234,11 @@ function activateFun(
     const args = { format: 'YAML', label: 'YAML', isPalette: true };
     palette.addItem({
       command: 'gquant:export-yaml',
+      category: 'Notebook Operations',
+      args: args
+    });
+    palette.addItem({
+      command: 'gquant:reLayout',
       category: 'Notebook Operations',
       args: args
     });

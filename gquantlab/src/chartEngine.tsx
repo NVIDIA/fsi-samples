@@ -2,13 +2,7 @@ import React from 'react';
 import * as d4 from 'd3-dag';
 import YAML from 'yaml';
 
-import {
-  IEdge,
-  INode,
-  IAllNodes,
-  IChartInput,
-  ContentHandler
-} from './document';
+import { IEdge, INode, IChartInput, ContentHandler } from './document';
 import { Chart } from './chart';
 
 interface IProps {
@@ -20,7 +14,6 @@ interface IProps {
 interface IState {
   nodes: INode[];
   edges: IEdge[];
-  allNodes: IAllNodes;
 }
 
 export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
@@ -64,8 +57,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
     super(props);
     this.state = {
       nodes: [],
-      edges: [],
-      allNodes: {}
+      edges: []
     };
     props.contentHandler.contentChanged.connect(
       this.contentChangeHandler,
@@ -84,8 +76,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
     const layoutNodes = this.updateLayout(inputs.nodes, inputs.edges, null);
     this.setState({
       nodes: layoutNodes,
-      edges: inputs.edges,
-      allNodes: inputs.allNodes
+      edges: inputs.edges
     });
   }
 
@@ -174,12 +165,12 @@ export class ChartEngine extends React.Component<IProps, IState> {
     console.log('chart engine render');
     return (
       <Chart
+        contentHandler={this.props.contentHandler}
         nodes={this.state.nodes}
         edges={this.state.edges}
         setChartState={this.updateWorkFlow.bind(this)}
         width={this.props.width}
         height={this.props.height}
-        allNodes={this.state.allNodes}
         layout={this.layout.bind(this)}
       />
     );
