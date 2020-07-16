@@ -1,6 +1,6 @@
 # gQuant - GPU Accelerated Framework for Quantitative Analyst Tasks
 
-**NOTE:** For the latest stable [README.md](https://github.com/rapidsai/gquant/blob/master/README.md) ensure you are on the `master` branch.
+**NOTE:** For the latest stable [README.md](https://github.com/rapidsai/gquant/blob/main/README.md) ensure you are on the `main` branch.
 
 ## What is gQuant?
 gQuant is a collection of open-source GPU accelerated Python tools and examples  for quantitative analyst tasks,  built on top of the [RAPIDS AI](https://rapids.ai/) project, [Numba](https://numba.pydata.org/), and [Dask](https://dask.org/).
