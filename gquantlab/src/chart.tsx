@@ -62,6 +62,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   mouse: { x: number; y: number };
   mousePage: { x: number; y: number };
   starting: { groupName: string; from: string; point: IPoint };
+  contextMenuReady: boolean;
   tooltip: any;
   textHeight: number;
   circleHeight: number;
@@ -94,6 +95,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.link = null;
     this.mouseLink = null;
     this.g = null;
+    this.contextMenuReady = false;
     this.state = {
       addMenu: true,
       x: -1000,
@@ -450,6 +452,13 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   }
 
   createMenu(): void {
+    if (
+      Object.keys(this.props.allNodes).length === 0 ||
+      this.contextMenuReady
+    ) {
+      return;
+    }
+
     const commands = new CommandRegistry();
     const contextMenu = new ContextMenu({ commands });
     const layoutCommand = 'gquant:AutoLayout';
@@ -506,115 +515,12 @@ export class Chart extends React.Component<IChartProp, IChartState> {
         event.preventDefault();
       }
     });
+    this.contextMenuReady = true;
   }
 
   configFile(): INode[] {
     return exportWorkFlowNodes(this.props.nodes, this.props.edges);
   }
-
-  // handleNameChange(event) {
-  //   this.props.setChartState({ filename: event.target.value });
-  // }
-
-  // downloadConf() {
-  //   let output = this.configFile();
-  //   let jsonString = JSON.stringify(output);
-  //   this.updateInputs(jsonString);
-  //   let yamlText = YAML.stringify(output);
-  //   const element = document.createElement('a');
-  //   const file = new Blob([yamlText], { type: 'text/plain' });
-  //   element.href = URL.createObjectURL(file);
-  //   element.download = this.props.filename;
-  //   document.body.appendChild(element); // Required for this to work in FireFox
-  //   element.click();
-  // }
-
-  // saveConf() {
-  //   let output = this.configFile();
-  //   let jsonString = JSON.stringify(output);
-  //   this.updateInputs(jsonString);
-  //   let yamlText = YAML.stringify(output);
-
-  //   let payload = { filename: this.props.filename, content: yamlText };
-
-  //   const requestOptions = {
-  //     method: 'POST',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify(payload)
-  //   };
-  //   fetch(process.env.REACT_APP_SAVE_URL, requestOptions)
-  //     .then(response => response.json())
-  //     .then(workflows => {
-  //       let mapedWorkflows = workflows.map(d => {
-  //         d['modified'] = Moment(d.modified);
-  //         return d;
-  //       });
-  //       this.props.setChartState({ files: mapedWorkflows });
-  //     });
-  // }
-
-  //   render() {
-  //     this.portMap();
-  //     console.log('rendering');
-  //     if (this.state.addMenu) {
-  //       return (
-  //         <div ref={this.myRef}>
-  //           {this.props.allNodes && (
-  //             <AddNodeMenu
-  //               allNodes={this.props.allNodes}
-  //               x={this.state.x}
-  //               y={this.state.y}
-  //               nodeX={this.state.nodeX}
-  //               nodeY={this.state.nodeY}
-  //               opacity={this.state.opacity}
-  //               setChartState={this.props.setChartState}
-  //               currentNodes={this.props.nodes}
-  //               setMenuState={this.setState.bind(this)}
-  //             />
-  //           )}
-  //           <div>
-  //             <Input
-  //               type="text"
-  //               value={this.props.filename}
-  //               onChange={this.handleNameChange.bind(this)}
-  //             />
-  //             <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
-  //             <button onClick={this.downloadConf.bind(this)}>Download</button>
-  //             <button onClick={this.saveConf.bind(this)}>Save</button>
-  //           </div>
-  //         </div>
-  //       );
-  //     } else {
-  //       return (
-  //         <div ref={this.myRef}>
-  //           <NodeEditor
-  //             x={this.state.x}
-  //             y={this.state.y}
-  //             nodeX={this.state.nodeX}
-  //             nodeY={this.state.nodeY}
-  //             opacity={this.state.opacity}
-  //             nodeDatum={this.state.nodeDatum}
-  //             setChartState={this.props.setChartState}
-  //             nodes={this.props.nodes}
-  //             edges={this.props.edges}
-  //             setMenuState={this.setState.bind(this)}
-  //           />
-  //           <div>
-  //             <Input
-  //               type="text"
-  //               value={this.props.filename}
-  //               onChange={this.handleNameChange.bind(this)}
-  //             />
-  //             <button onClick={this.reLayout.bind(this)}>Auto Layout</button>
-  //             <button onClick={this.downloadConf.bind(this)}>Download</button>
-  //             <button onClick={this.saveConf.bind(this)}>Save</button>
-  //           </div>
-  //         </div>
-  //       );
-  //     }
-  //   }
-  // }
-  //
 
   render(): JSX.Element {
     this.portMap();
