@@ -9,6 +9,7 @@ import warnings
 import json
 
 
+
 __all__ = ['TaskGraph']
 
 
@@ -255,6 +256,18 @@ class TaskGraph(object):
         t = TaskGraph(obj)
         return t
 
+    def export_task_speclist(self):
+        tlist_od = []  # task list ordered
+        for task in self:
+            tod = OrderedDict([(TaskSpecSchema.task_id, 'idholder'),
+                               (TaskSpecSchema.node_type, 'typeholder'),
+                               (TaskSpecSchema.conf, 'confholder'),
+                               (TaskSpecSchema.inputs, 'inputsholder')
+                               ])
+            tod.update(task._task_spec)
+            tlist_od.append(tod)
+        return tlist_od
+
     def save_taskgraph(self, filename):
         """
         Write a list of tasks i.e. taskgraph to a yaml file.
@@ -270,16 +283,7 @@ class TaskGraph(object):
             TaskGraph.setup_yaml()
 
         # we want -id to be first in the resulting yaml file.
-        tlist_od = []  # task list ordered
-        for task in self:
-            tod = OrderedDict([(TaskSpecSchema.task_id, 'idholder'),
-                               (TaskSpecSchema.node_type, 'typeholder'),
-                               (TaskSpecSchema.conf, 'confholder'),
-                               (TaskSpecSchema.inputs, 'inputsholder')
-                               ])
-            tod.update(task._task_spec)
-            tlist_od.append(tod)
-
+        tlist_od = self.export_task_speclist()
         with open(filename, 'w') as fh:
             yaml.dump(tlist_od, fh, default_flow_style=False)
 
@@ -514,7 +518,7 @@ class TaskGraph(object):
         pdot = to_pydot(nx_graph)
         return pdot
 
-    def draw(self, show=None, fmt='png', show_ports=False):
+    def draw(self, show='lab', fmt='png', show_ports=False):
         pdot = self.to_pydot(show_ports)
         pdot_out = pdot.create(format=fmt)
 
@@ -527,5 +531,11 @@ class TaskGraph(object):
 
             plt = Image(pdot_out)
             display(plt)
+        elif show in ('lab',):
+            from gquantlab.gquantmodel import GQuantWidget
+            widget = GQuantWidget()
+            widget.value = self.export_task_speclist()
+            widget.set_taskgraph(self)
+            return widget
         else:
             return pdot_out

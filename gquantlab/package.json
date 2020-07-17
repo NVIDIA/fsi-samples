@@ -41,6 +41,7 @@
   "dependencies": {
     "@emotion/core": "^10.0.28",
     "@emotion/styled": "^10.0.27",
+    "@jupyter-widgets/base": "^3.0.0",
     "@jupyterlab/application": "^2.0.0",
     "@jupyterlab/apputils": "^2.1.1",
     "@jupyterlab/coreutils": "^4.0.0",

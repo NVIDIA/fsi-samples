@@ -67,9 +67,8 @@ export class ContentHandler {
     this._onContentChanged();
   }
 
-  public async renderGraph(yamlContent: string): Promise<void> {
-    const objContent = YAML.parse(yamlContent);
-    const jsonString = JSON.stringify(objContent);
+  public async renderGraph(objContent: any): Promise<void> {
+      const jsonString = JSON.stringify(objContent);
     // this.context.model.contentChanged.connect(this._onContentChanged, this);
     const workflows = await requestAPI<any>('load_graph', {
       body: jsonString,
@@ -87,7 +86,8 @@ export class ContentHandler {
       await this.context.ready;
       const yamlContent = this.context.model.toString();
       console.log('model path', this.context.path);
-      this.renderGraph(yamlContent);
+      const objContent = YAML.parse(yamlContent);
+      this.renderGraph(objContent);
     };
     refreshContent();
   }

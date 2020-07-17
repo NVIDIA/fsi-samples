@@ -12,6 +12,10 @@ import { IMainMenu } from '@jupyterlab/mainmenu';
 
 import { Token } from '@lumino/coreutils';
 
+import { MODULE_NAME, MODULE_VERSION } from './version';
+
+import * as widgetExports from './widget';
+
 import { requestAPI } from './gquantlab';
 
 import {
@@ -23,6 +27,7 @@ import { GquantWidget, GquantFactory, IAllNodes } from './document';
 import { Menu } from '@lumino/widgets';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { GQuantWidgetRenderer } from './widgetRender';
+import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 
 const WIDGET_VIEW_MIMETYPE = 'application/gquant-taskgraph';
 
@@ -41,7 +46,8 @@ const extension: JupyterFrontEndPlugin<void> = {
     ILayoutRestorer,
     IMainMenu,
     ICommandPalette,
-    IRenderMimeRegistry
+    IRenderMimeRegistry,
+    IJupyterWidgetRegistry
   ],
   optional: [ILauncher],
   autoStart: true,
@@ -55,6 +61,7 @@ function activateFun(
   menu: IMainMenu,
   palette: ICommandPalette,
   rendermime: IRenderMimeRegistry,
+  jupyterWidgetRegistry: IJupyterWidgetRegistry,
   launcher: ILauncher | null
 ): void {
   const namespace = 'gquant';
@@ -264,6 +271,12 @@ function activateFun(
     },
     100
   );
+
+  jupyterWidgetRegistry.registerWidget({
+    name: MODULE_NAME,
+    version: MODULE_VERSION,
+    exports: widgetExports
+  });
 }
 
 // (app: JupyterFrontEnd, ) => {

@@ -32,6 +32,7 @@ export class MainView extends ReactWidget {
   }
 
   onAfterAttach(msg: Message): void {
+    console.log('attached');
     super.onAfterAttach(msg);
     this._mimerenderWidgetUpdateSize();
   }
