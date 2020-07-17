@@ -3,6 +3,7 @@ import { ReactWidget, UseSignal } from '@jupyterlab/apputils';
 import React from 'react';
 import { ContentHandler } from './document';
 import { Widget } from '@lumino/widgets';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ChartEngine } from './chartEngine';
 import { Message } from '@lumino/messaging';
 

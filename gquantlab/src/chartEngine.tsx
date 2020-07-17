@@ -3,6 +3,7 @@ import * as d4 from 'd3-dag';
 import YAML from 'yaml';
 
 import { IEdge, INode, IChartInput, ContentHandler } from './document';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Chart } from './chart';
 
 interface IProps {

@@ -15,6 +15,7 @@ import {
 } from './eventHandler';
 import { drag } from './dragHandler';
 import { handleMouseDown, handleMouseUp } from './connectionHandler';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IEdge, ContentHandler } from './document';

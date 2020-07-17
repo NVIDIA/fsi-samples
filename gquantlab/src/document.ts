@@ -48,7 +48,6 @@ export class ContentHandler {
   }
 
   renderNodesAndEdges(workflows: IChartInput): void {
-    this.setPrivateCopy(workflows);
     this._contentChanged.emit(workflows);
   }
 
