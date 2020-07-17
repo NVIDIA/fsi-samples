@@ -7,17 +7,16 @@ import { Widget } from '@lumino/widgets';
 import { ChartEngine } from './chartEngine';
 import { Message } from '@lumino/messaging';
 
+const OUTPUT_CELL_HEIGHT = 300;
+
 export class MainView extends ReactWidget {
   private _contentHandler: ContentHandler;
   private _height: number;
   private _width: number;
 
-  onAfterAttach(msg: Message): void {
-    super.onAfterAttach(msg);
-    this._height = 300;
+  private _mimerenderWidgetUpdateSize(): void {
+    this._height = OUTPUT_CELL_HEIGHT;
     this._width = this.node.clientWidth;
-    console.log('h', this._height, 'w', this._width);
-    this.render();
     if (!this._contentHandler) {
       return;
     }
@@ -30,6 +29,11 @@ export class MainView extends ReactWidget {
 
     this._contentHandler.renderNodesAndEdges(this._contentHandler.privateCopy);
     this._contentHandler.reLayoutSignalInstance.emit();
+  }
+
+  onAfterAttach(msg: Message): void {
+    super.onAfterAttach(msg);
+    this._mimerenderWidgetUpdateSize();
   }
 
   public get contentHandler(): ContentHandler {
@@ -46,9 +50,10 @@ export class MainView extends ReactWidget {
     this._height = msg.height;
     this._width = msg.width;
     if (this._height < 0 || this._width < 0) {
+      // this is a hack that onResize doesn't work for rendered widget
+      this._mimerenderWidgetUpdateSize();
       return;
     }
-    this.render();
     this._contentHandler.emit();
   }
 
@@ -58,7 +63,7 @@ export class MainView extends ReactWidget {
       <div>
         <UseSignal
           signal={this._contentHandler.contentChanged}
-          initialArgs={{ nodes: [], edges: [], width: null, height: null }}
+          initialArgs={{ nodes: [], edges: [], width: 100, height: 100 }}
         >
           {(_, args): JSX.Element => {
             return (

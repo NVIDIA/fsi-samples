@@ -170,8 +170,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
         nodes={this.state.nodes}
         edges={this.state.edges}
         setChartState={this.updateWorkFlow.bind(this)}
-        width={this.props.width}
-        height={this.props.height}
+        width={this.props.width ? this.props.width : 100}
+        height={this.props.height ? this.props.height : 100}
         layout={this.layout.bind(this)}
       />
     );
