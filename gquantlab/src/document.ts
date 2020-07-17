@@ -15,11 +15,21 @@ export class ContentHandler {
   // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
 
+  private _privateCopy: { nodes: INode[]; edges: IEdge[] };
+
   // create a signal that emits the relayout command
   private _reLayout = new Signal<ContentHandler, void>(this);
 
   get reLayoutSignal(): ISignal<ContentHandler, void> {
     return this._reLayout;
+  }
+
+  get reLayoutSignalInstance(): Signal<ContentHandler, void> {
+    return this._reLayout;
+  }
+
+  get privateCopy(): IChartInput {
+    return this._privateCopy;
   }
 
   get nodeAddedSignal(): ISignal<ContentHandler, INode> {
@@ -30,6 +40,18 @@ export class ContentHandler {
     return this._contentChanged;
   }
 
+  setPrivateCopy(workflows: IChartInput): void {
+    if (!workflows) {
+      return;
+    }
+    this._privateCopy = workflows;
+  }
+
+  renderNodesAndEdges(workflows: IChartInput): void {
+    this.setPrivateCopy(workflows);
+    this._contentChanged.emit(workflows);
+  }
+
   constructor(context: DocumentRegistry.Context) {
     this.context = context;
     //this.context.model.contentChanged.connect(this._onContentChanged, this);
@@ -37,30 +59,36 @@ export class ContentHandler {
   }
 
   public update(content: string): void {
-    this.context.model.fromString(content);
+    if (this.context) {
+      this.context.model.fromString(content);
+    }
   }
 
   public emit(): void {
     this._onContentChanged();
   }
 
+  public async renderGraph(yamlContent: string): Promise<void> {
+    const objContent = YAML.parse(yamlContent);
+    const jsonString = JSON.stringify(objContent);
+    // this.context.model.contentChanged.connect(this._onContentChanged, this);
+    const workflows = await requestAPI<any>('load_graph', {
+      body: jsonString,
+      method: 'POST'
+    });
+    this.renderNodesAndEdges(workflows);
+  }
+
   private _onContentChanged(): void {
     console.log('content chagned');
     const refreshContent = async (): Promise<void> => {
+      if (this.context === null) {
+        return;
+      }
       await this.context.ready;
       const yamlContent = this.context.model.toString();
       console.log('model path', this.context.path);
-      const objContent = YAML.parse(yamlContent);
-      const jsonString = JSON.stringify(objContent);
-      // this.context.model.contentChanged.connect(this._onContentChanged, this);
-      const workflows = await requestAPI<any>('load_graph', {
-        body: jsonString,
-        method: 'POST'
-      });
-      this._contentChanged.emit({
-        nodes: workflows['nodes'],
-        edges: workflows['edges']
-      });
+      this.renderGraph(yamlContent);
     };
     refreshContent();
   }
@@ -96,6 +124,8 @@ export interface IEdge {
 export interface IChartInput {
   nodes: INode[];
   edges: IEdge[];
+  width?: number;
+  height?: number;
 }
 
 export interface IAllNodes {

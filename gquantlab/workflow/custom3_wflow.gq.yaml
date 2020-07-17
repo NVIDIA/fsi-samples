@@ -7,7 +7,7 @@
 - id: distributed_points
   type: DistributedNode
   conf:
-    npartitions: 4
+    npartitions: 40
   inputs:
     points_df_in: points_task.points_df_out
   filepath: modules/custom_port_nodes.py
@@ -27,7 +27,7 @@
   type: CupyDistanceNode
   conf: {}
   inputs:
-    points_df_in: distributed_points.points_ddf_out
+    points_df_in: c5tn4wj3z7c.distance_df
   filepath: modules/custom_port_nodes.py
 - id: verify_cudf_to_numba
   type: VerifyNode
@@ -46,4 +46,10 @@
   inputs:
     df1: distance_by_cudf.distance_df
     df2: distance_by_cupy.distance_df
+  filepath: modules/custom_port_nodes.py
+- id: c5tn4wj3z7c
+  type: DistanceNode
+  conf: {}
+  inputs:
+    points_df_in: points_task.points_df_out
   filepath: modules/custom_port_nodes.py

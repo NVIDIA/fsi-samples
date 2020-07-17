@@ -6,9 +6,117 @@ from ._node_flow import OUTPUT_ID
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 import warnings
+import json
 
 
 __all__ = ['TaskGraph']
+
+
+def format_port(port):
+    """
+    compute the right port type str
+
+    Arguments
+    -------
+    port: input/output port object
+
+    Returns
+    -------
+    list
+        a list of ports with name and type
+    """
+    all_ports = []
+    for key in port:
+        one_port = {}
+        one_port['name'] = key
+        port_type = port[key]['type']
+        if isinstance(port_type, list):
+            types = []
+            for t in port_type:
+                type_name = t.__module__+'.'+t.__name__
+                types.append(type_name)
+            one_port['type'] = types
+        else:
+            type_name = port_type.__module__+'.'+port_type.__name__
+            one_port['type'] = [type_name]
+        all_ports.append(one_port)
+    return all_ports
+
+
+def get_nodes(task_graph):
+    """
+    It is a private function taking an input task graph. It will run the
+    column flow and compute the column names and types for all the nodes.
+
+    It returns a dict which has two keys.
+        nodes:
+            - list of node objects for the UI client. It contains all the
+            necessary information about the node including the size of the node
+            input ports, output ports, output column names/types,
+            conf schema and conf data.
+        edges:
+            - list of edge objects for the UI client. It enumerate all the
+            edges in the graph.
+
+    Arguments
+    -------
+    task_graph: TaskGraph
+        taskgraph object
+
+    Returns
+    -------
+    dict
+        nodes and edges of the graph data
+    """
+    task_graph.build()
+    nodes = []
+    edges = []
+    for task in task_graph:
+        node = task.get_node_obj()
+        out_node = get_node_obj(node)
+        connection_inputs = task.get('inputs')
+        nodes.append(out_node)
+        out_node['output_columns'] = task_graph[node.uid].output_columns
+        for port, v in connection_inputs.items():
+            edge = {"from": v, "to": node.uid+"."+port}
+            edges.append(edge)
+
+    return {'nodes': nodes, 'edges': edges}
+
+
+def get_node_obj(node):
+    """
+    It is a private function to convert a Node instance into a dictionary for
+    client to consume.
+
+    Arguments
+    -------
+    node: Node
+        gquant Node
+
+    Returns
+    -------
+    dict
+        node data for client
+    """
+    ports = node.ports_setup()
+    schema = node.conf_schema()
+    typeName = node._task_obj.get('type')
+    width = max(max(len(node.uid), len(typeName)) * 10, 100)
+    conf = node._task_obj.get('conf')
+    out_node = {'width': width,
+                'id': node.uid,
+                'type': typeName,
+                'schema': schema.json,
+                'ui': schema.ui,
+                'conf': conf,
+                'inputs': format_port(ports.inports),
+                'outputs': format_port(ports.outports)}
+    out_node['required'] = node.required
+    out_node['output_columns'] = {}
+    if node._task_obj.get('filepath'):
+        out_node['filepath'] = node._task_obj.get('filepath')
+    return out_node
 
 
 class TaskGraph(object):
@@ -174,6 +282,11 @@ class TaskGraph(object):
 
         with open(filename, 'w') as fh:
             yaml.dump(tlist_od, fh, default_flow_style=False)
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        obj = get_nodes(self)
+        content = json.dumps(obj)
+        return {'application/gquant-taskgraph': content}
 
     def viz_graph(self, show_ports=False):
         """

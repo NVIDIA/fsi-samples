@@ -21,6 +21,10 @@ import {
 } from '@jupyterlab/apputils';
 import { GquantWidget, GquantFactory, IAllNodes } from './document';
 import { Menu } from '@lumino/widgets';
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
+import { GQuantWidgetRenderer } from './widgetRender';
+
+const WIDGET_VIEW_MIMETYPE = 'application/gquant-taskgraph';
 
 const FACTORY = 'GQUANTLAB';
 
@@ -32,7 +36,13 @@ export const IGQUANTTracker = new Token<IGQUANTTracker>('gquant/tracki');
  */
 const extension: JupyterFrontEndPlugin<void> = {
   id: 'gquantlab',
-  requires: [IFileBrowserFactory, ILayoutRestorer, IMainMenu, ICommandPalette],
+  requires: [
+    IFileBrowserFactory,
+    ILayoutRestorer,
+    IMainMenu,
+    ICommandPalette,
+    IRenderMimeRegistry
+  ],
   optional: [ILauncher],
   autoStart: true,
   activate: activateFun
@@ -44,6 +54,7 @@ function activateFun(
   restorer: ILayoutRestorer,
   menu: IMainMenu,
   palette: ICommandPalette,
+  rendermime: IRenderMimeRegistry,
   launcher: ILauncher | null
 ): void {
   const namespace = 'gquant';
@@ -243,6 +254,16 @@ function activateFun(
       args: args
     });
   }
+
+  // Add a placeholder widget renderer.
+  rendermime.addFactory(
+    {
+      safe: false,
+      mimeTypes: [WIDGET_VIEW_MIMETYPE],
+      createRenderer: options => new GQuantWidgetRenderer(options)
+    },
+    100
+  );
 }
 
 // (app: JupyterFrontEnd, ) => {
