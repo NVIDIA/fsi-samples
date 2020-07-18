@@ -21,7 +21,7 @@ export class ContentHandler {
   // create a signal that emits the relayout command
   private _reLayout = new Signal<ContentHandler, void>(this);
 
-  get reLayoutSignal(): ISignal<ContentHandler, void> {
+  get reLayoutSignal(): Signal<ContentHandler, void> {
     return this._reLayout;
   }
 
@@ -33,7 +33,7 @@ export class ContentHandler {
     return this._privateCopy;
   }
 
-  get nodeAddedSignal(): ISignal<ContentHandler, INode> {
+  get nodeAddedSignal(): Signal<ContentHandler, INode> {
     return this._nodeAdded;
   }
 

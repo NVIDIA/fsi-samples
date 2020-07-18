@@ -11,8 +11,11 @@
   "bugs": {
     "url": "https://github.com/rapidsai/gQuant/gquantlab/issues"
   },
-  "license": "BSD-3-Clause",
-  "author": "Yi",
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Yi Dong",
+    "email": "doyend@gmail.com"
+  },
   "files": [
     "lib/**/*.{d.ts,eot,gif,html,jpg,js,js.map,json,png,svg,woff2,ttf}",
     "style/**/*.{css,eot,gif,html,jpg,json,png,svg,woff2,ttf}"

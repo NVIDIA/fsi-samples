@@ -8,9 +8,11 @@ import {
 } from '@jupyter-widgets/base';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
-import { ContentHandler } from './document';
+import { ContentHandler, IAllNodes } from './document';
 import { MainView } from './mainComponent';
-import { Panel } from '@lumino/widgets';
+import { Panel, ContextMenu, Menu } from '@lumino/widgets';
+import { CommandRegistry } from '@lumino/commands';
+import { requestAPI } from './gquantlab';
 
 // Import the CSS
 // import '../css/widget.css';
@@ -55,13 +57,69 @@ export class GQuantView extends DOMWidgetView {
     this.value_changed();
     this._contentHandler.setPrivateCopy(this.model);
     this.model.on('change:value', this.value_changed, this);
-    console.log('attached');
+    this.createContexMenu();
   }
 
-   protected getFigureSize (): DOMRect {
-        const figureSize: DOMRect  = this.el.getBoundingClientRect();
-        return figureSize;
-    }
+  createContexMenu() {
+    const commands = new CommandRegistry();
+    const contextMenu = new ContextMenu({ commands });
+
+    commands.addCommand('gquant:reLayout', {
+      label: 'Taskgraph Nodes Auto Layout',
+      caption: 'Taskgraph Nodes Auto Layout',
+      mnemonic: 0,
+      execute: () => {
+        this._contentHandler.reLayoutSignal.emit();
+      }
+    });
+
+    contextMenu.addItem({
+      command: 'gquant:reLayout',
+      selector: '.jp-GQuant'
+    });
+
+    contextMenu.addItem({
+      type: 'separator',
+      selector: '.jp-GQuant'
+    });
+
+    const allNodes = requestAPI<any>('all_nodes');
+    allNodes.then((allNodes: IAllNodes) => {
+      for (const k in allNodes) {
+        const submenu = new Menu({ commands });
+        submenu.title.label = k;
+        submenu.title.mnemonic = 0;
+        for (let i = 0; i < allNodes[k].length; i++) {
+          const name = allNodes[k][i].type;
+          const commandName = 'addnode:' + name;
+          commands.addCommand(commandName, {
+            label: 'Add ' + name,
+            mnemonic: 1,
+            execute: () => {
+              this._contentHandler.nodeAddedSignal.emit(allNodes[k][i]);
+            }
+          });
+          submenu.addItem({ command: commandName });
+        }
+        contextMenu.addItem({
+          type: 'submenu',
+          submenu: submenu,
+          selector: '.jp-GQuant'
+        });
+      }
+    });
+    this.pWidget.node.addEventListener('contextmenu', (event: MouseEvent) => {
+      if (contextMenu.open(event)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+  }
+
+  protected getFigureSize(): DOMRect {
+    const figureSize: DOMRect = this.el.getBoundingClientRect();
+    return figureSize;
+  }
 
   processPhosphorMessage(msg: any) {
     super.processPhosphorMessage.apply(this, msg);
