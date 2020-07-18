@@ -9,7 +9,7 @@ TODO: Add module docstring
 """
 
 from ipywidgets import DOMWidget
-from traitlets import Unicode, List
+from traitlets import Unicode, List, Dict
 from ._frontend import module_name, module_version
 
 
@@ -24,6 +24,7 @@ class GQuantWidget(DOMWidget):
     _view_module_version = Unicode(module_version).tag(sync=True)
 
     value = List().tag(sync=True)
+    cache = Dict().tag(sync=True)
 
     def set_taskgraph(self, task_graph):
         self.task_graph = task_graph

@@ -64,11 +64,19 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this.contentChangeHandler,
       this
     );
+    props.contentHandler.chartStateUpdate.connect(
+      this.stateUpdateHandler,
+      this
+    );
   }
 
   componentWillUnmount(): void {
     this.props.contentHandler.contentChanged.disconnect(
       this.contentChangeHandler,
+      this
+    );
+    this.props.contentHandler.chartStateUpdate.disconnect(
+      this.stateUpdateHandler,
       this
     );
   }
@@ -83,6 +91,13 @@ export class ChartEngine extends React.Component<IProps, IState> {
     );
     this.setState({
       nodes: layoutNodes,
+      edges: inputs.edges
+    });
+  }
+
+  stateUpdateHandler(sender: ContentHandler, inputs: IChartInput): void {
+    this.setState({
+      nodes: inputs.nodes,
       edges: inputs.edges
     });
   }
@@ -173,16 +188,19 @@ export class ChartEngine extends React.Component<IProps, IState> {
   }
 
   updateWorkFlow(state: IState): void {
-    this.setState(state);
     if (state.edges && state.nodes) {
       const output = exportWorkFlowNodes(state.nodes, state.edges);
       if (this.props.contentHandler.privateCopy) {
         this.props.contentHandler.privateCopy.set('value', output);
+        const stateCopy = JSON.parse(JSON.stringify(state));
+        this.props.contentHandler.privateCopy.set('cache', stateCopy);
         this.props.contentHandler.privateCopy.save();
+        console.log('edges:', state.edges.length, 'nodes:', state.nodes.length)
       }
       const yamlText = YAML.stringify(output);
       this.props.contentHandler.update(yamlText);
     }
+    this.setState(state);
   }
 
   render(): JSX.Element {

@@ -146,6 +146,7 @@ class TaskGraph(object):
         :param task_spec_list: List of task-spec dicts per TaskSpecSchema.
         '''
         self.__task_list = {}
+        self.__node_dict = {}
         self.__index = None
 
         error_msg = 'Task-id "{}" already in the task graph. Set '\
@@ -265,6 +266,8 @@ class TaskGraph(object):
                                (TaskSpecSchema.inputs, 'inputsholder')
                                ])
             tod.update(task._task_spec)
+            if not isinstance(tod[TaskSpecSchema.node_type], str):
+                tod[TaskSpecSchema.node_type] = tod[TaskSpecSchema.node_type].__name__
             tlist_od.append(tod)
         return tlist_od
 
@@ -352,7 +355,7 @@ class TaskGraph(object):
         replace: dict
             conf parameters replacement
         """
-        self.__node_dict = {}
+        self.__node_dict.clear()
         replace = dict() if replace is None else replace
 
         # check if there are item in the replace that is not in the graph
@@ -423,8 +426,9 @@ class TaskGraph(object):
         return out_str
     
     def reset(self):
+        self.__node_dict.clear()
         self.__task_list.clear()
-        self.__index = 0
+        self.__index = None
 
     def run(self, outputs, replace=None, profile=False):
         """

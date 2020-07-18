@@ -12,7 +12,11 @@ import { WidgetModel } from '@jupyter-widgets/base';
 
 export class ContentHandler {
   context: DocumentRegistry.Context;
+  // this one will relayout the graph
   private _contentChanged = new Signal<ContentHandler, IChartInput>(this);
+  // this one just update the graphs, no relayout
+  private _chartStateUpdate = new Signal<ContentHandler, IChartInput>(this);
+
   // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
 
@@ -51,6 +55,11 @@ export class ContentHandler {
   get contentChanged(): ISignal<ContentHandler, IChartInput> {
     return this._contentChanged;
   }
+
+  get chartStateUpdate(): Signal<ContentHandler, IChartInput> {
+    return this._chartStateUpdate;
+  }
+
 
   setPrivateCopy(widgetModel: WidgetModel): void {
     if (!widgetModel) {

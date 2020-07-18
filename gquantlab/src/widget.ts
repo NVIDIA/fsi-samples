@@ -27,7 +27,8 @@ export class GQuantModel extends DOMWidgetModel {
       _view_name: GQuantModel.view_name,
       _view_module: GQuantModel.view_module,
       _view_module_version: GQuantModel.view_module_version,
-      value: []
+      value: [],
+      cache: {}
     };
   }
 
@@ -54,10 +55,10 @@ export class GQuantView extends DOMWidgetView {
     this._widget = new MainView(this._contentHandler);
     pane.addWidget(this._widget);
     this.pWidget = pane;
-    //    this.el.classList.add('custom-widget');
-    this.value_changed();
+    this._contentHandler.renderGraph(this.model.get('value'));
     this._contentHandler.setPrivateCopy(this.model);
     this.model.on('change:value', this.value_changed, this);
+    this.model.on('change:cache', this.cache_changed, this);
     this.createContexMenu();
   }
 
@@ -195,7 +196,11 @@ export class GQuantView extends DOMWidgetView {
   }
 
   value_changed() {
-    console.log(this.model.get('value'));
-    this._contentHandler.renderGraph(this.model.get('value'));
   }
+
+  cache_changed() {
+    console.log(this.model.get('value'));
+    this._contentHandler.chartStateUpdate.emit(this.model.get('cache'));
+  }
+
 }
