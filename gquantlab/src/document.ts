@@ -8,6 +8,7 @@ import { requestAPI } from './gquantlab';
 import YAML from 'yaml';
 import { Signal, ISignal } from '@lumino/signaling';
 import { MainAreaWidget } from '@jupyterlab/apputils';
+import { WidgetModel } from '@jupyter-widgets/base';
 
 export class ContentHandler {
   context: DocumentRegistry.Context;
@@ -15,7 +16,7 @@ export class ContentHandler {
   // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
 
-  private _privateCopy: { nodes: INode[]; edges: IEdge[] };
+  private _privateCopy: WidgetModel;
 
   // create a signal that emits the relayout command
   private _reLayout = new Signal<ContentHandler, void>(this);
@@ -28,7 +29,7 @@ export class ContentHandler {
     return this._reLayout;
   }
 
-  get privateCopy(): IChartInput {
+  get privateCopy(): WidgetModel {
     return this._privateCopy;
   }
 
@@ -40,11 +41,11 @@ export class ContentHandler {
     return this._contentChanged;
   }
 
-  setPrivateCopy(workflows: IChartInput): void {
-    if (!workflows) {
+  setPrivateCopy(widgetModel: WidgetModel): void {
+    if (!widgetModel) {
       return;
     }
-    this._privateCopy = workflows;
+    this._privateCopy = widgetModel;
   }
 
   renderNodesAndEdges(workflows: IChartInput): void {
@@ -67,13 +68,19 @@ export class ContentHandler {
     this._onContentChanged();
   }
 
-  public async renderGraph(objContent: any): Promise<void> {
+  public async renderGraph(objContent: any, width?: number, height?: number): Promise<void> {
       const jsonString = JSON.stringify(objContent);
     // this.context.model.contentChanged.connect(this._onContentChanged, this);
-    const workflows = await requestAPI<any>('load_graph', {
+    const workflows: IChartInput = await requestAPI<any>('load_graph', {
       body: jsonString,
       method: 'POST'
     });
+    if (width){
+      workflows.width  = width;
+    }
+    if (height){
+      workflows.height = height;
+    }
     this.renderNodesAndEdges(workflows);
   }
 

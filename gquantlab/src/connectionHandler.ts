@@ -35,6 +35,7 @@ export function handleMouseUp(that: Chart) {
           const jsonString = JSON.stringify(output);
           that.drawLinks();
           that.updateInputs(jsonString);
+          that.isDirty = false;
           //that.props.setChartState({'edges': that.props.edges})
           //let links = that.edgeData();
           //link = that.link.data(links)
@@ -61,6 +62,7 @@ export function handleMouseUp(that: Chart) {
           const jsonString = JSON.stringify(output);
           that.drawLinks();
           that.updateInputs(jsonString);
+          that.isDirty = false;
           //that.props.setChartState({'edges': that.props.edges})
           // links = edges.map(edge_map);
           // link = link.data(links)
@@ -103,15 +105,11 @@ export function handleMouseDown(that: Chart) {
           point: null
         };
         that.props.edges.splice(index, 1);
-        const output = that.configFile();
-        const jsonString = JSON.stringify(output);
+        // const output = that.configFile();
+        // const jsonString = JSON.stringify(output);
         that.drawLinks();
-        that.updateInputs(jsonString);
-
-        //that.props.setChartState({'edges': that.props.edges})
-        // links = edges.map(edge_map);
-        // link = link.data(links)
-        //     .join("line");
+        that.isDirty = true;
+        // that.updateInputs(jsonString);
       }
     } else {
       //outputs, from in edges
@@ -125,10 +123,11 @@ export function handleMouseDown(that: Chart) {
           point: null
         };
         that.props.edges.splice(index, 1);
-        const output = that.configFile();
-        const jsonString = JSON.stringify(output);
+        //const output = that.configFile();
+        //const jsonString = JSON.stringify(output);
         that.drawLinks();
-        that.updateInputs(jsonString);
+        //that.updateInputs(jsonString);
+        that.isDirty = true;
         //that.props.setChartState({'edges': that.props.edges})
         // links = edges.map(edge_map);
         // link = link.data(links)

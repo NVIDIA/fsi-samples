@@ -4,7 +4,7 @@
 import {
   DOMWidgetModel,
   DOMWidgetView,
-  ISerializers,
+  ISerializers
 } from '@jupyter-widgets/base';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
@@ -30,7 +30,7 @@ export class GQuantModel extends DOMWidgetModel {
   }
 
   static serializers: ISerializers = {
-    ...DOMWidgetModel.serializers,
+    ...DOMWidgetModel.serializers
     // Add any extra serializers here
   };
 
@@ -50,18 +50,34 @@ export class GQuantView extends DOMWidgetView {
     const pane = new Panel();
     const widget = new MainView(this._contentHandler);
     pane.addWidget(widget);
-    // this.setElement(pane.node);
     this.pWidget = pane;
-//    this.el.classList.add('custom-widget');
+    //    this.el.classList.add('custom-widget');
     this.value_changed();
+    this._contentHandler.setPrivateCopy(this.model);
     this.model.on('change:value', this.value_changed, this);
     console.log('attached');
+  }
+
+   protected getFigureSize (): DOMRect {
+        const figureSize: DOMRect  = this.el.getBoundingClientRect();
+        return figureSize;
+    }
+
+  processPhosphorMessage(msg: any) {
+    super.processPhosphorMessage.apply(this, msg);
+    switch (msg.type) {
+      case 'resize':
+      case 'after-show':
+      case 'after-attach':
+        if (this.pWidget.isVisible) {
+          console.log(this.getFigureSize());
+        }
+        break;
+    }
   }
 
   value_changed() {
     console.log(this.model.get('value'));
     this._contentHandler.renderGraph(this.model.get('value'));
-    // this._contentHandler.reLayoutSignalInstance.emit();
-    // this.el.textContent = this.model.get('value');
   }
 }

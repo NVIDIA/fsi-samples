@@ -73,6 +73,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   inputRequriements: { [key: string]: any };
   outputColumns: { [key: string]: any };
   portTypes: { [key: string]: string[] };
+  isDirty: boolean;
 
   constructor(props: IChartProp) {
     super(props);
@@ -90,6 +91,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.link = null;
     this.mouseLink = null;
     this.g = null;
+    this.isDirty = false;
     this.state = {
       addMenu: true,
       x: -1000,

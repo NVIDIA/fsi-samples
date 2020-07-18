@@ -16,19 +16,20 @@ export class MainView extends ReactWidget {
 
   private _mimerenderWidgetUpdateSize(): void {
     this._height = OUTPUT_CELL_HEIGHT;
-    this._width = this.node.clientWidth;
+    this._width = this.parent.parent.parent.node.clientWidth;
+    console.log('nsize', this._height, this._width);
     if (!this._contentHandler) {
       return;
     }
     if (!this._contentHandler.privateCopy) {
       return;
     }
-    if (this._contentHandler.privateCopy.nodes.length === 0) {
-      return;
-    }
-
-    this._contentHandler.renderNodesAndEdges(this._contentHandler.privateCopy);
-    this._contentHandler.reLayoutSignalInstance.emit();
+    //if (this._contentHandler.privateCopy.nodes.length === 0) {
+    //  return;
+    //}
+    this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
+    //this._contentHandler.reLayoutSignalInstance.emit();
+    //this._contentHandler.renderNodesAndEdges(this._contentHandler.privateCopy);
   }
 
   onAfterAttach(msg: Message): void {
@@ -50,6 +51,7 @@ export class MainView extends ReactWidget {
   protected onResize(msg: Widget.ResizeMessage): void {
     this._height = msg.height;
     this._width = msg.width;
+    console.log('resize', this._height, this._width);
     if (this._height < 0 || this._width < 0) {
       // this is a hack that onResize doesn't work for rendered widget
       this._mimerenderWidgetUpdateSize();

@@ -2,7 +2,7 @@ import React from 'react';
 import * as d4 from 'd3-dag';
 import YAML from 'yaml';
 
-import { IEdge, INode, IChartInput, ContentHandler } from './document';
+import { IEdge, INode, ContentHandler, IChartInput } from './document';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Chart } from './chart';
 
@@ -74,14 +74,26 @@ export class ChartEngine extends React.Component<IProps, IState> {
   }
 
   contentChangeHandler(sender: ContentHandler, inputs: IChartInput): void {
-    const layoutNodes = this.updateLayout(inputs.nodes, inputs.edges, null);
+    const layoutNodes = this.updateLayout(
+      inputs.nodes,
+      inputs.edges,
+      null,
+      inputs.width,
+      inputs.height
+    );
     this.setState({
       nodes: layoutNodes,
       edges: inputs.edges
     });
   }
 
-  updateLayout(nodes: INode[], edges: IEdge[], transform: any): INode[] {
+  updateLayout(
+    nodes: INode[],
+    edges: IEdge[],
+    transform: any,
+    width?: number,
+    height?: number
+  ): INode[] {
     if (nodes.length === 0) {
       return nodes;
     }
@@ -107,12 +119,14 @@ export class ChartEngine extends React.Component<IProps, IState> {
       }
     }
 
-    const dataWithParentsId = nodes.map((d: INode) => {
+    const dataWithParentsId = nodes.map((d: INode, i: number) => {
       if (d['id'] in connectionInfoCtoP) {
         d['parentIds'] = connectionInfoCtoP[d['id']];
       } else {
         d['parentIds'] = [];
       }
+      d['x'] = i * 10;
+      d['y'] = i * 10;
       return d;
     });
 
@@ -123,25 +137,30 @@ export class ChartEngine extends React.Component<IProps, IState> {
       (d: INode) =>
         !(d.id in connectionInfoCtoP) && !(d.id in connectionInfoPtoC)
     );
-    const dagData = d4.dagStratify()(data);
-    d4
-      .sugiyama()
-      .size([this.props.height, this.props.width])
-      .layering(d4.layeringSimplex())
-      .decross(d4.decrossOpt())
-      .coord(d4.coordVert())(dagData);
+    if (data.length > 0) {
+      const dagData = d4.dagStratify()(data);
+      d4
+        .sugiyama()
+        .size([
+          height ? height : this.props.height,
+          width ? width : this.props.width
+        ])
+        .layering(d4.layeringSimplex())
+        .decross(d4.decrossOpt())
+        .coord(d4.coordVert())(dagData);
 
-    dagData.descendants().forEach((d: any) => {
-      if (transform) {
-        const newPosition = transform.invert([d.y, d.x]);
-        d.data['y'] = newPosition[1];
-        d.data['x'] = newPosition[0];
-      } else {
-        d.data['y'] = d.x;
-        d.data['x'] = d.y;
-      }
-      return;
-    });
+      dagData.descendants().forEach((d: any) => {
+        if (transform) {
+          const newPosition = transform.invert([d.y, d.x]);
+          d.data['y'] = newPosition[1];
+          d.data['x'] = newPosition[0];
+        } else {
+          d.data['y'] = d.x;
+          d.data['x'] = d.y;
+        }
+        return;
+      });
+    }
     return [...data, ...dataIslands];
   }
 
@@ -157,6 +176,10 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState(state);
     if (state.edges && state.nodes) {
       const output = exportWorkFlowNodes(state.nodes, state.edges);
+      if (this.props.contentHandler.privateCopy) {
+        this.props.contentHandler.privateCopy.set('value', output);
+        this.props.contentHandler.privateCopy.save();
+      }
       const yamlText = YAML.stringify(output);
       this.props.contentHandler.update(yamlText);
     }

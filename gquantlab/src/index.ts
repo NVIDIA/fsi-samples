@@ -26,10 +26,10 @@ import {
 import { GquantWidget, GquantFactory, IAllNodes } from './document';
 import { Menu } from '@lumino/widgets';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
-import { GQuantWidgetRenderer } from './widgetRender';
+//import { GQuantWidgetRenderer } from './widgetRender';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 
-const WIDGET_VIEW_MIMETYPE = 'application/gquant-taskgraph';
+//const WIDGET_VIEW_MIMETYPE = 'application/gquant-taskgraph';
 
 const FACTORY = 'GQUANTLAB';
 
@@ -262,15 +262,15 @@ function activateFun(
     });
   }
 
-  // Add a placeholder widget renderer.
-  rendermime.addFactory(
-    {
-      safe: false,
-      mimeTypes: [WIDGET_VIEW_MIMETYPE],
-      createRenderer: options => new GQuantWidgetRenderer(options)
-    },
-    100
-  );
+  // // Add a placeholder widget renderer.
+  // rendermime.addFactory(
+  //   {
+  //     safe: false,
+  //     mimeTypes: [WIDGET_VIEW_MIMETYPE],
+  //     createRenderer: options => new GQuantWidgetRenderer(options)
+  //   },
+  //   100
+  // );
 
   jupyterWidgetRegistry.registerWidget({
     name: MODULE_NAME,

@@ -20,6 +20,14 @@ export function handleClicked(that: Chart) {
         nodeDatum: nodeDatum
       });
     } else {
+      console.log('clicked');
+      if (that.isDirty){
+        const output = that.configFile();
+        const jsonString = JSON.stringify(output);
+        that.updateInputs(jsonString);
+        that.isDirty = false;
+      }
+
       const [x, y] = d3.mouse(this);
       that.mouse = { x, y };
       that.starting = null;
