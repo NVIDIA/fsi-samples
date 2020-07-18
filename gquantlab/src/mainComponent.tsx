@@ -14,15 +14,18 @@ export class MainView extends ReactWidget {
   private _height: number;
   private _width: number;
 
-  private _mimerenderWidgetUpdateSize(): void {
+  public mimerenderWidgetUpdateSize(): void {
     this._height = OUTPUT_CELL_HEIGHT;
     this._width = this.parent.parent.parent.node.clientWidth;
-    console.log('nsize', this._height, this._width);
+    // console.log('nsize', this._height, this._width);
     if (!this._contentHandler) {
       return;
     }
     if (!this._contentHandler.privateCopy) {
       return;
+    }
+    if (this._contentHandler.aspectRatio){
+      this._height = this._width * this._contentHandler.aspectRatio;
     }
     //if (this._contentHandler.privateCopy.nodes.length === 0) {
     //  return;
@@ -35,7 +38,7 @@ export class MainView extends ReactWidget {
   onAfterAttach(msg: Message): void {
     console.log('attached');
     super.onAfterAttach(msg);
-    this._mimerenderWidgetUpdateSize();
+    this.mimerenderWidgetUpdateSize();
   }
 
   public get contentHandler(): ContentHandler {
@@ -54,7 +57,7 @@ export class MainView extends ReactWidget {
     console.log('resize', this._height, this._width);
     if (this._height < 0 || this._width < 0) {
       // this is a hack that onResize doesn't work for rendered widget
-      this._mimerenderWidgetUpdateSize();
+      this.mimerenderWidgetUpdateSize();
       return;
     }
     this._contentHandler.emit();

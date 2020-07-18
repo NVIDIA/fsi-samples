@@ -46,12 +46,13 @@ export class GQuantModel extends DOMWidgetModel {
 
 export class GQuantView extends DOMWidgetView {
   private _contentHandler: ContentHandler;
+  private _widget: MainView;
 
   render() {
     this._contentHandler = new ContentHandler(null);
     const pane = new Panel();
-    const widget = new MainView(this._contentHandler);
-    pane.addWidget(widget);
+    this._widget = new MainView(this._contentHandler);
+    pane.addWidget(this._widget);
     this.pWidget = pane;
     //    this.el.classList.add('custom-widget');
     this.value_changed();
@@ -70,6 +71,46 @@ export class GQuantView extends DOMWidgetView {
       mnemonic: 0,
       execute: () => {
         this._contentHandler.reLayoutSignal.emit();
+      }
+    });
+
+    commands.addCommand('gquant:aspect1', {
+      label: 'AspectRatio 1.0',
+      caption: 'AspectRatio 1.0',
+      mnemonic: 0,
+      execute: () => {
+        this._contentHandler.aspectRatio = 1.0;
+        this._widget.mimerenderWidgetUpdateSize();
+      }
+    });
+
+    commands.addCommand('gquant:aspect0.3', {
+      label: 'AspectRatio 0.3',
+      caption: 'AspectRatio 0.3',
+      mnemonic: 0,
+      execute: () => {
+        this._contentHandler.aspectRatio = 0.3;
+        this._widget.mimerenderWidgetUpdateSize();
+      }
+    });
+
+    commands.addCommand('gquant:aspect0.5', {
+      label: 'AspectRatio 0.5',
+      caption: 'AspectRatio 0.5',
+      mnemonic: 0,
+      execute: () => {
+        this._contentHandler.aspectRatio = 0.5;
+        this._widget.mimerenderWidgetUpdateSize();
+      }
+    });
+
+    commands.addCommand('gquant:aspect0.7', {
+      label: 'AspectRatio 0.7',
+      caption: 'AspectRatio 0.7',
+      mnemonic: 0,
+      execute: () => {
+        this._contentHandler.aspectRatio = 0.7;
+        this._widget.mimerenderWidgetUpdateSize();
       }
     });
 
@@ -108,6 +149,25 @@ export class GQuantView extends DOMWidgetView {
         });
       }
     });
+
+    contextMenu.addItem({
+      type: 'separator',
+      selector: '.jp-GQuant'
+    });
+
+    const submenu = new Menu({ commands });
+    submenu.title.label = 'Change Aspect Ratio';
+    submenu.title.mnemonic = 0;
+    submenu.addItem({ command: 'gquant:aspect0.3' });
+    submenu.addItem({ command: 'gquant:aspect0.5' });
+    submenu.addItem({ command: 'gquant:aspect0.7' });
+    submenu.addItem({ command: 'gquant:aspect1' });
+    contextMenu.addItem({
+      type: 'submenu',
+      submenu: submenu,
+      selector: '.jp-GQuant'
+    });
+
     this.pWidget.node.addEventListener('contextmenu', (event: MouseEvent) => {
       if (contextMenu.open(event)) {
         event.preventDefault();
