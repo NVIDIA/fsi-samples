@@ -421,6 +421,10 @@ class TaskGraph(object):
         for k in self.__node_dict.keys():
             out_str += k + ": " + str(self.__node_dict[k]) + "\n"
         return out_str
+    
+    def reset(self):
+        self.__task_list.clear()
+        self.__index = 0
 
     def run(self, outputs, replace=None, profile=False):
         """

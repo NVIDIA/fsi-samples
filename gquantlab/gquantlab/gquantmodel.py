@@ -27,3 +27,8 @@ class GQuantWidget(DOMWidget):
 
     def set_taskgraph(self, task_graph):
         self.task_graph = task_graph
+
+    def set_state(self, sync_data):
+        super().set_state(sync_data)
+        self.task_graph.reset()
+        self.task_graph.extend(sync_data['value'])
