@@ -12,6 +12,7 @@ from ipywidgets import DOMWidget
 from traitlets import Unicode, List, Dict
 from ._frontend import module_name, module_version
 
+OUTPUT_ID= 'collector_id_fd9567b6'
 
 class GQuantWidget(DOMWidget):
     """TODO: Add docstring here
@@ -33,3 +34,10 @@ class GQuantWidget(DOMWidget):
         super().set_state(sync_data)
         self.task_graph.reset()
         self.task_graph.extend(sync_data['value'])
+        # get all the outputs
+        edges = sync_data['cache']['edges']
+        outputs = []
+        for edge in edges:
+            if edge['to'].split('.')[0] == OUTPUT_ID:
+                outputs.append(edge['from'])
+        self.task_graph.set_outputs(outputs)

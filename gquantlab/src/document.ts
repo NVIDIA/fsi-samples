@@ -6,7 +6,7 @@ import {
 import { MainView } from './mainComponent';
 import { requestAPI } from './gquantlab';
 import YAML from 'yaml';
-import { Signal, ISignal } from '@lumino/signaling';
+import { Signal } from '@lumino/signaling';
 import { MainAreaWidget } from '@jupyterlab/apputils';
 import { WidgetModel } from '@jupyter-widgets/base';
 
@@ -52,7 +52,7 @@ export class ContentHandler {
     return this._nodeAdded;
   }
 
-  get contentChanged(): ISignal<ContentHandler, IChartInput> {
+  get contentChanged(): Signal<ContentHandler, IChartInput> {
     return this._contentChanged;
   }
 

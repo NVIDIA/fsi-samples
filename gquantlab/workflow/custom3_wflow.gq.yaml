@@ -30,6 +30,7 @@
     df2_col: distance_numba
   inputs:
     df1: distance_by_cudf.distance_df
+    df2: distance_by_cupy.distance_df
   filepath: modules/custom_port_nodes.py
 - id: verify_cudf_to_cupy
   type: VerifyNode

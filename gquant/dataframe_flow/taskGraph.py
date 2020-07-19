@@ -147,6 +147,7 @@ class TaskGraph(object):
         '''
         self.__task_list = {}
         self.__node_dict = {}
+        self.__outputs = [] # this is used to store a list of outputs
         self.__index = None
 
         error_msg = 'Task-id "{}" already in the task graph. Set '\
@@ -428,9 +429,17 @@ class TaskGraph(object):
     def reset(self):
         self.__node_dict.clear()
         self.__task_list.clear()
+        self.__outputs.clear()
         self.__index = None
 
-    def run(self, outputs, replace=None, profile=False):
+    def set_outputs(self, outputs):
+        self.__outputs.clear()
+        self.__outputs.extend(outputs)
+
+    def get_outputs(self):
+        return self.__outputs
+
+    def run(self, outputs=None, replace=None, profile=False):
         """
         Flow the dataframes in the graph to do the data science computations.
 
@@ -470,8 +479,9 @@ class TaskGraph(object):
 
         # want to save the intermediate results
         outputs_collector_node.clear_input = False
-        results = []
         results_task_ids = []
+        if outputs is None:
+            outputs = self.__outputs
         for task_id in outputs:
             nodeid_oport = task_id.split('.')
             nodeid = nodeid_oport[0]
@@ -513,12 +523,9 @@ class TaskGraph(object):
             i.flow()
 
         results_dfs_dict = outputs_collector_node.input_df
-        for task_id in results_task_ids:
-            results.append(results_dfs_dict[task_id])
-
         # clean the results afterwards
         outputs_collector_node.input_df = {}
-        return tuple(results)
+        return results_dfs_dict
 
     def to_pydot(self, show_ports=False):
         nx_graph = self.viz_graph(show_ports=show_ports)

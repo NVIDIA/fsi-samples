@@ -9,6 +9,8 @@ import { Message } from '@lumino/messaging';
 
 const OUTPUT_CELL_HEIGHT = 300;
 
+export const OUTPUT_COLLECTOR = 'collector_id_fd9567b6';
+
 export class MainView extends ReactWidget {
   private _contentHandler: ContentHandler;
   private _height: number;
@@ -30,9 +32,10 @@ export class MainView extends ReactWidget {
     //if (this._contentHandler.privateCopy.nodes.length === 0) {
     //  return;
     //}
-    this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
+    //this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
     //this._contentHandler.reLayoutSignalInstance.emit();
     //this._contentHandler.renderNodesAndEdges(this._contentHandler.privateCopy);
+    this._contentHandler.contentChanged.emit(this._contentHandler.privateCopy.get("cache"));
   }
 
   onAfterAttach(msg: Message): void {

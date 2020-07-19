@@ -37,9 +37,17 @@ export function validConnection(that: Chart) {
 
       const toTypes = that.portTypes[to];
       const fromTypes = that.portTypes[from];
-      const intersection = toTypes.filter((x: string) => fromTypes.includes(x));
-      if (intersection.length === 0) {
-        return false;
+      // if 'any shows up in types, it is valid
+      if (
+        toTypes.findIndex(d => d === 'any') < 0 &&
+        fromTypes.findIndex(d => d === 'any') < 0
+      ) {
+        const intersection = toTypes.filter((x: string) =>
+          fromTypes.includes(x)
+        );
+        if (intersection.length === 0) {
+          return false;
+        }
       }
 
       // make sure the requirement is met
@@ -63,9 +71,16 @@ export function validConnection(that: Chart) {
       }
       const toTypes = that.portTypes[to];
       const fromTypes = that.portTypes[from];
-      const intersection = toTypes.filter((x: string) => fromTypes.includes(x));
-      if (intersection.length === 0) {
-        return false;
+      if (
+        toTypes.findIndex(d => d === 'any') < 0 &&
+        fromTypes.findIndex(d => d === 'any') < 0
+      ) {
+        const intersection = toTypes.filter((x: string) =>
+          fromTypes.includes(x)
+        );
+        if (intersection.length === 0) {
+          return false;
+        }
       }
 
       // make sure the requirement is met

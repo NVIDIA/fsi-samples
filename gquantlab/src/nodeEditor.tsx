@@ -2,6 +2,7 @@ import React from 'react';
 import styled from '@emotion/styled';
 import Form from '@rjsf/core';
 import { INode, IEdge } from './document';
+import { OUTPUT_COLLECTOR } from './mainComponent';
 interface IProp {
   x: number;
   y: number;
@@ -77,6 +78,13 @@ class NodeEditor extends React.Component<IProp> {
     `;
     console.log(this.props.nodeDatum);
 
+    if (this.props.nodeDatum.id === OUTPUT_COLLECTOR) {
+      return (
+        <Editor>
+          <Button onClick={this.handleDelete}>Delete</Button>
+        </Editor>
+      );
+    }
     return (
       <Editor>
         <div>

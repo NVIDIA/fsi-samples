@@ -8,14 +8,15 @@ import {
 } from '@jupyter-widgets/base';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
-import { ContentHandler, IAllNodes } from './document';
-import { MainView } from './mainComponent';
+import { ContentHandler, IAllNodes, INode } from './document';
+import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
 import { Panel, ContextMenu, Menu } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
 import { requestAPI } from './gquantlab';
 
 // Import the CSS
 // import '../css/widget.css';
+
 
 export class GQuantModel extends DOMWidgetModel {
   defaults() {
@@ -149,6 +150,36 @@ export class GQuantView extends DOMWidgetView {
           selector: '.jp-GQuant'
         });
       }
+    });
+
+    contextMenu.addItem({
+      type: 'separator',
+      selector: '.jp-GQuant'
+    });
+
+    commands.addCommand('add:outputCollector', {
+      label: 'Add Output Collector',
+      mnemonic: 1,
+      execute: () => {
+        const output: INode = {
+          id: OUTPUT_COLLECTOR,
+          width: 200,
+          type: 'Output Collector',
+          conf: {},
+          required: {},
+          output_columns: [],
+          outputs: [],
+          schema: {},
+          ui: {},
+          inputs: [ {name: "in1", type: ['any']}]
+        };
+        this._contentHandler.nodeAddedSignal.emit(output);
+      }
+    });
+
+    contextMenu.addItem({
+      command: 'add:outputCollector',
+      selector: '.jp-GQuant'
     });
 
     contextMenu.addItem({

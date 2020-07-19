@@ -5,6 +5,7 @@ import YAML from 'yaml';
 import { IEdge, INode, ContentHandler, IChartInput } from './document';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Chart } from './chart';
+import { OUTPUT_COLLECTOR } from './mainComponent';
 
 interface IProps {
   height: number;
@@ -18,24 +19,26 @@ interface IState {
 }
 
 export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
+  const cleanedNodes = nodes.filter((d: INode)=> d.id !== OUTPUT_COLLECTOR);
+  const cleanedEdges = edges.filter((d: IEdge)=> d.to.split('.')[0] !== OUTPUT_COLLECTOR);
   /**
    * get the gqaunt task graph, which is a list of tasks
    */
   const connectionInfo: { [key: string]: { [key: string]: any } } = {};
-  for (let i = 0; i < edges.length; i++) {
-    const children = edges[i].to.split('.')[0];
-    const childrenPort = edges[i].to.split('.')[1];
+  for (let i = 0; i < cleanedEdges.length; i++) {
+    const children = cleanedEdges[i].to.split('.')[0];
+    const childrenPort = cleanedEdges[i].to.split('.')[1];
     if (children in connectionInfo) {
-      connectionInfo[children][childrenPort] = edges[i].from;
+      connectionInfo[children][childrenPort] = cleanedEdges[i].from;
     } else {
       connectionInfo[children] = {
-        [childrenPort]: edges[i].from
+        [childrenPort]: cleanedEdges[i].from
       };
     }
   }
   const output: INode[] = [];
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
+  for (let i = 0; i < cleanedNodes.length; i++) {
+    const node = cleanedNodes[i];
     const element: any = {};
     element['id'] = node.id;
     element['type'] = node.type;
@@ -187,8 +190,31 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
+  private _fixOutputCollectorPorts(state: IState) : void {
+    const index = state.nodes.findIndex((d: INode)=> d.id === OUTPUT_COLLECTOR);
+
+    if (index < 0){
+      return;
+    }
+    const connectedEdges = state.edges.filter((d: IEdge)=> d.to.split('.')[0] === OUTPUT_COLLECTOR);
+    const usedPortNames = connectedEdges.map((d:IEdge) => d.to.split(".")[1]);
+    const outputCollector = state.nodes[index];
+    // total 
+    const totalNeed = usedPortNames.length + 1;
+    // reset the input ports
+    outputCollector.inputs = []
+    for(let i=0; i<totalNeed; i++){
+      outputCollector.inputs.push({name: `in${i+1}`, type: ['any']} )
+    }
+    connectedEdges.forEach((d: IEdge, i: number)=>{
+      d.to = `${OUTPUT_COLLECTOR}.in${i+1}`;
+    })
+    //inputs: [ {name: "in1", type: ['any']}]
+  }
+
   updateWorkFlow(state: IState): void {
     if (state.edges && state.nodes) {
+      this._fixOutputCollectorPorts(state);
       const output = exportWorkFlowNodes(state.nodes, state.edges);
       if (this.props.contentHandler.privateCopy) {
         this.props.contentHandler.privateCopy.set('value', output);
