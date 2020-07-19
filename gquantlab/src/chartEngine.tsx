@@ -19,8 +19,10 @@ interface IState {
 }
 
 export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
-  const cleanedNodes = nodes.filter((d: INode)=> d.id !== OUTPUT_COLLECTOR);
-  const cleanedEdges = edges.filter((d: IEdge)=> d.to.split('.')[0] !== OUTPUT_COLLECTOR);
+  const cleanedNodes = nodes.filter((d: INode) => d.id !== OUTPUT_COLLECTOR);
+  const cleanedEdges = edges.filter(
+    (d: IEdge) => d.to.split('.')[0] !== OUTPUT_COLLECTOR
+  );
   /**
    * get the gqaunt task graph, which is a list of tasks
    */
@@ -92,6 +94,19 @@ export class ChartEngine extends React.Component<IProps, IState> {
       inputs.width,
       inputs.height
     );
+
+    // if (
+    //   sender.privateCopy &&
+    //   sender.privateCopy.get('cache') &&
+    //   !sender.privateCopy.get('cache').nodes
+    // ) {
+    //   this.updateWorkFlow({
+    //     nodes: layoutNodes,
+    //     edges: inputs.edges
+    //   });
+    //   return;
+    // }
+
     this.setState({
       nodes: layoutNodes,
       edges: inputs.edges
@@ -190,25 +205,29 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
-  private _fixOutputCollectorPorts(state: IState) : void {
-    const index = state.nodes.findIndex((d: INode)=> d.id === OUTPUT_COLLECTOR);
+  private _fixOutputCollectorPorts(state: IState): void {
+    const index = state.nodes.findIndex(
+      (d: INode) => d.id === OUTPUT_COLLECTOR
+    );
 
-    if (index < 0){
+    if (index < 0) {
       return;
     }
-    const connectedEdges = state.edges.filter((d: IEdge)=> d.to.split('.')[0] === OUTPUT_COLLECTOR);
-    const usedPortNames = connectedEdges.map((d:IEdge) => d.to.split(".")[1]);
+    const connectedEdges = state.edges.filter(
+      (d: IEdge) => d.to.split('.')[0] === OUTPUT_COLLECTOR
+    );
+    const usedPortNames = connectedEdges.map((d: IEdge) => d.to.split('.')[1]);
     const outputCollector = state.nodes[index];
-    // total 
+    // total
     const totalNeed = usedPortNames.length + 1;
     // reset the input ports
-    outputCollector.inputs = []
-    for(let i=0; i<totalNeed; i++){
-      outputCollector.inputs.push({name: `in${i+1}`, type: ['any']} )
+    outputCollector.inputs = [];
+    for (let i = 0; i < totalNeed; i++) {
+      outputCollector.inputs.push({ name: `in${i + 1}`, type: ['any'] });
     }
-    connectedEdges.forEach((d: IEdge, i: number)=>{
-      d.to = `${OUTPUT_COLLECTOR}.in${i+1}`;
-    })
+    connectedEdges.forEach((d: IEdge, i: number) => {
+      d.to = `${OUTPUT_COLLECTOR}.in${i + 1}`;
+    });
     //inputs: [ {name: "in1", type: ['any']}]
   }
 
@@ -221,7 +240,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
         const stateCopy = JSON.parse(JSON.stringify(state));
         this.props.contentHandler.privateCopy.set('cache', stateCopy);
         this.props.contentHandler.privateCopy.save();
-        console.log('edges:', state.edges.length, 'nodes:', state.nodes.length)
+        console.log('edges:', state.edges.length, 'nodes:', state.nodes.length);
       }
       const yamlText = YAML.stringify(output);
       this.props.contentHandler.update(yamlText);

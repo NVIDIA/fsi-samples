@@ -25,7 +25,7 @@ export class ContentHandler {
   // create a signal that emits the relayout command
   private _reLayout = new Signal<ContentHandler, void>(this);
 
-  private _aspectRatio: number = 0.5;
+  private _aspectRatio: number = 0.3;
 
   get reLayoutSignal(): Signal<ContentHandler, void> {
     return this._reLayout;

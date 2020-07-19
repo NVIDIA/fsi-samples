@@ -29,7 +29,7 @@ export class GQuantModel extends DOMWidgetModel {
       _view_module: GQuantModel.view_module,
       _view_module_version: GQuantModel.view_module_version,
       value: [],
-      cache: {}
+      cache: { nodes:[], edges: []}
     };
   }
 
@@ -230,7 +230,6 @@ export class GQuantView extends DOMWidgetView {
   }
 
   cache_changed() {
-    console.log(this.model.get('value'));
     this._contentHandler.chartStateUpdate.emit(this.model.get('cache'));
   }
 

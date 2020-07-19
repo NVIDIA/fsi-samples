@@ -16,7 +16,7 @@ export class MainView extends ReactWidget {
   private _height: number;
   private _width: number;
 
-  public mimerenderWidgetUpdateSize(): void {
+  private _calclateSize(): void {
     this._height = OUTPUT_CELL_HEIGHT;
     this._width = this.parent.parent.parent.node.clientWidth;
     // console.log('nsize', this._height, this._width);
@@ -29,20 +29,40 @@ export class MainView extends ReactWidget {
     if (this._contentHandler.aspectRatio){
       this._height = this._width * this._contentHandler.aspectRatio;
     }
+  }
+
+
+  public mimerenderWidgetUpdateSize(): void {
+    this._calclateSize();
     //if (this._contentHandler.privateCopy.nodes.length === 0) {
     //  return;
     //}
     //this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
     //this._contentHandler.reLayoutSignalInstance.emit();
     //this._contentHandler.renderNodesAndEdges(this._contentHandler.privateCopy);
+    if (!this._contentHandler.privateCopy) {
+      return;
+    }
+    if (!this._contentHandler.privateCopy.get('cache')){
+      return;
+    }
+    if (!this._contentHandler.privateCopy.get("cache").nodes){
+      return;
+    }
     this._contentHandler.contentChanged.emit(this._contentHandler.privateCopy.get("cache"));
   }
-
-  onAfterAttach(msg: Message): void {
-    console.log('attached');
-    super.onAfterAttach(msg);
-    this.mimerenderWidgetUpdateSize();
-  }
+    onAfterAttach(msg: Message): void {
+      console.log('attached');
+      super.onAfterAttach(msg);
+      this._calclateSize();
+      if (!this._contentHandler.privateCopy){
+        return;
+      }
+      if (!this._contentHandler.privateCopy.get('value')){
+        return;
+      }
+      this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
+    }
 
   public get contentHandler(): ContentHandler {
     return this._contentHandler;
@@ -57,7 +77,7 @@ export class MainView extends ReactWidget {
   protected onResize(msg: Widget.ResizeMessage): void {
     this._height = msg.height;
     this._width = msg.width;
-    console.log('resize', this._height, this._width);
+//    console.log('resize', this._height, this._width);
     if (this._height < 0 || this._width < 0) {
       // this is a hack that onResize doesn't work for rendered widget
       this.mimerenderWidgetUpdateSize();
