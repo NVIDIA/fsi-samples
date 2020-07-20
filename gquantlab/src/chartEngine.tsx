@@ -8,15 +8,23 @@ import { Chart } from './chart';
 import { OUTPUT_COLLECTOR } from './mainComponent';
 
 interface IProps {
-  height: number;
-  width: number;
   contentHandler: ContentHandler;
 }
 
 interface IState {
+  height: number;
+  width: number;
   nodes: INode[];
   edges: IEdge[];
 }
+
+/**
+ * Serialize the graph to list of INode objects that can be saved into files.
+ * UI related infomration is stripped out. The special OUTPUT_COLLECTOR node is removed
+ * @param nodes 
+ * @param edges 
+ * @returns list of INode that can be serialized
+ */
 
 export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
   const cleanedNodes = nodes.filter((d: INode) => d.id !== OUTPUT_COLLECTOR);
@@ -62,6 +70,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
     this.state = {
+      height: 100,
+      width: 100,
       nodes: [],
       edges: []
     };
@@ -86,33 +96,36 @@ export class ChartEngine extends React.Component<IProps, IState> {
     );
   }
 
+  /**
+   *  handle the raw graph nodes and edge changes
+   *  recalculate the layout
+   * @param sender 
+   * @param inputs 
+   */
+
   contentChangeHandler(sender: ContentHandler, inputs: IChartInput): void {
-    const layoutNodes = this.updateLayout(
+    const layoutNodes = this._updateLayout(
       inputs.nodes,
       inputs.edges,
       null,
       inputs.width,
       inputs.height
     );
-
-    // if (
-    //   sender.privateCopy &&
-    //   sender.privateCopy.get('cache') &&
-    //   !sender.privateCopy.get('cache').nodes
-    // ) {
-    //   this.updateWorkFlow({
-    //     nodes: layoutNodes,
-    //     edges: inputs.edges
-    //   });
-    //   return;
-    // }
-
     this.setState({
       nodes: layoutNodes,
-      edges: inputs.edges
+      edges: inputs.edges,
+      width: inputs.width?inputs.width:this.state.width,
+      height: inputs.height?inputs.height:this.state.height,
     });
   }
 
+/**
+ * 
+ *  handle the raw graph nodes and edge changes,
+ *  just update the nodes and edges, no layout updates
+ * @param sender 
+ * @param inputs 
+ */
   stateUpdateHandler(sender: ContentHandler, inputs: IChartInput): void {
     this.setState({
       nodes: inputs.nodes,
@@ -120,7 +133,15 @@ export class ChartEngine extends React.Component<IProps, IState> {
     });
   }
 
-  updateLayout(
+  /**
+   * Compute the coordinates of the nodes so it fits the give width and height
+   * @param nodes 
+   * @param edges 
+   * @param transform  transform object returned from d3.zoom
+   * @param width if specified, it overrides the state.width
+   * @param height 
+   */
+  private _updateLayout(
     nodes: INode[],
     edges: IEdge[],
     transform: any,
@@ -175,8 +196,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
       d4
         .sugiyama()
         .size([
-          height ? height : this.props.height,
-          width ? width : this.props.width
+          height ? height : this.state.height,
+          width ? width : this.state.width
         ])
         .layering(d4.layeringSimplex())
         .decross(d4.decrossOpt())
@@ -197,11 +218,18 @@ export class ChartEngine extends React.Component<IProps, IState> {
     return [...data, ...dataIslands];
   }
 
+/**
+ * relayout the nodes and edges
+ * 
+ * @param nodes 
+ * @param edges 
+ * @param transform 
+ */
   layout(nodes: INode[], edges: IEdge[], transform: any): void {
     if (nodes.length === 0) {
       return;
     }
-    const layoutNodes = this.updateLayout(nodes, edges, transform);
+    const layoutNodes = this._updateLayout(nodes, edges, transform);
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
@@ -256,8 +284,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
         nodes={this.state.nodes}
         edges={this.state.edges}
         setChartState={this.updateWorkFlow.bind(this)}
-        width={this.props.width ? this.props.width : 100}
-        height={this.props.height ? this.props.height : 100}
+        width={this.state.width}
+        height={this.state.height}
         layout={this.layout.bind(this)}
       />
     );

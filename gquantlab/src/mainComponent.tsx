@@ -1,7 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ReactWidget, UseSignal } from '@jupyterlab/apputils';
+import { ReactWidget } from '@jupyterlab/apputils';
 import React from 'react';
-import { ContentHandler } from './document';
+import { ContentHandler, IChartInput } from './document';
 import { Widget } from '@lumino/widgets';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ChartEngine } from './chartEngine';
@@ -26,43 +26,48 @@ export class MainView extends ReactWidget {
     if (!this._contentHandler.privateCopy) {
       return;
     }
-    if (this._contentHandler.aspectRatio){
+    if (this._contentHandler.aspectRatio) {
       this._height = this._width * this._contentHandler.aspectRatio;
     }
   }
 
-
+  /**
+   * This is used exclusively to handle the gquantlab widget resize event in the cell output of the notebook
+   * 
+   */
   public mimerenderWidgetUpdateSize(): void {
     this._calclateSize();
-    //if (this._contentHandler.privateCopy.nodes.length === 0) {
-    //  return;
-    //}
-    //this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
-    //this._contentHandler.reLayoutSignalInstance.emit();
-    //this._contentHandler.renderNodesAndEdges(this._contentHandler.privateCopy);
     if (!this._contentHandler.privateCopy) {
       return;
     }
-    if (!this._contentHandler.privateCopy.get('cache')){
+    if (!this._contentHandler.privateCopy.get('cache')) {
       return;
     }
-    if (!this._contentHandler.privateCopy.get("cache").nodes){
+    if (!this._contentHandler.privateCopy.get('cache').nodes) {
       return;
     }
-    this._contentHandler.contentChanged.emit(this._contentHandler.privateCopy.get("cache"));
+    const content: IChartInput = this._contentHandler.privateCopy.get('cache');
+    content['width'] = this._width;
+    content['height'] = this._height;
+    this._contentHandler.contentChanged.emit(content);
   }
-    onAfterAttach(msg: Message): void {
-      console.log('attached');
-      super.onAfterAttach(msg);
-      this._calclateSize();
-      if (!this._contentHandler.privateCopy){
-        return;
-      }
-      if (!this._contentHandler.privateCopy.get('value')){
-        return;
-      }
-      this._contentHandler.renderGraph(this._contentHandler.privateCopy.get("value"), this._width, this._height);
+
+  onAfterAttach(msg: Message): void {
+    console.log('attached');
+    super.onAfterAttach(msg);
+    this._calclateSize();
+    if (!this._contentHandler.privateCopy) {
+      return;
     }
+    if (!this._contentHandler.privateCopy.get('value')) {
+      return;
+    }
+    this._contentHandler.renderGraph(
+      this._contentHandler.privateCopy.get('value'),
+      this._width,
+      this._height
+    );
+  }
 
   public get contentHandler(): ContentHandler {
     return this._contentHandler;
@@ -77,33 +82,20 @@ export class MainView extends ReactWidget {
   protected onResize(msg: Widget.ResizeMessage): void {
     this._height = msg.height;
     this._width = msg.width;
-//    console.log('resize', this._height, this._width);
+    //    console.log('resize', this._height, this._width);
     if (this._height < 0 || this._width < 0) {
       // this is a hack that onResize doesn't work for rendered widget
       this.mimerenderWidgetUpdateSize();
       return;
     }
-    this._contentHandler.emit();
+    this._contentHandler.emit(this._width, this._height);
   }
 
   protected render(): React.ReactElement<any> {
     console.log('re render');
     return (
       <div>
-        <UseSignal
-          signal={this._contentHandler.contentChanged}
-          initialArgs={{ nodes: [], edges: [], width: 100, height: 100 }}
-        >
-          {(_, args): JSX.Element => {
-            return (
-              <ChartEngine
-                contentHandler={this._contentHandler}
-                height={args.height ? args.height : this._height}
-                width={args.width ? args.width : this._width}
-              />
-            );
-          }}
-        </UseSignal>
+        <ChartEngine contentHandler={this._contentHandler} />
       </div>
     );
   }

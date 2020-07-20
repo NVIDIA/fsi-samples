@@ -68,26 +68,41 @@ export class ContentHandler {
     this._privateCopy = widgetModel;
   }
 
-  renderNodesAndEdges(workflows: IChartInput): void {
-    this._contentChanged.emit(workflows);
-  }
-
   constructor(context: DocumentRegistry.Context) {
     this.context = context;
     //this.context.model.contentChanged.connect(this._onContentChanged, this);
-    this.emit();
+    //this.emit();
   }
 
+  /**
+   * Write graph info into the model
+   * @param content 
+   */
   public update(content: string): void {
     if (this.context) {
       this.context.model.fromString(content);
     }
   }
 
-  public emit(): void {
-    this._onContentChanged();
+  /**
+   * 
+   * Load the file from the model 
+   * And covert it to include UI elements
+   * Send to render 
+   * @param width, the width of the svg area
+   * @param height, the width of the svg area
+   */
+  public emit(width: number, height: number): void {
+    this._onContentChanged(width, height);
   }
 
+  /**
+   * Use the raw object from the file as input,  add UI information (UI schema, required, output_columns etc) to it
+   * 
+   * @param objContent 
+   * @param width 
+   * @param height 
+   */
   public async renderGraph(objContent: any, width?: number, height?: number): Promise<void> {
       const jsonString = JSON.stringify(objContent);
     // this.context.model.contentChanged.connect(this._onContentChanged, this);
@@ -101,10 +116,10 @@ export class ContentHandler {
     if (height){
       workflows.height = height;
     }
-    this.renderNodesAndEdges(workflows);
+    this._contentChanged.emit(workflows);
   }
 
-  private _onContentChanged(): void {
+  private _onContentChanged(width: number, height: number): void {
     console.log('content chagned');
     const refreshContent = async (): Promise<void> => {
       if (this.context === null) {
@@ -114,7 +129,7 @@ export class ContentHandler {
       const yamlContent = this.context.model.toString();
       console.log('model path', this.context.path);
       const objContent = YAML.parse(yamlContent);
-      this.renderGraph(objContent);
+      this.renderGraph(objContent, width, height);
     };
     refreshContent();
   }
