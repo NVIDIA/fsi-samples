@@ -171,16 +171,19 @@ export class Chart extends React.Component<IChartProp, IChartState> {
 
   addNewNode(sender: ContentHandler, inputs: INode): void {
     const result: INode = JSON.parse(JSON.stringify(inputs));
-    // if the Output Collector is already added, ignore it
-    const findDup = this.props.nodes.findIndex((d:INode)=> d.id === OUTPUT_COLLECTOR);
-    console.log(findDup);
-    if ( findDup >= 0){
-      return;
+    if (inputs.id === OUTPUT_COLLECTOR) {
+      // if the Output Collector is already added, ignore it
+      const findDup = this.props.nodes.findIndex(
+        (d: INode) => d.id === OUTPUT_COLLECTOR
+      );
+      console.log(findDup);
+      if (findDup >= 0) {
+        return;
+      }
     }
     if (result.type === 'Output Collector') {
       result.id = OUTPUT_COLLECTOR;
-    }
-    else{
+    } else {
       result.id = Math.random()
         .toString(36)
         .substring(2, 15);
@@ -419,7 +422,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.bars
       .selectAll('text')
       .filter((d: INode, i: number) => i === 0)
-      .data((d: INode, i: number) => [{ w: d.width, id: (d.id===OUTPUT_COLLECTOR?"":d.id)}])
+      .data((d: INode, i: number) => [
+        { w: d.width, id: d.id === OUTPUT_COLLECTOR ? '' : d.id }
+      ])
       .join('text')
       .attr('fill', 'white')
       .attr('x', (d: { w: number; id: string }) => d.w)
