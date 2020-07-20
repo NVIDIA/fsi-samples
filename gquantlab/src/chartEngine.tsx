@@ -111,6 +111,18 @@ export class ChartEngine extends React.Component<IProps, IState> {
       inputs.width,
       inputs.height
     );
+    // if the cache is empty, populate it
+    if (
+      this.props.contentHandler.privateCopy &&
+      this.props.contentHandler.privateCopy.get('cache') &&
+      !this.props.contentHandler.privateCopy.get('cache').nodes
+    ) {
+      console.log('empty cache', this.state);
+      const newState = {nodes: layoutNodes, edges: inputs.edges};
+      const stateCopy = JSON.parse(JSON.stringify(newState));
+      this.props.contentHandler.privateCopy.set('cache', stateCopy);
+      this.props.contentHandler.privateCopy.save();
+    }
     this.setState({
       nodes: layoutNodes,
       edges: inputs.edges,
