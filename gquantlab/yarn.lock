@@ -311,6 +311,19 @@
     path-posix "~1.0.0"
     url-parse "~1.4.7"
 
+"@jupyterlab/coreutils@^4.2.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/coreutils/-/coreutils-4.2.0.tgz#13ee2291cad40995f17dee8e6572913d50c83e60"
+  integrity sha512-jxR3Y6ONYL4Pe6I1cT9hgsU7iCuNQfb31FBK9HX62D5ky40O/BN2VYlNX6+lPXXeSEvH4kqKEQfMG1kADK2ONg==
+  dependencies:
+    "@lumino/coreutils" "^1.4.2"
+    "@lumino/disposable" "^1.3.5"
+    "@lumino/signaling" "^1.3.5"
+    minimist "~1.2.0"
+    moment "^2.24.0"
+    path-posix "~1.0.0"
+    url-parse "~1.4.7"
+
 "@jupyterlab/docmanager@^2.1.2":
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/@jupyterlab/docmanager/-/docmanager-2.1.2.tgz#036f6a2ef61eacee2a4d4f2e9bc85e225a85f343"
@@ -521,6 +534,22 @@
     "@blueprintjs/core" "^3.22.2"
     "@blueprintjs/select" "^3.11.2"
     "@jupyterlab/coreutils" "^4.1.0"
+    "@lumino/coreutils" "^1.4.2"
+    "@lumino/signaling" "^1.3.5"
+    "@lumino/virtualdom" "^1.6.1"
+    "@lumino/widgets" "^1.11.1"
+    react "~16.9.0"
+    react-dom "~16.9.0"
+    typestyle "^2.0.4"
+
+"@jupyterlab/ui-components@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/ui-components/-/ui-components-2.2.0.tgz#fe4edfc589789b154cbe0302c513dcdf2708a5e8"
+  integrity sha512-ggMP82+IRMH9fJmQqYm/F/qmeDLCnyOzG5113LKWEorPiEdvp68ufc8cZLHxd0q4KIeI5grmvqnqwJxAdEEMvA==
+  dependencies:
+    "@blueprintjs/core" "^3.22.2"
+    "@blueprintjs/select" "^3.11.2"
+    "@jupyterlab/coreutils" "^4.2.0"
     "@lumino/coreutils" "^1.4.2"
     "@lumino/signaling" "^1.3.5"
     "@lumino/virtualdom" "^1.6.1"

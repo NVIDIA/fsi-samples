@@ -10,10 +10,10 @@ import {
 import { MODULE_NAME, MODULE_VERSION } from './version';
 import { ContentHandler, IAllNodes, INode } from './document';
 import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
-import { Panel, ContextMenu, Menu } from '@lumino/widgets';
+import { Panel, Menu } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
 import { requestAPI } from './gquantlab';
-
+import { ContextMenuSvg } from '@jupyterlab/ui-components';
 // Import the CSS
 // import '../css/widget.css';
 
@@ -65,7 +65,8 @@ export class GQuantView extends DOMWidgetView {
 
   createContexMenu() {
     const commands = new CommandRegistry();
-    const contextMenu = new ContextMenu({ commands });
+    
+    const contextMenu = new ContextMenuSvg({ commands });
 
     commands.addCommand('gquant:reLayout', {
       label: 'Taskgraph Nodes Auto Layout',
@@ -163,7 +164,7 @@ export class GQuantView extends DOMWidgetView {
       execute: () => {
         const output: INode = {
           id: OUTPUT_COLLECTOR,
-          width: 200,
+          width: 160,
           type: 'Output Collector',
           conf: {},
           required: {},

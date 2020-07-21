@@ -249,7 +249,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
     if (nodes.length === 0) {
       return;
     }
-    const layoutNodes = this._updateLayout(nodes, edges, transform);
+    const layoutNodes = this._updateLayout(nodes, edges, transform, this.state.width, this.state.height);
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 

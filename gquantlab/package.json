@@ -54,6 +54,7 @@
     "@jupyterlab/mainmenu": "^2.1.1",
     "@jupyterlab/rendermime": "^2.1.1",
     "@jupyterlab/services": "^5.0.0",
+    "@jupyterlab/ui-components": "^2.2.0",
     "@lumino/commands": "^1.11.2",
     "@lumino/coreutils": "^1.5.2",
     "@lumino/domutils": "^1.2.2",
