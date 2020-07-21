@@ -155,6 +155,7 @@ export interface INode {
   filepath?: string;
   required: any;
   output_columns: any;
+  busy?: boolean;
 }
 
 export interface IEdge {

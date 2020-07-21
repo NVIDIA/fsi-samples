@@ -11,6 +11,9 @@ interface IProps {
   contentHandler: ContentHandler;
 }
 
+const DefaultWidth = 100;
+const DefaultHeight = 100;
+
 interface IState {
   height: number;
   width: number;
@@ -70,8 +73,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
   constructor(props: IProps) {
     super(props);
     this.state = {
-      height: 100,
-      width: 100,
+      height: null,
+      width: null,
       nodes: [],
       edges: []
     };
@@ -104,18 +107,23 @@ export class ChartEngine extends React.Component<IProps, IState> {
    */
 
   contentChangeHandler(sender: ContentHandler, inputs: IChartInput): void {
+    if (!inputs.width && !inputs.height){
+      // if the size is not determined, do nothing
+      return;
+    }
     const layoutNodes = this._updateLayout(
       inputs.nodes,
       inputs.edges,
       null,
-      inputs.width,
-      inputs.height
+      inputs.width?inputs.width:DefaultWidth,
+      inputs.height?inputs.height:DefaultHeight
     );
-    // if the cache is empty, populate it
+    // if the cache is empty and the height/width are determined, populate it so it can be shared between GquantViews
     if (
       this.props.contentHandler.privateCopy &&
       this.props.contentHandler.privateCopy.get('cache') &&
-      !this.props.contentHandler.privateCopy.get('cache').nodes
+      !this.props.contentHandler.privateCopy.get('cache').nodes &&
+      inputs.width && inputs.height
     ) {
       console.log('empty cache', this.state);
       const newState = {nodes: layoutNodes, edges: inputs.edges};
@@ -208,8 +216,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
       d4
         .sugiyama()
         .size([
-          height ? height : this.state.height,
-          width ? width : this.state.width
+          height ? height : DefaultHeight,
+          width ? width : DefaultWidth
         ])
         .layering(d4.layeringSimplex())
         .decross(d4.decrossOpt())
@@ -289,15 +297,15 @@ export class ChartEngine extends React.Component<IProps, IState> {
   }
 
   render(): JSX.Element {
-    console.log('chart engine render');
+    console.log('chart engine render', this.state.height, this.state.width);
     return (
       <Chart
         contentHandler={this.props.contentHandler}
         nodes={this.state.nodes}
         edges={this.state.edges}
         setChartState={this.updateWorkFlow.bind(this)}
-        width={this.state.width}
-        height={this.state.height}
+        width={this.state.width?this.state.width:DefaultWidth}
+        height={this.state.height?this.state.height:DefaultHeight}
         layout={this.layout.bind(this)}
       />
     );

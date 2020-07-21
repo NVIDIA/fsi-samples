@@ -223,14 +223,11 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.svg = d3
       .select(this.myRef.current)
       .append('svg')
-      .attr('width', this.props.width ? this.props.width : 100)
-      .attr('height', this.props.height ? this.props.height : 100)
+      .attr('width', this.props.width)
+      .attr('height', this.props.height)
       .attr(
         'viewBox',
-        `0 0 ${(this.props.width ? this.props.width : 0) + 300} ${(this.props
-          .height
-          ? this.props.height
-          : 0) + 300}`
+        `0 0 ${this.props.width + 300} ${this.props.height + 300}`
       )
       .attr('font-family', 'sans-serif')
       .attr('font-size', '14')
@@ -397,13 +394,14 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           w: d.width,
           h:
             this.textHeight +
-            Math.max(d.inputs.length, d.outputs.length) * this.circleHeight
+            Math.max(d.inputs.length, d.outputs.length) * this.circleHeight,
+          color: d.busy ? 'red' : 'steelblue'
         }
       ])
       .join('rect')
-      .attr('fill', 'steelblue')
-      .attr('width', (d: { w: number; h: number }) => d.w)
-      .attr('height', (d: { w: number; h: number }) => d.h)
+      .attr('fill', (d: { w: number; h: number; color: string }) => d.color)
+      .attr('width', (d: { w: number; h: number; color: string }) => d.w)
+      .attr('height', (d: { w: number; h: number; color: string }) => d.h)
       .on('mouseover', handleHighlight(this, 'red', 'pointer'))
       .on('mouseout', handleDeHighlight(this));
 
@@ -504,14 +502,11 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.portMap();
     if (this.svg) {
       this.svg
-        .attr('width', this.props.width ? this.props.width : 100)
-        .attr('height', this.props.height ? this.props.height : 100)
+        .attr('width', this.props.width)
+        .attr('height', this.props.height)
         .attr(
           'viewBox',
-          `0 0 ${(this.props.width ? this.props.width : 0) + 300} ${(this.props
-            .height
-            ? this.props.height
-            : 0) + 300}`
+          `0 0 ${this.props.width + 300} ${this.props.height + 300}`
         );
     }
 
