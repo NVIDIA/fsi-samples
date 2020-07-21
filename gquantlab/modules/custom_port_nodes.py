@@ -371,11 +371,11 @@ class VerifyNode(Node):
             # df2_col = df2_col.compute()
             pass
 
-        max_difference = float((df1_col - df2_col).abs().max())
+        max_difference = (df1_col - df2_col).abs().max()
 
         if isinstance(max_difference, dask.dataframe.core.Scalar):
             max_difference = float(max_difference.compute())
-
+        max_difference = float(max_difference)
         # print('Max Difference: {}'.format(max_difference))
         # assert(max_difference < 1e-8)
 
