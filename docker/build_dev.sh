@@ -17,15 +17,15 @@ OPERATING_SYSTEM=${OPERATING_SYSTEM:-1}
 case $OPERATING_SYSTEM in
     1)
         echo "Ubuntu 16.04 selected."
-        OS_STR="ubuntu16.04"
+        OS_STR="10.2-cudnn8-devel-ubuntu16.04"
         ;;
     2)
         echo "Ubuntu 18.04 selected."
-        OS_STR="ubuntu18.04"
+        OS_STR="10.2-cudnn8-devel-ubuntu18.04"
         ;;
     *)
         echo "Ubuntu 20.04 selected."
-        OS_STR="ubuntu20.04"
+        OS_STR="11.0-devel-ubuntu20.04"
         ;;
 esac
 
@@ -57,7 +57,7 @@ esac
 D_CONT=${D_CONT:="gquant/gquant:${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}"}
 
 cat > $D_FILE <<EOF
-FROM nvidia/cuda:10.2-cudnn8-devel-$OS_STR
+FROM nvidia/cuda:$OS_STR
 EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
