@@ -492,14 +492,18 @@ class NodeTaskGraphMixin(object):
     def __set_input_column(self, to_port, columns):
         self.input_columns[to_port] = columns
 
-    def flow(self):
+    def flow(self, progress_fun=None):
         """
+        progress_fun is used to show the progress of computaion
+        it is function that takes node id as argument
         flow from this node to do computation.
             * it will check all the input dataframe are ready or not
             * calls its process function to manipulate the input dataframes
             * set the resulting dataframe to the children nodes as inputs
             * flow each of the chidren nodes
         """
+        if progress_fun is not None:
+            progress_fun(self.uid)
         input_ready = self.__input_ready()
         if not input_ready:
             return
@@ -549,7 +553,7 @@ class NodeTaskGraphMixin(object):
 
             onode.__set_input_df(iport, df)
 
-            onode.flow()
+            onode.flow(progress_fun)
 
     def __make_copy(self, df_obj):
         if isinstance(df_obj, cudf.DataFrame):

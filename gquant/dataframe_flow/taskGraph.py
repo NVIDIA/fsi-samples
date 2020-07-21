@@ -7,6 +7,7 @@ from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 import warnings
 import json
+import copy
 
 
 
@@ -149,6 +150,7 @@ class TaskGraph(object):
         self.__node_dict = {}
         self.__outputs = [] # this is used to store a list of outputs
         self.__index = None
+        self.__widget = None # this is server widget that this taskgraph associated with
 
         error_msg = 'Task-id "{}" already in the task graph. Set '\
                     'replace=True to replace existing task with extended task.'
@@ -435,9 +437,12 @@ class TaskGraph(object):
     def set_outputs(self, outputs):
         self.__outputs.clear()
         self.__outputs.extend(outputs)
-
+    
     def get_outputs(self):
         return self.__outputs
+    
+    def get_widget(self):
+        return self.__widget
 
     def run(self, outputs=None, replace=None, profile=False):
         """
@@ -518,9 +523,31 @@ class TaskGraph(object):
                     }
                     inode.outputs.remove(onode_info)
                 node_check_visit.inputs = []
-
-        for i in inputs:
-            i.flow()
+        
+        if self.__widget is not None:
+            def progress_fun(uid):
+                cacheCopy = copy.deepcopy(self.__widget.cache)
+                nodes = list(filter(lambda x: x['id'] == uid , cacheCopy['nodes']))
+                if len(nodes) > 0:
+                    current_node = nodes[0]
+                    current_node['busy'] = True
+                self.__widget.cache = cacheCopy
+            for i in inputs:
+                i.flow(progress_fun)
+            # clean up the progress
+            def cleanup():
+                import time
+                cacheCopy = copy.deepcopy(self.__widget.cache)
+                for node in cacheCopy['nodes']:
+                    node['busy'] = False
+                time.sleep(1)
+                self.__widget.cache = cacheCopy
+            import threading
+            t = threading.Thread(target = cleanup)
+            t.start()
+        else:
+            for i in inputs:
+                i.flow()
 
         results_dfs_dict = outputs_collector_node.input_df
         Result = namedtuple('Result', " ".join(outputs).replace('.', '_'))
@@ -555,6 +582,7 @@ class TaskGraph(object):
             widget = GQuantWidget()
             widget.value = self.export_task_speclist()
             widget.set_taskgraph(self)
+            self.__widget = widget
             return widget
         else:
             return pdot_out

@@ -13,16 +13,6 @@ import sys
 sys.path.append('modules') # noqa E262
 import os
 
-print("Path at terminal when executing this file")
-print(os.getcwd() + "\n")
-
-print("This file path, relative to os.getcwd()")
-print(__file__ + "\n")
-
-print("This file full path (following symlinks)")
-full_path = os.path.realpath(__file__)
-print(full_path + "\n")
-
 
 def get_nodes_from_file(file):
     """
