@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 import networkx as nx
 import yaml
 from .node import Node
@@ -523,9 +523,13 @@ class TaskGraph(object):
             i.flow()
 
         results_dfs_dict = outputs_collector_node.input_df
+        Result = namedtuple('Result', " ".join(outputs).replace('.', '_'))
+        results = []
+        for task_id in results_task_ids:
+            results.append(results_dfs_dict[task_id])
         # clean the results afterwards
         outputs_collector_node.input_df = {}
-        return results_dfs_dict
+        return Result(*results)
 
     def to_pydot(self, show_ports=False):
         nx_graph = self.viz_graph(show_ports=show_ports)
