@@ -1,4 +1,4 @@
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict
 import networkx as nx
 import yaml
 from .node import Node
@@ -10,8 +10,35 @@ import json
 import copy
 
 
-
 __all__ = ['TaskGraph']
+
+
+class Results(object):
+
+    def __init__(self, values):
+        self.values = tuple([i[1] for i in values])
+        self.__dict = OrderedDict(values)
+
+    def __iter__(self):
+        return iter(self.values)
+
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            return self.values[key]
+        else:
+            return self.__dict[key]
+
+    def __len__(self):
+        return len(self.values)
+
+    def __repr__(self):
+        return "Results"+self.__dict.__repr__()[11:]
+
+    def __str__(self):
+        return "Results"+self.__dict.__str__()[11:]
+
+    def __contains__(self, key):
+        return True if key in self.__dict else False
 
 
 def format_port(port):
@@ -148,9 +175,10 @@ class TaskGraph(object):
         '''
         self.__task_list = {}
         self.__node_dict = {}
-        self.__outputs = [] # this is used to store a list of outputs
+        self.__outputs = []  # this is used to store a list of outputs
         self.__index = None
-        self.__widget = None # this is server widget that this taskgraph associated with
+        # this is server widget that this taskgraph associated with
+        self.__widget = None
 
         error_msg = 'Task-id "{}" already in the task graph. Set '\
                     'replace=True to replace existing task with extended task.'
@@ -270,7 +298,8 @@ class TaskGraph(object):
                                ])
             tod.update(task._task_spec)
             if not isinstance(tod[TaskSpecSchema.node_type], str):
-                tod[TaskSpecSchema.node_type] = tod[TaskSpecSchema.node_type].__name__
+                tod[TaskSpecSchema.node_type] = tod[
+                    TaskSpecSchema.node_type].__name__
             tlist_od.append(tod)
         return tlist_od
 
@@ -427,7 +456,7 @@ class TaskGraph(object):
         for k in self.__node_dict.keys():
             out_str += k + ": " + str(self.__node_dict[k]) + "\n"
         return out_str
-    
+
     def reset(self):
         self.__node_dict.clear()
         self.__task_list.clear()
@@ -437,10 +466,10 @@ class TaskGraph(object):
     def set_outputs(self, outputs):
         self.__outputs.clear()
         self.__outputs.extend(outputs)
-    
+
     def get_outputs(self):
         return self.__outputs
-    
+
     def get_widget(self):
         return self.__widget
 
@@ -523,11 +552,12 @@ class TaskGraph(object):
                     }
                     inode.outputs.remove(onode_info)
                 node_check_visit.inputs = []
-        
+
         if self.__widget is not None:
             def progress_fun(uid):
                 cacheCopy = copy.deepcopy(self.__widget.cache)
-                nodes = list(filter(lambda x: x['id'] == uid , cacheCopy['nodes']))
+                nodes = list(filter(lambda x: x['id'] == uid,
+                                    cacheCopy['nodes']))
                 if len(nodes) > 0:
                     current_node = nodes[0]
                     current_node['busy'] = True
@@ -535,6 +565,7 @@ class TaskGraph(object):
             for i in inputs:
                 i.flow(progress_fun)
             # clean up the progress
+
             def cleanup():
                 import time
                 cacheCopy = copy.deepcopy(self.__widget.cache)
@@ -543,20 +574,19 @@ class TaskGraph(object):
                 time.sleep(1)
                 self.__widget.cache = cacheCopy
             import threading
-            t = threading.Thread(target = cleanup)
+            t = threading.Thread(target=cleanup)
             t.start()
         else:
             for i in inputs:
                 i.flow()
 
         results_dfs_dict = outputs_collector_node.input_df
-        Result = namedtuple('Result', " ".join(outputs).replace('.', '_'))
         results = []
         for task_id in results_task_ids:
-            results.append(results_dfs_dict[task_id])
+            results.append((task_id, results_dfs_dict[task_id]))
         # clean the results afterwards
         outputs_collector_node.input_df = {}
-        return Result(*results)
+        return Results(results)
 
     def to_pydot(self, show_ports=False):
         nx_graph = self.viz_graph(show_ports=show_ports)
