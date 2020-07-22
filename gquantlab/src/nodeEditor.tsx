@@ -72,6 +72,7 @@ class NodeEditor extends React.Component<IProp> {
       opacity: ${this.props.opacity};
       left: ${x};
       top: ${y};
+      z-index: 1000;
     `;
     const Button = styled.button`
       background-color: red;

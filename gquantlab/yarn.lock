@@ -261,6 +261,44 @@
     react-dom "~16.9.0"
     sanitize-html "~1.20.1"
 
+"@jupyterlab/attachments@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/attachments/-/attachments-2.2.0.tgz#30c8b755fb6304454f9170e968acbe90f6b568be"
+  integrity sha512-GeNKuSNpc6v5KjXbek6kSxPYoUaPcPEyTehBpDay3m44H8vo/K5WXCCMu3x+i8JKG+fCsDFSAvnkPKeziGRgpA==
+  dependencies:
+    "@jupyterlab/nbformat" "^2.2.0"
+    "@jupyterlab/observables" "^3.2.0"
+    "@jupyterlab/rendermime" "^2.2.0"
+    "@jupyterlab/rendermime-interfaces" "^2.2.0"
+    "@lumino/disposable" "^1.3.5"
+    "@lumino/signaling" "^1.3.5"
+
+"@jupyterlab/cells@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/cells/-/cells-2.2.0.tgz#0110d50cc992e04bb1ff90ebc8c0e73f0059bc8f"
+  integrity sha512-Hy/B5JahXKouCNRLTZPEbWryPNh9rhGsO801wG147mPBdVacWWqYafPNFH8LDkXgZcGVJu4TB94+GF6ZlV/oug==
+  dependencies:
+    "@jupyterlab/apputils" "^2.2.0"
+    "@jupyterlab/attachments" "^2.2.0"
+    "@jupyterlab/codeeditor" "^2.2.0"
+    "@jupyterlab/codemirror" "^2.2.0"
+    "@jupyterlab/coreutils" "^4.2.0"
+    "@jupyterlab/filebrowser" "^2.2.0"
+    "@jupyterlab/nbformat" "^2.2.0"
+    "@jupyterlab/observables" "^3.2.0"
+    "@jupyterlab/outputarea" "^2.2.0"
+    "@jupyterlab/rendermime" "^2.2.0"
+    "@jupyterlab/services" "^5.2.0"
+    "@jupyterlab/ui-components" "^2.2.0"
+    "@lumino/algorithm" "^1.2.3"
+    "@lumino/coreutils" "^1.4.2"
+    "@lumino/dragdrop" "^1.5.1"
+    "@lumino/messaging" "^1.3.3"
+    "@lumino/signaling" "^1.3.5"
+    "@lumino/virtualdom" "^1.6.1"
+    "@lumino/widgets" "^1.11.1"
+    react "~16.9.0"
+
 "@jupyterlab/codeeditor@^2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@jupyterlab/codeeditor/-/codeeditor-2.2.0.tgz#124bb0c7e61ab5c15c12ea4c9e95072e3f38900a"
@@ -351,7 +389,7 @@
     "@lumino/signaling" "^1.3.5"
     "@lumino/widgets" "^1.11.1"
 
-"@jupyterlab/filebrowser@^2.1.1":
+"@jupyterlab/filebrowser@^2.1.1", "@jupyterlab/filebrowser@^2.2.0":
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/@jupyterlab/filebrowser/-/filebrowser-2.2.0.tgz#0c1a29e1edb324e92c8598779df77fc31c3485c0"
   integrity sha512-iPXecsNxz8Zdfv1IEXwN1hrgJzuM4ARw/5DZczp6aWZlaODRD6spA4lwkQ08SBAEtwcYDfMpyaEcI3fBjx8UhA==
@@ -411,6 +449,33 @@
   dependencies:
     "@lumino/coreutils" "^1.4.2"
 
+"@jupyterlab/notebook@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/notebook/-/notebook-2.2.0.tgz#3f240eb17f6a447d43f1374ee6e20432f35cad14"
+  integrity sha512-sFjUjaBWLK4bkZ04czbaSJSqisYel6wyjtQZ43Nv3AEQya0AjW37b++1G0f5TdvE//lJTC4OCGDNTZAVVCbK9g==
+  dependencies:
+    "@jupyterlab/apputils" "^2.2.0"
+    "@jupyterlab/cells" "^2.2.0"
+    "@jupyterlab/codeeditor" "^2.2.0"
+    "@jupyterlab/coreutils" "^4.2.0"
+    "@jupyterlab/docregistry" "^2.2.0"
+    "@jupyterlab/nbformat" "^2.2.0"
+    "@jupyterlab/observables" "^3.2.0"
+    "@jupyterlab/rendermime" "^2.2.0"
+    "@jupyterlab/services" "^5.2.0"
+    "@jupyterlab/statusbar" "^2.2.0"
+    "@jupyterlab/ui-components" "^2.2.0"
+    "@lumino/algorithm" "^1.2.3"
+    "@lumino/coreutils" "^1.4.2"
+    "@lumino/domutils" "^1.1.7"
+    "@lumino/dragdrop" "^1.5.1"
+    "@lumino/messaging" "^1.3.3"
+    "@lumino/properties" "^1.1.6"
+    "@lumino/signaling" "^1.3.5"
+    "@lumino/virtualdom" "^1.6.1"
+    "@lumino/widgets" "^1.11.1"
+    react "~16.9.0"
+
 "@jupyterlab/observables@^3.2.0":
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/@jupyterlab/observables/-/observables-3.2.0.tgz#866d9c9f3bdb2fda5c3262647deb72b5cd009ae2"
@@ -421,6 +486,25 @@
     "@lumino/disposable" "^1.3.5"
     "@lumino/messaging" "^1.3.3"
     "@lumino/signaling" "^1.3.5"
+
+"@jupyterlab/outputarea@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/@jupyterlab/outputarea/-/outputarea-2.2.0.tgz#044515c9557dabf81636c3a724077c56c24b9fa9"
+  integrity sha512-ZMhcCHD6mEnvZ0DMvfnuKqDAOKDrbjS5F1ibTpdamohoLoECNc+NcU2j0TgyHwPEEFjU0uKlsVPPmus27uQxpA==
+  dependencies:
+    "@jupyterlab/apputils" "^2.2.0"
+    "@jupyterlab/nbformat" "^2.2.0"
+    "@jupyterlab/observables" "^3.2.0"
+    "@jupyterlab/rendermime" "^2.2.0"
+    "@jupyterlab/rendermime-interfaces" "^2.2.0"
+    "@jupyterlab/services" "^5.2.0"
+    "@lumino/algorithm" "^1.2.3"
+    "@lumino/coreutils" "^1.4.2"
+    "@lumino/disposable" "^1.3.5"
+    "@lumino/messaging" "^1.3.3"
+    "@lumino/properties" "^1.1.6"
+    "@lumino/signaling" "^1.3.5"
+    "@lumino/widgets" "^1.11.1"
 
 "@jupyterlab/rendermime-interfaces@^2.2.0":
   version "2.2.0"

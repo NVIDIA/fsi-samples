@@ -22,16 +22,19 @@ import gqStr from '../style/gq.svg';
 
 import { LabIcon } from '@jupyterlab/ui-components';
 
-
 import {
   ICommandPalette,
   IWidgetTracker,
   WidgetTracker
 } from '@jupyterlab/apputils';
-import { GquantWidget, GquantFactory, IAllNodes } from './document';
+import { GquantWidget, GquantFactory, IAllNodes, INode } from './document';
 import { Menu } from '@lumino/widgets';
-import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
+import { INotebookTracker } from '@jupyterlab/notebook';
+import { CodeCell } from '@jupyterlab/cells';
+import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
+import YAML from 'yaml';
+
 // import { LabIcon } from '@jupyterlab/ui-components';
 // import { LabIcon } from '@jupyterlab/ui-components/lib/icon/labicon';
 
@@ -44,22 +47,30 @@ type IGQUANTTracker = IWidgetTracker<GquantWidget>;
 export const gqIcon = new LabIcon({ name: 'gquantlab:gq', svgstr: gqStr });
 
 export const IGQUANTTracker = new Token<IGQUANTTracker>('gquant/tracki');
+
 /**
  * Initialization data for the gquantlab extension.
  */
 const extension: JupyterFrontEndPlugin<void> = {
-  id: 'gquantlab',
+  id: 'gquantlab-extension',
   requires: [
     IFileBrowserFactory,
     ILayoutRestorer,
     IMainMenu,
     ICommandPalette,
-    IRenderMimeRegistry,
-    IJupyterWidgetRegistry
+    INotebookTracker
   ],
   optional: [ILauncher],
   autoStart: true,
   activate: activateFun
+};
+
+const gquantWidget: JupyterFrontEndPlugin<void> = {
+  id: 'gquantlab',
+  requires: [IJupyterWidgetRegistry],
+  optional: [ILauncher],
+  autoStart: true,
+  activate: activateWidget
 };
 
 function activateFun(
@@ -68,8 +79,7 @@ function activateFun(
   restorer: ILayoutRestorer,
   menu: IMainMenu,
   palette: ICommandPalette,
-  rendermime: IRenderMimeRegistry,
-  jupyterWidgetRegistry: IJupyterWidgetRegistry,
+  notebookTracker: INotebookTracker,
   launcher: ILauncher | null
 ): void {
   const namespace = 'gquant';
@@ -81,14 +91,47 @@ function activateFun(
   const { commands } = app;
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
 
+  function getMainView(): MainView {
+    const codecell = notebookTracker.activeCell as CodeCell;
+    const outputArea = codecell.outputArea;
+    let widget = outputArea.widgets[0];
+    const children = widget.children();
+    //first one is output promot
+    children.next();
+    //second one is output wrapper
+    widget = children.next();
+    // this is the panel
+    widget = widget.children().next();
+    // this is the mainview
+    const mainView = widget.children().next() as MainView;
+    return mainView;
+  }
+
   /**
    * Whether there is an active graph editor
    */
-  function isEnabled(): boolean {
+  function isCellVisible(): boolean {
+    return (
+      notebookTracker.currentWidget !== null &&
+      notebookTracker.currentWidget === app.shell.currentWidget
+    );
+  }
+
+  /**
+   * Whether there is an active graph editor
+   */
+  function isGquantVisible(): boolean {
     return (
       tracker.currentWidget !== null &&
       tracker.currentWidget === app.shell.currentWidget
     );
+  }
+
+  /**
+   * Whether there is an active graph editor
+   */
+  function isVisible(): boolean {
+    return isGquantVisible() || isCellVisible();
   }
 
   // Handle state restoration.
@@ -122,36 +165,58 @@ function activateFun(
   // Function to create a new untitled diagram file, given
   // the current working directory.
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const createGQFile = (cwd: string) => {
-    return commands
-      .execute('docmanager:new-untitled', {
-        path: cwd,
-        type: 'file',
-        ext: '.gq.yaml'
-      })
-      .then(model => {
-        return commands.execute('docmanager:open', {
-          path: model.path,
-          factory: FACTORY
-        });
-      });
+  const createGQFile = async (cwd: string) => {
+    const model = await commands.execute('docmanager:new-untitled', {
+      path: cwd,
+      type: 'file',
+      ext: '.gq.yaml'
+    });
+    return commands.execute('docmanager:open', {
+      path: model.path,
+      factory: FACTORY
+    });
   };
 
+  const convertToGQFile = async (cwd: string) => {
+    const model = await commands.execute('docmanager:new-untitled', {
+      path: cwd,
+      type: 'file',
+      ext: '.gq.yaml'
+    });
+    console.log('here');
+    const mainView  = getMainView();
+    const obj = mainView.contentHandler.privateCopy.get('value');
+    console.log('content',obj)
+    console.log('content text',YAML.stringify(obj));
+    model.content = YAML.stringify(obj);
+    model.format = 'text';
+    app.serviceManager.contents.save(model.path, model);
+  };
+
+  commands.addCommand('gquant:convertCellToFile', {
+    label: 'Create Taskgraph from this Cell',
+    caption: 'Create Taskgraph from this Cell',
+    icon: gqIcon,
+    execute: () => {
+      //const cwd = notebookTracker.currentWidget.context.path;
+      const cwd = browserFactory.defaultBrowser.model.path;
+      return convertToGQFile(cwd);
+    },
+    isVisible: isCellVisible,
+  });
+
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const createNewTaskgraph = (cwd: string) => {
-    return commands
-      .execute('docmanager:new-untitled', {
-        path: cwd,
-        type: 'file',
-        ext: '.gq.yaml'
-      })
-      .then(model => {
-        //let wdg = app.shell.currentWidget as any;
-        // wdg.getSVG()
-        model.content = '';
-        model.format = 'text';
-        app.serviceManager.contents.save(model.path, model);
-      });
+  const createNewTaskgraph = async (cwd: string) => {
+    const model = await commands.execute('docmanager:new-untitled', {
+      path: cwd,
+      type: 'file',
+      ext: '.gq.yaml'
+    });
+    //let wdg = app.shell.currentWidget as any;
+    // wdg.getSVG()
+    model.content = '';
+    model.format = 'text';
+    app.serviceManager.contents.save(model.path, model);
   };
 
   // Add a command for creating a new diagram file.
@@ -171,8 +236,7 @@ function activateFun(
     execute: () => {
       const cwd = browserFactory.defaultBrowser.model.path;
       return createNewTaskgraph(cwd);
-    },
-    isEnabled
+    }
   });
 
   commands.addCommand('gquant:reLayout', {
@@ -180,10 +244,63 @@ function activateFun(
     caption: 'Taskgraph Nodes Auto Layout',
     mnemonic: 0,
     execute: () => {
-      const wdg = app.shell.currentWidget as any;
-      wdg.contentHandler.reLayoutSignal.emit();
+      if (isCellVisible()) {
+        const mainView = getMainView();
+        mainView.contentHandler.reLayoutSignal.emit();
+      } else {
+        const wdg = app.shell.currentWidget as any;
+        wdg.contentHandler.reLayoutSignal.emit();
+      }
     },
-    isEnabled
+    isVisible
+  });
+
+  commands.addCommand('gquant:aspect1', {
+    label: 'AspectRatio 1.0',
+    caption: 'AspectRatio 1.0',
+    mnemonic: 14,
+    execute: () => {
+      const mainView = getMainView();
+      mainView.contentHandler.aspectRatio = 1.0;
+      mainView.mimerenderWidgetUpdateSize();
+    },
+    isVisible: isCellVisible
+  });
+
+  commands.addCommand('gquant:aspect0.3', {
+    label: 'AspectRatio 0.3',
+    caption: 'AspectRatio 0.3',
+    mnemonic: 14,
+    execute: () => {
+      const mainView = getMainView();
+      mainView.contentHandler.aspectRatio = 0.3;
+      mainView.mimerenderWidgetUpdateSize();
+    },
+    isVisible: isCellVisible
+  });
+
+  commands.addCommand('gquant:aspect0.5', {
+    label: 'AspectRatio 0.5',
+    caption: 'AspectRatio 0.5',
+    mnemonic: 14,
+    execute: () => {
+      const mainView = getMainView();
+      mainView.contentHandler.aspectRatio = 0.5;
+      mainView.mimerenderWidgetUpdateSize();
+    },
+    isVisible: isCellVisible
+  });
+
+  commands.addCommand('gquant:aspect0.7', {
+    label: 'AspectRatio 0.7',
+    caption: 'AspectRatio 0.7',
+    mnemonic: 14,
+    execute: () => {
+      const mainView = getMainView();
+      mainView.contentHandler.aspectRatio = 0.7;
+      mainView.mimerenderWidgetUpdateSize();
+    },
+    isVisible: isCellVisible
   });
 
   app.contextMenu.addItem({
@@ -195,6 +312,12 @@ function activateFun(
     command: 'filebrowser:download',
     selector: '.jp-GQuant'
   });
+
+  app.contextMenu.addItem({
+    command: 'gquant:convertCellToFile',
+    selector: '.jp-GQuant'
+  });
+
 
   app.contextMenu.addItem({
     command: 'gquant:reLayout',
@@ -217,12 +340,17 @@ function activateFun(
         const commandName = 'addnode:' + name;
         commands.addCommand(commandName, {
           label: 'Add ' + name,
-          mnemonic: 1,
+          mnemonic: 4,
           execute: () => {
-            const wdg = app.shell.currentWidget as any;
-            wdg.contentHandler.nodeAddedSignal.emit(allNodes[k][i]);
+            if (isCellVisible()) {
+              const mainView = getMainView();
+              mainView.contentHandler.nodeAddedSignal.emit(allNodes[k][i]);
+            } else {
+              const wdg = app.shell.currentWidget as any;
+              wdg.contentHandler.nodeAddedSignal.emit(allNodes[k][i]);
+            }
           },
-          isEnabled
+          isVisible
         });
         submenu.addItem({ command: commandName });
         if (palette) {
@@ -241,6 +369,57 @@ function activateFun(
       });
     }
   });
+
+  app.contextMenu.addItem({
+    type: 'separator',
+    selector: '.jp-GQuant'
+  });
+
+  commands.addCommand('add:outputCollector', {
+    label: 'Add Output Collector',
+    mnemonic: 1,
+    execute: () => {
+      const output: INode = {
+        id: OUTPUT_COLLECTOR,
+        width: 160,
+        type: 'Output Collector',
+        conf: {},
+        required: {},
+        output_columns: [],
+        outputs: [],
+        schema: {},
+        ui: {},
+        inputs: [{ name: 'in1', type: ['any'] }]
+      };
+      const mainView = getMainView();
+      mainView.contentHandler.nodeAddedSignal.emit(output);
+    },
+    isVisible: isCellVisible
+  });
+
+  app.contextMenu.addItem({
+    command: 'add:outputCollector',
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    type: 'separator',
+    selector: '.jp-GQuant'
+  });
+
+  const submenu = new Menu({ commands });
+  submenu.title.label = 'Change Aspect Ratio';
+  submenu.title.mnemonic = 0;
+  submenu.addItem({ command: 'gquant:aspect0.3' });
+  submenu.addItem({ command: 'gquant:aspect0.5' });
+  submenu.addItem({ command: 'gquant:aspect0.7' });
+  submenu.addItem({ command: 'gquant:aspect1' });
+  app.contextMenu.addItem({
+    type: 'submenu',
+    submenu: submenu,
+    selector: '.jp-GQuant'
+  });
+
   // Add a launcher item if the launcher is available.
   if (launcher) {
     launcher.add({
@@ -266,11 +445,47 @@ function activateFun(
     });
     palette.addItem({
       command: 'gquant:reLayout',
-      category: 'Notebook Operations',
+      category: 'GquantLab',
       args: args
     });
-  }
+    palette.addItem({
+      command: 'gquant:aspect0.3',
+      category: 'GquantLab',
+      args: args
+    });
+    palette.addItem({
+      command: 'gquant:aspect0.5',
+      category: 'GquantLab',
+      args: args
+    });
+    palette.addItem({
+      command: 'gquant:aspect0.7',
+      category: 'GquantLab',
+      args: args
+    });
+    palette.addItem({
+      command: 'gquant:aspect1',
+      category: 'GquantLab',
+      args: args
+    });
+    palette.addItem({
+      command: 'add:outputCollector',
+      category: 'Add New Nodes',
+      args: args
+    });
+    palette.addItem({
+      command: 'gquant:convertCellToFile',
+      category: 'GquantLab',
+      args: args
+    });
 
+  }
+}
+
+function activateWidget(
+  app: JupyterFrontEnd,
+  jupyterWidgetRegistry: IJupyterWidgetRegistry
+): void {
   jupyterWidgetRegistry.registerWidget({
     name: MODULE_NAME,
     version: MODULE_VERSION,
@@ -278,18 +493,8 @@ function activateFun(
   });
 }
 
-// (app: JupyterFrontEnd, ) => {
-//     console.log('JupyterLab extension gquantlab is activated!');
-//
-//     requestAPI<any>('get_example')
-//       .then(data => {
-//         console.log(data);
-//       })
-//       .catch(reason => {
-//         console.error(
-//           `The gquantlab server extension appears to be missing.\n${reason}`
-//         );
-//       });
-//   }
-
-export default extension;
+/**
+ * Export the plugins as default.
+ */
+const plugins: JupyterFrontEndPlugin<any>[] = [extension, gquantWidget];
+export default plugins;
