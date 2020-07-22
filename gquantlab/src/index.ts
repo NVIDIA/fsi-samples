@@ -18,6 +18,11 @@ import * as widgetExports from './widget';
 
 import { requestAPI } from './gquantlab';
 
+import gqStr from '../style/gq.svg';
+
+import { LabIcon } from '@jupyterlab/ui-components';
+
+
 import {
   ICommandPalette,
   IWidgetTracker,
@@ -27,12 +32,16 @@ import { GquantWidget, GquantFactory, IAllNodes } from './document';
 import { Menu } from '@lumino/widgets';
 import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
+// import { LabIcon } from '@jupyterlab/ui-components';
+// import { LabIcon } from '@jupyterlab/ui-components/lib/icon/labicon';
 
 //const WIDGET_VIEW_MIMETYPE = 'application/gquant-taskgraph';
 
 const FACTORY = 'GQUANTLAB';
 
 type IGQUANTTracker = IWidgetTracker<GquantWidget>;
+
+export const gqIcon = new LabIcon({ name: 'gquantlab:gq', svgstr: gqStr });
 
 export const IGQUANTTracker = new Token<IGQUANTTracker>('gquant/tracki');
 /**
@@ -90,7 +99,7 @@ function activateFun(
   });
 
   factory.widgetCreated.connect((sender, widget) => {
-    widget.title.icon = 'jp-MaterialIcon jp-ImageIcon'; // TODO change
+    widget.title.icon = gqIcon;
     // Notify the instance tracker if restore data needs to update.
     widget.context.pathChanged.connect(() => {
       tracker.save(widget);
@@ -105,7 +114,8 @@ function activateFun(
     displayName: 'TaskGraph',
     mimeTypes: ['application/gq.yaml'],
     extensions: ['.gq.yaml'],
-    iconClass: 'jp-MaterialIcon jp-ImageIcon',
+    //iconClass: 'jp-MaterialIcon jp-ImageIcon',
+    icon: gqIcon,
     fileFormat: 'text'
   });
 
@@ -147,7 +157,7 @@ function activateFun(
   // Add a command for creating a new diagram file.
   commands.addCommand('gquant:create-new', {
     label: 'TaskGraph',
-    iconClass: 'jp-MaterialIcon jp-ImageIcon',
+    icon: gqIcon,
     caption: 'Create a new task graph file',
     execute: () => {
       const cwd = browserFactory.defaultBrowser.model.path;
