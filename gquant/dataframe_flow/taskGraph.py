@@ -17,6 +17,7 @@ class Results(object):
 
     def __init__(self, values):
         self.values = tuple([i[1] for i in values])
+        self.__keys = tuple([i[0] for i in values])
         self.__dict = OrderedDict(values)
 
     def __iter__(self):
@@ -39,6 +40,24 @@ class Results(object):
 
     def __contains__(self, key):
         return True if key in self.__dict else False
+
+    def get_keys(self):
+        return self.__keys
+
+
+def formated_result(result):
+    import ipywidgets as widgets
+    from IPython.display import display
+    from ipywidgets import Output
+    outputs = [Output() for i in range(len(result))]
+    for i in range(len(result)):
+        with outputs[i]:
+            display(result[i])
+    tab = widgets.Tab()
+    tab.children = outputs
+    for i in range(len(result)):
+        tab.set_title(i, result.get_keys()[i])
+    return tab
 
 
 def format_port(port):
@@ -473,7 +492,7 @@ class TaskGraph(object):
     def get_widget(self):
         return self.__widget
 
-    def run(self, outputs=None, replace=None, profile=False):
+    def run(self, outputs=None, replace=None, profile=False, formated=False):
         """
         Flow the dataframes in the graph to do the data science computations.
 
@@ -586,7 +605,11 @@ class TaskGraph(object):
             results.append((task_id, results_dfs_dict[task_id]))
         # clean the results afterwards
         outputs_collector_node.input_df = {}
-        return Results(results)
+        result = Results(results)
+        if formated:
+            return formated_result(result)
+        else:
+            return result
 
     def to_pydot(self, show_ports=False):
         nx_graph = self.viz_graph(show_ports=show_ports)
