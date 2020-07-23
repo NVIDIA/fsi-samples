@@ -345,6 +345,9 @@ function activateFun(
     selector: '.jp-GQuant'
   });
 
+  const addNodeMenu = new Menu({ commands });
+  addNodeMenu.title.label='Add Nodes';
+  addNodeMenu.title.mnemonic = 4;
   const allNodes = requestAPI<any>('all_nodes');
   allNodes.then((allNodes: IAllNodes) => {
     for (const k in allNodes) {
@@ -353,7 +356,7 @@ function activateFun(
       submenu.title.mnemonic = 0;
       for (let i = 0; i < allNodes[k].length; i++) {
         const name = allNodes[k][i].type;
-        const commandName = 'addnode:' + name;
+        const commandName = `addnode:${k}.${name}`;
         commands.addCommand(commandName, {
           label: 'Add ' + name,
           mnemonic: 4,
@@ -378,12 +381,17 @@ function activateFun(
           });
         }
       }
-      app.contextMenu.addItem({
+      addNodeMenu.addItem({
         type: 'submenu',
         submenu: submenu,
-        selector: '.jp-GQuant'
       });
     }
+  });
+
+  app.contextMenu.addItem({
+    type: 'submenu',
+    submenu: addNodeMenu,
+    selector: '.jp-GQuant'
   });
 
   app.contextMenu.addItem({
