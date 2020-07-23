@@ -8,8 +8,10 @@
 TODO: Add module docstring
 """
 
+import ipywidgets.widgets as widgets
+import ipywidgets 
 from ipywidgets import DOMWidget
-from traitlets import Unicode, List, Dict
+from traitlets import Unicode, List, Dict, Instance
 from ._frontend import module_name, module_version
 
 OUTPUT_ID= 'collector_id_fd9567b6'
@@ -26,6 +28,11 @@ class GQuantWidget(DOMWidget):
 
     value = List().tag(sync=True)
     cache = Dict().tag(sync=True)
+    sub = Instance(widgets.Widget).tag(sync=True, **widgets.widget_serialization)
+
+    def __init__(self):
+        self.sub = ipywidgets.HBox()
+        super().__init__()
 
     def set_taskgraph(self, task_graph):
         self.task_graph = task_graph

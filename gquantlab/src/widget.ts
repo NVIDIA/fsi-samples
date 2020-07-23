@@ -4,15 +4,20 @@
 import {
   DOMWidgetModel,
   DOMWidgetView,
-  ISerializers
+  ViewList
 } from '@jupyter-widgets/base';
-
+import * as widgets from '@jupyter-widgets/base';
 import { MODULE_NAME, MODULE_VERSION } from './version';
 import { ContentHandler, } from './document';
 import { MainView } from './mainComponent';
 import { Panel } from '@lumino/widgets';
 
 export class GQuantModel extends DOMWidgetModel {
+  static serializers = {
+    ...DOMWidgetModel.serializers,
+    'sub': { deserialize: widgets.unpack_models }
+  };
+
   defaults() {
     return {
       ...super.defaults(),
@@ -23,14 +28,10 @@ export class GQuantModel extends DOMWidgetModel {
       _view_module: GQuantModel.view_module,
       _view_module_version: GQuantModel.view_module_version,
       value: [],
-      cache: { nodes:[], edges: []}
+      cache: { nodes: [], edges: [] },
+      sub: null
     };
   }
-
-  static serializers: ISerializers = {
-    ...DOMWidgetModel.serializers
-    // Add any extra serializers here
-  };
 
   static model_name = 'GQuantModel';
   static model_module = MODULE_NAME;
@@ -43,6 +44,7 @@ export class GQuantModel extends DOMWidgetModel {
 export class GQuantView extends DOMWidgetView {
   private _contentHandler: ContentHandler;
   private _widget: MainView;
+  views: ViewList<DOMWidgetView>;
 
   render() {
     this._contentHandler = new ContentHandler(null);
@@ -54,11 +56,30 @@ export class GQuantView extends DOMWidgetView {
     this._contentHandler.setPrivateCopy(this.model);
     this.model.on('change:value', this.value_changed, this);
     this.model.on('change:cache', this.cache_changed, this);
+    this.views = new ViewList<DOMWidgetView>(this.addView, null, this);
+    this.model.on('change:sub', this.sub_changed, this);
+    //this.views.update([this.model.get('sub')]);
+  }
+
+  sub_changed(model: DOMWidgetModel, value: any) {
+    const subView = this.create_child_view(value);
+    subView.then((view)=>{
+      const pane = this.pWidget as Panel;
+      if (pane.widgets.length===2){
+        pane.layout.removeWidget(pane.widgets[1]);
+      }
+      pane.insertWidget(1, view.pWidget);
+    });
+    this.views.update([value]);
   }
 
   protected getFigureSize(): DOMRect {
     const figureSize: DOMRect = this.el.getBoundingClientRect();
     return figureSize;
+  }
+
+  addView(model: DOMWidgetModel) {
+    return this.create_child_view(model);
   }
 
   processPhosphorMessage(msg: any) {
