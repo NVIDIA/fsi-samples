@@ -11,11 +11,14 @@ import { MainAreaWidget } from '@jupyterlab/apputils';
 import { WidgetModel } from '@jupyter-widgets/base';
 
 export class ContentHandler {
+  private _outputs: string[]; // store a list of outputs
   context: DocumentRegistry.Context;
   // this one will relayout the graph
   private _contentChanged = new Signal<ContentHandler, IChartInput>(this);
   // this one just update the graphs, no relayout
   private _chartStateUpdate = new Signal<ContentHandler, IChartInput>(this);
+   // this one just update the size of the chart
+  private _sizeStateUpdate = new Signal<ContentHandler, IChartInput>(this);
 
   // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
@@ -39,6 +42,13 @@ export class ContentHandler {
     return this._aspectRatio;
   }
 
+  set outputs(outputs: string[]){
+    this._outputs = outputs;
+  }
+
+  get outputs(){
+    return this._outputs?this._outputs:[];
+  }
 
   get reLayoutSignalInstance(): Signal<ContentHandler, void> {
     return this._reLayout;
@@ -58,6 +68,10 @@ export class ContentHandler {
 
   get chartStateUpdate(): Signal<ContentHandler, IChartInput> {
     return this._chartStateUpdate;
+  }
+
+  get sizeStateUpdate(): Signal<ContentHandler, IChartInput> {
+    return this._sizeStateUpdate;
   }
 
 

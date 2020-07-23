@@ -10,6 +10,8 @@ import { ILauncher } from '@jupyterlab/launcher';
 
 import { IMainMenu } from '@jupyterlab/mainmenu';
 
+import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
+
 import { Token } from '@lumino/coreutils';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
@@ -34,6 +36,7 @@ import { INotebookTracker } from '@jupyterlab/notebook';
 import { CodeCell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
 import YAML from 'yaml';
+import { OutputPanel } from './outputPanel';
 
 // import { LabIcon } from '@jupyterlab/ui-components';
 // import { LabIcon } from '@jupyterlab/ui-components/lib/icon/labicon';
@@ -58,7 +61,8 @@ const extension: JupyterFrontEndPlugin<void> = {
     ILayoutRestorer,
     IMainMenu,
     ICommandPalette,
-    INotebookTracker
+    INotebookTracker,
+    IRenderMimeRegistry
   ],
   optional: [ILauncher],
   autoStart: true,
@@ -80,6 +84,7 @@ function activateFun(
   menu: IMainMenu,
   palette: ICommandPalette,
   notebookTracker: INotebookTracker,
+  rendermime: IRenderMimeRegistry,
   launcher: ILauncher | null
 ): void {
   const namespace = 'gquant';
@@ -88,8 +93,14 @@ function activateFun(
     fileTypes: ['gq.yaml'],
     defaultFor: ['gq.yaml']
   });
-  const { commands } = app;
+  const { commands, shell } = app;
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
+
+  // function getRendermime(): IRenderMimeRegistry {
+  //   const codecell = notebookTracker.activeCell as CodeCell;
+  //   const outputArea = codecell.outputArea;
+  //   return outputArea.rendermime;
+  // }
 
   function getMainView(): MainView {
     const codecell = notebookTracker.activeCell as CodeCell;
@@ -183,11 +194,8 @@ function activateFun(
       type: 'file',
       ext: '.gq.yaml'
     });
-    console.log('here');
-    const mainView  = getMainView();
+    const mainView = getMainView();
     const obj = mainView.contentHandler.privateCopy.get('value');
-    console.log('content',obj)
-    console.log('content text',YAML.stringify(obj));
     model.content = YAML.stringify(obj);
     model.format = 'text';
     app.serviceManager.contents.save(model.path, model);
@@ -202,7 +210,7 @@ function activateFun(
       const cwd = browserFactory.defaultBrowser.model.path;
       return convertToGQFile(cwd);
     },
-    isVisible: isCellVisible,
+    isVisible: isCellVisible
   });
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -318,7 +326,6 @@ function activateFun(
     selector: '.jp-GQuant'
   });
 
-
   app.contextMenu.addItem({
     command: 'gquant:reLayout',
     selector: '.jp-GQuant'
@@ -391,10 +398,16 @@ function activateFun(
         ui: {},
         inputs: [{ name: 'in1', type: ['any'] }]
       };
-      const mainView = getMainView();
-      mainView.contentHandler.nodeAddedSignal.emit(output);
+      if (isCellVisible()) {
+        const mainView = getMainView();
+        mainView.contentHandler.nodeAddedSignal.emit(output);
+      }
+      if (isGquantVisible()) {
+        const wdg = app.shell.currentWidget as any;
+        wdg.contentHandler.nodeAddedSignal.emit(output);
+      }
     },
-    isVisible: isCellVisible
+    isVisible: isVisible
   });
 
   app.contextMenu.addItem({
@@ -478,8 +491,72 @@ function activateFun(
       category: 'GquantLab',
       args: args
     });
-
   }
+
+  let panel: OutputPanel;
+  const manager = app.serviceManager;
+
+  /**
+   * Creates a example panel.
+   *
+   * @returns The panel
+   */
+  async function createPanel(): Promise<OutputPanel> {
+    panel = new OutputPanel(manager, rendermime);
+    shell.add(panel, 'main');
+    return panel;
+  }
+
+  const commandExecute = 'gquant:execute';
+  const commandCreate = 'gquant:createOutput';
+  // add commands to registry
+  commands.addCommand(commandCreate, {
+    label: 'Open the Output Panel',
+    caption: 'Open the Output Panel',
+    execute: createPanel
+  });
+
+  commands.addCommand(commandExecute, {
+    label: 'Run',
+    caption: 'Run',
+    execute: async () => {
+      // Create the panel if it does not exist
+      if (!panel) {
+        await createPanel();
+      }
+      let mainView: MainView;
+      let objStr: string = '';
+      if (isCellVisible()) {
+        // Prompt the user about the statement to be executed
+        mainView = getMainView();
+        objStr = JSON.stringify(
+          mainView.contentHandler.privateCopy.get('value')
+        );
+      }
+      if (isGquantVisible()) {
+        mainView = app.shell.currentWidget as any;
+        objStr = JSON.stringify(
+          YAML.parse(mainView.contentHandler.context.model.toString())
+        );
+      }
+      const outputStr = JSON.stringify(mainView.contentHandler.outputs);
+      console.log(outputStr);
+      const input = `import json\nfrom gquant.dataframe_flow import TaskGraph\nobj="""${objStr}"""\ntaskList=json.loads(obj)\ntaskGraph=TaskGraph(taskList)\noutlist=${outputStr}\ntaskGraph.run(outlist, formated=True)`;
+      // Execute the statement
+      const code = input;
+      panel.execute(code);
+    }
+  });
+
+  app.contextMenu.addItem({
+    command: commandExecute,
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    command: commandCreate,
+    selector: '.jp-GQuant'
+  });
 }
 
 function activateWidget(
