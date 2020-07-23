@@ -10,8 +10,6 @@ import { ILauncher } from '@jupyterlab/launcher';
 
 import { IMainMenu } from '@jupyterlab/mainmenu';
 
-import { IRenderMimeRegistry } from '@jupyterlab/rendermime';
-
 import { Token } from '@lumino/coreutils';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
@@ -80,7 +78,6 @@ const extension: JupyterFrontEndPlugin<void> = {
     IMainMenu,
     ICommandPalette,
     INotebookTracker,
-    IRenderMimeRegistry
   ],
   optional: [ILauncher],
   autoStart: true,
@@ -102,7 +99,6 @@ function activateFun(
   menu: IMainMenu,
   palette: ICommandPalette,
   notebookTracker: INotebookTracker,
-  rendermime: IRenderMimeRegistry,
   launcher: ILauncher | null
 ): void {
   const namespace = 'gquant';
@@ -113,12 +109,6 @@ function activateFun(
   });
   const { commands } = app;
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
-
-  // function getRendermime(): IRenderMimeRegistry {
-  //   const codecell = notebookTracker.activeCell as CodeCell;
-  //   const outputArea = codecell.outputArea;
-  //   return outputArea.rendermime;
-  // }
 
   function getMainView(): MainView {
     const codecell = notebookTracker.activeCell as CodeCell;
