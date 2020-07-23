@@ -48,6 +48,8 @@ export class GQuantView extends DOMWidgetView {
 
   render() {
     this._contentHandler = new ContentHandler(null);
+    this._contentHandler.runGraph.connect(this.run, this);
+    this._contentHandler.cleanResult.connect(this.clean, this);
     const pane = new Panel();
     this._widget = new MainView(this._contentHandler);
     pane.addWidget(this._widget);
@@ -61,11 +63,23 @@ export class GQuantView extends DOMWidgetView {
     //this.views.update([this.model.get('sub')]);
   }
 
+  run() {
+    this.send({
+      event: 'run'
+    });
+  }
+
+  clean() {
+    this.send({
+      event: 'clean'
+    });
+  }
+
   sub_changed(model: DOMWidgetModel, value: any) {
     const subView = this.create_child_view(value);
-    subView.then((view)=>{
+    subView.then((view) => {
       const pane = this.pWidget as Panel;
-      if (pane.widgets.length===2){
+      if (pane.widgets.length === 2) {
         pane.layout.removeWidget(pane.widgets[1]);
       }
       pane.insertWidget(1, view.pWidget);

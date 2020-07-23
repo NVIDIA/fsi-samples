@@ -21,8 +21,19 @@ import * as widgetExports from './widget';
 import { requestAPI } from './gquantlab';
 
 import gqStr from '../style/gq.svg';
+import runStr from '../style/run.svg';
+import cleanStr from '../style/clean.svg';
+import layoutStr from '../style/layout.svg';
 
 import { LabIcon } from '@jupyterlab/ui-components';
+
+import {
+  ToolbarButton
+} from '@jupyterlab/apputils';
+
+import {
+  IDisposable, DisposableDelegate
+} from '@lumino/disposable';
 
 import {
   ICommandPalette,
@@ -32,11 +43,11 @@ import {
 import { GquantWidget, GquantFactory, IAllNodes, INode } from './document';
 import { Menu } from '@lumino/widgets';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import { INotebookTracker } from '@jupyterlab/notebook';
+import { INotebookTracker, NotebookPanel, INotebookModel } from '@jupyterlab/notebook';
 import { CodeCell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
 import YAML from 'yaml';
-import { OutputPanel } from './outputPanel';
+import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 // import { LabIcon } from '@jupyterlab/ui-components';
 // import { LabIcon } from '@jupyterlab/ui-components/lib/icon/labicon';
@@ -48,6 +59,13 @@ const FACTORY = 'GQUANTLAB';
 type IGQUANTTracker = IWidgetTracker<GquantWidget>;
 
 export const gqIcon = new LabIcon({ name: 'gquantlab:gq', svgstr: gqStr });
+
+export const runIcon = new LabIcon({ name: 'gquantlab:gqrun', svgstr: runStr });
+
+export const cleanIcon = new LabIcon({ name: 'gquantlab:gqclean', svgstr: cleanStr });
+
+export const layoutIcon = new LabIcon({ name: 'gquantlab:layout', svgstr: layoutStr });
+
 
 export const IGQUANTTracker = new Token<IGQUANTTracker>('gquant/tracki');
 
@@ -93,7 +111,7 @@ function activateFun(
     fileTypes: ['gq.yaml'],
     defaultFor: ['gq.yaml']
   });
-  const { commands, shell } = app;
+  const { commands } = app;
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
 
   // function getRendermime(): IRenderMimeRegistry {
@@ -250,6 +268,7 @@ function activateFun(
   commands.addCommand('gquant:reLayout', {
     label: 'Taskgraph Nodes Auto Layout',
     caption: 'Taskgraph Nodes Auto Layout',
+    icon: layoutIcon,
     mnemonic: 0,
     execute: () => {
       if (isCellVisible()) {
@@ -382,6 +401,48 @@ function activateFun(
     selector: '.jp-GQuant'
   });
 
+  const commandExecute = 'gquant:execute';
+  const commandClean = 'gquant:cleanResult';
+
+  commands.addCommand(commandExecute, {
+    label: 'Run',
+    caption: 'Run',
+    icon: runIcon,
+    mnemonic: 0,
+    execute: async () => {
+      if (isCellVisible()) {
+        const mainView = getMainView();
+        mainView.contentHandler.runGraph.emit();
+      }
+    },
+    isVisible: isCellVisible,
+  });
+
+  commands.addCommand(commandClean, {
+    label: 'Clean Result',
+    caption: 'Clean Result',
+    icon: cleanIcon,
+    mnemonic: 0,
+    execute: async () => {
+      if (isCellVisible()) {
+        const mainView = getMainView();
+        mainView.contentHandler.cleanResult.emit();
+      }
+    },
+    isVisible: isCellVisible,
+  });
+
+  app.contextMenu.addItem({
+    command: commandExecute,
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    command: commandClean,
+    selector: '.jp-GQuant'
+  });
+
+
   commands.addCommand('add:outputCollector', {
     label: 'Add Output Collector',
     mnemonic: 1,
@@ -407,7 +468,7 @@ function activateFun(
         wdg.contentHandler.nodeAddedSignal.emit(output);
       }
     },
-    isVisible: isVisible
+    isVisible: isCellVisible
   });
 
   app.contextMenu.addItem({
@@ -491,72 +552,19 @@ function activateFun(
       category: 'GquantLab',
       args: args
     });
+    palette.addItem({
+      command: commandClean,
+      category: 'GquantLab',
+      args: args
+    });
+    palette.addItem({
+      command: commandExecute,
+      category: 'GquantLab',
+      args: args
+    });
   }
 
-  let panel: OutputPanel;
-  const manager = app.serviceManager;
 
-  /**
-   * Creates a example panel.
-   *
-   * @returns The panel
-   */
-  async function createPanel(): Promise<OutputPanel> {
-    panel = new OutputPanel(manager, rendermime);
-    shell.add(panel, 'main');
-    return panel;
-  }
-
-  const commandExecute = 'gquant:execute';
-  const commandCreate = 'gquant:createOutput';
-  // add commands to registry
-  commands.addCommand(commandCreate, {
-    label: 'Open the Output Panel',
-    caption: 'Open the Output Panel',
-    execute: createPanel
-  });
-
-  commands.addCommand(commandExecute, {
-    label: 'Run',
-    caption: 'Run',
-    execute: async () => {
-      // Create the panel if it does not exist
-      if (!panel) {
-        await createPanel();
-      }
-      let mainView: MainView;
-      let objStr: string = '';
-      if (isCellVisible()) {
-        // Prompt the user about the statement to be executed
-        mainView = getMainView();
-        objStr = JSON.stringify(
-          mainView.contentHandler.privateCopy.get('value')
-        );
-      }
-      if (isGquantVisible()) {
-        mainView = app.shell.currentWidget as any;
-        objStr = JSON.stringify(
-          YAML.parse(mainView.contentHandler.context.model.toString())
-        );
-      }
-      const outputStr = JSON.stringify(mainView.contentHandler.outputs);
-      console.log(outputStr);
-      const input = `import json\nfrom gquant.dataframe_flow import TaskGraph\nobj="""${objStr}"""\ntaskList=json.loads(obj)\ntaskGraph=TaskGraph(taskList)\noutlist=${outputStr}\ntaskGraph.run(outlist, formated=True)`;
-      // Execute the statement
-      const code = input;
-      panel.execute(code);
-    }
-  });
-
-  app.contextMenu.addItem({
-    command: commandExecute,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: commandCreate,
-    selector: '.jp-GQuant'
-  });
 }
 
 function activateWidget(
@@ -571,7 +579,109 @@ function activateWidget(
 }
 
 /**
+ * A notebook widget extension that adds a button to the toolbar.
+ */
+export
+  class ButtonExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
+
+  /**
+   * Create a new extension object.
+   */
+  createNew(panel: NotebookPanel, context: DocumentRegistry.IContext<INotebookModel>): IDisposable {
+    function getMainView(): MainView {
+      const codecell = panel.content.activeCell as CodeCell;
+      const outputArea = codecell.outputArea;
+      let widget = outputArea.widgets[0];
+      const children = widget.children();
+      //first one is output promot
+      children.next();
+      //second one is output wrapper
+      widget = children.next();
+      // this is the panel
+      widget = widget.children().next();
+      // this is the mainview
+      const mainView = widget.children().next() as MainView;
+      return mainView;
+    }
+
+    function isEnabled(): boolean {
+      if (!panel.content.activeCell)
+        return false;
+      if (!(panel.content.activeCell instanceof CodeCell))
+        return false;
+      const codecell = panel.content.activeCell as CodeCell;
+      const outputArea = codecell.outputArea;
+      if (!outputArea)
+        return false;
+      if (outputArea.widgets.length === 0) {
+        return false;
+      }
+      let widget = outputArea.widgets[0];
+      if (!widget)
+       return false;
+      const children = widget.children();
+      if (!children)
+        return false;
+      //first one is output promot
+      children.next();
+      //second one is output wrapper
+      widget = children.next();
+      if (!widget)
+        return false;
+      // this is the panel
+      widget = widget.children().next();
+      if (!widget)
+        return false;
+      // this is the mainview
+      const mainView = widget.children().next();
+      if (!mainView)
+        return false;
+      if (!(mainView instanceof MainView))
+        return false;
+      return true;
+    }
+
+    let callback = () => {
+      if (isEnabled()) {
+        const mainView = getMainView();
+        mainView.contentHandler.runGraph.emit();
+      }
+    };
+
+    let button = new ToolbarButton({
+      className: 'myButton',
+      icon: runIcon,
+      onClick: callback,
+      tooltip: 'Run GQuant TaskGraph',
+    });
+
+    panel.toolbar.insertItem(0, 'runAll', button);
+    return new DisposableDelegate(() => {
+      button.dispose();
+    });
+  }
+}
+
+/**
+ * Activate the extension.
+ */
+function activate(app: JupyterFrontEnd) {
+  app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension());
+};
+
+/**
+ * The plugin registration information.
+ */
+const buttonExtension: JupyterFrontEndPlugin<void> = {
+  activate,
+  id: 'my-extension-name:buttonPlugin',
+  autoStart: true
+};
+
+
+
+/**
  * Export the plugins as default.
  */
-const plugins: JupyterFrontEndPlugin<any>[] = [extension, gquantWidget];
+const plugins: JupyterFrontEndPlugin<any>[] = [extension, gquantWidget, buttonExtension];
 export default plugins;

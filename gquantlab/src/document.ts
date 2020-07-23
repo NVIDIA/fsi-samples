@@ -20,7 +20,9 @@ export class ContentHandler {
    // this one just update the size of the chart
   private _sizeStateUpdate = new Signal<ContentHandler, IChartInput>(this);
 
-  // create a signal that emits the added node command
+  private _runGraph = new Signal<ContentHandler, void>(this);
+  private _cleanResult = new Signal<ContentHandler, void>(this);
+ // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
 
   private _privateCopy: WidgetModel;
@@ -29,6 +31,14 @@ export class ContentHandler {
   private _reLayout = new Signal<ContentHandler, void>(this);
 
   private _aspectRatio: number = 0.3;
+
+  get runGraph(): Signal<ContentHandler, void> {
+    return this._runGraph;
+  }
+
+  get cleanResult(): Signal<ContentHandler, void> {
+    return this._cleanResult;
+  }
 
   get reLayoutSignal(): Signal<ContentHandler, void> {
     return this._reLayout;

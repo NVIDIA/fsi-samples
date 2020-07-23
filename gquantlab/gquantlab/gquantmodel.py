@@ -33,6 +33,13 @@ class GQuantWidget(DOMWidget):
     def __init__(self):
         self.sub = ipywidgets.HBox()
         super().__init__()
+        self.on_msg(self._handle_event)
+
+    def _handle_event(self, _, content, buffers):
+        if content.get('event', '') == 'run':
+            self.run()
+        elif content.get('event', '') == 'clean':
+            self.sub = ipywidgets.HBox()
 
     def set_taskgraph(self, task_graph):
         self.task_graph = task_graph
@@ -48,3 +55,7 @@ class GQuantWidget(DOMWidget):
             if edge['to'].split('.')[0] == OUTPUT_ID:
                 outputs.append(edge['from'])
         self.task_graph.set_outputs(outputs)
+    
+    def run(self):
+        result = self.task_graph.run(formated=True)
+        self.sub = result

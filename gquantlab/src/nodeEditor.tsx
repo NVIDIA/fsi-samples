@@ -77,7 +77,7 @@ class NodeEditor extends React.Component<IProp> {
     const Button = styled.button`
       background-color: red;
     `;
-    console.log(this.props.nodeDatum);
+    // console.log(this.props.nodeDatum);
 
     if (this.props.nodeDatum.id === OUTPUT_COLLECTOR) {
       return (
