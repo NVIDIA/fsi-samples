@@ -489,9 +489,6 @@ class TaskGraph(object):
     def get_outputs(self):
         return self.__outputs
 
-    def get_widget(self):
-        return self.__widget
-
     def run(self, outputs=None, replace=None, profile=False, formated=False):
         """
         Flow the dataframes in the graph to do the data science computations.
@@ -617,25 +614,28 @@ class TaskGraph(object):
         pdot = to_pydot(nx_graph)
         return pdot
 
-    def draw(self, show='lab', fmt='png', show_ports=False):
-        pdot = self.to_pydot(show_ports)
-        pdot_out = pdot.create(format=fmt)
-
-        if show in ('ipynb',):
-            from IPython.display import display
-            if fmt in ('svg',):
-                from IPython.display import SVG as Image  # @UnusedImport
-            else:
-                from IPython.display import Image  # @Reimport
-
-            plt = Image(pdot_out)
-            display(plt)
-        elif show in ('lab',):
+    def get_widget(self):
+        if self.__widget is None:
             from gquantlab.gquantmodel import GQuantWidget
             widget = GQuantWidget()
             widget.value = self.export_task_speclist()
             widget.set_taskgraph(self)
             self.__widget = widget
+        return self.__widget
+
+    def draw(self, show='lab', fmt='png', show_ports=False):
+        pdot = self.to_pydot(show_ports)
+        pdot_out = pdot.create(format=fmt)
+
+        if show in ('ipynb',):
+            if fmt in ('svg',):
+                from IPython.display import SVG as Image  # @UnusedImport
+            else:
+                from IPython.display import Image  # @Reimport
+            plt = Image(pdot_out)
+            return plt
+        elif show in ('lab',):
+            widget = self.get_widget()
             return widget
         else:
             return pdot_out

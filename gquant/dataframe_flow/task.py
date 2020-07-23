@@ -64,11 +64,31 @@ class Task(object):
             if modulepath is not None:
                 spec = importlib.util.spec_from_file_location(node_id,
                                                               modulepath)
-                modulename = Path(modulepath).stem
+                pp = Path(modulepath)
+                modulename = pp.stem
                 spec = importlib.util.spec_from_file_location(
                     modulename, modulepath)
                 mod = importlib.util.module_from_spec(spec)
                 sys.modules[spec.name] = mod
+                module_dir = str(pp.parent.absolute())
+
+                # create a task to add path path
+                def append_path(path):
+                    if path not in sys.path:
+                        sys.path.append(path)
+
+                append_path(module_dir)
+
+                try:
+                    # add python path to all the client workers
+                    # assume all the worikers share the same directory
+                    # structure
+                    import dask.distributed
+                    client = dask.distributed.client.default_client()
+                    client.run(append_path, module_dir)
+                except (ValueError, ImportError):
+                    pass
+
                 spec.loader.exec_module(mod)
                 NodeClass = getattr(mod, node_type)
             else:
