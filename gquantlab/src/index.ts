@@ -646,6 +646,14 @@ export
       }
     };
 
+    let layoutCallback = () => {
+      if (isEnabled()) {
+        const mainView = getMainView();
+        mainView.contentHandler.reLayoutSignal.emit();
+      }
+    };
+
+
     let button = new ToolbarButton({
       className: 'myButton',
       icon: runIcon,
@@ -653,9 +661,19 @@ export
       tooltip: 'Run GQuant TaskGraph',
     });
 
+    let button2 = new ToolbarButton({
+      className: 'myButton',
+      icon: layoutIcon,
+      onClick: layoutCallback,
+      tooltip: 'Taskgraph Nodes Auto Layout',
+    });
+
     panel.toolbar.insertItem(0, 'runAll', button);
+    panel.toolbar.insertAfter("runAll", 'layout', button2);
+
     return new DisposableDelegate(() => {
       button.dispose();
+      button2.dispose();
     });
   }
 }

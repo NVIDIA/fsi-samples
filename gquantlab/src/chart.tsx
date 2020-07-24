@@ -190,6 +190,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     }
     result.x = this.mouse ? this.mouse.x : 0;
     result.y = this.mouse ? this.mouse.y : 0;
+    if (this.transform) {
+      [result.x, result.y] = this.transform.invert([result.x, result.y]);
+    }
     this.props.nodes.push(result);
     this.props.setChartState({
       nodes: this.props.nodes,
@@ -227,7 +230,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .attr('height', this.props.height)
       .attr(
         'viewBox',
-         `0 -${this.props.height*0.1} ${this.props.width*1.1 +300} ${this.props.height*1.1+ 300}`
+        `0 -${this.props.height * 0.1} ${this.props.width * 1.1 + 300} ${this.props.height * 1.1 + 300}`
       )
       .attr('font-family', 'sans-serif')
       .attr('font-size', '14')
@@ -506,7 +509,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
         .attr('height', this.props.height)
         .attr(
           'viewBox',
-           `0 -${this.props.height*0.1} ${this.props.width*1.1 +300} ${this.props.height*1.1+ 300}`
+          `0 -${this.props.height * 0.1} ${this.props.width * 1.1 + 300} ${this.props.height * 1.1 + 300}`
         );
     }
 

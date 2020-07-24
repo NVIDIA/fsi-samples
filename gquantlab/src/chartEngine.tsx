@@ -224,8 +224,29 @@ export class ChartEngine extends React.Component<IProps, IState> {
         connectionInfoPtoC[parent] = [child];
       }
     }
+    const layoutNodeID = 'something uniq 24dd8da7-ac82-4b82-aa6b-4d9338ff15b9';
+    const layoutNode: INode = {
+      id: layoutNodeID,
+      width: 0,
+      type: 'Empty Layout Node',
+      conf: {},
+      required: {},
+      output_columns: [],
+      outputs: [],
+      schema: {},
+      ui: {},
+      inputs: []
+    };
+    // find all the leaf nodes
+    const leaves = nodes.filter((d: INode, i: number) => {
+      return !(d['id'] in connectionInfoPtoC);
+    });
+    // connect all the leaf nodes to this layout node
+    connectionInfoCtoP[layoutNodeID] = leaves.map((d: INode) => d.id);
+    // add this layout node temporally
+    nodes.push(layoutNode);
 
-    const dataWithParentsId = nodes.map((d: INode, i: number) => {
+    const data = nodes.map((d: INode, i: number) => {
       if (d['id'] in connectionInfoCtoP) {
         d['parentIds'] = connectionInfoCtoP[d['id']];
       } else {
@@ -236,35 +257,27 @@ export class ChartEngine extends React.Component<IProps, IState> {
       return d;
     });
 
-    const data = dataWithParentsId.filter(
-      (d: INode) => d.id in connectionInfoCtoP || d.id in connectionInfoPtoC
-    );
-    const dataIslands = nodes.filter(
-      (d: INode) =>
-        !(d.id in connectionInfoCtoP) && !(d.id in connectionInfoPtoC)
-    );
-    if (data.length > 0) {
-      const dagData = d4.dagStratify()(data);
-      d4
-        .sugiyama()
-        .size([height ? height : DefaultHeight, width ? width : DefaultWidth])
-        .layering(d4.layeringSimplex())
-        .decross(d4.decrossOpt())
-        .coord(d4.coordVert())(dagData);
-
-      dagData.descendants().forEach((d: any) => {
-        if (transform) {
-          const newPosition = transform.invert([d.y, d.x]);
-          d.data['y'] = newPosition[1];
-          d.data['x'] = newPosition[0];
-        } else {
-          d.data['y'] = d.x;
-          d.data['x'] = d.y;
-        }
-        return;
-      });
-    }
-    return [...data, ...dataIslands];
+    const dagData = d4.dagStratify()(data);
+    d4
+      .sugiyama()
+      .size([height ? height : DefaultHeight, width ? width : DefaultWidth])
+      .layering(d4.layeringSimplex())
+      .decross(d4.decrossOpt())
+      .coord(d4.coordVert())(dagData);
+    // set the coordinates
+    dagData.descendants().forEach((d: any) => {
+      if (transform) {
+        const newPosition = transform.invert([d.y, d.x]);
+        d.data['y'] = newPosition[1];
+        d.data['x'] = newPosition[0];
+      } else {
+        d.data['y'] = d.x;
+        d.data['x'] = d.y;
+      }
+      return;
+    });
+    const removedLayout = data.filter((d: INode) => d.id !== layoutNodeID);
+    return removedLayout;
   }
 
   /**
