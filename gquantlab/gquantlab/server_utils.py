@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.task import Task
+from gquant.dataframe_flow.task import load_modules
 from gquant.dataframe_flow.taskGraph import get_node_obj, get_nodes
 import importlib
 import pathlib
@@ -12,6 +13,7 @@ from datetime import datetime as dt
 import sys
 sys.path.append('modules') # noqa E262
 import os
+from python_settings import settings
 
 
 def get_nodes_from_file(file):
@@ -78,8 +80,12 @@ def add_nodes():
     #                     print(get_node_obj(n))
     all_nodes = {}
     for module in all_modules:
-        mod = importlib.import_module(module)
-        all_nodes[module] = []
+        # mod = importlib.import_module(str(module))
+        loaded = load_modules(module)
+        mod = loaded.mod
+        modulename = module.stem
+
+        all_nodes[modulename] = []
         for node in inspect.getmembers(mod):
             if node[1] == Node:
                 continue
@@ -89,12 +95,12 @@ def add_nodes():
                             'type': node[0],
                             'conf': {},
                             'inputs': [],
-                            'filepath': 'modules/'+module+'.py'
+                            'filepath': modulename+'.py'
                             }
                     t = Task(task)
                     n = node[1](t)
                     nodeObj = get_node_obj(n)
-                    all_nodes[module].append(nodeObj)
+                    all_nodes[modulename].append(nodeObj)
     return all_nodes
 
 
@@ -106,7 +112,12 @@ def load_all_modules():
     Returns
     -------
     list
-        list of moudles in the 'modules' directory
+        list of module files in the 'modules' directory
     """
-    all_modules = pathlib.Path('modules').glob('*.py')
-    return [module.stem for module in all_modules]
+    modulepaths = settings.MODULE_PATH
+    all_modules = []
+    for path in modulepaths:
+        modules = pathlib.Path(path).glob('*.py')
+        for module in modules:
+            all_modules.append(module)
+    return all_modules

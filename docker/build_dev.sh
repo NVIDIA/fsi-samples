@@ -94,10 +94,12 @@ RUN wget \
 RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
     -c defaults rapids=$RAPIDS_VERSION python=3.7 cudatoolkit=$CUDA_STR
 
-RUN conda install -y -c conda-forge jupyterlab
+RUN conda install -y -c conda-forge jupyterlab 
 
 RUN conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets \
     pytables mkl numexpr pydot flask pylint flake8 autopep8
+
+RUN pip install python-settings
 
 RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build  
 RUN jupyter labextension install bqplot --no-build  

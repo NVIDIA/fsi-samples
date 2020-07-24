@@ -5,11 +5,58 @@ from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
 from pathlib import Path
 import sys
+from python_settings import settings
+from collections import namedtuple
 
 
 __all__ = ['Task']
 
 DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
+
+
+def load_modules_from_file(modulefile):
+    """
+    Given a py filename without path information,
+    this method will find it from a set of paths from settings.MODULE_PATHS
+    check for https://github.com/charlsagente/python-settings to
+    learn how to set up the setting file. It will load the file as a python
+    module, put it into the sys.modules and add the path into the pythonpath.
+    @param modulefile
+        string, file name
+    @returns
+        namedtuple, absolute path and loaded module
+    """
+    modulepaths = settings.MODULE_PATH
+    found = False
+    for path in modulepaths:
+        filename = Path(path+'/'+modulefile)
+        if filename.exists():
+            found = True
+            break
+    if (not found):
+        raise ("cannot find file %s" % (modulefile))
+    return load_modules(str(filename))
+
+
+def load_modules(pathfile):
+    """
+    Given a py filename with path information,
+    It will load the file as a python
+    module, put it into the sys.modules and add the path into the pythonpath.
+    @param modulefile
+        string, file name
+    @returns
+        namedtuple, absolute path and loaded module
+    """
+    filename = Path(pathfile)
+    modulename = filename.stem
+    spec = importlib.util.spec_from_file_location(modulename, str(filename))
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = mod
+    module_dir = str(filename.parent.absolute())
+    spec.loader.exec_module(mod)
+    Load = namedtuple("Load", "path mod")
+    return Load(module_dir, mod)
 
 
 class Task(object):
@@ -54,7 +101,7 @@ class Task(object):
         task_spec = copy.copy(self._task_spec)
         task_spec.update(replace)
 
-        node_id = task_spec[TaskSpecSchema.task_id]
+        # node_id = task_spec[TaskSpecSchema.task_id]
         modulepath = task_spec.get(TaskSpecSchema.filepath)
 
         node_type = task_spec[TaskSpecSchema.node_type]
@@ -62,15 +109,9 @@ class Task(object):
 
         if isinstance(node_type, str):
             if modulepath is not None:
-                spec = importlib.util.spec_from_file_location(node_id,
-                                                              modulepath)
-                pp = Path(modulepath)
-                modulename = pp.stem
-                spec = importlib.util.spec_from_file_location(
-                    modulename, modulepath)
-                mod = importlib.util.module_from_spec(spec)
-                sys.modules[spec.name] = mod
-                module_dir = str(pp.parent.absolute())
+                loaded = load_modules_from_file(modulepath)
+                module_dir = loaded.path
+                mod = loaded.mod
 
                 # create a task to add path path
                 def append_path(path):
@@ -88,8 +129,6 @@ class Task(object):
                     client.run(append_path, module_dir)
                 except (ValueError, ImportError):
                     pass
-
-                spec.loader.exec_module(mod)
                 NodeClass = getattr(mod, node_type)
             else:
                 global DEFAULT_MODULE

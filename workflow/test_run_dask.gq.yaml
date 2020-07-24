@@ -1,21 +1,21 @@
 - id: points_task
   type: PointNode
   conf:
-    npts: 80
+    npts: 8000
   inputs: {}
-  filepath: modules/custom_port_nodes.py
+  filepath: custom_port_nodes.py
 - id: numba
   type: NumbaDistanceNode
   conf: {}
   inputs:
-    points_df_in: points_task.points_df_out
-  filepath: modules/custom_port_nodes.py
+    points_df_in: dask.points_ddf_out
+  filepath: custom_port_nodes.py
 - id: cupy
   type: CupyDistanceNode
   conf: {}
   inputs:
-    points_df_in: points_task.points_df_out
-  filepath: modules/custom_port_nodes.py
+    points_df_in: dask.points_ddf_out
+  filepath: custom_port_nodes.py
 - id: verify
   type: VerifyNode
   conf:
@@ -24,13 +24,13 @@
   inputs:
     df1: numba.distance_df
     df2: cupy.distance_df
-  filepath: modules/custom_port_nodes.py
+  filepath: custom_port_nodes.py
 - id: cudf
   type: DistanceNode
   conf: {}
   inputs:
-    points_df_in: points_task.points_df_out
-  filepath: modules/custom_port_nodes.py
+    points_df_in: dask.points_ddf_out
+  filepath: custom_port_nodes.py
 - id: verify2
   type: VerifyNode
   conf:
@@ -39,4 +39,11 @@
   inputs:
     df1: cupy.distance_df
     df2: cudf.distance_df
-  filepath: modules/custom_port_nodes.py
+  filepath: custom_port_nodes.py
+- id: dask
+  type: DistributedNode
+  conf:
+    npartitions: 8
+  inputs:
+    points_df_in: points_task.points_df_out
+  filepath: custom_port_nodes.py
