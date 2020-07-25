@@ -3,19 +3,16 @@
   conf:
     npts: 80
   inputs: {}
-  filepath: custom_port_nodes.py
 - id: numba
   type: NumbaDistanceNode
   conf: {}
   inputs:
     points_df_in: points_task.points_df_out
-  filepath: custom_port_nodes.py
 - id: cupy
   type: CupyDistanceNode
   conf: {}
   inputs:
     points_df_in: points_task.points_df_out
-  filepath: custom_port_nodes.py
 - id: verify
   type: VerifyNode
   conf:
@@ -24,13 +21,11 @@
   inputs:
     df1: numba.distance_df
     df2: cupy.distance_df
-  filepath: custom_port_nodes.py
 - id: cudf
   type: DistanceNode
   conf: {}
   inputs:
     points_df_in: points_task.points_df_out
-  filepath: custom_port_nodes.py
 - id: verify2
   type: VerifyNode
   conf:
@@ -39,4 +34,3 @@
   inputs:
     df1: cupy.distance_df
     df2: cudf.distance_df
-  filepath: custom_port_nodes.py

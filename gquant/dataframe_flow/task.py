@@ -5,8 +5,39 @@ from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
 from pathlib import Path
 import sys
-from python_settings import settings
 from collections import namedtuple
+import configparser
+
+
+class ConfigParser(configparser.ConfigParser):
+    """Can get options() without defaults
+    """
+
+    def options(self, section, no_defaults=False, **kwargs):
+        if no_defaults:
+            try:
+                return list(self._sections[section].keys())
+            except KeyError:
+                raise configparser.NoSectionError(section)
+        else:
+            return super().options(section, **kwargs)
+
+
+def get_gquant_config_modules():
+    default_dict = {
+        'GQUANT_CONFIG': os.getenv('GQUANT_CONFIG', os.getcwd()+'/gquantrc'),
+        'MODULEPATH': os.getenv('MODULEPATH', os.getcwd()+'/modules/'),
+    }
+    config = ConfigParser(defaults=default_dict)
+    gquant_cfg = default_dict.get('GQUANT_CONFIG', None)
+    if Path(gquant_cfg).is_file():
+        config.read(gquant_cfg)
+    if 'ModuleFiles' not in config:
+        return []
+    modules_names = config.options('ModuleFiles', no_defaults=True)
+    modules_list = {imod: config['ModuleFiles'][imod]
+                    for imod in modules_names}
+    return modules_list
 
 
 __all__ = ['Task']
@@ -14,9 +45,9 @@ __all__ = ['Task']
 DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
 
 
-def load_modules_from_file(modulefile):
+def load_modules_from_file(modulefile, modulepaths):
     """
-    Given a py filename without path information,
+    Given a py filename without path information and modulepaths
     this method will find it from a set of paths from settings.MODULE_PATHS
     check for https://github.com/charlsagente/python-settings to
     learn how to set up the setting file. It will load the file as a python
@@ -26,7 +57,6 @@ def load_modules_from_file(modulefile):
     @returns
         namedtuple, absolute path and loaded module
     """
-    modulepaths = settings.MODULE_PATH
     found = False
     for path in modulepaths:
         filename = Path(path+'/'+modulefile)
@@ -38,7 +68,7 @@ def load_modules_from_file(modulefile):
     return load_modules(str(filename))
 
 
-def load_modules(pathfile):
+def load_modules(pathfile, name=None):
     """
     Given a py filename with path information,
     It will load the file as a python
@@ -49,7 +79,10 @@ def load_modules(pathfile):
         namedtuple, absolute path and loaded module
     """
     filename = Path(pathfile)
-    modulename = filename.stem
+    if name is None:
+        modulename = filename.stem
+    else:
+        modulename = name
     spec = importlib.util.spec_from_file_location(modulename, str(filename))
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
@@ -107,19 +140,17 @@ class Task(object):
         node_type = task_spec[TaskSpecSchema.node_type]
         task = Task(task_spec)
 
+        # create a task to add path path
+        def append_path(path):
+            if path not in sys.path:
+                sys.path.append(path)
+
         if isinstance(node_type, str):
             if modulepath is not None:
-                loaded = load_modules_from_file(modulepath)
+                loaded = load_modules(modulepath)
                 module_dir = loaded.path
                 mod = loaded.mod
-
-                # create a task to add path path
-                def append_path(path):
-                    if path not in sys.path:
-                        sys.path.append(path)
-
                 append_path(module_dir)
-
                 try:
                     # add python path to all the client workers
                     # assume all the worikers share the same directory
@@ -131,11 +162,36 @@ class Task(object):
                     pass
                 NodeClass = getattr(mod, node_type)
             else:
-                global DEFAULT_MODULE
-                plugmod = os.getenv('GQUANT_PLUGIN_MODULE', DEFAULT_MODULE)
-                # MODLIB = importlib.import_module(DEFAULT_MODULE)
-                MODLIB = importlib.import_module(plugmod)
-                NodeClass = getattr(MODLIB, node_type)
+                NodeClass = None
+                try:
+                    global DEFAULT_MODULE
+                    plugmod = os.getenv('GQUANT_PLUGIN_MODULE', DEFAULT_MODULE)
+                    MODLIB = importlib.import_module(plugmod)
+                    NodeClass = getattr(MODLIB, node_type)
+                except AttributeError:
+                    modules = get_gquant_config_modules()
+                    for key in modules:
+                        loaded = load_modules(modules[key], name=key)
+                        module_dir = loaded.path
+                        mod = loaded.mod
+                        try:
+                            NodeClass = getattr(mod, node_type)
+                            break
+                        except AttributeError:
+                            continue
+                if NodeClass is None:
+                    raise Exception("Cannot find the module")
+                else:
+                    append_path(module_dir)
+                    try:
+                        # add python path to all the client workers
+                        # assume all the worikers share the same directory
+                        # structure
+                        import dask.distributed
+                        client = dask.distributed.client.default_client()
+                        client.run(append_path, module_dir)
+                    except (ValueError, ImportError):
+                        pass
         elif issubclass(node_type, _Node):
             NodeClass = node_type
         else:

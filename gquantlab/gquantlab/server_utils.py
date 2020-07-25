@@ -1,7 +1,7 @@
 from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.task import Task
-from gquant.dataframe_flow.task import load_modules
+from gquant.dataframe_flow.task import load_modules, get_gquant_config_modules
 from gquant.dataframe_flow.taskGraph import get_node_obj, get_nodes
 import importlib
 import pathlib
@@ -62,7 +62,7 @@ def add_nodes():
     dict
         dictionary of all the nodes that can be added in the client
     """
-    all_modules = load_all_modules()
+    all_modules = get_gquant_config_modules()
     print(all_modules)
     # not implemented yet for gQuant
     # for item in inspect.getmembers(plugin_nodes):
@@ -81,9 +81,9 @@ def add_nodes():
     all_nodes = {}
     for module in all_modules:
         # mod = importlib.import_module(str(module))
-        loaded = load_modules(module)
+        loaded = load_modules(all_modules[module], module)
         mod = loaded.mod
-        modulename = module.stem
+        modulename = module
 
         all_nodes[modulename] = []
         for node in inspect.getmembers(mod):
@@ -95,29 +95,10 @@ def add_nodes():
                             'type': node[0],
                             'conf': {},
                             'inputs': [],
-                            'filepath': modulename+'.py'
+                            'filepath': all_modules[module]
                             }
                     t = Task(task)
                     n = node[1](t)
                     nodeObj = get_node_obj(n)
                     all_nodes[modulename].append(nodeObj)
     return all_nodes
-
-
-def load_all_modules():
-    """
-    This is a utility function to load all the customized module files
-    return list of modules
-
-    Returns
-    -------
-    list
-        list of module files in the 'modules' directory
-    """
-    modulepaths = settings.MODULE_PATH
-    all_modules = []
-    for path in modulepaths:
-        modules = pathlib.Path(path).glob('*.py')
-        for module in modules:
-            all_modules.append(module)
-    return all_modules
