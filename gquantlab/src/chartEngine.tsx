@@ -64,6 +64,9 @@ export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
     if ('filepath' in node) {
       element['filepath'] = node.filepath;
     }
+    if ('module' in node) {
+      element['module'] = node.module;
+    }
     output.push(element);
   }
   return output;

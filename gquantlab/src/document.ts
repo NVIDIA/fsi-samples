@@ -177,6 +177,7 @@ export interface INode {
   inputs: IPort[];
   outputs: IPort[];
   filepath?: string;
+  module?: string;
   required: any;
   output_columns: any;
   busy?: boolean;

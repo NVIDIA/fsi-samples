@@ -136,6 +136,7 @@ class Task(object):
 
         # node_id = task_spec[TaskSpecSchema.task_id]
         modulepath = task_spec.get(TaskSpecSchema.filepath)
+        module_name = task_spec.get(TaskSpecSchema.module)
 
         node_type = task_spec[TaskSpecSchema.node_type]
         task = Task(task_spec)
@@ -170,17 +171,27 @@ class Task(object):
                     NodeClass = getattr(MODLIB, node_type)
                 except AttributeError:
                     modules = get_gquant_config_modules()
-                    for key in modules:
-                        loaded = load_modules(modules[key], name=key)
+                    if (module_name is not None):
+                        loaded = load_modules(
+                            modules[module_name], name=module_name)
                         module_dir = loaded.path
                         mod = loaded.mod
                         try:
                             NodeClass = getattr(mod, node_type)
-                            break
                         except AttributeError:
-                            continue
+                            pass
+                    else:
+                        for key in modules:
+                            loaded = load_modules(modules[key], name=key)
+                            module_dir = loaded.path
+                            mod = loaded.mod
+                            try:
+                                NodeClass = getattr(mod, node_type)
+                                break
+                            except AttributeError:
+                                continue
                 if NodeClass is None:
-                    raise Exception("Cannot find the module")
+                    raise Exception("Cannot find the Node Class: "+node_type)
                 else:
                     append_path(module_dir)
                     try:

@@ -164,6 +164,8 @@ def get_node_obj(node):
     out_node['output_columns'] = {}
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
+    if node._task_obj.get('module'):
+        out_node['module'] = node._task_obj.get('module')
     return out_node
 
 

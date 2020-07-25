@@ -11,6 +11,7 @@ class TaskSpecSchema(object):
     :cvar conf: Configuration for the plugin i.e. parameterization. This is a
         dictionary.
     :cvar filepath: Path to python module for custom plugin types.
+    :cvar module: optional field for the name of the module.
     :cvar inputs: List of ids of other tasks or an empty list.
     '''
 
@@ -18,6 +19,7 @@ class TaskSpecSchema(object):
     node_type = 'type'
     conf = 'conf'
     filepath = 'filepath'
+    module = 'module'
     inputs = 'inputs'
     # outputs = 'outputs'
     load = 'load'
@@ -32,6 +34,8 @@ class TaskSpecSchema(object):
         elif schema_field == cls.conf:
             assert (isinstance(value, dict) or isinstance(value, list))
         elif schema_field == cls.filepath:
+            assert isinstance(value, str)
+        elif schema_field == cls.module:
             assert isinstance(value, str)
         elif schema_field == cls.inputs:
             assert (isinstance(value, list) or isinstance(value, dict))

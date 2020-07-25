@@ -95,7 +95,7 @@ def add_nodes():
                             'type': node[0],
                             'conf': {},
                             'inputs': [],
-                            'filepath': all_modules[module]
+                            'module': module
                             }
                     t = Task(task)
                     n = node[1](t)
