@@ -1,0 +1,33 @@
+- id: point2
+  type: PointNode
+  conf:
+    npts: 100
+  inputs: {}
+  module: custom_port_nodes2
+- id: point1
+  type: PointNode
+  conf:
+    npts: 100
+  inputs: {}
+  module: custom_port_nodes
+- id: distance1
+  type: DistanceNode
+  conf: {}
+  inputs:
+    points_df_in: point2.points_df_out
+  module: custom_port_nodes
+- id: distance2
+  type: DistanceNode
+  conf: {}
+  inputs:
+    points_df_in: point1.points_df_out
+  module: custom_port_nodes2
+- id: urrpqc6pgb8
+  type: VerifyNode
+  conf:
+    df1_col: distance_cudf
+    df2_col: distance_cudf
+  inputs:
+    df1: distance1.distance_df
+    df2: distance2.distance_df
+  module: custom_port_nodes
