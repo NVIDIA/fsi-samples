@@ -13,7 +13,6 @@ from datetime import datetime as dt
 import sys
 sys.path.append('modules') # noqa E262
 import os
-from python_settings import settings
 
 
 def get_nodes_from_file(file):
