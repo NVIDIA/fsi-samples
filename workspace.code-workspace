@@ -1,10 +1,7 @@
 {
 	"folders": [
 		{
-			"path": "gquantui/server"
-		},
-		{
-			"path": "gquantui/client"
+			"path": "gquantlab"
 		},
 		{
 			"path": "."
@@ -12,13 +9,13 @@
 	],
 	"settings": {
         "terminal.integrated.shell.linux": "/bin/bash",
-        "python.pythonPath": "/opt/conda/envs/rapids/bin/python",
+        "python.pythonPath": "/home/quant/miniconda3/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
-        "python.formatting.autopep8Path": "/opt/conda/envs/rapids/bin/autopep8",
-        "python.linting.flake8Path": "/opt/conda/envs/rapids/bin/flake8",
-        "python.linting.pylintPath": "/opt/conda/envs/rapids/bin/pylint",
-        "python.testing.pytestPath": "/opt/conda/envs/rapids/bin/pytest"
+        "python.formatting.autopep8Path": "/home/quant/miniconda3/bin/autopep8",
+        "python.linting.flake8Path": "/home/quant/miniconda3/bin/flake8",
+        "python.linting.pylintPath": "/home/quant/miniconda3/bin/pylint",
+        "python.testing.pytestPath": "/home/quant/miniconda3/bin/pytest"
     }
 
 }
