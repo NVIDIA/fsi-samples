@@ -53,7 +53,7 @@
 - id: distributed_data
   type: DistributedNode
   conf:
-    npartitions: 8
+    npartitions: 4
   inputs:
     points_df_in: points_task.points_df_out
   module: custom_port_nodes

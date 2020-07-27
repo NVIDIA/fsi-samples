@@ -9,6 +9,26 @@ import rmm
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow import NodePorts, PortsSpecSchema
 from gquant.dataframe_flow import ConfSchema
+import copy
+
+
+def share_type(ports, connections):
+    """
+    utility function, the input/output type is determinted by the connected
+    input port
+    @params, ports, input or output port
+    @connections, input port connection information, returned by
+     self.get_connected_inports()
+    return
+        the finalized port types
+    """
+    ports_out = copy.deepcopy(ports)
+    for key in ports:
+        if key in connections:
+            # connected
+            types = connections[key]
+            ports_out[key].update({PortsSpecSchema.port_type: types})
+    return ports_out
 
 
 class PointNode(Node):
@@ -82,21 +102,26 @@ class PointNode(Node):
 class DistanceNode(Node):
 
     def ports_setup(self):
+        port_type = PortsSpecSchema.port_type
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type: [cudf.DataFrame,
-                                            dask_cudf.DataFrame]
+                port_type: [cudf.DataFrame, dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type: [cudf.DataFrame,
-                                            dask_cudf.DataFrame]
+                port_type: [cudf.DataFrame, dask_cudf.DataFrame]
             }
         }
-
-        return NodePorts(inports=input_ports, outports=output_ports)
+        input_connections = self.get_connected_inports()
+        if 'points_df_in' in input_connections:
+            types = input_connections['points_df_in']
+            # connected, use the types passed in from parent
+            return NodePorts(inports={'points_df_in': {port_type: types}},
+                             outports={'distance_df': {port_type: types}})
+        else:
+            return NodePorts(inports=input_ports, outports=output_ports)
 
     def conf_schema(self):
         return ConfSchema()
@@ -148,21 +173,29 @@ def distance_kernel(x, y, distance, array_len):
 class NumbaDistanceNode(Node):
 
     def ports_setup(self):
+        port_type = PortsSpecSchema.port_type
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type: [cudf.DataFrame,
-                                            dask_cudf.DataFrame]
+                port_type: [cudf.DataFrame,
+                            dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type: [cudf.DataFrame,
-                                            dask_cudf.DataFrame]
+                port_type: [cudf.DataFrame,
+                            dask_cudf.DataFrame]
             }
         }
 
-        return NodePorts(inports=input_ports, outports=output_ports)
+        input_connections = self.get_connected_inports()
+        if 'points_df_in' in input_connections:
+            types = input_connections['points_df_in']
+            # connected
+            return NodePorts(inports={'points_df_in': {port_type: types}},
+                             outports={'distance_df': {port_type: types}})
+        else:
+            return NodePorts(inports=input_ports, outports=output_ports)
 
     def columns_setup(self,):
         self.delayed_process = True
@@ -221,21 +254,29 @@ kernel_string = r'''
 class CupyDistanceNode(Node):
 
     def ports_setup(self):
+        port_type = PortsSpecSchema.port_type
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type: [cudf.DataFrame,
-                                            dask_cudf.DataFrame]
+                port_type: [cudf.DataFrame,
+                            dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type: [cudf.DataFrame,
-                                            dask_cudf.DataFrame]
+                port_type: [cudf.DataFrame,
+                            dask_cudf.DataFrame]
             }
         }
 
-        return NodePorts(inports=input_ports, outports=output_ports)
+        input_connections = self.get_connected_inports()
+        if 'points_df_in' in input_connections:
+            types = input_connections['points_df_in']
+            # connected
+            return NodePorts(inports={'points_df_in': {port_type: types}},
+                             outports={'distance_df': {port_type: types}})
+        else:
+            return NodePorts(inports=input_ports, outports=output_ports)
 
     def columns_setup(self,):
         cols_required = {'x': 'float64',
@@ -346,7 +387,9 @@ class VerifyNode(Node):
             }
         }
 
-        return NodePorts(inports=input_ports, outports=output_ports)
+        input_connections = self.get_connected_inports()
+        input_ports_out = share_type(input_ports, input_connections)
+        return NodePorts(inports=input_ports_out, outports=output_ports)
 
     def columns_setup(self):
         pass

@@ -121,9 +121,7 @@ def get_nodes(task_graph):
     edges = []
     for task in task_graph:
         # node = task.get_node_obj()
-        # pass in the computed ports
         node = task_graph[task[TaskSpecSchema.task_id]]
-        # node.computed_ports = task_graph[task.id].computed_ports
         out_node = get_node_obj(node)
         connection_inputs = task.get('inputs')
         nodes.append(out_node)
@@ -150,8 +148,7 @@ def get_node_obj(node):
     dict
         node data for client
     """
-    ports = (node.computed_ports if node.computed_ports is not None
-             else node.ports_setup())
+    ports = node.ports_setup()
     schema = node.conf_schema()
     typeName = node._task_obj.get('type')
     width = max(max(len(node.uid), len(typeName)) * 10, 100)
@@ -428,7 +425,6 @@ class TaskGraph(object):
             task_id = task[TaskSpecSchema.task_id]
             node = task.get_node_obj(replace.get(task_id), profile,
                                      tgraph_mixin=True)
-            node.computed_ports = None  # reset the computed_ports
             self.__node_dict[task_id] = node
 
         # build the graph

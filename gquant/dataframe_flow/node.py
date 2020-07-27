@@ -114,7 +114,6 @@ class Node(_PortsMixin, _Node):
         # customized the column setup
         self.columns_setup()
         self.profile = False  # by default, do not profile
-        self.computed_ports = None
 
         if self._using_ports():
             PortsSpecSchema.validate_ports(self.ports_setup())
@@ -174,6 +173,17 @@ class Node(_PortsMixin, _Node):
         """
         # this method will be implemented by NodeTaskGraphMixin
         pass
+
+    def get_connected_inports(self):
+        """
+        Get all the connected input port information. It is used by individual
+        node to determine the output port types
+        returns
+            dict, key is the current node input port name, value is the port
+            type passed from parent
+        """
+        # this method will be implemented by NodeTaskGraphMixin
+        return {}
 
     def conf_schema(self):
         """Virtual method for specifying configuration schema. Implement if

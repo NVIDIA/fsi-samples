@@ -338,67 +338,6 @@ class NodeTaskGraphMixin(object):
                     out_cols = self.output_columns
             onode.__set_input_column(iport, out_cols)
             # type computation, only supports the new API
-
-            def get_type(type_def):
-                if isinstance(type_def, list):
-                    return type_def
-                else:
-                    return [type_def]
-
-            def get_all_types(port):
-                outputs = []
-                for typedef in port.values():
-                    outputs.extend(get_type(typedef['type']))
-                return outputs
-            # import pdb
-            # pdb.set_trace()
-
-            if self._using_ports():
-                # first the output type match the input type, if there are
-                # more than one output types and single input type
-                if self.computed_ports is None:
-                    self.computed_ports = self.ports_setup()
-                curr_node_in_types = get_all_types(self.computed_ports.inports)
-
-                if len(curr_node_in_types) == 1:
-                    curr_in_type = curr_node_in_types[0]
-                    for typedef in self.computed_ports.outports.values():
-                        output_types = get_type(typedef['type'])
-                        if ((curr_in_type in output_types) and
-                                len(output_types) > 1):
-                            typedef['type'] = curr_in_type
-
-                # the next node's input type match the current node's current
-                # output type if there is single current type and more than
-                # 1 input types
-                if onode._using_ports():
-                    if onode.computed_ports is None:
-                        onode.computed_ports = onode.ports_setup()
-                    for node_input in onode.inputs:
-                        from_node = node_input['from_node']
-                        if from_node != self:
-                            continue
-                        from_port_name = node_input['from_port']
-                        to_port_name = node_input['to_port']
-                        output_types = get_type(
-                            from_node.computed_ports.outports[
-                                from_port_name]['type'])
-                        if len(output_types) == 1:
-                            curr_out_type = output_types[0]
-                            typedef = onode.computed_ports.inports[
-                                to_port_name]
-                            input_types = get_type(typedef['type'])
-                            if ((curr_out_type in input_types) and
-                                    len(input_types) > 1):
-                                typedef['type'] = curr_out_type
-                                # make the output output uniq
-                                #  Hack for the leaf node
-                                for typedef in onode.computed_ports.outports.values():  # noqa E501
-                                    output_types = get_type(typedef['type'])
-                                    if ((curr_out_type in output_types) and
-                                            len(output_types) > 1):
-                                        typedef['type'] = curr_out_type
-
             onode.columns_flow()
 
     def _validate_df(self, df_to_val, ref_cols):
@@ -796,6 +735,31 @@ class NodeTaskGraphMixin(object):
                 found = True
                 break
         return found
+
+    def get_connected_inports(self):
+        """
+        get all the connected input port information
+        returns
+            dict, key is the current node input port name, value is the port
+            type passed from parent
+        """
+
+        def get_type(type_def):
+            if isinstance(type_def, list):
+                return type_def
+            else:
+                return [type_def]
+        output = {}
+        if not hasattr(self, 'inputs'):
+            return output
+        for node_input in self.inputs:
+            from_node = node_input['from_node']
+            ports = from_node.ports_setup()
+            from_port_name = node_input['from_port']
+            to_port_name = node_input['to_port']
+            types = get_type(ports.outports[from_port_name]['type'])
+            output[to_port_name] = types
+        return output
 
     def decorate_process(self):
 
