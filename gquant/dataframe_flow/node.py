@@ -165,7 +165,8 @@ class Node(_PortsMixin, _Node):
     def outport_connected(self, portname):
         """
         Test whether this node's output port is connected. It is used
-        to generate result for the output port based on the connection condition
+        to generate result for the output port based on the connection
+        condition
         @params port_name
             string, outpout port name
         returns

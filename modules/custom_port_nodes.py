@@ -78,6 +78,7 @@ class PointNode(Node):
             output.update({'points_ddf_out': ddf})
         return output
 
+
 class DistanceNode(Node):
 
     def ports_setup(self):
