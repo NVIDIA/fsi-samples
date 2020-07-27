@@ -18,9 +18,11 @@ class PointNode(Node):
         output_ports = {
             'points_df_out': {
                 PortsSpecSchema.port_type: cudf.DataFrame
-            }
+            },
+            'points_ddf_out': {
+                PortsSpecSchema.port_type: dask_cudf.DataFrame
+            },
         }
-
         return NodePorts(inports=input_ports, outports=output_ports)
 
     def conf_schema(self):
@@ -32,20 +34,31 @@ class PointNode(Node):
                     "type": "number",
                     "description": "number of data points",
                     "minimum": 10
+                },
+                "npartitions":  {
+                    "type": "number",
+                    "description": "num of partitions in the Dask dataframe",
+                    "minimum": 1
                 }
+
             },
-            "required": ["npts"],
+            "required": ["npts", "npartitions"],
         }
 
         ui = {
-            "npts": {"ui:widget": "updown"}
+            "npts": {"ui:widget": "updown"},
+            "npartitions": {"ui:widget": "updown"}
         }
         return ConfSchema(json=json, ui=ui)
 
     def columns_setup(self):
         self.required = {}
         self.addition = {
-           'points_df_out': {
+            'points_df_out': {
+                'x': 'float64',
+                'y': 'float64'
+            },
+            'points_ddf_out': {
                 'x': 'float64',
                 'y': 'float64'
             }
@@ -56,9 +69,14 @@ class PointNode(Node):
         df = cudf.DataFrame()
         df['x'] = np.random.rand(npts)
         df['y'] = np.random.rand(npts)
-
-        return {'points_df_out': df}
-
+        output = {}
+        if self.outport_connected('points_df_out'):
+            output.update({'points_df_out': df})
+        if self.outport_connected('points_ddf_out'):
+            npartitions = self.conf['npartitions']
+            ddf = dask_cudf.from_cudf(df, npartitions=npartitions)
+            output.update({'points_ddf_out': ddf})
+        return output
 
 class DistanceNode(Node):
 
@@ -204,14 +222,14 @@ class CupyDistanceNode(Node):
     def ports_setup(self):
         input_ports = {
             'points_df_in': {
-                PortsSpecSchema.port_type:[cudf.DataFrame,
+                PortsSpecSchema.port_type: [cudf.DataFrame,
                                             dask_cudf.DataFrame]
             }
         }
 
         output_ports = {
             'distance_df': {
-                PortsSpecSchema.port_type:[cudf.DataFrame,
+                PortsSpecSchema.port_type: [cudf.DataFrame,
                                             dask_cudf.DataFrame]
             }
         }

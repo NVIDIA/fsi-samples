@@ -472,6 +472,11 @@ class NodeTaskGraphMixin(object):
             # Validate each port
             out_ports = self._get_output_ports(full_port_spec=True)
             for pname, pspec in out_ports.items():
+                # only validate it if it is connected
+                if not self.outport_connected(pname):
+                    # if the port is not connected skip it
+                    # print('port {} is not connected'.format(pname))
+                    continue
                 out_optional = pspec.get('optional', False)
                 if pname not in node_output:
                     if out_optional:
@@ -775,6 +780,22 @@ class NodeTaskGraphMixin(object):
             output_df[oport] = dask_cudf.from_delayed(outputs_dly[oport])
 
         return output_df
+
+    def outport_connected(self, port_name):
+        """
+        test whether this node's output port is connected.
+        @params port_name
+            string, outpout port name
+        returns
+            boolean, whehther this port is connected or not
+        """
+        found = False
+        for iout in self.outputs:
+            oport = iout['from_port']
+            if (port_name == oport):
+                found = True
+                break
+        return found
 
     def decorate_process(self):
 
