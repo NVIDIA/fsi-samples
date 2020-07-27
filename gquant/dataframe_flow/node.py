@@ -162,6 +162,18 @@ class Node(_PortsMixin, _Node):
         """
         raise NotImplementedError
 
+    def outport_connected(self, portname):
+        """
+        Test whether this node's output port is connected. It is used
+        to generate result for the output port based on the connection condition
+        @params port_name
+            string, outpout port name
+        returns
+            boolean, whehther this port is connected or not
+        """
+        # this method will be implemented by NodeTaskGraphMixin
+        pass
+
     def conf_schema(self):
         """Virtual method for specifying configuration schema. Implement if
         desire to use the UI client to help fill the conf forms.
