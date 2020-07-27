@@ -475,12 +475,19 @@ export class Chart extends React.Component<IChartProp, IChartState> {
 
     workflows.then((data: any) => {
       const newNode: {
-        [key: string]: { required: any; outputColumns: any };
+        [key: string]: {
+          required: any;
+          outputColumns: any;
+          inputs: any;
+          outputs: any;
+        };
       } = {};
       data.nodes.forEach((d: INode) => {
         newNode[d.id] = {
           required: d.required,
-          outputColumns: d.output_columns
+          outputColumns: d.output_columns,
+          inputs: d.inputs,
+          outputs: d.outputs
         };
       });
       this.props.nodes.forEach((d: INode) => {
@@ -488,6 +495,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           d.required = newNode[d.id].required;
           // eslint-disable-next-line @typescript-eslint/camelcase
           d.output_columns = newNode[d.id].outputColumns;
+          d.inputs = newNode[d.id].inputs;
+          d.outputs = newNode[d.id].outputs;
         }
       });
       this.props.setChartState({

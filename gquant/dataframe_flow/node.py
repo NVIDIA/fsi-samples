@@ -114,6 +114,7 @@ class Node(_PortsMixin, _Node):
         # customized the column setup
         self.columns_setup()
         self.profile = False  # by default, do not profile
+        self.computed_ports = None
 
         if self._using_ports():
             PortsSpecSchema.validate_ports(self.ports_setup())

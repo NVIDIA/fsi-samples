@@ -179,7 +179,7 @@ class NodeTaskGraphMixin(object):
             if kval != icols[kcol]:
                 # special case for 'date'
                 if (kval == 'date' and icols[kcol]
-                   in ('datetime64[ms]', 'date', 'datetime64[ns]')):
+                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
                     # continue
                     return
                 else:
@@ -230,7 +230,6 @@ class NodeTaskGraphMixin(object):
                     validate_required(incoming_cols, kcol, kval, in_taskids)
 
         # ABOVE validates the columns in dataframe inputs
-
         combined = {}
         # When using ports all the validation logic below add/del/retain
         # can just be simplified to having a columns dict for the port.
@@ -338,6 +337,68 @@ class NodeTaskGraphMixin(object):
                 else:
                     out_cols = self.output_columns
             onode.__set_input_column(iport, out_cols)
+            # type computation, only supports the new API
+
+            def get_type(type_def):
+                if isinstance(type_def, list):
+                    return type_def
+                else:
+                    return [type_def]
+
+            def get_all_types(port):
+                outputs = []
+                for typedef in port.values():
+                    outputs.extend(get_type(typedef['type']))
+                return outputs
+            # import pdb
+            # pdb.set_trace()
+
+            if self._using_ports():
+                # first the output type match the input type, if there are
+                # more than one output types and single input type
+                if self.computed_ports is None:
+                    self.computed_ports = self.ports_setup()
+                curr_node_in_types = get_all_types(self.computed_ports.inports)
+
+                if len(curr_node_in_types) == 1:
+                    curr_in_type = curr_node_in_types[0]
+                    for typedef in self.computed_ports.outports.values():
+                        output_types = get_type(typedef['type'])
+                        if ((curr_in_type in output_types) and
+                                len(output_types) > 1):
+                            typedef['type'] = curr_in_type
+
+                # the next node's input type match the current node's current
+                # output type if there is single current type and more than
+                # 1 input types
+                if onode._using_ports():
+                    if onode.computed_ports is None:
+                        onode.computed_ports = onode.ports_setup()
+                    for node_input in onode.inputs:
+                        from_node = node_input['from_node']
+                        if from_node != self:
+                            continue
+                        from_port_name = node_input['from_port']
+                        to_port_name = node_input['to_port']
+                        output_types = get_type(
+                            from_node.computed_ports.outports[
+                                from_port_name]['type'])
+                        if len(output_types) == 1:
+                            curr_out_type = output_types[0]
+                            typedef = onode.computed_ports.inports[
+                                to_port_name]
+                            input_types = get_type(typedef['type'])
+                            if ((curr_out_type in input_types) and
+                                    len(input_types) > 1):
+                                typedef['type'] = curr_out_type
+                                # make the output output uniq
+                                #  Hack for the leaf node
+                                for typedef in onode.computed_ports.outports.values():  # noqa E501
+                                    output_types = get_type(typedef['type'])
+                                    if ((curr_out_type in output_types) and
+                                            len(output_types) > 1):
+                                        typedef['type'] = curr_out_type
+
             onode.columns_flow()
 
     def _validate_df(self, df_to_val, ref_cols):
