@@ -460,7 +460,8 @@ class TaskGraph(object):
             def progress_fun(uid):
                 cacheCopy = copy.deepcopy(self.__widget.cache)
                 nodes = list(filter(lambda x: x['id'] == uid,
-                                    cacheCopy['nodes']))
+                                    cacheCopy['nodes']
+                                    if 'nodes' in cacheCopy else []))
                 if len(nodes) > 0:
                     current_node = nodes[0]
                     current_node['busy'] = True
@@ -472,7 +473,7 @@ class TaskGraph(object):
             def cleanup():
                 import time
                 cacheCopy = copy.deepcopy(self.__widget.cache)
-                for node in cacheCopy['nodes']:
+                for node in cacheCopy.get('nodes', []):
                     node['busy'] = False
                 time.sleep(1)
                 self.__widget.cache = cacheCopy
