@@ -25,13 +25,9 @@ import layoutStr from '../style/layout.svg';
 
 import { LabIcon } from '@jupyterlab/ui-components';
 
-import {
-  ToolbarButton
-} from '@jupyterlab/apputils';
+import { ToolbarButton } from '@jupyterlab/apputils';
 
-import {
-  IDisposable, DisposableDelegate
-} from '@lumino/disposable';
+import { IDisposable, DisposableDelegate } from '@lumino/disposable';
 
 import {
   ICommandPalette,
@@ -41,7 +37,11 @@ import {
 import { GquantWidget, GquantFactory, IAllNodes, INode } from './document';
 import { Menu } from '@lumino/widgets';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import { INotebookTracker, NotebookPanel, INotebookModel } from '@jupyterlab/notebook';
+import {
+  INotebookTracker,
+  NotebookPanel,
+  INotebookModel
+} from '@jupyterlab/notebook';
 import { CodeCell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
 import YAML from 'yaml';
@@ -60,12 +60,63 @@ export const gqIcon = new LabIcon({ name: 'gquantlab:gq', svgstr: gqStr });
 
 export const runIcon = new LabIcon({ name: 'gquantlab:gqrun', svgstr: runStr });
 
-export const cleanIcon = new LabIcon({ name: 'gquantlab:gqclean', svgstr: cleanStr });
+export const cleanIcon = new LabIcon({
+  name: 'gquantlab:gqclean',
+  svgstr: cleanStr
+});
 
-export const layoutIcon = new LabIcon({ name: 'gquantlab:layout', svgstr: layoutStr });
-
+export const layoutIcon = new LabIcon({
+  name: 'gquantlab:layout',
+  svgstr: layoutStr
+});
 
 export const IGQUANTTracker = new Token<IGQUANTTracker>('gquant/tracki');
+
+function isEnabled(cell: any): boolean {
+  if (!cell) {
+    return false;
+  }
+  if (!(cell instanceof CodeCell)) {
+    return false;
+  }
+  const codecell = cell as CodeCell;
+  const outputArea = codecell.outputArea;
+  if (!outputArea) {
+    return false;
+  }
+  if (outputArea.widgets.length === 0) {
+    return false;
+  }
+  let widget = outputArea.widgets[0];
+  if (!widget) {
+    return false;
+  }
+  const children = widget.children();
+  if (!children) {
+    return false;
+  }
+  // first one is output promot
+  children.next();
+  // second one is output wrapper
+  widget = children.next();
+  if (!widget) {
+    return false;
+  }
+  // this is the panel
+  widget = widget.children().next();
+  if (!widget) {
+    return false;
+  }
+  // this is the mainview
+  const mainView = widget.children().next();
+  if (!mainView) {
+    return false;
+  }
+  if (!(mainView instanceof MainView)) {
+    return false;
+  }
+  return true;
+}
 
 /**
  * Initialization data for the gquantlab extension.
@@ -77,7 +128,7 @@ const extension: JupyterFrontEndPlugin<void> = {
     ILayoutRestorer,
     IMainMenu,
     ICommandPalette,
-    INotebookTracker,
+    INotebookTracker
   ],
   optional: [ILauncher],
   autoStart: true,
@@ -196,7 +247,7 @@ function activateFun(
     });
   };
 
-  const convertToGQFile = async (cwd: string) => {
+  const convertToGQFile = async (cwd: string): Promise<void> => {
     const model = await commands.execute('docmanager:new-untitled', {
       path: cwd,
       type: 'file',
@@ -262,8 +313,10 @@ function activateFun(
     mnemonic: 0,
     execute: () => {
       if (isCellVisible()) {
-        const mainView = getMainView();
-        mainView.contentHandler.reLayoutSignal.emit();
+        if (isEnabled(notebookTracker.activeCell)) {
+          const mainView = getMainView();
+          mainView.contentHandler.reLayoutSignal.emit();
+        }
       } else {
         const wdg = app.shell.currentWidget as any;
         wdg.contentHandler.reLayoutSignal.emit();
@@ -346,7 +399,7 @@ function activateFun(
   });
 
   const addNodeMenu = new Menu({ commands });
-  addNodeMenu.title.label='Add Nodes';
+  addNodeMenu.title.label = 'Add Nodes';
   addNodeMenu.title.mnemonic = 4;
   const allNodes = requestAPI<any>('all_nodes');
   allNodes.then((allNodes: IAllNodes) => {
@@ -383,7 +436,7 @@ function activateFun(
       }
       addNodeMenu.addItem({
         type: 'submenu',
-        submenu: submenu,
+        submenu: submenu
       });
     }
   });
@@ -409,11 +462,13 @@ function activateFun(
     mnemonic: 0,
     execute: async () => {
       if (isCellVisible()) {
-        const mainView = getMainView();
-        mainView.contentHandler.runGraph.emit();
+        if (isEnabled(notebookTracker.activeCell)) {
+          const mainView = getMainView();
+          mainView.contentHandler.runGraph.emit();
+        }
       }
     },
-    isVisible: isCellVisible,
+    isVisible: isCellVisible
   });
 
   commands.addCommand(commandClean, {
@@ -423,11 +478,13 @@ function activateFun(
     mnemonic: 0,
     execute: async () => {
       if (isCellVisible()) {
-        const mainView = getMainView();
-        mainView.contentHandler.cleanResult.emit();
+        if (isEnabled(notebookTracker.activeCell)) {
+          const mainView = getMainView();
+          mainView.contentHandler.cleanResult.emit();
+        }
       }
     },
-    isVisible: isCellVisible,
+    isVisible: isCellVisible
   });
 
   app.contextMenu.addItem({
@@ -439,7 +496,6 @@ function activateFun(
     command: commandClean,
     selector: '.jp-GQuant'
   });
-
 
   commands.addCommand('add:outputCollector', {
     label: 'Add Output Collector',
@@ -458,8 +514,10 @@ function activateFun(
         inputs: [{ name: 'in1', type: ['any'] }]
       };
       if (isCellVisible()) {
-        const mainView = getMainView();
-        mainView.contentHandler.nodeAddedSignal.emit(output);
+        if (isEnabled(notebookTracker.activeCell)) {
+          const mainView = getMainView();
+          mainView.contentHandler.nodeAddedSignal.emit(output);
+        }
       }
       if (isGquantVisible()) {
         const wdg = app.shell.currentWidget as any;
@@ -561,8 +619,38 @@ function activateFun(
       args: args
     });
   }
-
-
+  //add key board shortcuts
+  app.commands.addKeyBinding({
+    command: 'gquant:reLayout',
+    keys: ['Alt A'],
+    selector: '.jp-GQuant'
+  });
+  app.commands.addKeyBinding({
+    command: 'add:outputCollector',
+    keys: ['Alt O'],
+    selector: '.jp-GQuant'
+  });
+  //add key board shortcuts
+  app.commands.addKeyBinding({
+    command: commandExecute,
+    keys: ['Alt R'],
+    selector: '.jp-Notebook'
+  });
+  app.commands.addKeyBinding({
+    command: commandClean,
+    keys: ['Alt C'],
+    selector: '.jp-Notebook'
+  });
+  app.commands.addKeyBinding({
+    command: 'gquant:reLayout',
+    keys: ['Alt A'],
+    selector: '.jp-Notebook'
+  });
+  app.commands.addKeyBinding({
+    command: 'add:outputCollector',
+    keys: ['Alt O'],
+    selector: '.jp-Notebook'
+  });
 }
 
 function activateWidget(
@@ -579,13 +667,15 @@ function activateWidget(
 /**
  * A notebook widget extension that adds a button to the toolbar.
  */
-export
-  class ButtonExtension implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
-
+export class ButtonExtension
+  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
   /**
    * Create a new extension object.
    */
-  createNew(panel: NotebookPanel, context: DocumentRegistry.IContext<INotebookModel>): IDisposable {
+  createNew(
+    panel: NotebookPanel,
+    _context: DocumentRegistry.IContext<INotebookModel>
+  ): IDisposable {
     function getMainView(): MainView {
       const codecell = panel.content.activeCell as CodeCell;
       const outputArea = codecell.outputArea;
@@ -602,74 +692,36 @@ export
       return mainView;
     }
 
-    function isEnabled(): boolean {
-      if (!panel.content.activeCell)
-        return false;
-      if (!(panel.content.activeCell instanceof CodeCell))
-        return false;
-      const codecell = panel.content.activeCell as CodeCell;
-      const outputArea = codecell.outputArea;
-      if (!outputArea)
-        return false;
-      if (outputArea.widgets.length === 0) {
-        return false;
-      }
-      let widget = outputArea.widgets[0];
-      if (!widget)
-       return false;
-      const children = widget.children();
-      if (!children)
-        return false;
-      //first one is output promot
-      children.next();
-      //second one is output wrapper
-      widget = children.next();
-      if (!widget)
-        return false;
-      // this is the panel
-      widget = widget.children().next();
-      if (!widget)
-        return false;
-      // this is the mainview
-      const mainView = widget.children().next();
-      if (!mainView)
-        return false;
-      if (!(mainView instanceof MainView))
-        return false;
-      return true;
-    }
-
-    let callback = () => {
-      if (isEnabled()) {
+    const callback = (): void => {
+      if (isEnabled(panel.content.activeCell)) {
         const mainView = getMainView();
         mainView.contentHandler.runGraph.emit();
       }
     };
 
-    let layoutCallback = () => {
-      if (isEnabled()) {
+    const layoutCallback = (): void => {
+      if (isEnabled(panel.content.activeCell)) {
         const mainView = getMainView();
         mainView.contentHandler.reLayoutSignal.emit();
       }
     };
 
-
-    let button = new ToolbarButton({
+    const button = new ToolbarButton({
       className: 'myButton',
       icon: runIcon,
       onClick: callback,
-      tooltip: 'Run GQuant TaskGraph',
+      tooltip: 'Run GQuant TaskGraph'
     });
 
-    let button2 = new ToolbarButton({
+    const button2 = new ToolbarButton({
       className: 'myButton',
       icon: layoutIcon,
       onClick: layoutCallback,
-      tooltip: 'Taskgraph Nodes Auto Layout',
+      tooltip: 'Taskgraph Nodes Auto Layout'
     });
 
     panel.toolbar.insertItem(0, 'runAll', button);
-    panel.toolbar.insertAfter("runAll", 'layout', button2);
+    panel.toolbar.insertAfter('runAll', 'layout', button2);
 
     return new DisposableDelegate(() => {
       button.dispose();
@@ -681,9 +733,9 @@ export
 /**
  * Activate the extension.
  */
-function activate(app: JupyterFrontEnd) {
+function activate(app: JupyterFrontEnd): void {
   app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension());
-};
+}
 
 /**
  * The plugin registration information.
@@ -694,10 +746,12 @@ const buttonExtension: JupyterFrontEndPlugin<void> = {
   autoStart: true
 };
 
-
-
 /**
  * Export the plugins as default.
  */
-const plugins: JupyterFrontEndPlugin<any>[] = [extension, gquantWidget, buttonExtension];
+const plugins: JupyterFrontEndPlugin<any>[] = [
+  extension,
+  gquantWidget,
+  buttonExtension
+];
 export default plugins;
