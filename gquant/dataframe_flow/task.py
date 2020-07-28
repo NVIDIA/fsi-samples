@@ -13,7 +13,7 @@ class ConfigParser(configparser.ConfigParser):
     """Can get options() without defaults
     """
 
-    def options(self, section, no_defaults=False, **kwargs):
+    def options(self, section, no_defaults=True, **kwargs):
         if no_defaults:
             try:
                 return list(self._sections[section].keys())
@@ -24,17 +24,16 @@ class ConfigParser(configparser.ConfigParser):
 
 
 def get_gquant_config_modules():
-    default_dict = {
-        'GQUANT_CONFIG': os.getenv('GQUANT_CONFIG', os.getcwd()+'/gquantrc'),
-        'MODULEPATH': os.getenv('MODULEPATH', os.getcwd()+'/modules/'),
-    }
-    config = ConfigParser(defaults=default_dict)
-    gquant_cfg = default_dict.get('GQUANT_CONFIG', None)
+    if 'GQUANT_CONFIG' not in os.environ:
+        os.environ['GQUANT_CONFIG'] = os.getcwd()+'/gquantrc'
+        print(os.environ['GQUANT_CONFIG'])
+    config = ConfigParser(defaults=os.environ)
+    gquant_cfg = os.getenv('GQUANT_CONFIG', None)
     if Path(gquant_cfg).is_file():
         config.read(gquant_cfg)
     if 'ModuleFiles' not in config:
         return []
-    modules_names = config.options('ModuleFiles', no_defaults=True)
+    modules_names = config.options('ModuleFiles')
     modules_list = {imod: config['ModuleFiles'][imod]
                     for imod in modules_names}
     return modules_list
