@@ -21,7 +21,7 @@ export function handleClicked(that: Chart) {
       });
     } else {
       console.log('clicked');
-      if (that.isDirty){
+      if (that.isDirty) {
         const output = that.configFile();
         const jsonString = JSON.stringify(output);
         that.updateInputs(jsonString);

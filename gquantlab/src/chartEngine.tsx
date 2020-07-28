@@ -89,10 +89,11 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this.stateUpdateHandler,
       this
     );
-    props.contentHandler.sizeStateUpdate.connect(
-      this.stateHandleResize,
+    props.contentHandler.sizeStateUpdate.connect(this.stateHandleResize, this);
+    this.props.contentHandler.contentReset.connect(
+      this.contentResetHandler,
       this
-    )
+    );
   }
 
   componentWillUnmount(): void {
@@ -106,6 +107,10 @@ export class ChartEngine extends React.Component<IProps, IState> {
     );
     this.props.contentHandler.chartStateUpdate.disconnect(
       this.stateHandleResize,
+      this
+    );
+    this.props.contentHandler.contentReset.disconnect(
+      this.contentResetHandler,
       this
     );
   }
@@ -148,6 +153,29 @@ export class ChartEngine extends React.Component<IProps, IState> {
       edges: inputs.edges,
       width: inputs.width ? inputs.width : this.state.width,
       height: inputs.height ? inputs.height : this.state.height
+    });
+  }
+
+  /**
+   *  handle the raw graph nodes and edge changes
+   *  recalculate the layout, no size information
+   * @param sender
+   * @param inputs
+   */
+
+  contentResetHandler(sender: ContentHandler, inputs: IChartInput): void {
+    const layoutNodes = this._updateLayout(
+      inputs.nodes,
+      inputs.edges,
+      null,
+      this.state.width,
+      this.state.height
+    );
+    this.updateWorkFlow({
+      nodes: layoutNodes,
+      edges: inputs.edges,
+      height: this.state.height,
+      width: this.state.width
     });
   }
 
@@ -234,6 +262,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       type: 'Empty Layout Node',
       conf: {},
       required: {},
+      // eslint-disable-next-line @typescript-eslint/camelcase
       output_columns: [],
       outputs: [],
       schema: {},

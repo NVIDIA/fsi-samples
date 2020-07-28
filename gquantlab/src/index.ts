@@ -4,7 +4,7 @@ import {
   ILayoutRestorer
 } from '@jupyterlab/application';
 
-import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
+import { IFileBrowserFactory, FileDialog } from '@jupyterlab/filebrowser';
 
 import { ILauncher } from '@jupyterlab/launcher';
 
@@ -25,6 +25,8 @@ import layoutStr from '../style/layout.svg';
 
 import { LabIcon } from '@jupyterlab/ui-components';
 
+import { folderIcon } from '@jupyterlab/ui-components';
+
 import { ToolbarButton } from '@jupyterlab/apputils';
 
 import { IDisposable, DisposableDelegate } from '@lumino/disposable';
@@ -34,7 +36,13 @@ import {
   IWidgetTracker,
   WidgetTracker
 } from '@jupyterlab/apputils';
-import { GquantWidget, GquantFactory, IAllNodes, INode } from './document';
+import {
+  GquantWidget,
+  GquantFactory,
+  IAllNodes,
+  INode,
+  IChartInput
+} from './document';
 import { Menu } from '@lumino/widgets';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 import {
@@ -272,6 +280,38 @@ function activateFun(
     isVisible: isCellVisible
   });
 
+  commands.addCommand('gquant:openNewFile', {
+    label: 'Open TaskGraph file',
+    caption: 'Open TaskGraph file',
+    icon: folderIcon,
+    execute: async () => {
+      const dialog = FileDialog.getOpenFiles({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        filter: model => model.path.endsWith('.gq.yaml')
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          // only 1 file is allowed
+          const payload = { path: values[0].path };
+          const workflows: IChartInput = await requestAPI<any>(
+            'load_graph_path',
+            {
+              body: JSON.stringify(payload),
+              method: 'POST'
+            }
+          );
+          const mainView = getMainView();
+          mainView.contentHandler.contentReset.emit(workflows);
+        }
+        //let files = result.value;
+      }
+    },
+    isVisible: isCellVisible
+  });
+
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const createNewTaskgraph = async (cwd: string) => {
     const model = await commands.execute('docmanager:new-untitled', {
@@ -385,6 +425,11 @@ function activateFun(
 
   app.contextMenu.addItem({
     command: 'gquant:convertCellToFile',
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    command: 'gquant:openNewFile',
     selector: '.jp-GQuant'
   });
 
@@ -507,6 +552,7 @@ function activateFun(
         type: 'Output Collector',
         conf: {},
         required: {},
+        // eslint-disable-next-line @typescript-eslint/camelcase
         output_columns: [],
         outputs: [],
         schema: {},

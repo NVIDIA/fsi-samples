@@ -15,14 +15,18 @@ export class ContentHandler {
   context: DocumentRegistry.Context;
   // this one will relayout the graph
   private _contentChanged = new Signal<ContentHandler, IChartInput>(this);
+
+  // this reset the content, leave the size as before
+  private _contentReset = new Signal<ContentHandler, IChartInput>(this);
+
   // this one just update the graphs, no relayout
   private _chartStateUpdate = new Signal<ContentHandler, IChartInput>(this);
-   // this one just update the size of the chart
+  // this one just update the size of the chart
   private _sizeStateUpdate = new Signal<ContentHandler, IChartInput>(this);
 
   private _runGraph = new Signal<ContentHandler, void>(this);
   private _cleanResult = new Signal<ContentHandler, void>(this);
- // create a signal that emits the added node command
+  // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
 
   private _privateCopy: WidgetModel;
@@ -30,7 +34,7 @@ export class ContentHandler {
   // create a signal that emits the relayout command
   private _reLayout = new Signal<ContentHandler, void>(this);
 
-  private _aspectRatio: number = 0.3;
+  private _aspectRatio = 0.3;
 
   get runGraph(): Signal<ContentHandler, void> {
     return this._runGraph;
@@ -48,16 +52,16 @@ export class ContentHandler {
     this._aspectRatio = aspectRatio;
   }
 
-  get aspectRatio() {
+  get aspectRatio(): number {
     return this._aspectRatio;
   }
 
-  set outputs(outputs: string[]){
+  set outputs(outputs: string[]) {
     this._outputs = outputs;
   }
 
-  get outputs(){
-    return this._outputs?this._outputs:[];
+  get outputs(): string[] {
+    return this._outputs ? this._outputs : [];
   }
 
   get reLayoutSignalInstance(): Signal<ContentHandler, void> {
@@ -76,6 +80,10 @@ export class ContentHandler {
     return this._contentChanged;
   }
 
+  get contentReset(): Signal<ContentHandler, IChartInput> {
+    return this._contentReset;
+  }
+
   get chartStateUpdate(): Signal<ContentHandler, IChartInput> {
     return this._chartStateUpdate;
   }
@@ -83,7 +91,6 @@ export class ContentHandler {
   get sizeStateUpdate(): Signal<ContentHandler, IChartInput> {
     return this._sizeStateUpdate;
   }
-
 
   setPrivateCopy(widgetModel: WidgetModel): void {
     if (!widgetModel) {
@@ -100,7 +107,7 @@ export class ContentHandler {
 
   /**
    * Write graph info into the model
-   * @param content 
+   * @param content
    */
   public update(content: string): void {
     if (this.context) {
@@ -109,10 +116,10 @@ export class ContentHandler {
   }
 
   /**
-   * 
-   * Load the file from the model 
+   *
+   * Load the file from the model
    * And covert it to include UI elements
-   * Send to render 
+   * Send to render
    * @param width, the width of the svg area
    * @param height, the width of the svg area
    */
@@ -122,22 +129,26 @@ export class ContentHandler {
 
   /**
    * Use the raw object from the file as input,  add UI information (UI schema, required, output_columns etc) to it
-   * 
-   * @param objContent 
-   * @param width 
-   * @param height 
+   *
+   * @param objContent
+   * @param width
+   * @param height
    */
-  public async renderGraph(objContent: any, width?: number, height?: number): Promise<void> {
-      const jsonString = JSON.stringify(objContent);
+  public async renderGraph(
+    objContent: any,
+    width?: number,
+    height?: number
+  ): Promise<void> {
+    const jsonString = JSON.stringify(objContent);
     // this.context.model.contentChanged.connect(this._onContentChanged, this);
     const workflows: IChartInput = await requestAPI<any>('load_graph', {
       body: jsonString,
       method: 'POST'
     });
-    if (width){
-      workflows.width  = width;
+    if (width) {
+      workflows.width = width;
     }
-    if (height){
+    if (height) {
       workflows.height = height;
     }
     this._contentChanged.emit(workflows);

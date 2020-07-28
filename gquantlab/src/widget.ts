@@ -1,24 +1,21 @@
+/* eslint-disable @typescript-eslint/camelcase */
 // Copyright (c) Yi Dong
 // Distributed under the terms of the Modified BSD License.
 
-import {
-  DOMWidgetModel,
-  DOMWidgetView,
-  ViewList
-} from '@jupyter-widgets/base';
+import { DOMWidgetModel, DOMWidgetView, ViewList } from '@jupyter-widgets/base';
 import * as widgets from '@jupyter-widgets/base';
 import { MODULE_NAME, MODULE_VERSION } from './version';
-import { ContentHandler, } from './document';
+import { ContentHandler } from './document';
 import { MainView } from './mainComponent';
 import { Panel } from '@lumino/widgets';
 
 export class GQuantModel extends DOMWidgetModel {
   static serializers = {
     ...DOMWidgetModel.serializers,
-    'sub': { deserialize: widgets.unpack_models }
+    sub: { deserialize: widgets.unpack_models }
   };
 
-  defaults() {
+  defaults(): any {
     return {
       ...super.defaults(),
       _model_name: GQuantModel.model_name,
@@ -46,7 +43,7 @@ export class GQuantView extends DOMWidgetView {
   private _widget: MainView;
   views: ViewList<DOMWidgetView>;
 
-  render() {
+  render(): void {
     this._contentHandler = new ContentHandler(null);
     this._contentHandler.runGraph.connect(this.run, this);
     this._contentHandler.cleanResult.connect(this.clean, this);
@@ -56,28 +53,27 @@ export class GQuantView extends DOMWidgetView {
     this.pWidget = pane;
     this._contentHandler.renderGraph(this.model.get('value'));
     this._contentHandler.setPrivateCopy(this.model);
-    this.model.on('change:value', this.value_changed, this);
     this.model.on('change:cache', this.cache_changed, this);
     this.views = new ViewList<DOMWidgetView>(this.addView, null, this);
     this.model.on('change:sub', this.sub_changed, this);
     //this.views.update([this.model.get('sub')]);
   }
 
-  run() {
+  run(): void {
     this.send({
       event: 'run'
     });
   }
 
-  clean() {
+  clean(): void {
     this.send({
       event: 'clean'
     });
   }
 
-  sub_changed(model: DOMWidgetModel, value: any) {
+  sub_changed(model: DOMWidgetModel, value: any): void {
     const subView = this.create_child_view(value);
-    subView.then((view) => {
+    subView.then(view => {
       const pane = this.pWidget as Panel;
       if (pane.widgets.length === 2) {
         pane.layout.removeWidget(pane.widgets[1]);
@@ -92,11 +88,11 @@ export class GQuantView extends DOMWidgetView {
     return figureSize;
   }
 
-  addView(model: DOMWidgetModel) {
+  addView(model: DOMWidgetModel): Promise<DOMWidgetView> {
     return this.create_child_view(model);
   }
 
-  processPhosphorMessage(msg: any) {
+  processPhosphorMessage(msg: any): void {
     super.processPhosphorMessage.apply(this, msg);
     switch (msg.type) {
       case 'resize':
@@ -109,11 +105,7 @@ export class GQuantView extends DOMWidgetView {
     }
   }
 
-  value_changed() {
-  }
-
-  cache_changed() {
+  cache_changed(): void {
     this._contentHandler.chartStateUpdate.emit(this.model.get('cache'));
   }
-
 }

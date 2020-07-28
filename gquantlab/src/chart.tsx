@@ -230,7 +230,10 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .attr('height', this.props.height)
       .attr(
         'viewBox',
-        `0 -${this.props.height * 0.1} ${this.props.width * 1.1 + 300} ${this.props.height * 1.1 + 300}`
+        `0 -${this.props.height * 0.1} ${this.props.width * 1.1 + 300} ${this
+          .props.height *
+          1.1 +
+          300}`
       )
       .attr('font-family', 'sans-serif')
       .attr('font-size', '14')
@@ -518,7 +521,10 @@ export class Chart extends React.Component<IChartProp, IChartState> {
         .attr('height', this.props.height)
         .attr(
           'viewBox',
-          `0 -${this.props.height * 0.1} ${this.props.width * 1.1 + 300} ${this.props.height * 1.1 + 300}`
+          `0 -${this.props.height * 0.1} ${this.props.width * 1.1 + 300} ${this
+            .props.height *
+            1.1 +
+            300}`
         );
     }
 
