@@ -11,16 +11,17 @@ for the frontend extension.
 
 
 ## Build the dev container
+
 In the gQuant root direction
 ```bash
-docker build docker/Dockerfile.custom -t gquantDevelop .
+bash docker/build_dev.sh
 ```
 Launch your development container, make sure mounting your gQuant directory
 to the container and open `8080` and `8888` ports.
 
-The code-server will automatically starts and hosts at port `8080`. Set the 
-folder to the root directory of gQuant to start the development.
-
+The code-server starts and hosts at port `8080`. Set the 
+gQuant path as the folder to start the development or you can open the 
+`workspace.code-workspace` file.
 
 
 ## Requirements
@@ -104,4 +105,25 @@ Now every change will be built locally and bundled into JupyterLab. Be sure to r
 ```bash
 pip uninstall gquantlab
 jupyter labextension uninstall gquantlab
+```
+
+### Start the JupyterLab
+
+Once the gquantlab plugin is install, the jupyterlab can be started. There is 
+one important environment to consider before starting. The custom module files 
+are specified in the `gquantrc` file. You can find an example `gquantrc` file in
+the gQuant root directory. `gquantrc` file is by default is read at the same location
+as the jupyterlab server's root directory. However, this can be overwirtten by 
+setting the `GQUANT_CONFIG` environment variable. In the example `gquantrc`, system 
+environment variable `MODULEPATH` is used to point to the paths of the module files.
+To start the jupyterlab, please make sure `MODULEPATH` is set properly. 
+
+For example, if you want to start the jupyterlab in the gQuant root directory.
+```bash
+MODULEPATH=$PWD/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+```
+
+Or, if you want to start the jupyterlab in the gquantlab directory.
+```bash
+GQUANT_CONFIG=../gquantrc MODULEPATH=$PWD/../modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 ```
