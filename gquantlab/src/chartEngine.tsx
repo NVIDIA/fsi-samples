@@ -30,10 +30,12 @@ interface IState {
  */
 
 export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
-  const cleanedNodes = nodes.filter((d: INode) => d.id !== OUTPUT_COLLECTOR);
-  const cleanedEdges = edges.filter(
-    (d: IEdge) => d.to.split('.')[0] !== OUTPUT_COLLECTOR
-  );
+  // const cleanedNodes = nodes.filter((d: INode) => d.id !== OUTPUT_COLLECTOR);
+  // const cleanedEdges = edges.filter(
+  //   (d: IEdge) => d.to.split('.')[0] !== OUTPUT_COLLECTOR
+  // );
+  const cleanedNodes = nodes;
+  const cleanedEdges = edges;
   /**
    * get the gqaunt task graph, which is a list of tasks
    */
@@ -53,7 +55,7 @@ export function exportWorkFlowNodes(nodes: INode[], edges: IEdge[]): INode[] {
   for (let i = 0; i < cleanedNodes.length; i++) {
     const node = cleanedNodes[i];
     const element: any = {};
-    element['id'] = node.id;
+    element['id'] = node.id === OUTPUT_COLLECTOR ? '' : node.id;
     element['type'] = node.type;
     element['conf'] = node.conf;
     if (node.id in connectionInfo) {

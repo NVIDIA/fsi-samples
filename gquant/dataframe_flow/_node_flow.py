@@ -8,10 +8,12 @@ import dask_cudf
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
 
-OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
+# OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
+OUTPUT_ID = 'collector_id_fd9567b6'
+OUTPUT_TYPE = 'Output Collector'
 
 
-__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID']
+__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
 
 # class NodeIncomingEdge(object):
 #     from_node = 'from_node'

@@ -13,8 +13,8 @@ import ipywidgets
 from ipywidgets import DOMWidget
 from traitlets import Unicode, List, Dict, Instance
 from ._frontend import module_name, module_version
+from gquant.dataframe_flow._node_flow import OUTPUT_ID
 
-OUTPUT_ID= 'collector_id_fd9567b6'
 
 class GQuantWidget(DOMWidget):
     """TODO: Add docstring here
@@ -28,7 +28,8 @@ class GQuantWidget(DOMWidget):
 
     value = List().tag(sync=True)
     cache = Dict().tag(sync=True)
-    sub = Instance(widgets.Widget).tag(sync=True, **widgets.widget_serialization)
+    sub = Instance(widgets.Widget).tag(sync=True,
+                                       **widgets.widget_serialization)
 
     def __init__(self):
         self.sub = ipywidgets.HBox()
@@ -55,7 +56,7 @@ class GQuantWidget(DOMWidget):
             if edge['to'].split('.')[0] == OUTPUT_ID:
                 outputs.append(edge['from'])
         self.task_graph.set_outputs(outputs)
-    
+
     def run(self):
         result = self.task_graph.run(formated=True)
         self.sub = result

@@ -20,7 +20,7 @@ import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IEdge, ContentHandler } from './document';
 import { exportWorkFlowNodes } from './chartEngine';
-import { OUTPUT_COLLECTOR } from './mainComponent';
+import { OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 
 interface IPortInfo {
   [key: string]: any;
@@ -181,7 +181,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
         return;
       }
     }
-    if (result.type === 'Output Collector') {
+    if (result.type === OUTPUT_TYPE) {
       result.id = OUTPUT_COLLECTOR;
     } else {
       result.id = Math.random()
@@ -495,6 +495,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       });
       this.props.nodes.forEach((d: INode) => {
         if (d.id in newNode) {
+          if (d.id === OUTPUT_COLLECTOR) {
+            return;
+          }
           d.required = newNode[d.id].required;
           // eslint-disable-next-line @typescript-eslint/camelcase
           d.output_columns = newNode[d.id].outputColumns;

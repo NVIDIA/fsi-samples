@@ -2,14 +2,29 @@ from collections import OrderedDict
 import networkx as nx
 import yaml
 from .node import Node
-from ._node_flow import OUTPUT_ID
+from ._node_flow import OUTPUT_ID, OUTPUT_TYPE
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
+from .portsSpecSchema import NodePorts, ConfSchema
 import warnings
 import copy
 
 
-__all__ = ['TaskGraph']
+__all__ = ['TaskGraph', 'OutputCollector']
+
+
+class OutputCollector(Node):
+    def columns_setup(self):
+        super().columns_setup()
+
+    def ports_setup(self):
+        return NodePorts(inports={}, outports={})
+
+    def conf_schema(self):
+        return ConfSchema()
+
+    def process(self, inputs):
+        return super().process(inputs)
 
 
 class Results(object):
@@ -246,6 +261,9 @@ class TaskGraph(object):
         for itask in self:
             task_inputs = itask[TaskSpecSchema.inputs]
             to_task = itask[TaskSpecSchema.task_id]
+            to_type = itask[TaskSpecSchema.node_type]
+            if (to_task == OUTPUT_ID or to_type == OUTPUT_TYPE):
+                continue
             for iport_or_tid in task_inputs:
                 # iport_or_tid: it is either to_port or task id (tid) b/c
                 #     if using ports API task_inputs is a dictionary otherwise
@@ -307,8 +325,18 @@ class TaskGraph(object):
         # instantiate node objects
         for task in self:
             task_id = task[TaskSpecSchema.task_id]
-            node = task.get_node_obj(replace.get(task_id), profile,
-                                     tgraph_mixin=True)
+            nodetype = task[TaskSpecSchema.node_type]
+            if (task_id == OUTPUT_ID or nodetype == OUTPUT_TYPE):
+                output_task = Task({
+                    TaskSpecSchema.task_id: OUTPUT_ID,
+                    TaskSpecSchema.conf: {},
+                    TaskSpecSchema.node_type: OutputCollector,
+                    TaskSpecSchema.inputs: task[TaskSpecSchema.inputs]
+                })
+                node = output_task.get_node_obj(tgraph_mixin=True)
+            else:
+                node = task.get_node_obj(replace.get(task_id), profile,
+                                         tgraph_mixin=True)
             self.__node_dict[task_id] = node
 
         # build the graph
@@ -398,44 +426,55 @@ class TaskGraph(object):
 
         self.build(replace, profile)
 
-        class OutputCollector(Node):
-            def columns_setup(self):
-                super().columns_setup()
+        graph_outputs = []
+        # add the output graph only if the Output Node is not in the graph
+        found_output_node = False
+        for task in self:
+            if (task[TaskSpecSchema.task_id] == OUTPUT_ID or
+                    task[TaskSpecSchema.node_type] == OUTPUT_TYPE):
+                found_output_node = True
+                outputs_collector_node = self[task[TaskSpecSchema.task_id]]
+                outputs_collector_node.clear_input = False
+                for input_item in outputs_collector_node.inputs:
+                    from_node_id = input_item['from_node'].uid
+                    fromStr = from_node_id+'.'+input_item['from_port']
+                    graph_outputs.append(fromStr)
+                break
 
-            def process(self, inputs):
-                return super().process(inputs)
-
-        output_task = Task({
-            TaskSpecSchema.task_id: OUTPUT_ID,
-            TaskSpecSchema.conf: {},
-            TaskSpecSchema.node_type: OutputCollector,
-            TaskSpecSchema.inputs: []
-        })
-
-        outputs_collector_node = output_task.get_node_obj(tgraph_mixin=True)
-
-        # want to save the intermediate results
-        outputs_collector_node.clear_input = False
-        results_task_ids = []
         if outputs is None:
-            outputs = self.__outputs
-        for task_id in outputs:
-            nodeid_oport = task_id.split('.')
-            nodeid = nodeid_oport[0]
-            oport = nodeid_oport[1] if len(nodeid_oport) > 1 else None
-            onode = self.__node_dict[nodeid]
-            results_task_ids.append(task_id)
-            dummy_port = task_id
-            outputs_collector_node.inputs.append({
-                'from_node': onode,
-                'from_port': oport,
-                'to_port': dummy_port
+            outputs = graph_outputs
+
+        if not found_output_node:
+            output_task = Task({
+                TaskSpecSchema.task_id: OUTPUT_ID,
+                TaskSpecSchema.conf: {},
+                TaskSpecSchema.node_type: OutputCollector,
+                TaskSpecSchema.inputs: []
             })
-            onode.outputs.append({
-                'to_node': outputs_collector_node,
-                'to_port': dummy_port,
-                'from_port': oport
-            })
+
+            outputs_collector_node = output_task.get_node_obj(
+                tgraph_mixin=True)
+
+            # want to save the intermediate results
+            outputs_collector_node.clear_input = False
+            for task_id in outputs:
+                nodeid_oport = task_id.split('.')
+                nodeid = nodeid_oport[0]
+                oport = nodeid_oport[1] if len(nodeid_oport) > 1 else None
+                onode = self.__node_dict[nodeid]
+                dummy_port = task_id
+                outputs_collector_node.inputs.append({
+                    'from_node': onode,
+                    'from_port': oport,
+                    'to_port': dummy_port
+                })
+                onode.outputs.append({
+                    'to_node': outputs_collector_node,
+                    'to_port': dummy_port,
+                    'from_port': oport
+                })
+
+        results_task_ids = outputs
 
         inputs = []
         self.__find_roots(outputs_collector_node, inputs, consider_load=True)
@@ -485,9 +524,14 @@ class TaskGraph(object):
                 i.flow()
 
         results_dfs_dict = outputs_collector_node.input_df
+        port_map = {}
+        for input_item in outputs_collector_node.inputs:
+            from_node_id = input_item['from_node'].uid
+            fromStr = from_node_id+'.'+input_item['from_port']
+            port_map[fromStr] = input_item['to_port']
         results = []
         for task_id in results_task_ids:
-            results.append((task_id, results_dfs_dict[task_id]))
+            results.append((task_id, results_dfs_dict[port_map[task_id]]))
         # clean the results afterwards
         outputs_collector_node.input_df = {}
         result = Results(results)
@@ -512,18 +556,15 @@ class TaskGraph(object):
         return self.__widget
 
     def draw(self, show='lab', fmt='png', show_ports=False):
-        pdot = self.to_pydot(show_ports)
-        pdot_out = pdot.create(format=fmt)
-
         if show in ('ipynb',):
+            pdot = self.to_pydot(show_ports)
+            pdot_out = pdot.create(format=fmt)
             if fmt in ('svg',):
                 from IPython.display import SVG as Image  # @UnusedImport
             else:
                 from IPython.display import Image  # @Reimport
             plt = Image(pdot_out)
             return plt
-        elif show in ('lab',):
+        else:
             widget = self.get_widget()
             return widget
-        else:
-            return pdot_out

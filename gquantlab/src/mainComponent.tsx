@@ -11,6 +11,7 @@ import { Message } from '@lumino/messaging';
 const OUTPUT_CELL_HEIGHT = 300;
 
 export const OUTPUT_COLLECTOR = 'collector_id_fd9567b6';
+export const OUTPUT_TYPE = 'Output Collector';
 
 export class MainView extends ReactWidget {
   private _contentHandler: ContentHandler;

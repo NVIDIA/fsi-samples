@@ -51,7 +51,7 @@ import {
   INotebookModel
 } from '@jupyterlab/notebook';
 import { CodeCell } from '@jupyterlab/cells';
-import { MainView, OUTPUT_COLLECTOR } from './mainComponent';
+import { MainView, OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 import YAML from 'yaml';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
@@ -549,7 +549,7 @@ function activateFun(
       const output: INode = {
         id: OUTPUT_COLLECTOR,
         width: 160,
-        type: 'Output Collector',
+        type: OUTPUT_TYPE,
         conf: {},
         required: {},
         // eslint-disable-next-line @typescript-eslint/camelcase

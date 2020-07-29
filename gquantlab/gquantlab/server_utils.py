@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.task import Task
+from gquant.dataframe_flow._node_flow import OUTPUT_TYPE, OUTPUT_ID
 from gquant.dataframe_flow import TaskSpecSchema
 from gquant.dataframe_flow.task import load_modules, get_gquant_config_modules
 import importlib
@@ -71,6 +72,9 @@ def get_nodes(task_graph):
     dict
         nodes and edges of the graph data
     """
+    for task in task_graph:
+        if (task.get(TaskSpecSchema.node_type) == OUTPUT_TYPE):
+            task.set_output()
     task_graph.build()
     nodes = []
     edges = []
@@ -84,7 +88,13 @@ def get_nodes(task_graph):
         for port, v in connection_inputs.items():
             edge = {"from": v, "to": node.uid+"."+port}
             edges.append(edge)
-
+        # fix the output collector inputs
+        if (task[TaskSpecSchema.task_id] == OUTPUT_ID):
+            inputs = []
+            for port, v in connection_inputs.items():
+                inputs.append({'name': port, "type": ["any"]})
+            inputs.append({'name': 'in'+str(int(port[2:])+1), "type": ["any"]})
+            out_node['inputs'] = inputs
     return {'nodes': nodes, 'edges': edges}
 
 
@@ -106,7 +116,11 @@ def get_node_obj(node):
     ports = node.ports_setup()
     schema = node.conf_schema()
     typeName = node._task_obj.get('type')
-    width = max(max(len(node.uid), len(typeName)) * 10, 100)
+    if node.uid == OUTPUT_ID:
+        width = 160
+        typeName = OUTPUT_TYPE
+    else:
+        width = max(max(len(node.uid), len(typeName)) * 10, 100)
     conf = node._task_obj.get('conf')
     out_node = {'width': width,
                 'id': node.uid,
