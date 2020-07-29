@@ -570,7 +570,7 @@ function activateFun(
         wdg.contentHandler.nodeAddedSignal.emit(output);
       }
     },
-    isVisible: isCellVisible
+    isVisible: isVisible
   });
 
   app.contextMenu.addItem({
