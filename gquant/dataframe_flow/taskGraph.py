@@ -101,7 +101,6 @@ class TaskGraph(object):
         '''
         self.__task_list = {}
         self.__node_dict = {}
-        self.__outputs = []  # this is used to store a list of outputs
         self.__index = None
         # this is server widget that this taskgraph associated with
         self.__widget = None
@@ -262,8 +261,8 @@ class TaskGraph(object):
             task_inputs = itask[TaskSpecSchema.inputs]
             to_task = itask[TaskSpecSchema.task_id]
             to_type = itask[TaskSpecSchema.node_type]
-            if (to_task == OUTPUT_ID or to_type == OUTPUT_TYPE):
-                continue
+            if to_task == "":
+                to_task = OUTPUT_TYPE
             for iport_or_tid in task_inputs:
                 # iport_or_tid: it is either to_port or task id (tid) b/c
                 #     if using ports API task_inputs is a dictionary otherwise
@@ -287,6 +286,9 @@ class TaskGraph(object):
 
             # draw output ports
             if show_ports:
+
+                if (to_type == OUTPUT_TYPE):
+                    continue
                 task_node = itask.get_node_obj()
                 if not task_node._using_ports():
                     continue
@@ -394,15 +396,7 @@ class TaskGraph(object):
     def reset(self):
         self.__node_dict.clear()
         self.__task_list.clear()
-        self.__outputs.clear()
         self.__index = None
-
-    def set_outputs(self, outputs):
-        self.__outputs.clear()
-        self.__outputs.extend(outputs)
-
-    def get_outputs(self):
-        return self.__outputs
 
     def run(self, outputs=None, replace=None, profile=False, formated=False):
         """
@@ -434,7 +428,6 @@ class TaskGraph(object):
                     task[TaskSpecSchema.node_type] == OUTPUT_TYPE):
                 found_output_node = True
                 outputs_collector_node = self[task[TaskSpecSchema.task_id]]
-                outputs_collector_node.clear_input = False
                 for input_item in outputs_collector_node.inputs:
                     from_node_id = input_item['from_node'].uid
                     fromStr = from_node_id+'.'+input_item['from_port']
@@ -455,8 +448,12 @@ class TaskGraph(object):
             outputs_collector_node = output_task.get_node_obj(
                 tgraph_mixin=True)
 
-            # want to save the intermediate results
-            outputs_collector_node.clear_input = False
+        outputs_collector_node.clear_input = False
+        if not found_output_node or outputs is not None:
+            # set the connection only if output_node is manullay created
+            # or the output is overwritten
+            outputs_collector_node.inputs.clear()
+            outputs_collector_node.outputs.clear()
             for task_id in outputs:
                 nodeid_oport = task_id.split('.')
                 nodeid = nodeid_oport[0]

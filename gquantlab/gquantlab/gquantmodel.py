@@ -9,11 +9,10 @@ TODO: Add module docstring
 """
 
 import ipywidgets.widgets as widgets
-import ipywidgets 
+import ipywidgets
 from ipywidgets import DOMWidget
 from traitlets import Unicode, List, Dict, Instance
 from ._frontend import module_name, module_version
-from gquant.dataframe_flow._node_flow import OUTPUT_ID
 
 
 class GQuantWidget(DOMWidget):
@@ -49,13 +48,6 @@ class GQuantWidget(DOMWidget):
         super().set_state(sync_data)
         self.task_graph.reset()
         self.task_graph.extend(sync_data['value'])
-        # get all the outputs
-        edges = sync_data['cache']['edges']
-        outputs = []
-        for edge in edges:
-            if edge['to'].split('.')[0] == OUTPUT_ID:
-                outputs.append(edge['from'])
-        self.task_graph.set_outputs(outputs)
 
     def run(self):
         result = self.task_graph.run(formated=True)
