@@ -754,11 +754,11 @@ function activateFun(
       if (isGquantVisible()) {
         mainView = app.shell.currentWidget as any;
         objStr = JSON.stringify(
-          YAML.parse(mainView.contentHandler.context.model.toString())
+          YAML.parse(mainView.contentHandler.context.model.toString()),
+          null,
+          2
         );
       }
-      const outputStr = JSON.stringify(mainView.contentHandler.outputs);
-      console.log(outputStr);
       const input1 = `import json\nfrom gquant.dataframe_flow import TaskGraph\nobj="""${objStr}"""\ntaskList=json.loads(obj)\ntaskGraph=TaskGraph(taskList)\ntaskGraph.draw()`;
       const input2 = 'taskGraph.run(formated=True)';
       return createNewNotebook(input1, input2);
