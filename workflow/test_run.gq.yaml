@@ -34,3 +34,8 @@
   inputs:
     df1: cupy.distance_df
     df2: cudf.distance_df
+- id: ""
+  type: Output Collector
+  conf: {}
+  inputs:
+    in1: verify2.max_diff
