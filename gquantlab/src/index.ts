@@ -326,6 +326,46 @@ function activateFun(
     app.serviceManager.contents.save(model.path, model);
   };
 
+  // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+  const createNewNotebook = async (input1: string, input2: string) => {
+    const model = await commands.execute('docmanager:new-untitled', {
+      type: 'notebook'
+    });
+    const empty: any[] = [];
+    const notebook = {
+      cells: [
+        {
+          cell_type: "code",
+          execution_count: 1,
+          metadata: {},
+          outputs: empty,
+          source: input1
+        },
+        {
+          cell_type: "code",
+          execution_count: 2,
+          metadata: {},
+          outputs: empty,
+          source: input2
+        }
+      ],
+      metadata: {
+        kernelspec: {
+          display_name: 'Python 3',
+          language: 'python',
+          name: 'python3'
+        }
+      },
+      nbformat: 4,
+      nbformat_minor: 4
+    };
+
+    model.content = notebook;
+    model.format = 'text';
+    const savedModel = await app.serviceManager.contents.save(model.path, model);
+    browserFactory.defaultBrowser.model.manager.open(savedModel.path);
+  };
+
   // Add a command for creating a new diagram file.
   commands.addCommand('gquant:create-new', {
     label: 'TaskGraph',
@@ -696,6 +736,39 @@ function activateFun(
     command: 'add:outputCollector',
     keys: ['Alt O'],
     selector: '.jp-Notebook'
+  });
+
+  commands.addCommand('gquant:openAnNewNotebook', {
+    label: 'Convert TaskGraph to Notebook',
+    caption: 'Convert TaskGraph to Notebook',
+    execute: async () => {
+      let mainView: MainView;
+      let objStr = '';
+      if (isCellVisible()) {
+        // Prompt the user about the statement to be executed
+        mainView = getMainView();
+        objStr = JSON.stringify(
+          mainView.contentHandler.privateCopy.get('value')
+        );
+      }
+      if (isGquantVisible()) {
+        mainView = app.shell.currentWidget as any;
+        objStr = JSON.stringify(
+          YAML.parse(mainView.contentHandler.context.model.toString())
+        );
+      }
+      const outputStr = JSON.stringify(mainView.contentHandler.outputs);
+      console.log(outputStr);
+      const input1 = `import json\nfrom gquant.dataframe_flow import TaskGraph\nobj="""${objStr}"""\ntaskList=json.loads(obj)\ntaskGraph=TaskGraph(taskList)\ntaskGraph.draw()`;
+      const input2 = 'taskGraph.run(formated=True)';
+      return createNewNotebook(input1, input2);
+      // Execute the statement
+    },
+    isVisible: isGquantVisible
+  });
+  app.contextMenu.addItem({
+    command: 'gquant:openAnNewNotebook',
+    selector: '.jp-GQuant'
   });
 }
 
