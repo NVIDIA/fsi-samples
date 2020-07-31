@@ -30,7 +30,10 @@ class XGBoostStrategyNode(Node):
     def columns_setup(self):
         self.required = {'datetime': 'date',
                          "asset": "int64"}
-        self.retention = self.conf['no_feature']
+        if 'no_feature' in self.conf:
+            self.retention = self.conf['no_feature']
+        else:
+            self.retention = {}
         self.retention['signal'] = 'float64'
 
     def process(self, inputs):

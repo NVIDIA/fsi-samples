@@ -8,17 +8,18 @@ class IndicatorNode(Node):
         self.delayed_process = True
         self.required = {'indicator': 'int32'}
         self.addition = {}
-        indicators = self.conf['indicators']
-        for indicator in indicators:
-            for col in indicator['columns']:
-                self.required[col] = 'float64'
-            if 'outputs' in indicator:
-                for out in indicator['outputs']:
-                    out_col = self._compose_name(indicator, [out])
+        if 'indicators' in self.conf:
+            indicators = self.conf['indicators']
+            for indicator in indicators:
+                for col in indicator['columns']:
+                    self.required[col] = 'float64'
+                if 'outputs' in indicator:
+                    for out in indicator['outputs']:
+                        out_col = self._compose_name(indicator, [out])
+                        self.addition[out_col] = 'float64'
+                else:
+                    out_col = self._compose_name(indicator, [])
                     self.addition[out_col] = 'float64'
-            else:
-                out_col = self._compose_name(indicator, [])
-                self.addition[out_col] = 'float64'
 
     def _compose_name(self, indicator, outname=[]):
         name = indicator['function']
