@@ -15,7 +15,7 @@ __all__ = ['TaskGraph', 'OutputCollector']
 
 class OutputCollector(Node):
     def columns_setup(self):
-        super().columns_setup()
+        return super().columns_setup()
 
     def ports_setup(self):
         return NodePorts(inports={}, outports={})

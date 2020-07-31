@@ -203,7 +203,7 @@ class NumbaDistanceNode(Node):
                              outports={'distance_df': {port_type: types}})
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
-   
+  
     def init(self):
         self.delayed_process = True
         required = {'x': 'float64',
