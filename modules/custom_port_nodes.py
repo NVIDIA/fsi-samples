@@ -71,9 +71,11 @@ class PointNode(Node):
         }
         return ConfSchema(json=json, ui=ui)
 
-    def columns_setup(self):
+    def init(self):
         self.required = {}
-        self.addition = {
+
+    def columns_setup(self):
+        columns_out = {
             'points_df_out': {
                 'x': 'float64',
                 'y': 'float64'
@@ -83,6 +85,7 @@ class PointNode(Node):
                 'y': 'float64'
             }
         }
+        return columns_out
 
     def process(self, inputs):
         npts = self.conf['npts']
@@ -126,24 +129,28 @@ class DistanceNode(Node):
     def conf_schema(self):
         return ConfSchema()
 
-    def columns_setup(self):
+    def init(self):
         self.delayed_process = True
-
         req_cols = {
             'x': 'float64',
             'y': 'float64'
         }
-
         self.required = {
             'points_df_in': req_cols,
             'distance_df': req_cols
         }
 
-        self.addition = {
+    def columns_setup(self):
+        input_columns = self.get_input_columns()
+        col_from_inport = input_columns['points_df_in']
+        # additional ports
+        output_cols = {
             'distance_df': {
                 'distance_cudf': 'float64'
             }
         }
+        output_cols['distance_df'].update(col_from_inport)
+        return output_cols
 
     def process(self, inputs):
         df = inputs['points_df_in']
@@ -196,19 +203,25 @@ class NumbaDistanceNode(Node):
                              outports={'distance_df': {port_type: types}})
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
-
-    def columns_setup(self,):
+   
+    def init(self):
         self.delayed_process = True
-
         required = {'x': 'float64',
                     'y': 'float64'}
         self.required = {
             'points_df_in': required,
             'distance_df': required
         }
-        self.addition = {
+
+    def columns_setup(self,):
+        input_columns = self.get_input_columns()
+        col_from_inport = input_columns['points_df_in']
+        # additional ports
+        output_cols = {
             'distance_df': {'distance_numba': 'float64'}
         }
+        output_cols['distance_df'].update(col_from_inport)
+        return output_cols
 
     def conf_schema(self):
         return ConfSchema()
@@ -278,7 +291,8 @@ class CupyDistanceNode(Node):
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
 
-    def columns_setup(self,):
+    def init(self):
+        self.delayed_process = True
         cols_required = {'x': 'float64',
                          'y': 'float64'}
         self.required = {
@@ -286,12 +300,17 @@ class CupyDistanceNode(Node):
             'distance_df': cols_required
         }
 
-        self.addition = {
+    def columns_setup(self,):
+        input_columns = self.get_input_columns()
+        col_from_inport = input_columns['points_df_in']
+        # additional ports
+        output_cols = {
             'distance_df': {
                 'distance_cupy': 'float64'
             }
         }
-        self.delayed_process = True
+        output_cols['distance_df'].update(col_from_inport)
+        return output_cols
 
     def conf_schema(self):
         return ConfSchema()
@@ -331,7 +350,7 @@ class DistributedNode(Node):
 
         return NodePorts(inports=input_ports, outports=output_ports)
 
-    def columns_setup(self,):
+    def init(self):
         required = {
             'x': 'float64',
             'y': 'float64'
@@ -341,6 +360,15 @@ class DistributedNode(Node):
             'points_df_in': required,
             'points_ddf_out': required
         }
+
+    def columns_setup(self,):
+        input_columns = self.get_input_columns()
+        col_from_inport = input_columns['points_df_in']
+        # additional ports
+        output_cols = {
+            'points_ddf_out': col_from_inport
+        }
+        return output_cols
 
     def conf_schema(self):
         json = {
@@ -392,7 +420,7 @@ class VerifyNode(Node):
         return NodePorts(inports=input_ports_out, outports=output_ports)
 
     def columns_setup(self):
-        pass
+        return {'max_dff': {}}
 
     def conf_schema(self):
         json = {

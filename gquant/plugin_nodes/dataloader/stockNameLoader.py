@@ -18,18 +18,23 @@ class StockNameLoader(Node):
         }
         return NodePorts(inports=input_ports, outports=output_ports)
 
+    def init(self):
+        self.required = {}
+
     def columns_setup(self):
         self.required = {}
         column_types = {"asset": "int64",
                         "asset_name": "object"}
-        self.addition = {
+        out_cols = {
             STOCK_NAME_PORT_NAME: column_types,
         }
+        return out_cols
 
     def conf_schema(self):
         json = {
             "title": "Stock name csv file loader configure",
             "type": "object",
+            "description": "Load the stock name data from the csv file",
             "properties": {
                 "file":  {
                     "type": "string",

@@ -4,6 +4,7 @@ import pandas as pd
 import dask
 import cudf
 import dask_cudf
+import copy
 
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
@@ -193,7 +194,7 @@ class NodeTaskGraphMixin(object):
         if not incols_ready:
             return
 
-        inputs_cols = self.__get_input_columns()
+        inputs_cols = self.get_input_columns()
 
         if not self._using_ports():
             # to_port (iport usually used as variable) is always set. Refer to
@@ -232,7 +233,6 @@ class NodeTaskGraphMixin(object):
                     validate_required(incoming_cols, kcol, kval, in_taskids)
 
         # ABOVE validates the columns in dataframe inputs
-        combined = {}
         # When using ports all the validation logic below add/del/retain
         # can just be simplified to having a columns dict for the port.
         # The operations add/del/retain are internal to the process API
@@ -242,74 +242,32 @@ class NodeTaskGraphMixin(object):
         # identified via "@" special character and typically configured via
         # task-spec conf.
         if self._using_ports():
-            out_ports = self._get_output_ports()
-            for oport in out_ports:
-                # TODO: Translate needs to be port aware. Assumes
-                #     translation is defined in self.conf:
-                #         types = self.conf[types[1:]]
-                #     The conf should then be ports aware.
-                oport_req_cols_tran = self.__translate_column(
-                    self.required.get(oport, {}))
-                combined[oport] = oport_req_cols_tran
+            self.output_columns = self.columns_setup()
         else:
+            combined = {}
             # old API assumes input columns are passed through
             combined.update(inputs_cols)
+            # compute the output columns
+            output_cols = combined
 
-        # compute the output columns
-        output_cols = combined
-
-        if self.addition:
-            if self._using_ports():
-                for oport in out_ports:
-                    add_cols = self.__translate_column(
-                        self.addition.get(oport, {}))
-                    col_dict = output_cols.get(oport, {})
-                    col_dict.update(add_cols)
-                    output_cols[oport] = col_dict
-            else:
+            if self.addition:
                 add_cols = self.__translate_column(self.addition)
                 output_cols.update(add_cols)
 
-        if self.deletion:
-            if self._using_ports():
-                for oport in out_ports:
-                    del_cols = self.__translate_column(
-                        self.deletion.get(oport, {}))
-                    col_dict = output_cols.get(oport, {})
-                    for kdel in del_cols:
-                        del col_dict[kdel]
-                    output_cols[oport] = col_dict
-            else:
+            if self.deletion:
                 for kdel in self.__translate_column(self.deletion).keys():
                     del output_cols[kdel]
 
-        if self.retention is not None:
-            if self._using_ports():
-                for oport in out_ports:
-                    output_cols[oport] = self.__translate_column(
-                        self.retention.get(oport, {}))
-            else:
+            if self.retention is not None:
                 output_cols = self.__translate_column(self.retention)
 
-        def rename_check(kk, cols):
-            if kk not in cols:
-                err_msg = 'Not valid replacement column: error for node "%s",'\
-                          ' missing required column "%s"' % (self.uid, kk)
-                raise Exception(err_msg)
+            def rename_check(kk, cols):
+                if kk not in cols:
+                    err_msg = 'Not valid replacement column: error for node "%s",'\
+                              ' missing required column "%s"' % (self.uid, kk)
+                    raise Exception(err_msg)
 
-        if self.rename:
-            if self._using_ports():
-                for oport in out_ports:
-                    replacement = self.__translate_column(
-                        self.rename.get(oport, {}))
-                    col_dict = output_cols.get(oport, {})
-                    for col_key, repl_name in replacement.items():
-                        rename_check(col_key, col_dict)
-                        types = col_dict[col_key]
-                        del col_dict[col_key]
-                        col_dict[repl_name] = types
-                    output_cols[oport] = col_dict
-            else:
+            if self.rename:
                 replacement = self.__translate_column(self.rename)
                 for col_key, repl_name in replacement.items():
                     rename_check(col_key, output_cols)
@@ -317,7 +275,7 @@ class NodeTaskGraphMixin(object):
                     del output_cols[col_key]
                     output_cols[repl_name] = types
 
-        self.output_columns = output_cols
+            self.output_columns = output_cols
 
         for iout in self.outputs:
             onode = iout['to_node']
@@ -490,8 +448,8 @@ class NodeTaskGraphMixin(object):
     def __get_input_df(self):
         return self.input_df
 
-    def __get_input_columns(self):
-        return self.input_columns
+    def get_input_columns(self):
+        return copy.deepcopy(self.input_columns)
 
     def __set_input_df(self, to_port, df):
         self.input_df[to_port] = df
