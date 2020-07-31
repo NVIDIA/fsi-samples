@@ -31,10 +31,10 @@ export function handleMouseUp(that: Chart) {
               that.props.edges.push(newEdge);
             }
           }
-          const output = that.configFile();
-          const jsonString = JSON.stringify(output);
-          that.drawLinks();
-          that.updateInputs(jsonString);
+          that.connectionUpdate();
+          // const jsonString = JSON.stringify(output);
+          // that.updateInputs(jsonString);
+          // that.drawLinks();
           that.isDirty = false;
           //that.props.setChartState({'edges': that.props.edges})
           //let links = that.edgeData();
@@ -58,10 +58,10 @@ export function handleMouseUp(that: Chart) {
               that.props.edges.push(newEdge);
             }
           }
-          const output = that.configFile();
-          const jsonString = JSON.stringify(output);
-          that.drawLinks();
-          that.updateInputs(jsonString);
+          that.connectionUpdate();
+          // const jsonString = JSON.stringify(output);
+          // that.updateInputs(jsonString);
+          // that.drawLinks();
           that.isDirty = false;
           //that.props.setChartState({'edges': that.props.edges})
           // links = edges.map(edge_map);

@@ -14,7 +14,7 @@ interface IProps {
 const DefaultWidth = 100;
 const DefaultHeight = 100;
 
-interface IState {
+export interface IState {
   height: number;
   width: number;
   nodes: INode[];
@@ -364,7 +364,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
     //inputs: [ {name: "in1", type: ['any']}]
   }
 
-  updateWorkFlow(state: IState): void {
+  updateWorkFlow(state: IState, update = true): void {
     if (state.edges && state.nodes) {
       this._fixOutputCollectorPorts(state);
       const output = exportWorkFlowNodes(state.nodes, state.edges);
@@ -378,7 +378,9 @@ export class ChartEngine extends React.Component<IProps, IState> {
       const yamlText = YAML.stringify(output);
       this.props.contentHandler.update(yamlText);
     }
-    this.setState(state);
+    if (update) {
+      this.setState(state);
+    }
   }
 
   render(): JSX.Element {

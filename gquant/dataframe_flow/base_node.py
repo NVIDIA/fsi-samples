@@ -53,6 +53,8 @@ class BaseNode(Node):
 
     def addition_columns_setup(self, addition):
         input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME not in input_columns:
+            return {self.OUTPUT_PORT_NAME: {}}
         col_from_inport = input_columns[self.INPUT_PORT_NAME]
         # additional ports
         output_cols = {
@@ -63,6 +65,8 @@ class BaseNode(Node):
 
     def deletion_columns_setup(self, deletion):
         input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME not in input_columns:
+            return {self.OUTPUT_PORT_NAME: {}}
         col_from_inport = input_columns[self.INPUT_PORT_NAME]
         # delete the columns from the inputs
         for key in deletion:
@@ -71,4 +75,7 @@ class BaseNode(Node):
         return {self.OUTPUT_PORT_NAME: col_from_inport}
 
     def retention_columns_setup(self, retention):
+        input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME not in input_columns:
+            return {self.OUTPUT_PORT_NAME: {}}
         return {self.OUTPUT_PORT_NAME: retention}

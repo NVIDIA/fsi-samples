@@ -19,7 +19,7 @@ import { handleMouseDown, handleMouseUp } from './connectionHandler';
 import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IEdge, ContentHandler } from './document';
-import { exportWorkFlowNodes } from './chartEngine';
+import { exportWorkFlowNodes, IState } from './chartEngine';
 import { OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 
 interface IPortInfo {
@@ -467,6 +467,30 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.props.layout(this.props.nodes, this.props.edges, this.transform);
   }
 
+  /**
+   * Update the charts, also send back to server to reculcate the columns,
+   * types and UI schema etc
+   * @param nodes
+   * @param edges
+   */
+  fullUpdate(nodes: INode[], edges: IEdge[]): void {
+    const content = exportWorkFlowNodes(nodes, edges);
+    const jsonString = JSON.stringify(content);
+    this.drawLinks();
+    this.updateInputs(jsonString);
+  }
+
+  nodeEditorUpdate(state: IState): void {
+    this.props.setChartState(
+      {
+        nodes: state.nodes,
+        edges: state.edges
+      },
+      false
+    );
+    this.fullUpdate(state.nodes, state.edges);
+  }
+
   updateInputs(json: string): void {
     /**
      * send the taskgraph to backend to run the column-flow logics so all the output types and names are computed
@@ -483,6 +507,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           outputColumns: any;
           inputs: any;
           outputs: any;
+          ui: any;
+          schema: any;
         };
       } = {};
       data.nodes.forEach((d: INode) => {
@@ -490,7 +516,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           required: d.required,
           outputColumns: d.output_columns,
           inputs: d.inputs,
-          outputs: d.outputs
+          outputs: d.outputs,
+          schema: d.schema,
+          ui: d.ui
         };
       });
       this.props.nodes.forEach((d: INode) => {
@@ -503,6 +531,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           d.output_columns = newNode[d.id].outputColumns;
           d.inputs = newNode[d.id].inputs;
           d.outputs = newNode[d.id].outputs;
+          d.schema = newNode[d.id].schema;
+          d.ui = newNode[d.id].ui;
         }
       });
       this.props.setChartState({
@@ -512,8 +542,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     });
   }
 
-  configFile(): INode[] {
-    return exportWorkFlowNodes(this.props.nodes, this.props.edges);
+  connectionUpdate(): void {
+    this.fullUpdate(this.props.nodes, this.props.edges);
   }
 
   render(): JSX.Element {
@@ -542,7 +572,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
             y={this.state.y}
             opacity={this.state.opacity}
             nodeDatum={this.state.nodeDatum}
-            setChartState={this.props.setChartState}
+            setChartState={this.nodeEditorUpdate.bind(this)}
             nodes={this.props.nodes}
             edges={this.props.edges}
             setMenuState={this.setState.bind(this)}
