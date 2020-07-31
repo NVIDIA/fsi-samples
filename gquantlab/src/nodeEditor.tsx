@@ -1,8 +1,13 @@
 import React from 'react';
 import styled from '@emotion/styled';
 import Form from '@rjsf/core';
+import 'bootstrap/dist/css/bootstrap.css';
+import '../style/editor.css';
+// import 'glyphicons-halflings/css/bootstrap-glyphicons';
+//import 'glyphicons-halflings/css/glyphicons-halflings.css';
 import { INode, IEdge } from './document';
 import { OUTPUT_COLLECTOR } from './mainComponent';
+//import '../style/bootstrap-glyphicons.css';
 interface IProp {
   x: number;
   y: number;
