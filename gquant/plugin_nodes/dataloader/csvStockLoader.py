@@ -27,9 +27,11 @@ class CsvStockLoader(Node):
             }
         }
         return NodePorts(inports=input_ports, outports=output_ports)
+    
+    def init(self):
+        self.required = {}
 
     def columns_setup(self):
-        self.required = {}
         column_types = {"datetime": "date",
                         "asset": "int64",
                         "volume": "float64",
@@ -37,16 +39,18 @@ class CsvStockLoader(Node):
                         "open": "float64",
                         "high": "float64",
                         "low": "float64"}
-        self.addition = {
+        out_cols = {
             CUDF_PORT_NAME: column_types,
             DASK_CUDF_PORT_NAME: column_types,
             PANDAS_PORT_NAME: column_types
         }
+        return out_cols
 
     def conf_schema(self):
         json = {
             "title": "Stock csv data loader configure",
             "type": "object",
+            "description": "Load the stock daily bar data from the csv file",
             "properties": {
                 "file":  {
                     "type": "string",

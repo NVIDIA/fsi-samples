@@ -112,7 +112,7 @@ class Node(_PortsMixin, _Node):
         self.rename = {}
         self.delayed_process = False
         # customized the column setup
-        self.columns_setup()
+        self.init()
         self.profile = False  # by default, do not profile
 
         if self._using_ports():
@@ -185,6 +185,46 @@ class Node(_PortsMixin, _Node):
         # this method will be implemented by NodeTaskGraphMixin
         return {}
 
+    def init(self):
+        """
+        Initialize the node. Usually it is used to setup the required
+        column types and self.delayed_process flag and other special
+        initialzation.
+
+        The self.delayed_process flag is by default set to False. It can be
+        overwritten here to True. For native dataframe API calls, dask cudf
+        support the distribution computation. But the dask_cudf dataframe does
+        not support GPU customized kernels directly. We can use to_delayed and
+        from_delayed low level interfaces of dask_cudf to add this support.
+        In order to use Dask (for distributed computation i.e. multi-gpu in
+        examples later on) we set the flag and the framework
+        handles dask_cudf dataframes automatically under the hood.
+
+        `self.required`, where keys are column names and values are
+        column types. 
+
+        `self.required` defines the required columns in the input dataframes
+
+         Example column types:
+            * int64
+            * int32
+            * float64
+            * float32
+            * datetime64[ms]
+        """
+        pass
+
+    def get_input_columns(self):
+        """
+        Get the input column information. It is used by individual node to
+         compute the output column information
+        returns
+            dict, key is the node input port name, value is the dict with keys
+            column names, and values column types
+        """
+        # this method will be implemented by NodeTaskGraphMixin
+        return {}
+
     def conf_schema(self):
         """Virtual method for specifying configuration schema. Implement if
         desire to use the UI client to help fill the conf forms.
@@ -241,7 +281,9 @@ class Node(_PortsMixin, _Node):
         There is a special syntax to use variable for column names. If the
         the key is `@xxxx`, it will `xxxx` as key to look up the value in the
         `self.conf` variable.
-
+        returns:
+            dict, key is the node output port name, value is the dict with keys
+            column names, and values column types
         """
         self.required = {}
         self.addition = {}
@@ -251,6 +293,7 @@ class Node(_PortsMixin, _Node):
         # for retention therefore use None instead of empty dict.
         self.retention = None
         self.rename = {}
+        return {}
 
     @abc.abstractmethod
     def process(self, inputs):
