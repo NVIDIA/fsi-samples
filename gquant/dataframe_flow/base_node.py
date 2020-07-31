@@ -64,8 +64,11 @@ class BaseNode(Node):
     def deletion_columns_setup(self, deletion):
         input_columns = self.get_input_columns()
         col_from_inport = input_columns[self.INPUT_PORT_NAME]
-        # additional ports
+        # delete the columns from the inputs
         for key in deletion:
             if key in col_from_inport:
-                del col_from_inport
-        return col_from_inport
+                del col_from_inport[key]
+        return {self.OUTPUT_PORT_NAME: col_from_inport}
+
+    def retention_columns_setup(self, retention):
+        return {self.OUTPUT_PORT_NAME: retention}

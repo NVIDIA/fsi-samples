@@ -7,7 +7,7 @@ class AssetIndicatorNode(BaseNode):
     def init(self):
         super().init()
         self.INPUT_PORT_NAME = 'stock_in'
-        self.OUTPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'stock_out'
         cols_required = {"asset": "int64"}
         self.required = {
             self.INPUT_PORT_NAME: cols_required
