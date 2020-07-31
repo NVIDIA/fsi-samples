@@ -1,12 +1,47 @@
-from gquant.dataframe_flow import Node
-from .returnFeatureNode import ReturnFeatureNode
+from gquant.dataframe_flow.base_node import BaseNode
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class DropNode(Node):
+class DropNode(BaseNode):
+
+    def init(self):
+        super().init()
+        cols_required = {}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.delayed_process = True
-        self.deletion = {"@columns": None}
+        dropped = {}
+        for k in self.conf['columns']:
+            dropped[k] = None
+        return self.deletion_columns_setup(dropped)
+
+    def conf_schema(self):
+        json = {
+            "title": "Drop Column configure",
+            "type": "object",
+            "description": """Drop a few columns from the dataframe""",
+            "properties": {
+                "columns":  {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": """array of columns to be droped"""
+                }
+            },
+            "required": ["columns"],
+        }
+        ui = {
+            "columns": {
+                "items": {
+                    "ui:widget": "text"
+                }
+            },
+
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -21,16 +56,6 @@ class DropNode(Node):
         -------
         dataframe
         """
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         column_names = self.conf['columns']
-        return input_df.drop(column_names, axis=1)
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    df = df.sort_values(["asset", 'datetime'])
-    sf = ReturnFeatureNode("id2", {})
-    df2 = sf([df])
+        return {self.OUTPUT_PORT_NAME: input_df.drop(column_names, axis=1)}
