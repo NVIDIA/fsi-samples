@@ -263,9 +263,9 @@ class NodeTaskGraphMixin(object):
 
             def rename_check(kk, cols):
                 if kk not in cols:
-                    err_msg = 'Not valid replacement column: error for node "%s",'\
+                    err = 'Not valid replacement column: error for node "%s",'\
                               ' missing required column "%s"' % (self.uid, kk)
-                    raise Exception(err_msg)
+                    raise Exception(err)
 
             if self.rename:
                 replacement = self.__translate_column(self.rename)
