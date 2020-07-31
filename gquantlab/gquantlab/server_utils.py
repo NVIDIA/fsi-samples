@@ -187,21 +187,25 @@ def add_nodes():
     """
     all_modules = get_gquant_config_modules()
     print(all_modules)
-    # not implemented yet for gQuant
-    # for item in inspect.getmembers(plugin_nodes):
-    #     if inspect.ismodule(item[1]):
-    #         print(item)
-    #         for node in inspect.getmembers(item[1]):
-    #             if inspect.isclass(node[1]):
-    #                 task = {'id': 'random',
-    #                         'type': node[0],
-    #                         'conf': {},
-    #                         'inputs': []}
-    #                 t = Task(task)
-    #                 n = node[1](t)
-    #                 if issubclass(node[1], Node):
-    #                     print(get_node_obj(n))
     all_nodes = {}
+    # not implemented yet for gQuant
+    for item in inspect.getmembers(plugin_nodes):
+        if inspect.ismodule(item[1]):
+            print(item)
+            all_nodes[item[0]] = []
+            for node in inspect.getmembers(item[1]):
+                if inspect.isclass(node[1]):
+                    task = {'id': 'random',
+                            'type': node[0],
+                            'conf': {},
+                            'inputs': []}
+                    t = Task(task)
+                    n = node[1](t)
+                    if not n._using_ports():
+                        continue
+                    if issubclass(node[1], Node):
+                        nodeObj = get_node_obj(n)
+                        all_nodes[item[0]].append(nodeObj)
     for module in all_modules:
         # mod = importlib.import_module(str(module))
         loaded = load_modules(all_modules[module], module)

@@ -198,19 +198,20 @@ class Task(object):
                                 break
                             except AttributeError:
                                 continue
-                if NodeClass is None:
-                    raise Exception("Cannot find the Node Class: "+node_type)
-                else:
-                    append_path(module_dir)
-                    try:
-                        # add python path to all the client workers
-                        # assume all the worikers share the same directory
-                        # structure
-                        import dask.distributed
-                        client = dask.distributed.client.default_client()
-                        client.run(append_path, module_dir)
-                    except (ValueError, ImportError):
-                        pass
+                    if NodeClass is None:
+                        raise Exception("Cannot find the Node Class:" +
+                                        node_type)
+                    else:
+                        append_path(module_dir)
+                        try:
+                            # add python path to all the client workers
+                            # assume all the worikers share the same directory
+                            # structure
+                            import dask.distributed
+                            client = dask.distributed.client.default_client()
+                            client.run(append_path, module_dir)
+                        except (ValueError, ImportError):
+                            pass
         elif issubclass(node_type, _Node):
             NodeClass = node_type
         else:
