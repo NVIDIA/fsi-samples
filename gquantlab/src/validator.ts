@@ -3,12 +3,12 @@ import { Chart } from './chart';
 
 function valid(required: any, outputs: any): boolean {
   const keys = Object.keys(required);
-
-  keys.forEach(d => {
+  for (let i = 0; i < keys.length; i++) {
+    const d = keys[i];
     if (!(d in outputs && required[d] === outputs[d])) {
       return false;
     }
-  });
+  }
   return true;
 }
 
