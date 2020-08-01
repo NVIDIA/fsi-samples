@@ -62,10 +62,13 @@ class AverageNode(Node, _PortTypesMixin):
         return {self.OUTPUT_PORT_NAME: volume_df}
 
     def columns_setup(self):
-        retention = {self.conf['column']: "float64",
-                     "asset": "int64"}
-        return _PortTypesMixin.retention_columns_setup(self,
-                                                       retention)
+        if 'column' in self.conf:
+            retention = {self.conf['column']: "float64",
+                         "asset": "int64"}
+            return _PortTypesMixin.retention_columns_setup(self,
+                                                           retention)
+        else:
+            return _PortTypesMixin.retention_columns_setup(self, {})
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

@@ -62,13 +62,17 @@ class LeftMergeNode(Node):
 
     def columns_setup(self):
         input_columns = self.get_input_columns()
-        col_from_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
-        col_from_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
-        col_from_left_inport.update(col_from_right_inport)
-        output_cols = {
-            self.OUTPUT_PORT_NAME: col_from_left_inport
-        }
-        return output_cols
+        if (self.INPUT_PORT_LEFT_NAME in input_columns
+                and self.INPUT_PORT_RIGHT_NAME in input_columns):
+            col_from_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
+            col_from_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
+            col_from_left_inport.update(col_from_right_inport)
+            output_cols = {
+                self.OUTPUT_PORT_NAME: col_from_left_inport
+            }
+            return output_cols
+        else:
+            return {self.OUTPUT_PORT_NAME: {}}
 
     def conf_schema(self):
         json = {
@@ -83,10 +87,22 @@ class LeftMergeNode(Node):
             },
             "required": ["column"],
         }
-        ui = {
-            "column": {"ui:widget": "text"}
-        }
-        return ConfSchema(json=json, ui=ui)
+        input_columns = self.get_input_columns()
+        if (self.INPUT_PORT_LEFT_NAME in input_columns
+                and self.INPUT_PORT_RIGHT_NAME in input_columns):
+            col_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
+            col_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
+            enums1 = set([col for col in col_left_inport.keys()])
+            enums2 = set([col for col in col_right_inport.keys()])
+            json['properties']['column']['enum'] = list(
+                enums1.intersection(enums2))
+            ui = {}
+            return ConfSchema(json=json, ui=ui)
+        else:
+            ui = {
+                "column": {"ui:widget": "text"}
+            }
+            return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """

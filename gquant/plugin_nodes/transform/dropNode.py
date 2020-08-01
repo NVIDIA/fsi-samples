@@ -13,11 +13,14 @@ class DropNode(Node, _PortTypesMixin):
         }
 
     def columns_setup(self):
-        dropped = {}
-        for k in self.conf['columns']:
-            dropped[k] = None
-        return _PortTypesMixin.deletion_columns_setup(self,
-                                                      dropped)
+        if 'columns' in self.conf:
+            dropped = {}
+            for k in self.conf['columns']:
+                dropped[k] = None
+            return _PortTypesMixin.deletion_columns_setup(self,
+                                                          dropped)
+        else:
+            return {self.OUTPUT_PORT_NAME: {}}
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -44,9 +47,27 @@ class DropNode(Node, _PortTypesMixin):
                     "ui:widget": "text"
                 }
             },
-
         }
-        return ConfSchema(json=json, ui=ui)
+        input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME in input_columns:
+            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            enums = [col for col in col_from_inport.keys()]
+            options = []
+            for enum in enums:
+                option = {
+                          "type": "string",
+                          "title": enum,
+                          "enum": [enum]
+                          }
+                options.append(option)
+            json['properties']['columns']['items']['anyOf'] = options
+            ui = {}
+            return ConfSchema(json=json, ui=ui)
+        else:
+            ui = {
+                "column": {"ui:widget": "text"}
+            }
+            return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """

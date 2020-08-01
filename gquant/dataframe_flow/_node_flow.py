@@ -219,12 +219,13 @@ class NodeTaskGraphMixin(object):
                         required.get(iport, {}).items()}
 
                     required_tran = self.__translate_column(required_iport)
-                    incoming_cols = inputs_cols[iport]
-                    in_taskid = pinputs[iport]
+                    if iport in inputs_cols:
+                        incoming_cols = inputs_cols[iport]
+                        in_taskid = pinputs[iport]
 
-                    for kcol, kval in required_tran.items():
-                        validate_required(incoming_cols, kcol, kval,
-                                          in_taskid, iport)
+                        for kcol, kval in required_tran.items():
+                            validate_required(incoming_cols, kcol, kval,
+                                              in_taskid, iport)
             else:
                 # required_flat = required
                 required_tran = self.__translate_column(required)
