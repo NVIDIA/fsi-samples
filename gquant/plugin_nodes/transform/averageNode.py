@@ -1,17 +1,19 @@
-from gquant.dataframe_flow.base_node import BaseNode
+from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class AverageNode(BaseNode):
+class AverageNode(Node, _PortTypesMixin):
 
     def init(self):
-        super().init()
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         required = {"asset": "int64"}
         self.required = {self.INPUT_PORT_NAME: required}
 
     def conf_schema(self):
+        input_columns = self.get_input_columns()
         json = {
             "title": "Asset Average Configure",
             "type": "object",
@@ -27,10 +29,17 @@ class AverageNode(BaseNode):
             },
             "required": ["column"],
         }
-        ui = {
-            "column": {"ui:widget": "text"}
-        }
-        return ConfSchema(json=json, ui=ui)
+        if self.INPUT_PORT_NAME in input_columns:
+            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            enums = [col for col in col_from_inport.keys()]
+            json['properties']['column']['enum'] = enums
+            ui = {}
+            return ConfSchema(json=json, ui=ui)
+        else:
+            ui = {
+                "column": {"ui:widget": "text"}
+            }
+            return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -55,4 +64,8 @@ class AverageNode(BaseNode):
     def columns_setup(self):
         retention = {self.conf['column']: "float64",
                      "asset": "int64"}
-        return self.retention_columns_setup(retention)
+        return _PortTypesMixin.retention_columns_setup(self,
+                                                       retention)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)

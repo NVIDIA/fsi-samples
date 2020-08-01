@@ -67,8 +67,13 @@ export function handleMouseOver(that: Chart): Function {
   function constructTable(d: any): string {
     const key = Object.keys(d)[0];
     let header = `<div>Port: ${key.split('.')[1]}</div>`;
-    const portType = d[key].portType;
-    header += `<div>Port Type:${portType}</div>`;
+    const portTypes = d[key].portType;
+    let typeHTML = '<ul>';
+    for (let i = 0; i < portTypes.length; i++) {
+      typeHTML += `<li>${portTypes[i]}</li>`;
+    }
+    typeHTML += '</ul>';
+    header += `<div>Port Type:${typeHTML}</div>`;
     const columnObj = d[key].content;
     const columnKeys = Object.keys(columnObj);
     if (columnKeys.length > 0) {

@@ -1,11 +1,12 @@
-from gquant.dataframe_flow.base_node import BaseNode
+from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class DropNode(BaseNode):
+class DropNode(Node, _PortTypesMixin):
 
     def init(self):
-        super().init()
+        _PortTypesMixin.init(self)
         cols_required = {}
         self.required = {
             self.INPUT_PORT_NAME: cols_required
@@ -15,7 +16,11 @@ class DropNode(BaseNode):
         dropped = {}
         for k in self.conf['columns']:
             dropped[k] = None
-        return self.deletion_columns_setup(dropped)
+        return _PortTypesMixin.deletion_columns_setup(self,
+                                                      dropped)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

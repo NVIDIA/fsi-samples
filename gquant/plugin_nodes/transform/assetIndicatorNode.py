@@ -1,11 +1,12 @@
-from gquant.dataframe_flow.base_node import BaseNode
+from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class AssetIndicatorNode(BaseNode):
+class AssetIndicatorNode(Node, _PortTypesMixin):
 
     def init(self):
-        super().init()
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         cols_required = {"asset": "int64"}
@@ -14,7 +15,11 @@ class AssetIndicatorNode(BaseNode):
         }
 
     def columns_setup(self):
-        return self.addition_columns_setup({"indicator": "int32"})
+        return _PortTypesMixin.addition_columns_setup(self,
+                                                      {"indicator": "int32"})
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

@@ -1,12 +1,13 @@
 import datetime
-from gquant.dataframe_flow.base_node import BaseNode
+from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
 __all__ = ['DatetimeFilterNode']
 
 
-class DatetimeFilterNode(BaseNode):
+class DatetimeFilterNode(Node, _PortTypesMixin):
     """
     A node that is used to select datapoints based on range of time.
     conf["beg"] defines the beginning of the date inclusively and
@@ -16,13 +17,19 @@ class DatetimeFilterNode(BaseNode):
     """
 
     def init(self):
-        super().init()
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         cols_required = {"datetime": "date"}
         self.required = {
             self.INPUT_PORT_NAME: cols_required
         }
+
+    def columns_setup(self):
+        return _PortTypesMixin.columns_setup(self)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

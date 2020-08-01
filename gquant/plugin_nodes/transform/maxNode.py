@@ -1,11 +1,12 @@
-from gquant.dataframe_flow.base_node import BaseNode
+from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class MaxNode(BaseNode):
+class MaxNode(Node, _PortTypesMixin):
 
     def init(self):
-        super().init()
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
         cols_required = {"asset": "int64"}
@@ -13,40 +14,30 @@ class MaxNode(BaseNode):
             self.INPUT_PORT_NAME: cols_required
         }
 
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
     def conf_schema(self):
+        json = {
+            "title": "Maximum Value Node configure",
+            "type": "object",
+            "description": "Compute the maximum value of the key column",
+            "properties": {
+                "column":  {
+                    "type": "string",
+                    "description": "column to calculate the maximum value"
+                }
+            },
+            "required": ["column"],
+        }
         input_columns = self.get_input_columns()
         if self.INPUT_PORT_NAME in input_columns:
             col_from_inport = input_columns[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
-            json = {
-                "title": "Maximum Value Node configure",
-                "type": "object",
-                "description": "Compute the maximum value of the key column",
-                "properties": {
-                    "column":  {
-                        "type": "string",
-                        "description": "column to calculate the maximum value",
-                        "enum": enums
-                    }
-                },
-                "required": ["column"],
-            }
-            ui = {
-            }
+            json['properties']['column']['enum'] = enums
+            ui = {}
             return ConfSchema(json=json, ui=ui)
         else:
-            json = {
-                "title": "Maximum Value Node configure",
-                "type": "object",
-                "description": "Compute the maximum value of the key column",
-                "properties": {
-                    "column":  {
-                        "type": "string",
-                        "description": "column to calculate the maximum value"
-                    }
-                },
-                "required": ["column"],
-            }
             ui = {
                 "column": {"ui:widget": "text"}
             }
