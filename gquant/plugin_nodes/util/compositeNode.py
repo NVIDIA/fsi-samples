@@ -9,30 +9,25 @@ INPUT_ID = '4fd31358-fb80-4224-b35f-34402c6c3763'
 
 class CompositeNode(Node):
 
-    def init(self):
-        self.taskgraph_path = None
-        self.taskgraph = None
-
     def ports_setup(self):
         required = {}
         inports = {}
         outports = {}
         if 'taskgraph' in self.conf:
-            if self.taskgraph_path != self.conf['taskgraph']:
-                self.taskgraph_path = self.conf['taskgraph']
-                self.task_graph = TaskGraph.load_taskgraph(
-                    self.conf['taskgraph'])
-                self.task_graph.build()
-            if 'input' in self.conf and self.conf['input'] in self.task_graph:
-                inputNode = self.task_graph[self.conf['input']]
+            task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            replacementObj = {}
+            self.update_replace(replacementObj)
+            task_graphh.build(replace=replacementObj)
+            if 'input' in self.conf and self.conf['input'] in task_graphh:
+                inputNode = task_graphh[self.conf['input']]
                 inputNode.inputs.clear()
                 if hasattr(self, 'inputs'):
                     inputNode.inputs.extend(self.inputs)
                 required = inputNode.required
                 inports = inputNode.ports_setup().inports
             if ('output' in self.conf and
-                    self.conf['output'] in self.task_graph):
-                outNode = self.task_graph[self.conf['output']]
+                    self.conf['output'] in task_graphh):
+                outNode = task_graphh[self.conf['output']]
                 outports = outNode.ports_setup().outports
         self.required = required
         return NodePorts(inports=inports, outports=outports)
@@ -40,19 +35,18 @@ class CompositeNode(Node):
     def columns_setup(self):
         out_columns = {}
         if 'taskgraph' in self.conf:
-            if self.taskgraph_path != self.conf['taskgraph']:
-                self.taskgraph_path = self.conf['taskgraph']
-                self.task_graph = TaskGraph.load_taskgraph(
-                    self.conf['taskgraph'])
-                self.task_graph.build()
-            if 'input' in self.conf and self.conf['input'] in self.task_graph:
-                inputNode = self.task_graph[self.conf['input']]
+            task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            replacementObj = {}
+            self.update_replace(replacementObj)
+            task_graphh.build(replace=replacementObj)
+            if 'input' in self.conf and self.conf['input'] in task_graphh:
+                inputNode = task_graphh[self.conf['input']]
                 inputNode.inputs.clear()
                 if hasattr(self, 'inputs'):
                     inputNode.inputs.extend(self.inputs)
             if ('output' in self.conf and
-                    self.conf['output'] in self.task_graph):
-                outNode = self.task_graph[self.conf['output']]
+                    self.conf['output'] in task_graphh):
+                outNode = task_graphh[self.conf['output']]
                 out_columns = outNode.columns_setup()
         return out_columns
 
@@ -73,16 +67,53 @@ class CompositeNode(Node):
                 "output":  {
                     "type": "string",
                     "description": "the output node id"
+                },
+                "subnodes":  {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "description": """sub graph node ids that need 
+                    to be reconfigured"""
                 }
             },
             "required": ["taskgraph", "input", "output"],
         }
-        ui = {
-            "taskgraph": {"ui:widget": "text"},
-            "input": {"ui:widget": "text"},
-            "output": {"ui:widget": "text"}
-        }
-
+        ui = {}
+        # ui = {
+        #     "taskgraph": {"ui:widget": "text"},
+        #     "input": {"ui:widget": "text"},
+        #     "output": {"ui:widget": "text"}
+        # }
+        if 'taskgraph' in self.conf:
+            task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            replacementObj = {}
+            self.update_replace(replacementObj)
+            task_graphh.build(replace=replacementObj)
+            if 'input' in self.conf and self.conf['input'] in task_graphh:
+                inputNode = task_graphh[self.conf['input']]
+                inputNode.inputs.clear()
+                if hasattr(self, 'inputs'):
+                    inputNode.inputs.extend(self.inputs)
+            ids_in_graph = []
+            for t in task_graphh:
+                ids_in_graph.append(t.get('id'))
+            json['properties']['input']['enum'] = ids_in_graph
+            json['properties']['output']['enum'] = ids_in_graph
+            options = []
+            for idd in ids_in_graph:
+                option = {
+                          "type": "string",
+                          "title": idd,
+                          "enum": [idd]
+                          }
+                options.append(option)
+            json['properties']['subnodes']['items']['anyOf'] = options
+        if 'subnodes' in self.conf:
+            for subnodeId in self.conf['subnodes']:
+                nodeObj = task_graphh[subnodeId]
+                schema = nodeObj.conf_schema()
+                json['properties']['conf_id.'+subnodeId] = schema.json    
         # input_columns = self.get_input_columns()
         # if (self.INPUT_PORT_LEFT_NAME in input_columns
         #         and self.INPUT_PORT_RIGHT_NAME in input_columns):
@@ -100,6 +131,17 @@ class CompositeNode(Node):
         #     }
         return ConfSchema(json=json, ui=ui)
 
+    def update_replace(self, replaceObj):
+        # find the other replacment conf
+        for key in self.conf:
+            if key.startswith('conf_id.'):
+                newid = key.split('.')[1]
+                if newid in replaceObj:
+                    replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
+                else:
+                    replaceObj[newid] = {}
+                    replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
+
     def process(self, inputs):
         """
         Composite computation
@@ -114,7 +156,6 @@ class CompositeNode(Node):
         """
         if 'taskgraph' in self.conf:
             task_graph = TaskGraph.load_taskgraph(self.conf['taskgraph'])
-            print('load', self.conf['taskgraph'])
             task_graph.build()
             if 'input' in self.conf and self.conf['input'] in task_graph:
                 inputNode = task_graph[self.conf['input']]
@@ -169,9 +210,23 @@ class CompositeNode(Node):
             for key in out_ports.keys():
                 if self.outport_connected(key):
                     outputLists.append(outNode.uid+'.'+key)
-            result = task_graph.run(outputLists, replace={inputNode.uid: {
-                TaskSpecSchema.inputs: newInputs
-            }})
+
+            replaceObj = {inputNode.uid: {
+                 TaskSpecSchema.inputs: newInputs
+                }
+            }
+            # find the other replacment conf
+            for key in self.conf:
+                if key.startswith('conf_id.'):
+                    newid = key.split('.')[1]
+                    if newid in replaceObj:
+                        replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
+                    else:
+                        replaceObj[newid] = {}
+                        replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
+
+            print(replaceObj)
+            result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():
                 output[key.split('.')[1]] = result[key]
