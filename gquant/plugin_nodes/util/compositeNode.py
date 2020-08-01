@@ -9,22 +9,30 @@ INPUT_ID = '4fd31358-fb80-4224-b35f-34402c6c3763'
 
 class CompositeNode(Node):
 
+    def init(self):
+        self.taskgraph_path = None
+        self.taskgraph = None
+
     def ports_setup(self):
         required = {}
         inports = {}
         outports = {}
         if 'taskgraph' in self.conf:
-            task_graph = TaskGraph.load_taskgraph(self.conf['taskgraph'])
-            task_graph.build()
-            if 'input' in self.conf and self.conf['input'] in task_graph:
-                inputNode = task_graph[self.conf['input']]
+            if self.taskgraph_path != self.conf['taskgraph']:
+                self.taskgraph_path = self.conf['taskgraph']
+                self.task_graph = TaskGraph.load_taskgraph(
+                    self.conf['taskgraph'])
+                self.task_graph.build()
+            if 'input' in self.conf and self.conf['input'] in self.task_graph:
+                inputNode = self.task_graph[self.conf['input']]
                 inputNode.inputs.clear()
                 if hasattr(self, 'inputs'):
                     inputNode.inputs.extend(self.inputs)
                 required = inputNode.required
                 inports = inputNode.ports_setup().inports
-            if 'output' in self.conf and self.conf['output'] in task_graph:
-                outNode = task_graph[self.conf['output']]
+            if ('output' in self.conf and
+                    self.conf['output'] in self.task_graph):
+                outNode = self.task_graph[self.conf['output']]
                 outports = outNode.ports_setup().outports
         self.required = required
         return NodePorts(inports=inports, outports=outports)
@@ -32,15 +40,19 @@ class CompositeNode(Node):
     def columns_setup(self):
         out_columns = {}
         if 'taskgraph' in self.conf:
-            task_graph = TaskGraph.load_taskgraph(self.conf['taskgraph'])
-            task_graph.build()
-            if 'input' in self.conf and self.conf['input'] in task_graph:
-                inputNode = task_graph[self.conf['input']]
+            if self.taskgraph_path != self.conf['taskgraph']:
+                self.taskgraph_path = self.conf['taskgraph']
+                self.task_graph = TaskGraph.load_taskgraph(
+                    self.conf['taskgraph'])
+                self.task_graph.build()
+            if 'input' in self.conf and self.conf['input'] in self.task_graph:
+                inputNode = self.task_graph[self.conf['input']]
                 inputNode.inputs.clear()
                 if hasattr(self, 'inputs'):
                     inputNode.inputs.extend(self.inputs)
-            if 'output' in self.conf and self.conf['output'] in task_graph:
-                outNode = task_graph[self.conf['output']]
+            if ('output' in self.conf and
+                    self.conf['output'] in self.task_graph):
+                outNode = self.task_graph[self.conf['output']]
                 out_columns = outNode.columns_setup()
         return out_columns
 
