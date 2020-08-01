@@ -13,7 +13,7 @@ class LinePlotNode(Node):
     def init(self):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'lineplot'
-        cols_required = {}
+        cols_required = {"datetime": "date"}
         self.required = {
             self.INPUT_PORT_NAME: cols_required
         }
