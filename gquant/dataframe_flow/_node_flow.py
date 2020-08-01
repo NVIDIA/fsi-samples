@@ -190,9 +190,9 @@ class NodeTaskGraphMixin(object):
                           "type %s mismatch %s"
                           % (self.uid, kval, icols[kcol]))
 
-        incols_ready = self.__input_columns_ready()
-        if not incols_ready:
-            return
+        # incols_ready = self.__input_columns_ready()
+        # if not incols_ready:
+        #     return
 
         inputs_cols = self.get_input_columns()
 

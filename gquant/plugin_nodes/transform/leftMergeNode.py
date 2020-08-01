@@ -71,6 +71,18 @@ class LeftMergeNode(Node):
                 self.OUTPUT_PORT_NAME: col_from_left_inport
             }
             return output_cols
+        elif self.INPUT_PORT_LEFT_NAME in input_columns:
+            col_from_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
+            output_cols = {
+                self.OUTPUT_PORT_NAME: col_from_left_inport
+            }
+            return output_cols
+        elif self.INPUT_PORT_RIGHT_NAME in input_columns:
+            col_from_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
+            output_cols = {
+                self.OUTPUT_PORT_NAME: col_from_right_inport
+            }
+            return output_cols
         else:
             return {self.OUTPUT_PORT_NAME: {}}
 

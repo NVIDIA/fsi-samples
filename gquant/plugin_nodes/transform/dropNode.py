@@ -20,7 +20,7 @@ class DropNode(Node, _PortTypesMixin):
             return _PortTypesMixin.deletion_columns_setup(self,
                                                           dropped)
         else:
-            return {self.OUTPUT_PORT_NAME: {}}
+            return _PortTypesMixin.columns_setup(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

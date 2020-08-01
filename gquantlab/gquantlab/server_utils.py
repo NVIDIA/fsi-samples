@@ -91,9 +91,11 @@ def get_nodes(task_graph):
         # fix the output collector inputs
         if (task[TaskSpecSchema.task_id] == OUTPUT_ID):
             inputs = []
+            num = 0
             for port, v in connection_inputs.items():
                 inputs.append({'name': port, "type": ["any"]})
-            inputs.append({'name': 'in'+str(int(port[2:])+1), "type": ["any"]})
+                num = max(int(port[2:]), num)
+            inputs.append({'name': 'in'+str(num+1), "type": ["any"]})
             out_node['inputs'] = inputs
     return {'nodes': nodes, 'edges': edges}
 

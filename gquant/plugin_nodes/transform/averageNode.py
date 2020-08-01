@@ -68,7 +68,9 @@ class AverageNode(Node, _PortTypesMixin):
             return _PortTypesMixin.retention_columns_setup(self,
                                                            retention)
         else:
-            return _PortTypesMixin.retention_columns_setup(self, {})
+            retention = {"asset": "int64"}
+            return _PortTypesMixin.retention_columns_setup(self,
+                                                           retention)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

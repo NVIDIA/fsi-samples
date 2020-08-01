@@ -486,7 +486,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
         nodes: state.nodes,
         edges: state.edges
       },
-      false
+      true
     );
     this.fullUpdate(state.nodes, state.edges);
   }
