@@ -420,7 +420,7 @@ class VerifyNode(Node):
         return NodePorts(inports=input_ports_out, outports=output_ports)
 
     def columns_setup(self):
-        return {'max_dff': {}}
+        return {'max_diff': {}}
 
     def conf_schema(self):
         json = {
