@@ -282,7 +282,7 @@ class NodeTaskGraphMixin(object):
             onode = iout['to_node']
             iport = iout['to_port']
             oport = iout['from_port']
-#             onode.__set_input_column(self, self.output_columns)
+#             onode.set_input_column(self, self.output_columns)
             if oport is not None:
                 out_cols = self.output_columns[oport]
             else:
@@ -297,7 +297,7 @@ class NodeTaskGraphMixin(object):
                         for col_name, col_type in col_dict.items()}
                 else:
                     out_cols = self.output_columns
-            onode.__set_input_column(iport, out_cols)
+            onode.set_input_column(iport, out_cols)
             # type computation, only supports the new API
             onode.columns_flow()
 
@@ -450,12 +450,26 @@ class NodeTaskGraphMixin(object):
         return self.input_df
 
     def get_input_columns(self):
-        return copy.deepcopy(self.input_columns)
+        """
+        get all the connected input columns information
+        returns
+            dict, key is the current node input port name, value is the column name and types
+        """
+        output = {}
+        if not hasattr(self, 'inputs'):
+            return output
+        for node_input in self.inputs:
+            from_node = node_input['from_node']
+            columns = copy.deepcopy(from_node.columns_setup())
+            from_port_name = node_input['from_port']
+            to_port_name = node_input['to_port']
+            output[to_port_name] = columns[from_port_name]
+        return output
 
     def __set_input_df(self, to_port, df):
         self.input_df[to_port] = df
 
-    def __set_input_column(self, to_port, columns):
+    def set_input_column(self, to_port, columns):
         self.input_columns[to_port] = columns
 
     def flow(self, progress_fun=None):
