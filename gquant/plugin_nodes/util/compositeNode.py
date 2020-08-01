@@ -225,7 +225,6 @@ class CompositeNode(Node):
                         replaceObj[newid] = {}
                         replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
 
-            print(replaceObj)
             result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():

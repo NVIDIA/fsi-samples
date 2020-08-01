@@ -7,6 +7,7 @@ import '../style/editor.css';
 //import 'glyphicons-halflings/css/glyphicons-halflings.css';
 import { INode, IEdge } from './document';
 import { OUTPUT_COLLECTOR } from './mainComponent';
+import Draggable from 'react-draggable';
 //import '../style/bootstrap-glyphicons.css';
 interface IProp {
   x: number;
@@ -86,12 +87,15 @@ class NodeEditor extends React.Component<IProp> {
 
     if (this.props.nodeDatum.id === OUTPUT_COLLECTOR) {
       return (
+      <Draggable>
         <Editor>
           <Button onClick={this.handleDelete}>Delete</Button>
         </Editor>
+      </Draggable>
       );
     }
     return (
+      <Draggable>
       <Editor>
         <div>
           <span>Node id:</span>
@@ -110,6 +114,7 @@ class NodeEditor extends React.Component<IProp> {
         />
         <Button onClick={this.handleDelete}>Delete</Button>
       </Editor>
+      </Draggable>
     );
   }
 }
