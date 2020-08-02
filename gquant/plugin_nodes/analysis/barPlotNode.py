@@ -39,8 +39,8 @@ class BarPlotNode(Node):
                     "type": "string",
                     "description": "label for the plot"
                 },
-                "required": ["points"],
-            }
+            },
+            "required": ["points"],
         }
         ui = {
         }
