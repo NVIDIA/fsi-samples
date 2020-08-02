@@ -1,14 +1,12 @@
 from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
-from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   NodePorts)
 import cudf
 import dask_cudf
-import pandas as pd
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 
-class LinePlotNode(Node):
+class LinePlotNode(Node, _PortTypesMixin):
 
     def init(self):
         self.INPUT_PORT_NAME = 'in'
@@ -78,30 +76,8 @@ class LinePlotNode(Node):
             return ConfSchema(json=json, ui=ui)
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame,
-                 pd.DataFrame]
-        port_type = PortsSpecSchema.port_type
-        input_ports = {
-            self.INPUT_PORT_NAME: {
-                port_type: types
-            }
-        }
-        output_ports = {
-            self.OUTPUT_PORT_NAME: {
-                port_type: Figure
-            }
-        }
-
-        input_connections = self.get_connected_inports()
-        if (self.INPUT_PORT_NAME in input_connections):
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            # connected
-            return NodePorts(inports={self.INPUT_PORT_NAME: {
-                port_type: determined_type}},
-                outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
+        return _PortTypesMixin.ports_setup_different_output_type(self,
+                                                                 Figure)
 
     def columns_setup(self):
         return {self.OUTPUT_PORT_NAME: {}}

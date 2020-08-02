@@ -2,15 +2,49 @@ from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
 import dask_cudf
 import cudf
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 
-class CumReturnNode(Node):
+class CumReturnNode(Node, _PortTypesMixin):
+
+    def init(self):
+        self.INPUT_PORT_NAME = 'in'
+        self.OUTPUT_PORT_NAME = 'cum_return'
+        cols_required = {"datetime": "date",
+                         "strategy_returns": "float64"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.required = {"datetime": "date",
-                         "strategy_returns": "float64"}
+        return {self.OUTPUT_PORT_NAME: {}}
 
-        self.retention = {}
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup_different_output_type(self,
+                                                                 Figure)
+
+    def conf_schema(self):
+        json = {
+            "title": "Cumulative Return Configuration",
+            "type": "object",
+            "description": """Plot the P & L graph from the `strategy_returns` column.
+            """,
+            "properties": {
+                "points":  {
+                    "type": "number",
+                    "description": "number of data points for the chart"
+                },
+                "label":  {
+                    "type": "string",
+                    "description": "Label for the line plot"
+                },
+                "required": ["points"],
+            }
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -26,7 +60,7 @@ class CumReturnNode(Node):
         Figure
 
         """
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         if isinstance(input_df,  dask_cudf.DataFrame):
             input_df = input_df.compute()  # get the computed value
         label = 'stock'
@@ -57,17 +91,4 @@ class CumReturnNode(Node):
                          colors=['blue'], labels=[label], display_legend=True)
         new_fig = Figure(marks=[line], axes=[yax, xax], title='P & L',
                          interaction=panzoom_main)
-        return new_fig
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-    from gquant.transform.averageNode import AverageNode
-    from gquant.analysis.outCsvNode import OutCsvNode
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    vf = AverageNode("id1", {"column": "volume"})
-    df2 = vf([df])
-    o = OutCsvNode("id3", {"path": "o.csv"})
-    o([df2])
+        return {self.OUTPUT_PORT_NAME: new_fig}

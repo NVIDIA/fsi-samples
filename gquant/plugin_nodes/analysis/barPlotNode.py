@@ -3,18 +3,55 @@ from bqplot import Axis, LinearScale, DateScale, Figure, OHLC, Bars, Tooltip
 import cupy as cp
 import cudf
 import dask_cudf
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 
 class BarPlotNode(Node):
 
-    def columns_setup(self):
-        self.required = {"datetime": "date",
+    def init(self):
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'barplot'
+        cols_required = {"datetime": "date",
                          "open": "float64",
                          "close": "float64",
                          "high": "float64",
                          "low": "float64",
                          "volume": "float64"}
-        self.retention = {}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+
+    def conf_schema(self):
+        json = {
+            "title": "Bar Plot Node Configuration",
+            "type": "object",
+            "description": """Takes `datetime`, `open`, `close`, `high`,
+            `volume` columns in the dataframe to plot the bqplot figure
+            for financial bar data
+            """,
+            "properties": {
+                "points":  {
+                    "type": "number",
+                    "description": "number of data points for the chart"
+                },
+                "label":  {
+                    "type": "string",
+                    "description": "label for the plot"
+                },
+                "required": ["points"],
+            }
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup_different_output_type(self,
+                                                                 Figure)
+
+    def columns_setup(self):
+        return {self.OUTPUT_PORT_NAME: {}}
 
     def process(self, inputs):
         """
@@ -29,7 +66,7 @@ class BarPlotNode(Node):
         -------
         bqplot.Figure
         """
-        stock = inputs[0]
+        stock = inputs[self.INPUT_PORT_NAME]
         num_points = self.conf['points']
         stride = max(len(stock) // num_points, 1)
         label = 'stock'
@@ -83,17 +120,4 @@ class BarPlotNode(Node):
         f = Figure(axes=[ax_x, ax_y], marks=[ohlc, bar],
                    fig_margin={"top": 0, "bottom": 60,
                                "left": 60, "right": 60})
-        return f
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-    from gquant.transform.averageNode import AverageNode
-    from gquant.analysis.outCsvNode import OutCsvNode
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    vf = AverageNode("id1", {"column": "volume"})
-    df2 = vf([df])
-    o = OutCsvNode("id3", {"path": "o.csv"})
-    o([df2])
+        return {self.OUTPUT_PORT_NAME: f}

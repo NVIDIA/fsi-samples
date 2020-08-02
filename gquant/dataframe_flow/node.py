@@ -201,7 +201,7 @@ class Node(_PortsMixin, _Node):
         handles dask_cudf dataframes automatically under the hood.
 
         `self.required`, where keys are column names and values are
-        column types. 
+        column types.
 
         `self.required` defines the required columns in the input dataframes
 

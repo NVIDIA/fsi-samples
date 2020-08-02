@@ -1,12 +1,37 @@
 from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class SimpleBackTestNode(Node):
+class SimpleBackTestNode(Node, _PortTypesMixin):
+
+    def init(self):
+        _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'bardata_in'
+        self.OUTPUT_PORT_NAME = 'backtest_out'
+        cols_required = {"signal": "float64",
+                         "returns": "float64"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.required = {"signal": "float64",
-                         "returns": "float64"}
-        self.addition = {"strategy_returns": "float64"}
+        addition = {"strategy_returns": "float64"}
+        return _PortTypesMixin.addition_columns_setup(self, addition)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def conf_schema(self):
+        json = {
+            "title": "Backtest configure",
+            "type": "object",
+            "description": """compute the `strategy_returns` by assuming invest
+             `signal` amount of dollars for each of the time step.""",
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -21,27 +46,6 @@ class SimpleBackTestNode(Node):
         -------
         dataframe
         """
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         input_df['strategy_returns'] = input_df['signal'] * input_df['returns']
-        return input_df
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-    from gquant.transform.assetFilterNode import AssetFilterNode
-    from gquant.transform.sortNode import SortNode
-    from gquant.transform.returnFeatureNode import ReturnFeatureNode
-    from gquant.strategy import MovingAverageStrategyNode
-
-    loader = CsvStockLoader("node_csvdata", {}, True, False)
-    df = loader([])
-    sf = AssetFilterNode("id2", {"asset": 22123})
-    df2 = sf([df])
-    sf2 = SortNode("id3", {"keys": ["asset", 'datetime']})
-    df3 = sf2([df2])
-    sf3 = ReturnFeatureNode('id4', {})
-    df4 = sf3([df3])
-    sf4 = MovingAverageStrategyNode('id5', {'fast': 5, 'slow': 10})
-    df5 = sf4([df4])
-    sf5 = SimpleBackTestNode('id6', {})
-    df6 = sf5([df5])
+        return {self.OUTPUT_PORT_NAME: input_df}

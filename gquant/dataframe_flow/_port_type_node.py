@@ -11,6 +11,32 @@ class _PortTypesMixin(object):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
 
+    def ports_setup_different_output_type(self, out_type):
+        types = [cudf.DataFrame,
+                 dask_cudf.DataFrame,
+                 pd.DataFrame]
+        port_type = PortsSpecSchema.port_type
+        input_ports = {
+            self.INPUT_PORT_NAME: {
+                port_type: types
+            }
+        }
+        output_ports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: out_type
+            }
+        }
+
+        input_connections = self.get_connected_inports()
+        if (self.INPUT_PORT_NAME in input_connections):
+            determined_type = input_connections[self.INPUT_PORT_NAME]
+            # connected
+            return NodePorts(inports={self.INPUT_PORT_NAME: {
+                port_type: determined_type}},
+                outports=output_ports)
+        else:
+            return NodePorts(inports=input_ports, outports=output_ports)
+
     def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
         input_ports = {
