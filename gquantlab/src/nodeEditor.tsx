@@ -87,33 +87,33 @@ class NodeEditor extends React.Component<IProp> {
 
     if (this.props.nodeDatum.id === OUTPUT_COLLECTOR) {
       return (
-      <Draggable>
-        <Editor>
-          <Button onClick={this.handleDelete}>Delete</Button>
-        </Editor>
-      </Draggable>
+        <Draggable>
+          <Editor>
+            <Button onClick={this.handleDelete}>Delete</Button>
+          </Editor>
+        </Draggable>
       );
     }
     return (
       <Draggable>
-      <Editor>
-        <div>
-          <span>Node id:</span>
-          <input
-            type="text"
-            placeholder="unique node name"
-            defaultValue={this.props.nodeDatum.id}
-            ref={this.myRef}
+        <Editor>
+          <div>
+            <span>Node id:</span>
+            <input
+              type="text"
+              placeholder="unique node name"
+              defaultValue={this.props.nodeDatum.id}
+              ref={this.myRef}
+            />
+          </div>
+          <Form
+            schema={this.props.nodeDatum.schema}
+            formData={this.props.nodeDatum.conf}
+            uiSchema={this.props.nodeDatum.ui}
+            onSubmit={this.handleSave}
           />
-        </div>
-        <Form
-          schema={this.props.nodeDatum.schema}
-          formData={this.props.nodeDatum.conf}
-          uiSchema={this.props.nodeDatum.ui}
-          onSubmit={this.handleSave}
-        />
-        <Button onClick={this.handleDelete}>Delete</Button>
-      </Editor>
+          <Button onClick={this.handleDelete}>Delete</Button>
+        </Editor>
       </Draggable>
     );
   }

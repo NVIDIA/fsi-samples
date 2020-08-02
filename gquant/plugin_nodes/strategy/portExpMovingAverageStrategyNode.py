@@ -1,11 +1,14 @@
 from gquant.dataframe_flow import Node
-from .movingAverageStrategyNode import MovingAverageStrategyNode
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 import gquant.cuindicator as ci
+import dask_cudf
 from numba import cuda
 from functools import partial
 import math
 import numpy as np
 import cudf
+import pandas as pd
 
 
 @cuda.jit
@@ -43,15 +46,54 @@ def port_exponential_moving_average(stock_df, n_fast, n_slow):
     return out_arr, ma_slow, ma_fast
 
 
-class PortExpMovingAverageStrategyNode(Node):
+class PortExpMovingAverageStrategyNode(Node, _PortTypesMixin):
+
+    def init(self):
+        _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'stock_out'
+        cols_required = {"close": "float64",
+                         "indicator": "int32"}
+        self.delayed_process = True
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+
+    def ports_setup(self):
+        types = [cudf.DataFrame,
+                 dask_cudf.DataFrame]
+        return _PortTypesMixin.ports_setup_from_types(self, types)
 
     def columns_setup(self):
-        self.delayed_process = True
-        self.required = {"close": "float64",
-                         "indicator": "int32"}
-        self.addition = {"signal": "float64",
-                         "exp_ma_slow": "float64",
-                         "exp_ma_fast": "float64"}
+        addition = {"signal": "float64",
+                    "exp_ma_slow": "float64",
+                    "exp_ma_fast": "float64"}
+        return _PortTypesMixin.addition_columns_setup(self,
+                                                      addition)
+
+    def conf_schema(self):
+        json = {
+            "title": "Portfollio Moving Average Strategy Node configure",
+            "type": "object",
+            "description": """Simple mean reversion trading strategy.
+            It computes two exponential moving average signals of the
+             `close` prices and decides long/short of asset when these
+            two signals cross over.""",
+            "properties": {
+                "fast":  {
+                    "type": "number",
+                    "description": "fast moving average window"
+                },
+                "slow":  {
+                    "type": "number",
+                    "description": "slow moving average window"
+                }
+            },
+            "required": ["fast", "slow"],
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -74,7 +116,7 @@ class PortExpMovingAverageStrategyNode(Node):
         dataframe
         """
 
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         n_fast = self.conf['fast']
         n_slow = self.conf['slow']
         signal, slow, fast = port_exponential_moving_average(input_df,
@@ -91,7 +133,7 @@ class PortExpMovingAverageStrategyNode(Node):
         # remove the bad datapints
         input_df = input_df.dropna()
         input_df = input_df.query('indicator == 0')
-        return input_df
+        return {self.OUTPUT_PORT_NAME: input_df}
 
 
 def cpu_exp_moving_average(df, n_slow=1, n_fast=3):
@@ -105,6 +147,10 @@ def cpu_exp_moving_average(df, n_slow=1, n_fast=3):
 
 
 class CpuPortExpMovingAverageStrategyNode(PortExpMovingAverageStrategyNode):
+
+    def ports_setup(self):
+        types = [pd.DataFrame]
+        return _PortTypesMixin.ports_setup_from_types(self, types)
 
     def process(self, inputs):
         """
@@ -126,24 +172,9 @@ class CpuPortExpMovingAverageStrategyNode(PortExpMovingAverageStrategyNode):
         -------
         dataframe
         """
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         n_fast = self.conf['fast']
         n_slow = self.conf['slow']
         fun = partial(cpu_exp_moving_average, n_fast=n_fast, n_slow=n_slow)
         input_df = input_df.groupby("asset").apply(fun)
-        return input_df.dropna(subset=['signal'])
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-    from gquant.transform.assetFilterNode import AssetFilterNode
-    from gquant.transform.sortNode import SortNode
-
-    loader = CsvStockLoader("node_csvdata", {}, True, False)
-    df = loader([])
-    sf = AssetFilterNode("id2", {"asset": 22123})
-    df2 = sf([df])
-    sf2 = SortNode("id3", {"keys": ["asset", 'datetime']})
-    df3 = sf2([df2])
-    sf3 = MovingAverageStrategyNode('id4', {'fast': 5, 'slow': 10})
-    df4 = sf3([df3])
+        return {self.OUTPUT_PORT_NAME: input_df.dropna(subset=['signal'])}

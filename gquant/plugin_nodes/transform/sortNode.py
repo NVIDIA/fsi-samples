@@ -22,7 +22,7 @@ class SortNode(Node, _PortTypesMixin):
         json = {
             "title": "Sort Column configure",
             "type": "object",
-            "description": """Sort the input frames based on a 
+            "description": """Sort the input frames based on a
             list of columns, which are defined in the
             `keys` of the node's conf""",
             "properties": {

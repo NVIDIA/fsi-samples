@@ -74,4 +74,3 @@ class MinNode(Node, _PortTypesMixin):
             retention = {"asset": "int64"}
             return _PortTypesMixin.retention_columns_setup(self,
                                                            retention)
-

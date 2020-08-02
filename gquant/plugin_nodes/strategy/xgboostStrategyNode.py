@@ -4,6 +4,8 @@ import cudf
 import dask_cudf
 import xgboost as xgb
 import dask
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
 __all__ = ['XGBoostStrategyNode']
@@ -27,14 +29,90 @@ class XGBoostStrategyNode(Node):
     The detailed computation steps are listed in the process method's docstring
     """
 
-    def columns_setup(self):
-        self.required = {'datetime': 'date',
+    def init(self):
+        _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'stock_out'
+        cols_required = {'datetime': 'date',
                          "asset": "int64"}
-        if 'no_feature' in self.conf:
-            self.retention = self.conf['no_feature']
+        self.delayed_process = True
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+
+    def columns_setup(self):
+        # if 'no_feature' in self.conf:
+        #     retention = self.conf['no_feature']
+        # else:
+        retention = {}
+        retention['signal'] = 'float64'
+        _PortTypesMixin.retention_columns_setup(self, retention)
+
+        input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME not in input_columns:
+            col_from_inport = self.required[self.INPUT_PORT_NAME]
         else:
-            self.retention = {}
-        self.retention['signal'] = 'float64'
+            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        # delete the columns from the inputs
+        if 'no_feature' in self.conf:
+            for key in self.conf['no_feature']:
+                if key in col_from_inport:
+                    retention[key] = col_from_inport[key]
+        return {self.OUTPUT_PORT_NAME: retention}
+
+    def ports_setup(self):
+        types = [cudf.DataFrame,
+                 dask_cudf.DataFrame]
+        return _PortTypesMixin.ports_setup_from_types(self, types)
+
+    def conf_schema(self):
+        json = {
+            "title": "XGBoost Node configure",
+            "type": "object",
+            "description": """Split the data into training and testing based on
+             'train_data', train a XGBoost model based on the training data, 
+             make predictions for all the data points, compute the trading.
+            """,
+            "properties": {
+                "train_date":  {
+                    "type": "string",
+                    "description": """the date to splite train and validation
+                    dataset"""
+                },
+                "target":  {
+                    "type": "string",
+                    "description": "the column used as dependent variable"
+                },
+                "no_feature": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                    },
+                    "description": """columns in the input dataframe that
+        should NOT be considered as training features."""
+                }
+            },
+            "required": ["target"],
+        }
+        ui = {
+            "train_date":  {
+                "ui:widget": "alt-date",
+                "ui:options": {
+                        "yearsRange": [1985, 2025],
+                        "hideNowButton": True,
+                        "hideClearButton": True,
+                },
+            },
+        }
+        input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME in input_columns:
+            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            enums = [col for col in col_from_inport.keys()]
+            json['properties']['no_feature']['items']['enum'] = enums
+            json['properties']['target']['enum'] = enums
+            return ConfSchema(json=json, ui=ui)
+        else:
+            return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -65,10 +143,10 @@ class XGBoostStrategyNode(Node):
         num_of_rounds = 100
         if 'xgboost_parameters' in self.conf:
             dxgb_params.update(self.conf['xgboost_parameters'])
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         model_df = input_df
         train_cols = set(model_df.columns) - set(
-            self.conf['no_feature'].keys())
+            self.conf['no_feature'])
         train_cols = list(train_cols - set([self.conf['target']]))
 
         if isinstance(input_df, dask_cudf.DataFrame):
@@ -124,27 +202,5 @@ class XGBoostStrategyNode(Node):
 
         # remove the bad datapints
         input_df = input_df.dropna()
-        remaining = list(self.conf['no_feature'].keys()) + ['signal']
-        return input_df[remaining]
-
-
-if __name__ == "__main__":
-    from gquant.plugin_nodes.dataloader.csvStockLoader import CsvStockLoader
-
-    loader = CsvStockLoader("node_technical_indicator", {}, True, False)
-    df = loader.load_cache('.cache'+'/'+loader.uid+'.hdf5')
-    conf = {
-        'train_date': '2010-1-1',
-        'target': 'SHIFT_-1',
-        'no_feature': {'asset': 'int64',
-                       'datetime': 'date',
-                       'volume': 'float64',
-                       'close': 'float64',
-                       'open': 'float64',
-                       'high': 'float64',
-                       'low': 'float64',
-                       'returns': 'float64',
-                       'indicator': 'int32'}
-    }
-    inN = XGBoostStrategyNode("abc", conf)
-    o = inN.process([df])
+        remaining = list(self.conf['no_feature']) + ['signal']
+        return {self.OUTPUT_PORT_NAME: input_df[remaining]}
