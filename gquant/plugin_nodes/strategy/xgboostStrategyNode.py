@@ -74,6 +74,11 @@ class XGBoostStrategyNode(Node):
              make predictions for all the data points, compute the trading.
             """,
             "properties": {
+                "num_of_rounds": {
+                    "type": "number",
+                    "description": """The number of rounds for boosting""",
+                    "default": 100
+                },
                 "train_date":  {
                     "type": "string",
                     "description": """the date to splite train and validation
@@ -90,9 +95,40 @@ class XGBoostStrategyNode(Node):
                     },
                     "description": """columns in the input dataframe that
         should NOT be considered as training features."""
+                },
+                "xgboost_parameters": {
+                    "type": "object",
+                    "description": "xgoobst parameters",
+                    "properties": {
+                        'max_depth': {
+                            "type": "number",
+                            "description": "Maximum depth of a tree.",
+                            "default": 8
+                        },      
+                        "max_leaves": {
+                            "type": "number",
+                            "description": "maximum number of tree leaves",
+                            "default": 2**8
+                        },
+                        "gamma": {
+                            "type": "number",
+                            "description": """Minimum loss reduction required
+                            to make a further partition on a leaf node of the
+                            tree.""",
+                            "default": 0
+                        },
+                        "objective": {
+                            "type": "string",
+                            "enum": ["reg:squarederror", "reg:squaredlogerror",
+                                     "reg:logistic", "reg:pseudohubererror"],
+                            "description": """Specify the learning task and
+                            the corresponding learning objective.""",
+                            "default": "reg:squarederror"
+                        }
+                    }
                 }
             },
-            "required": ["target"],
+            "required": ["target", "num_of_rounds"],
         }
         ui = {
             "train_date":  {
@@ -140,7 +176,7 @@ class XGBoostStrategyNode(Node):
                 'objective':         'reg:squarederror',
                 'grow_policy':       'lossguide',
         }
-        num_of_rounds = 100
+        # num_of_rounds = 100
         if 'xgboost_parameters' in self.conf:
             dxgb_params.update(self.conf['xgboost_parameters'])
         input_df = inputs[self.INPUT_PORT_NAME]
@@ -160,7 +196,7 @@ class XGBoostStrategyNode(Node):
             target = model_df[self.conf['target']]
             dmatrix = xgb.dask.DaskDMatrix(client, train, label=target)
             bst = xgb.dask.train(client, dxgb_params, dmatrix,
-                                 num_boost_round=num_of_rounds)
+                                 num_boost_round=self.conf["num_of_rounds"])
 
             dtrain = xgb.dask.DaskDMatrix(client, input_df[train_cols])
             prediction = xgb.dask.predict(client, bst, dtrain).persist()
@@ -177,7 +213,7 @@ class XGBoostStrategyNode(Node):
             target = model_df[self.conf['target']]
             dmatrix = xgb.DMatrix(train, label=target)
             bst = xgb.train(dxgb_params, dmatrix,
-                            num_boost_round=num_of_rounds)
+                            num_boost_round=self.conf["num_of_rounds"])
             infer_dmatrix = xgb.DMatrix(input_df[train_cols])
             prediction = cudf.Series(bst.predict(infer_dmatrix),
                                      nan_as_null=False,
