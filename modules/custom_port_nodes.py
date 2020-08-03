@@ -137,19 +137,21 @@ class DistanceNode(Node):
         }
         self.required = {
             'points_df_in': req_cols,
-            'distance_df': req_cols
         }
 
     def columns_setup(self):
         input_columns = self.get_input_columns()
-        col_from_inport = input_columns['points_df_in']
-        # additional ports
-        output_cols = {
-            'distance_df': {
-                'distance_cudf': 'float64'
-            }
-        }
-        output_cols['distance_df'].update(col_from_inport)
+        output_cols = ({
+                'distance_df': {
+                    'distance_cudf': 'float64',
+                    'x': 'float64',
+                    'y': 'float64'
+                }
+            })
+        if 'points_df_in' in input_columns:
+            col_from_inport = input_columns['points_df_in']
+            # additional ports
+            output_cols['distance_df'].update(col_from_inport)
         return output_cols
 
     def process(self, inputs):
@@ -215,12 +217,17 @@ class NumbaDistanceNode(Node):
 
     def columns_setup(self,):
         input_columns = self.get_input_columns()
-        col_from_inport = input_columns['points_df_in']
-        # additional ports
-        output_cols = {
-            'distance_df': {'distance_numba': 'float64'}
-        }
-        output_cols['distance_df'].update(col_from_inport)
+        output_cols = ({
+                'distance_df': {
+                    'distance_numba': 'float64',
+                    'x': 'float64',
+                    'y': 'float64'
+                }
+            })
+        if 'points_df_in' in input_columns:
+            col_from_inport = input_columns['points_df_in']
+            # additional ports
+            output_cols['distance_df'].update(col_from_inport)
         return output_cols
 
     def conf_schema(self):
@@ -302,14 +309,17 @@ class CupyDistanceNode(Node):
 
     def columns_setup(self,):
         input_columns = self.get_input_columns()
-        col_from_inport = input_columns['points_df_in']
-        # additional ports
-        output_cols = {
-            'distance_df': {
-                'distance_cupy': 'float64'
-            }
-        }
-        output_cols['distance_df'].update(col_from_inport)
+        output_cols = ({
+                'distance_df': {
+                    'distance_cupy': 'float64',
+                    'x': 'float64',
+                    'y': 'float64'
+                }
+            })
+        if 'points_df_in' in input_columns:
+            col_from_inport = input_columns['points_df_in']
+            # additional ports
+            output_cols['distance_df'].update(col_from_inport)
         return output_cols
 
     def conf_schema(self):
@@ -363,11 +373,16 @@ class DistributedNode(Node):
 
     def columns_setup(self,):
         input_columns = self.get_input_columns()
-        col_from_inport = input_columns['points_df_in']
-        # additional ports
-        output_cols = {
-            'points_ddf_out': col_from_inport
-        }
+        output_cols = ({
+                'points_ddf_out': {
+                    'x': 'float64',
+                    'y': 'float64'
+                }
+            })
+        if 'points_df_in' in input_columns:
+            col_from_inport = input_columns['points_df_in']
+            # additional ports
+            output_cols['points_ddf_out'].update(col_from_inport)
         return output_cols
 
     def conf_schema(self):

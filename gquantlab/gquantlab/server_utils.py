@@ -4,16 +4,11 @@ from gquant.dataframe_flow.task import Task
 from gquant.dataframe_flow._node_flow import OUTPUT_TYPE, OUTPUT_ID
 from gquant.dataframe_flow import TaskSpecSchema
 from gquant.dataframe_flow.task import load_modules, get_gquant_config_modules
-import importlib
-import pathlib
 import gquant.plugin_nodes as plugin_nodes
 import inspect
-from gquant.dataframe_flow import Node
 import uuid
-from datetime import datetime as dt
-import sys
-sys.path.append('modules') # noqa E262
-import os
+# import sys
+# sys.path.append('modules') # noqa E262
 
 
 def _format_port(port):
@@ -84,7 +79,7 @@ def get_nodes(task_graph):
         out_node = get_node_obj(node)
         connection_inputs = task.get('inputs')
         nodes.append(out_node)
-        out_node['output_columns'] = task_graph[node.uid].output_columns
+        # out_node['output_columns'] = task_graph[node.uid].output_columns
         for port, v in connection_inputs.items():
             edge = {"from": v, "to": node.uid+"."+port}
             edges.append(edge)
@@ -133,7 +128,7 @@ def get_node_obj(node):
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
     out_node['required'] = node.required
-    out_node['output_columns'] = {}
+    out_node['output_columns'] = node.columns_setup()
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
     if node._task_obj.get('module'):
@@ -145,9 +140,9 @@ def get_nodes_from_file(file):
     """
     Given an input yaml file string. It returns a dict which has two keys.
         nodes:
-            - list of node objects for the UI client. It contains all the 
+            - list of node objects for the UI client. It contains all the
             necessary information about the node including the size of the node
-            input ports, output ports, output column names/types, 
+            input ports, output ports, output column names/types,
             conf schema and conf data.
         edges:
             - list of edge objects for the UI client. It enumerate all the
@@ -170,14 +165,13 @@ def get_nodes_from_file(file):
 
 def add_nodes():
     """
-    It will load all the nodes for the UI client so user can add new node 
-    to the graph. The nodes are from two sources: 
+    It will load all the nodes for the UI client so user can add new node
+    to the graph. The nodes are from two sources:
     default gQuant nodes and customized node modules. Currently gQuant default
-    nodes are still using old API. So all the nodes are coming from customized 
+    nodes are still using old API. So all the nodes are coming from customized
     node modules in the 'modules' directory.
-    
     The output is a dictionary whose keys are module names and values are a
-    list of the nodes inside that module. 
+    list of the nodes inside that module.
 
     Arguments
     -------
@@ -209,7 +203,6 @@ def add_nodes():
                         nodeObj = get_node_obj(n)
                         all_nodes[item[0]].append(nodeObj)
     for module in all_modules:
-        # mod = importlib.import_module(str(module))
         loaded = load_modules(all_modules[module], module)
         mod = loaded.mod
         modulename = module
