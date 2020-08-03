@@ -74,23 +74,33 @@ export function handleMouseOver(that: Chart): Function {
     }
     typeHTML += '</ul>';
     header += `<div>Port Type:${typeHTML}</div>`;
-    const columnObj = d[key].content;
-    const columnKeys = Object.keys(columnObj);
-    if (columnKeys.length > 0) {
-      header += '<table>';
-      header += '<tr>';
-      header += '<th>Column Name</th>';
-      for (let i = 0; i < columnKeys.length; i++) {
-        header += `<th>${columnKeys[i]}</th>`;
+    // only show column if it is dataframe
+    let dataframe = false;
+    for (const oneType of d[key].portType) {
+      if (oneType.indexOf('DataFrame') >= 0) {
+        dataframe = true;
+        break;
       }
-      header += '</tr>';
-      header += '<tr>';
-      header += '<th>Type</th>';
-      for (let i = 0; i < columnKeys.length; i++) {
-        header += `<td>${columnObj[columnKeys[i]]}</td>`;
+    }
+    if (dataframe) {
+      const columnObj = d[key].content;
+      const columnKeys = Object.keys(columnObj);
+      if (columnKeys.length > 0) {
+        header += '<table>';
+        header += '<tr>';
+        header += '<th>Column Name</th>';
+        for (let i = 0; i < columnKeys.length; i++) {
+          header += `<th>${columnKeys[i]}</th>`;
+        }
+        header += '</tr>';
+        header += '<tr>';
+        header += '<th>Type</th>';
+        for (let i = 0; i < columnKeys.length; i++) {
+          header += `<td>${columnObj[columnKeys[i]]}</td>`;
+        }
+        header += '</tr>';
+        header += '</table>';
       }
-      header += '</tr>';
-      header += '</table>';
     }
     return header;
   }

@@ -4,7 +4,9 @@ from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
                                                    NodePorts,
                                                    ConfSchema)
 
+from .stockMap import StockMap
 STOCK_NAME_PORT_NAME = 'stock_name'
+STOCK_MAP_PORT_NAME = 'map_data'
 
 
 class StockNameLoader(Node):
@@ -14,6 +16,9 @@ class StockNameLoader(Node):
         output_ports = {
             STOCK_NAME_PORT_NAME: {
                 PortsSpecSchema.port_type: cudf.DataFrame
+            },
+            STOCK_MAP_PORT_NAME: {
+                PortsSpecSchema.port_type: StockMap
             }
         }
         return NodePorts(inports=input_ports, outports=output_ports)
@@ -28,6 +33,12 @@ class StockNameLoader(Node):
         out_cols = {
             STOCK_NAME_PORT_NAME: column_types,
         }
+        if self.outport_connected(STOCK_MAP_PORT_NAME):
+            if 'file' in self.conf:
+                name_df = cudf.read_csv(self.conf['file'])[['SM_ID', 'SYMBOL']]
+                name_df.columns = ["asset", 'asset_name']
+                pdf = name_df.to_pandas()
+                out_cols.update({STOCK_MAP_PORT_NAME: pdf.to_dict('list')})
         return out_cols
 
     def conf_schema(self):
@@ -61,8 +72,12 @@ class StockNameLoader(Node):
         -------
         cudf.DataFrame
         """
-
-        name_df = cudf.read_csv(self.conf['file'])[['SM_ID', 'SYMBOL']]
-        # change the names
-        name_df.columns = ["asset", 'asset_name']
-        return {STOCK_NAME_PORT_NAME: name_df}
+        output = {}
+        if self.outport_connected(STOCK_NAME_PORT_NAME):
+            name_df = cudf.read_csv(self.conf['file'])[['SM_ID', 'SYMBOL']]
+            # change the names
+            name_df.columns = ["asset", 'asset_name']
+            output.update({STOCK_NAME_PORT_NAME: name_df})
+        if self.outport_connected(STOCK_MAP_PORT_NAME):
+            output.update({STOCK_MAP_PORT_NAME: StockMap()})
+        return output
