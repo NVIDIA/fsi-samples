@@ -23,7 +23,12 @@ import runStr from '../style/run.svg';
 import cleanStr from '../style/clean.svg';
 import layoutStr from '../style/layout.svg';
 
-import { LabIcon, downloadIcon, saveIcon, notebookIcon } from '@jupyterlab/ui-components';
+import {
+  LabIcon,
+  downloadIcon,
+  saveIcon,
+  notebookIcon
+} from '@jupyterlab/ui-components';
 
 import { folderIcon } from '@jupyterlab/ui-components';
 
@@ -539,7 +544,7 @@ function activateFun(
       mainView.contentHandler.aspectRatio = 1.0;
       mainView.mimerenderWidgetUpdateSize();
     },
-    isVisible: isCellVisible
+    isEnabled: isCellVisible
   });
 
   commands.addCommand('gquant:aspect0.3', {
@@ -551,7 +556,7 @@ function activateFun(
       mainView.contentHandler.aspectRatio = 0.3;
       mainView.mimerenderWidgetUpdateSize();
     },
-    isVisible: isCellVisible
+    isEnabled: isCellVisible
   });
 
   commands.addCommand('gquant:aspect0.5', {
@@ -563,7 +568,7 @@ function activateFun(
       mainView.contentHandler.aspectRatio = 0.5;
       mainView.mimerenderWidgetUpdateSize();
     },
-    isVisible: isCellVisible
+    isEnabled: isCellVisible
   });
 
   commands.addCommand('gquant:aspect0.7', {
@@ -575,7 +580,7 @@ function activateFun(
       mainView.contentHandler.aspectRatio = 0.7;
       mainView.mimerenderWidgetUpdateSize();
     },
-    isVisible: isCellVisible
+    isEnabled: isCellVisible
   });
 
   app.contextMenu.addItem({
@@ -780,6 +785,7 @@ function activateFun(
     menu.fileMenu.newMenu.addGroup([{ command: 'gquant:create-new' }], 40);
     //palette.addItem({ command: 'gquant:export-yaml', category: 'Notebook Operations', args: args });
     menu.fileMenu.addGroup([{ command: 'gquant:export-yaml' }], 40);
+    menu.addMenu(addNodeMenu, { rank: 40 });
   }
 
   if (palette) {
