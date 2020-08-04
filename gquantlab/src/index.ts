@@ -23,7 +23,7 @@ import runStr from '../style/run.svg';
 import cleanStr from '../style/clean.svg';
 import layoutStr from '../style/layout.svg';
 
-import { LabIcon } from '@jupyterlab/ui-components';
+import { LabIcon, downloadIcon, saveIcon, notebookIcon } from '@jupyterlab/ui-components';
 
 import { folderIcon } from '@jupyterlab/ui-components';
 
@@ -192,7 +192,62 @@ function activateFun(
   const factory = new GquantFactory({
     name: FACTORY,
     fileTypes: ['gq.yaml'],
-    defaultFor: ['gq.yaml']
+    defaultFor: ['gq.yaml'],
+    toolbarFactory: (widget: Widget) => {
+      const layoutCallback = (): void => {
+        const mainView = widget as MainView;
+        mainView.contentHandler.reLayoutSignal.emit();
+      };
+
+      const downloadCallback = (): void => {
+        app.commands.execute('filebrowser:download');
+        // const mainView = widget as MainView;
+        // mainView.contentHandler.reLayoutSignal.emit();
+      };
+
+      const saveCallback = (): void => {
+        app.commands.execute('docmanager:save');
+      };
+
+      const notebookCallback = (): void => {
+        app.commands.execute('gquant:openAnNewNotebook');
+      };
+
+      const layout = new ToolbarButton({
+        className: 'myButton',
+        icon: layoutIcon,
+        onClick: layoutCallback,
+        tooltip: 'Taskgraph Nodes Auto Layout'
+      });
+
+      const download = new ToolbarButton({
+        className: 'myButton',
+        icon: downloadIcon,
+        onClick: downloadCallback,
+        tooltip: 'Download the TaskGraph'
+      });
+
+      const save = new ToolbarButton({
+        className: 'myButton',
+        icon: saveIcon,
+        onClick: saveCallback,
+        tooltip: 'Save the TaskGraph'
+      });
+
+      const notebook = new ToolbarButton({
+        className: 'myButton',
+        icon: notebookIcon,
+        onClick: notebookCallback,
+        tooltip: 'Convert TaskGraph to Notebook'
+      });
+
+      return [
+        { name: 'layout', widget: layout },
+        { name: 'download', widget: download },
+        { name: 'save', widget: save },
+        { name: 'notebook', widget: notebook }
+      ];
+    }
   });
   const { commands } = app;
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
@@ -816,6 +871,7 @@ function activateFun(
   commands.addCommand('gquant:openAnNewNotebook', {
     label: 'Convert TaskGraph to Notebook',
     caption: 'Convert TaskGraph to Notebook',
+    icon: notebookIcon,
     execute: async () => {
       let mainView: MainView;
       let objStr = '';

@@ -251,6 +251,7 @@ export class GquantFactory extends ABCWidgetFactory<
     const contentHandler = new ContentHandler(context);
     const mainView = new MainView(contentHandler);
     const widget = new MainAreaWidget<MainView>({ content: mainView });
+    widget.toolbar.hide();
     return new GquantWidget({ context, content: widget });
   }
 }
