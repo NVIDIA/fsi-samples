@@ -26,6 +26,10 @@ export class ContentHandler {
 
   private _runGraph = new Signal<ContentHandler, void>(this);
   private _cleanResult = new Signal<ContentHandler, void>(this);
+
+  // signal used to sync the graph status to server
+  private _saveCache = new Signal<ContentHandler, void>(this);
+
   // create a signal that emits the added node command
   private _nodeAdded = new Signal<ContentHandler, INode>(this);
 
@@ -38,6 +42,10 @@ export class ContentHandler {
 
   get runGraph(): Signal<ContentHandler, void> {
     return this._runGraph;
+  }
+
+  get saveCache(): Signal<ContentHandler, void> {
+    return this._saveCache;
   }
 
   get cleanResult(): Signal<ContentHandler, void> {

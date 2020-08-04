@@ -30,7 +30,7 @@ import { folderIcon } from '@jupyterlab/ui-components';
 import { ToolbarButton } from '@jupyterlab/apputils';
 
 import { IDisposable, DisposableDelegate } from '@lumino/disposable';
-
+import { toArray } from '@lumino/algorithm';
 import {
   ICommandPalette,
   IWidgetTracker,
@@ -43,7 +43,7 @@ import {
   INode,
   IChartInput
 } from './document';
-import { Menu } from '@lumino/widgets';
+import { Menu, Widget } from '@lumino/widgets';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 import {
   INotebookTracker,
@@ -80,15 +80,7 @@ export const layoutIcon = new LabIcon({
 
 export const IGQUANTTracker = new Token<IGQUANTTracker>('gquant/tracki');
 
-function isEnabled(cell: any): boolean {
-  if (!cell) {
-    return false;
-  }
-  if (!(cell instanceof CodeCell)) {
-    return false;
-  }
-  const codecell = cell as CodeCell;
-  const outputArea = codecell.outputArea;
+function outputEnabled(outputArea: any): boolean {
   if (!outputArea) {
     return false;
   }
@@ -99,6 +91,11 @@ function isEnabled(cell: any): boolean {
   if (!widget) {
     return false;
   }
+
+  if (widget.widgets[0] instanceof MainView) {
+    return true;
+  }
+
   const children = widget.children();
   if (!children) {
     return false;
@@ -124,6 +121,37 @@ function isEnabled(cell: any): boolean {
     return false;
   }
   return true;
+}
+
+function isLinkedView(currentWidget: any): boolean {
+  if (currentWidget) {
+    for (const view of toArray(currentWidget.children())) {
+      if (view instanceof Widget) {
+        if (view.id.startsWith('LinkedOutputView-')) {
+          for (const outputs of toArray(view.children())) {
+            for (const output of toArray(outputs.children())) {
+              if (outputEnabled(output)) {
+                return true;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function isEnabled(cell: any): boolean {
+  if (!cell) {
+    return false;
+  }
+  if (!(cell instanceof CodeCell)) {
+    return false;
+  }
+  const codecell = cell as CodeCell;
+  const outputArea = codecell.outputArea;
+  return outputEnabled(outputArea);
 }
 
 /**
@@ -170,6 +198,28 @@ function activateFun(
   const tracker = new WidgetTracker<GquantWidget>({ namespace });
 
   function getMainView(): MainView {
+    const currentWidget = app.shell.currentWidget;
+    if (currentWidget) {
+      for (const view of toArray(currentWidget.children())) {
+        if (view.id.startsWith('LinkedOutputView-')) {
+          for (const outputs of toArray(view.children())) {
+            for (const output of toArray(outputs.children())) {
+              const out = output as any;
+              if (
+                out &&
+                out.widgets.length > 0 &&
+                out.widgets[0].widgets.length > 0 &&
+                out.widgets[0].widgets[0] instanceof MainView
+              ) {
+                const mainView = out.widgets[0].widgets[0] as MainView;
+                return mainView;
+              }
+            }
+          }
+        }
+      }
+    }
+
     const codecell = notebookTracker.activeCell as CodeCell;
     const outputArea = codecell.outputArea;
     let widget = outputArea.widgets[0];
@@ -189,6 +239,23 @@ function activateFun(
    * Whether there is an active graph editor
    */
   function isCellVisible(): boolean {
+    const currentWidget = app.shell.currentWidget;
+    if (isLinkedView(currentWidget)) {
+      return true;
+    }
+    //if (currentWidget) {
+    //  for (const view of toArray(currentWidget.children())) {
+    //    if (view.id.startsWith('LinkedOutputView-')) {
+    //      for (const outputs of toArray(view.children())) {
+    //        for (const output of toArray(outputs.children())) {
+    //          if (outputEnabled(output)) {
+    //            return true;
+    //          }
+    //        }
+    //      }
+    //    }
+    //  }
+    //}
     return (
       notebookTracker.currentWidget !== null &&
       notebookTracker.currentWidget === app.shell.currentWidget
@@ -396,6 +463,9 @@ function activateFun(
         if (isEnabled(notebookTracker.activeCell)) {
           const mainView = getMainView();
           mainView.contentHandler.reLayoutSignal.emit();
+        } else if (isLinkedView(app.shell.currentWidget)) {
+          const mainView = getMainView();
+          mainView.contentHandler.reLayoutSignal.emit();
         }
       } else {
         const wdg = app.shell.currentWidget as any;
@@ -549,6 +619,11 @@ function activateFun(
       if (isCellVisible()) {
         if (isEnabled(notebookTracker.activeCell)) {
           const mainView = getMainView();
+          mainView.contentHandler.saveCache.emit();
+          mainView.contentHandler.runGraph.emit();
+        } else if (isLinkedView(app.shell.currentWidget)) {
+          const mainView = getMainView();
+          mainView.contentHandler.saveCache.emit();
           mainView.contentHandler.runGraph.emit();
         }
       }

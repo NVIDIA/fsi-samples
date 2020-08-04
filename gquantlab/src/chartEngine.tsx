@@ -96,6 +96,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this.contentResetHandler,
       this
     );
+    this.props.contentHandler.saveCache.connect(this.saveCacheHandler, this);
   }
 
   componentWillUnmount(): void {
@@ -115,6 +116,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this.contentResetHandler,
       this
     );
+    this.props.contentHandler.saveCache.disconnect(this.saveCacheHandler, this);
   }
 
   /**
@@ -156,6 +158,14 @@ export class ChartEngine extends React.Component<IProps, IState> {
       width: inputs.width ? inputs.width : this.state.width,
       height: inputs.height ? inputs.height : this.state.height
     });
+  }
+
+  saveCacheHandler(sender: ContentHandler): void {
+    if (this.props.contentHandler.privateCopy) {
+      const stateCopy = JSON.parse(JSON.stringify(this.state));
+      this.props.contentHandler.privateCopy.set('cache', stateCopy);
+      this.props.contentHandler.privateCopy.save();
+    }
   }
 
   /**
@@ -271,16 +281,17 @@ export class ChartEngine extends React.Component<IProps, IState> {
       ui: {},
       inputs: []
     };
+    const copyNodes = JSON.parse(JSON.stringify(nodes));
     // find all the leaf nodes
-    const leaves = nodes.filter((d: INode, i: number) => {
+    const leaves = copyNodes.filter((d: INode, i: number) => {
       return !(d['id'] in connectionInfoPtoC);
     });
     // connect all the leaf nodes to this layout node
     connectionInfoCtoP[layoutNodeID] = leaves.map((d: INode) => d.id);
     // add this layout node temporally
-    nodes.push(layoutNode);
+    copyNodes.push(layoutNode);
 
-    const data = nodes.map((d: INode, i: number) => {
+    const data = copyNodes.map((d: INode, i: number) => {
       if (d['id'] in connectionInfoCtoP) {
         d['parentIds'] = connectionInfoCtoP[d['id']];
       } else {
