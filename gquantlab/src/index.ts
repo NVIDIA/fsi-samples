@@ -868,6 +868,28 @@ function activateFun(
     selector: '.jp-Notebook'
   });
 
+  //add key board shortcuts
+  app.commands.addKeyBinding({
+    command: commandExecute,
+    keys: ['Alt R'],
+    selector: '.jp-LinkedOutputView'
+  });
+  app.commands.addKeyBinding({
+    command: commandClean,
+    keys: ['Alt C'],
+    selector: '.jp-LinkedOutputView'
+  });
+  app.commands.addKeyBinding({
+    command: 'gquant:reLayout',
+    keys: ['Alt A'],
+    selector: '.jp-LinkedOutputView'
+  });
+  app.commands.addKeyBinding({
+    command: 'add:outputCollector',
+    keys: ['Alt O'],
+    selector: '.jp-LinkedOutputView'
+  });
+
   commands.addCommand('gquant:openAnNewNotebook', {
     label: 'Convert TaskGraph to Notebook',
     caption: 'Convert TaskGraph to Notebook',
