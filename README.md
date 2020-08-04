@@ -14,6 +14,7 @@ The examples also show how to easily convert a single-threaded solution into a D
 These examples can be used as-is or, as they are open source, can be extended to suit your environments.
 
 ## gQuant jupyterlab extension
+![Tuturial](tutorial.gif "Tutorial")
 ![Quick Demo](gquantlab_demo.gif "Demo")
 The gQuant Juyterlab extension provides the user interface to build the dataframe flow TaskGraph easily. It takes advantage of the open sources projects like [jupyterlab](https://github.com/jupyterlab/jupyterlab), [ipywidget](https://github.com/jupyter-widgets/ipywidgets), [React](https://reactjs.org/) and [D3](https://d3js.org/). It features:
 1. Takes full advantage of the JupyterLab project that the extension adds commands to Jupyterlab context menu, command palette and bind them with keyboard shortcuts to speed up the productivity.  
