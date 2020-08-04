@@ -389,22 +389,24 @@ class Node(_PortsMixin, _Node):
                 for oport, pspec in \
                         self._get_output_ports(full_port_spec=True).items():
                     ptype = pspec.get(PortsSpecSchema.port_type)
-                    ptype = [ptype] if not isinstance(ptype, list) else ptype
-                    key = '{}/{}'.format(self.uid, oport)
-                    # check hdf store for the key
-                    if key not in hf:
-                        raise Exception(
-                            'The task "{}" port "{}" key "{}" not found in '
-                            'the hdf file "{}". Cannot load from cache.'
-                            .format(self.uid, oport, key, filename)
-                        )
-                    if cudf.DataFrame not in ptype:
-                        warnings.warn(
-                            RuntimeWarning,
-                            'Task "{}" port "{}" port type is not set to '
-                            'cudf.DataFrame. Attempting to load port data '
-                            'with cudf.read_hdf.'.format(self.uid, oport))
-                    output_df[oport] = cudf.read_hdf(hf, key)
+                    if self.outport_connected(oport):
+                        ptype = ([ptype] if not isinstance(ptype,
+                                                           list) else ptype)
+                        key = '{}/{}'.format(self.uid, oport)
+                        # check hdf store for the key
+                        if key not in hf:
+                            raise Exception(
+                                'The task "{}" port "{}" key "{}" not found in'
+                                'the hdf file "{}". Cannot load from cache.'
+                                .format(self.uid, oport, key, filename)
+                            )
+                        if cudf.DataFrame not in ptype:
+                            warnings.warn(
+                                RuntimeWarning,
+                                'Task "{}" port "{}" port type is not set to '
+                                'cudf.DataFrame. Attempting to load port data '
+                                'with cudf.read_hdf.'.format(self.uid, oport))
+                        output_df[oport] = cudf.read_hdf(hf, key)
         else:
             output_df = cudf.read_hdf(filename, key=self.uid)
 

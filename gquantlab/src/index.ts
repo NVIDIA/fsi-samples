@@ -973,6 +973,7 @@ export class ButtonExtension
     const callback = (): void => {
       if (isEnabled(panel.content.activeCell)) {
         const mainView = getMainView();
+        mainView.contentHandler.saveCache.emit();
         mainView.contentHandler.runGraph.emit();
       }
     };
@@ -980,6 +981,7 @@ export class ButtonExtension
     const layoutCallback = (): void => {
       if (isEnabled(panel.content.activeCell)) {
         const mainView = getMainView();
+        mainView.contentHandler.saveCache.emit();
         mainView.contentHandler.reLayoutSignal.emit();
       }
     };
