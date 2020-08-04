@@ -398,24 +398,7 @@ class TaskGraph(object):
         self.__task_list.clear()
         self.__index = None
 
-    def run(self, outputs=None, replace=None, profile=False, formated=False):
-        """
-        Flow the dataframes in the graph to do the data science computations.
-
-        Arguments
-        -------
-        outputs: list
-            a list of the leaf node IDs for which to return the final results
-        replace: list
-            a dict that defines the conf parameters replacement
-        profile: Boolean
-            whether profile the processing time of the nodes or not
-
-        Returns
-        -----
-        tuple
-            the results corresponding to the outputs list
-        """
+    def _run(self, outputs=None, replace=None, profile=False, formated=False):
         replace = dict() if replace is None else replace
 
         self.build(replace, profile)
@@ -536,6 +519,39 @@ class TaskGraph(object):
             return formated_result(result)
         else:
             return result
+
+    def run(self, outputs=None, replace=None, profile=False, formated=False):
+        """
+        Flow the dataframes in the graph to do the data science computations.
+
+        Arguments
+        -------
+        outputs: list
+            a list of the leaf node IDs for which to return the final results
+        replace: list
+            a dict that defines the conf parameters replacement
+        profile: Boolean
+            whether profile the processing time of the nodes or not
+
+        Returns
+        -----
+        tuple
+            the results corresponding to the outputs list
+        """
+        if formated:
+            import ipywidgets
+            out = ipywidgets.Output(layout={'border': '1px solid black'})
+            cap_run = out.capture(clear_output=True)(self._run)
+            result = cap_run(outputs=outputs, replace=replace,
+                             profile=profile, formated=formated)
+            if result is None:
+                result = ipywidgets.Tab()
+            result.set_title(len(result.children), 'std output')
+            result.children = result.children + (out,)
+            return result
+        else:
+            return self._run(outputs=outputs, replace=replace, profile=profile,
+                             formated=formated)
 
     def to_pydot(self, show_ports=False):
         nx_graph = self.viz_graph(show_ports=show_ports)
