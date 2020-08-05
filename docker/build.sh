@@ -61,8 +61,8 @@ case $DEV_MODE in
 	echo "Dev mode"
     read -r -d '' INSTALL_GQUANT<< EOM
 ## copy gquantlab extension
-ADD --chown=$USERID:$USERGID ./gQuant /home/quant
-WORKDIR /home/quant
+ADD --chown=$USERID:$USERGID ./gQuant /home/quant/gQuant
+WORKDIR /home/quant/gQuant
 EOM
     MODE_STR="dev"
 	;;
@@ -70,12 +70,12 @@ EOM
 	echo "Production mode"
     read -r -d '' INSTALL_GQUANT<< EOM
 ## install gquantlab extension
-ADD --chown=$USERID:$USERGID ./gQuant /home/quant
+ADD --chown=$USERID:$USERGID ./gQuant /home/quant/gQuant
 RUN pip install .
-WORKDIR /home/quant/gquantlab
+WORKDIR /home/quant/gQuant/gquantlab
 RUN pip install .
 RUN jupyter lab build
-WORKDIR /home/quant
+WORKDIR /home/quant/gQuant
 ENTRYPOINT MODULEPATH=\$HOME/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 EOM
     MODE_STR="prod"
@@ -91,7 +91,7 @@ mkdir -p gQuant
 cp -r ../gquant ./gQuant
 cp -r ../task_example ./gQuant
 cp -r ../modules ./gQuant
-cp -r ../workflow ./gQuant
+cp -r ../taskgraphs ./gQuant
 cp ../setup.cfg ./gQuant
 cp ../setup.py ./gQuant
 cp ../LICENSE ./gQuant
@@ -158,7 +158,8 @@ RUN jupyter labextension install jupyterlab-nvdashboard
 RUN pip install dask_labextension
 RUN jupyter labextension install dask-labextension
 RUN jupyter serverextension enable dask_labextension
-
+RUN mkdir -p /home/quant/gQuant
+WORKDIR /home/quant/gQuant
 $INSTALL_GQUANT
 EOF
 docker build -f $D_FILE -t $D_CONT .

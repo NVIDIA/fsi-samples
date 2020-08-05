@@ -1,7 +1,7 @@
 - id: stock_data
   type: CsvStockLoader
   conf:
-    file: /home/quant/notebooks/data/stock_price_hist.csv.gz
+    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
   inputs: {}
 - id: ""
   type: Output Collector
@@ -17,7 +17,7 @@
     conf_id.volume_filter:
       - column: volume
         min: 100
-    taskgraph: /home/quant/taskgraphs/get_return_feature.gq.yaml
+    taskgraph: /home/quant/gQuant/taskgraphs/get_return_feature.gq.yaml
     input: volume_filter
     output: add_return_feature
   inputs:
@@ -37,7 +37,7 @@
 - id: stock_name
   type: StockNameLoader
   conf:
-    file: /home/quant/notebooks/data/security_master.csv.gz
+    file: /home/quant/gQuant/notebooks/data/security_master.csv.gz
   inputs: {}
 - id: left_merge1
   type: LeftMergeNode
@@ -56,12 +56,12 @@
 - id: csv_output1
   type: OutCsvNode
   conf:
-    path: /home/quant/notebooks/average_return.csv
+    path: /home/quant/gQuant/notebooks/average_return.csv
   inputs:
     df_in: left_merge2.merged
 - id: csv_output2
   type: OutCsvNode
   conf:
-    path: /home/quant/notebooks/average_volume.csv
+    path: /home/quant/gQuant/notebooks/average_volume.csv
   inputs:
     df_in: left_merge1.merged

@@ -1,7 +1,7 @@
 - id: stock_data
   type: CsvStockLoader
   conf:
-    file: /home/quant/notebooks/data/stock_price_hist.csv.gz
+    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
   inputs: {}
 - id: ""
   type: Output Collector
