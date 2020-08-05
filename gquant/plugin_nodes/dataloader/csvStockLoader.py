@@ -110,5 +110,5 @@ class CsvStockLoader(Node):
         if self.outport_connected(DASK_CUDF_PORT_NAME):
             df = dask_cudf.read_csv(self.conf['path']+'/*.csv',
                                     parse_dates=['datetime'])
-            output.update({PANDAS_PORT_NAME: df})
+            output.update({DASK_CUDF_PORT_NAME: df})
         return output

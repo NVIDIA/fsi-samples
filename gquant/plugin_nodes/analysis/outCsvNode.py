@@ -70,10 +70,12 @@ class OutCsvNode(Node, _PortTypesMixin):
         dataframe
         """
 
-        input_df = inputs[self.INPUT_PORT_NAME]
-        if isinstance(input_df,  dask_cudf.DataFrame):
-            input_df = input_df.compute()  # get the computed value
+        raw_input_df = inputs[self.INPUT_PORT_NAME]
         if 'columns' in self.conf:
-            input_df = input_df[self.conf['columns']]
+            raw_input_df = raw_input_df[self.conf['columns']]
+        if isinstance(raw_input_df,  dask_cudf.DataFrame):
+            input_df = raw_input_df.compute()  # get the computed value
+        else:
+            input_df = raw_input_df
         input_df.to_pandas().to_csv(self.conf['path'], index=False)
-        return {self.OUTPUT_PORT_NAME: input_df}
+        return {self.OUTPUT_PORT_NAME: raw_input_df}
