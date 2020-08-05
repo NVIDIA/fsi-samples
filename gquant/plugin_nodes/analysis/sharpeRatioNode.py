@@ -56,4 +56,4 @@ class SharpeRatioNode(Node, _PortTypesMixin):
             input_df = input_df.compute()  # get the computed value
         daily_mean = input_df['strategy_returns'].mean()
         daily_std = input_df['strategy_returns'].std()
-        return {self.OUTPUT_PORT_NAME: daily_mean / daily_std * math.sqrt(252)}
+        return {self.OUTPUT_PORT_NAME: float(daily_mean / daily_std * math.sqrt(252))}

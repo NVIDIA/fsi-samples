@@ -39,8 +39,8 @@ class CumReturnNode(Node, _PortTypesMixin):
                     "type": "string",
                     "description": "Label for the line plot"
                 },
-                "required": ["points"],
-            }
+            },
+            "required": ["points"],
         }
         ui = {
         }
