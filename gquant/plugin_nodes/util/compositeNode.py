@@ -28,6 +28,9 @@ class CompositeNode(Node):
             if ('output' in self.conf and
                     self.conf['output'] in task_graphh):
                 outNode = task_graphh[self.conf['output']]
+                outNode.outputs.clear()
+                if hasattr(self, 'outputs'):
+                    outNode.outputs.extend(self.outputs)
                 outports = outNode.ports_setup().outports
         self.required = required
         return NodePorts(inports=inports, outports=outports)
@@ -47,6 +50,9 @@ class CompositeNode(Node):
             if ('output' in self.conf and
                     self.conf['output'] in task_graphh):
                 outNode = task_graphh[self.conf['output']]
+                outNode.outputs.clear()
+                if hasattr(self, 'outputs'):
+                    outNode.outputs.extend(self.outputs)
                 out_columns = outNode.columns_setup()
         return out_columns
 
@@ -77,7 +83,7 @@ class CompositeNode(Node):
                     to be reconfigured"""
                 }
             },
-            "required": ["taskgraph", "input", "output"],
+            "required": ["taskgraph"],
         }
         ui = {}
         # ui = {
@@ -95,6 +101,12 @@ class CompositeNode(Node):
                 inputNode.inputs.clear()
                 if hasattr(self, 'inputs'):
                     inputNode.inputs.extend(self.inputs)
+            if ('output' in self.conf and
+                    self.conf['output'] in task_graphh):
+                outNode = task_graphh[self.conf['output']]
+                outNode.outputs.clear()
+                if hasattr(self, 'outputs'):
+                    outNode.outputs.extend(self.outputs)
             ids_in_graph = []
             for t in task_graphh:
                 ids_in_graph.append(t.get('id'))
@@ -167,6 +179,9 @@ class CompositeNode(Node):
                 return {}
             if 'output' in self.conf and self.conf['output'] in task_graph:
                 outNode = task_graph[self.conf['output']]
+                outNode.outputs.clear()
+                if hasattr(self, 'outputs'):
+                    outNode.outputs.extend(self.outputs)
             else:
                 return {}
 

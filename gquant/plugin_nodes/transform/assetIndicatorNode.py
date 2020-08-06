@@ -6,6 +6,7 @@ from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 class AssetIndicatorNode(Node, _PortTypesMixin):
 
     def init(self):
+        self.delayed_process = True
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'

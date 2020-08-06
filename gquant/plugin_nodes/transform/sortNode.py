@@ -6,6 +6,7 @@ from gquant.dataframe_flow import Node
 class SortNode(Node, _PortTypesMixin):
 
     def init(self):
+        self.delayed_process = True
         _PortTypesMixin.init(self)
         cols_required = {}
         self.required = {

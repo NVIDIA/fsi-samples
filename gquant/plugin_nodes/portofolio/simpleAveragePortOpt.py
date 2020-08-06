@@ -27,7 +27,7 @@ class SimpleAveragePortOpt(Node, _PortTypesMixin):
 
     def conf_schema(self):
         json = {
-            "title": "Simple Portofolio Node configure",
+            "title": "Simple Portfolio Node configure",
             "type": "object",
             "description": """Average the strategy returns for all the
             assets """,

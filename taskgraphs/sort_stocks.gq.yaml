@@ -11,16 +11,9 @@
       - asset
       - datetime
   inputs:
-    in: stock_filter.out
+    in: stock_data.cudf_out
 - id: ""
   type: Output Collector
   conf: {}
   inputs:
     in1: sort_node.out
-- id: stock_filter
-  type: ValueFilterNode
-  conf:
-    - column: volume
-      min: 50
-  inputs:
-    in: stock_data.cudf_out

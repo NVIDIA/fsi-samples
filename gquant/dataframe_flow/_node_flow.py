@@ -178,8 +178,9 @@ class NodeTaskGraphMixin(object):
                     err_msg = '{}\nIncoming columns from "{}" do not match '\
                         'columns_setup for "{}".'.format(
                             err_msg, in_taskid, dst_uid)
-                raise Exception(err_msg)
-            if kval != icols[kcol]:
+                # raise Exception(err_msg)
+                print(err_msg)
+            if (kcol in icols) and kval != icols[kcol]:
                 # special case for 'date'
                 if (kval == 'date' and icols[kcol]
                         in ('datetime64[ms]', 'date', 'datetime64[ns]')):
@@ -283,9 +284,13 @@ class NodeTaskGraphMixin(object):
             iport = iout['to_port']
             oport = iout['from_port']
 #             onode.set_input_column(self, self.output_columns)
-            if oport is not None:
+            if oport is not None and oport in self.output_columns:
                 out_cols = self.output_columns[oport]
             else:
+                if oport not in self.output_columns:
+                    print("node {}: no col is sending to oport {}".format(
+                        self.uid, oport))
+                    print(self.output_columns)
                 if self._using_ports():
                     # oport is not specified but this is a port based Node.
                     # That means it is outputing to a non-port based Node.
@@ -453,7 +458,8 @@ class NodeTaskGraphMixin(object):
         """
         get all the connected input columns information
         returns
-            dict, key is the current node input port name, value is the column name and types
+            dict, key is the current node input port name, value is the column
+            name and types
         """
         output = {}
         if not hasattr(self, 'inputs'):
@@ -463,7 +469,12 @@ class NodeTaskGraphMixin(object):
             columns = copy.deepcopy(from_node.columns_setup())
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
-            output[to_port_name] = columns[from_port_name]
+            if from_port_name not in columns:
+                print('node {},  from {} oport {} not in out cols'.format(
+                    self.uid, from_node, from_port_name))
+                print(columns)
+            else:
+                output[to_port_name] = columns[from_port_name]
         return output
 
     def __set_input_df(self, to_port, df):
