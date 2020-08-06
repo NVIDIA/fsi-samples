@@ -16,7 +16,7 @@
         min: -10
       - column: max_return
         max: 10
-    taskgraph: /home/quant/gQuant/gquantlab/notebooks/preprocess.gq.yaml
+    taskgraph: /home/quant/gQuant/taskgraphs/preprocess.gq.yaml
     input: sort_node
     output: drop_columns
   inputs:

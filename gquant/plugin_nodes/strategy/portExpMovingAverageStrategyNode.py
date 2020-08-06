@@ -61,7 +61,8 @@ class PortExpMovingAverageStrategyNode(Node, _PortTypesMixin):
 
     def ports_setup(self):
         types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
+                 dask_cudf.DataFrame,
+                 pd.DataFrame]
         return _PortTypesMixin.ports_setup_from_types(self, types)
 
     def columns_setup(self):
@@ -119,20 +120,24 @@ class PortExpMovingAverageStrategyNode(Node, _PortTypesMixin):
         input_df = inputs[self.INPUT_PORT_NAME]
         n_fast = self.conf['fast']
         n_slow = self.conf['slow']
-        signal, slow, fast = port_exponential_moving_average(input_df,
-                                                             n_fast,
-                                                             n_slow)
-        signal = cudf.Series(signal, index=input_df.index)
-        slow = cudf.Series(slow, index=input_df.index)
-        fast = cudf.Series(fast, index=input_df.index)
-        input_df['signal'] = signal
-        input_df['exp_ma_slow'] = slow
-        input_df['exp_ma_slow'] = input_df['exp_ma_slow'].fillna(0.0)
-        input_df['exp_ma_fast'] = fast
-        input_df['exp_ma_fast'] = input_df['exp_ma_fast'].fillna(0.0)
-        # remove the bad datapints
-        input_df = input_df.dropna()
-        input_df = input_df.query('indicator == 0')
+        if isinstance(input_df,  pd.DataFrame):
+            fun = partial(cpu_exp_moving_average, n_fast=n_fast, n_slow=n_slow)
+            input_df = input_df.groupby("asset").apply(fun)
+        else:
+            signal, slow, fast = port_exponential_moving_average(input_df,
+                                                                 n_fast,
+                                                                 n_slow)
+            signal = cudf.Series(signal, index=input_df.index)
+            slow = cudf.Series(slow, index=input_df.index)
+            fast = cudf.Series(fast, index=input_df.index)
+            input_df['signal'] = signal
+            input_df['exp_ma_slow'] = slow
+            input_df['exp_ma_slow'] = input_df['exp_ma_slow'].fillna(0.0)
+            input_df['exp_ma_fast'] = fast
+            input_df['exp_ma_fast'] = input_df['exp_ma_fast'].fillna(0.0)
+            # remove the bad datapints
+            input_df = input_df.dropna()
+            input_df = input_df.query('indicator == 0')
         return {self.OUTPUT_PORT_NAME: input_df}
 
 
@@ -144,37 +149,3 @@ def cpu_exp_moving_average(df, n_slow=1, n_fast=3):
     df['signal'] = df['signal'].shift(1)
     df['signal'].values[0:n_slow] = np.nan
     return df
-
-
-class CpuPortExpMovingAverageStrategyNode(PortExpMovingAverageStrategyNode):
-
-    def ports_setup(self):
-        types = [pd.DataFrame]
-        return _PortTypesMixin.ports_setup_from_types(self, types)
-
-    def process(self, inputs):
-        """
-        Simple mean reversion trading strategy. It computes two exponential
-        moving average signals of the `close` prices and decides long/short
-        of asset when these two signals cross over. It computes the trading
-        signals for all the assets in the dataframe.
-
-        The trading signal is named as `signal` in the dataframe. positive
-        value means long and negative value means short. The resulting moving
-        average signals are added to the dataframe.
-
-
-        Arguments
-        -------
-         inputs: list
-            list of input dataframes.
-        Returns
-        -------
-        dataframe
-        """
-        input_df = inputs[self.INPUT_PORT_NAME]
-        n_fast = self.conf['fast']
-        n_slow = self.conf['slow']
-        fun = partial(cpu_exp_moving_average, n_fast=n_fast, n_slow=n_slow)
-        input_df = input_df.groupby("asset").apply(fun)
-        return {self.OUTPUT_PORT_NAME: input_df.dropna(subset=['signal'])}

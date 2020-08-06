@@ -49,7 +49,7 @@ class ReturnFeatureNode(Node, _PortTypesMixin):
         -------
         dataframe
         """
-        tmp_col = "ae699380a883-4957-b3a8-b7ad60192dd7"
+        tmp_col = "ae699380a8834957b3a8b7ad60192dd7"
         input_df = inputs[self.INPUT_PORT_NAME]
         shifted = input_df['close'].shift(1)
         input_df['returns'] = (input_df['close'] - shifted) / shifted
@@ -59,4 +59,4 @@ class ReturnFeatureNode(Node, _PortTypesMixin):
         input_df[tmp_col] = (input_df[tmp_col] != 0).astype('int32')
         input_df[tmp_col][input_df[tmp_col] == 1] = None
         return {self.OUTPUT_PORT_NAME: input_df.dropna(
-            subset=[tmp_col]).drop(tmp_col)}
+            subset=[tmp_col]).drop(tmp_col, axis=1)}
