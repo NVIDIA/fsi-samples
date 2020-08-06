@@ -227,7 +227,11 @@ class IndicatorNode(Node, _PortTypesMixin):
             },
             "required": ["remove_na"],
         }
-
+        input_columns = self.get_input_columns()
+        enums = []
+        if self.INPUT_PORT_NAME in input_columns:
+            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            enums = [col for col in col_from_inport.keys()]
         for key in IN_DATA.keys():
             fun_name = " ".join(key.split('_')[1:])
             out = {
@@ -241,6 +245,10 @@ class IndicatorNode(Node, _PortTypesMixin):
                 "type": "array",
                 "items": []
             }
+            columns = {
+                "type": "array",
+                "items": []
+            }
             for arg in range(len(IN_DATA[key]['args'])):
                 item = {
                     "type": "number",
@@ -248,8 +256,18 @@ class IndicatorNode(Node, _PortTypesMixin):
                     "default": IN_DATA[key]['args'][arg]
                 }
                 args['items'].append(item)
+            for arg in range(len(IN_DATA[key]['columns'])):
+                item = {
+                    "type": "string",
+                    "default": IN_DATA[key]['columns'][arg]
+                }
+                if len(enums) > 0:
+                    item['enum'] = enums
+                columns['items'].append(item)
             if (len(IN_DATA[key]['args']) > 0):
                 out['args'] = args
+            if (len(IN_DATA[key]['columns']) > 0):
+                out['columns'] = columns
             obj = {"type": "object", "properties": out, "title": fun_name}
             json['properties']['indicators']['items']['anyOf'].append(obj)
         ui = {}
