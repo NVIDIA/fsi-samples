@@ -18,16 +18,6 @@ class _PortsMixin(object):
     '''Mixed class must have (doesn't have to implement i.e. relies on
     NotImplementedError) "ports_setup" method otherwise raises AttributeError.
     '''
-    def _using_ports(self):
-        '''Check if the :meth:`ports_setup` is implemented. If it is return
-        True otherwise return False i.e. ports API or no-ports API.
-        '''
-        try:
-            _ = self.ports_setup()
-            has_ports = True
-        except NotImplementedError:
-            has_ports = False
-        return has_ports
 
     def __get_io_port(self, io=None, full_port_spec=False):
         input_ports, output_ports = self.ports_setup()
@@ -115,8 +105,7 @@ class Node(_PortsMixin, _Node):
         self.init()
         self.profile = False  # by default, do not profile
 
-        if self._using_ports():
-            PortsSpecSchema.validate_ports(self.ports_setup())
+        PortsSpecSchema.validate_ports(self.ports_setup())
 
     def ports_setup(self):
         """Virtual method for specifying inputs/outputs ports. Implement if
@@ -383,33 +372,29 @@ class Node(_PortsMixin, _Node):
         if filename is None:
             filename = cache_dir + '/' + self.uid + '.hdf5'
 
-        if self._using_ports():
-            output_df = {}
-            with pd.HDFStore(filename, mode='r') as hf:
-                for oport, pspec in \
-                        self._get_output_ports(full_port_spec=True).items():
-                    ptype = pspec.get(PortsSpecSchema.port_type)
-                    if self.outport_connected(oport):
-                        ptype = ([ptype] if not isinstance(ptype,
-                                                           list) else ptype)
-                        key = '{}/{}'.format(self.uid, oport)
-                        # check hdf store for the key
-                        if key not in hf:
-                            raise Exception(
-                                'The task "{}" port "{}" key "{}" not found in'
-                                'the hdf file "{}". Cannot load from cache.'
-                                .format(self.uid, oport, key, filename)
-                            )
-                        if cudf.DataFrame not in ptype:
-                            warnings.warn(
-                                RuntimeWarning,
-                                'Task "{}" port "{}" port type is not set to '
-                                'cudf.DataFrame. Attempting to load port data '
-                                'with cudf.read_hdf.'.format(self.uid, oport))
-                        output_df[oport] = cudf.read_hdf(hf, key)
-        else:
-            output_df = cudf.read_hdf(filename, key=self.uid)
-
+        output_df = {}
+        with pd.HDFStore(filename, mode='r') as hf:
+            for oport, pspec in \
+                    self._get_output_ports(full_port_spec=True).items():
+                ptype = pspec.get(PortsSpecSchema.port_type)
+                if self.outport_connected(oport):
+                    ptype = ([ptype] if not isinstance(ptype,
+                                                       list) else ptype)
+                    key = '{}/{}'.format(self.uid, oport)
+                    # check hdf store for the key
+                    if key not in hf:
+                        raise Exception(
+                            'The task "{}" port "{}" key "{}" not found in'
+                            'the hdf file "{}". Cannot load from cache.'
+                            .format(self.uid, oport, key, filename)
+                        )
+                    if cudf.DataFrame not in ptype:
+                        warnings.warn(
+                            RuntimeWarning,
+                            'Task "{}" port "{}" port type is not set to '
+                            'cudf.DataFrame. Attempting to load port data '
+                            'with cudf.read_hdf.'.format(self.uid, oport))
+                    output_df[oport] = cudf.read_hdf(hf, key)
         return output_df
 
     def save_cache(self, output_df):
@@ -422,24 +407,21 @@ class Node(_PortsMixin, _Node):
         cache_dir = os.getenv('GQUANT_CACHE_DIR', self.cache_dir)
         os.makedirs(cache_dir, exist_ok=True)
         filename = cache_dir + '/' + self.uid + '.hdf5'
-        if self._using_ports():
-            with pd.HDFStore(filename, mode='w') as hf:
-                for oport, odf in output_df.items():
-                    # check for to_hdf attribute
-                    if not hasattr(odf, 'to_hdf'):
-                        raise Exception(
-                            'Task "{}" port "{}" output object is missing '
-                            '"to_hdf" attribute. Cannot save to cache.'
-                            .format(self.uid, oport))
+        with pd.HDFStore(filename, mode='w') as hf:
+            for oport, odf in output_df.items():
+                # check for to_hdf attribute
+                if not hasattr(odf, 'to_hdf'):
+                    raise Exception(
+                        'Task "{}" port "{}" output object is missing '
+                        '"to_hdf" attribute. Cannot save to cache.'
+                        .format(self.uid, oport))
 
-                    dtype = '{}'.format(type(odf)).lower()
-                    if 'dataframe' not in dtype:
-                        warnings.warn(
-                            RuntimeWarning,
-                            'Task "{}" port "{}" port type is not a dataframe.'
-                            ' Attempting to save to hdf with "to_hdf" method.'
-                            .format(self.uid, oport))
-                    key = '{}/{}'.format(self.uid, oport)
-                    odf.to_hdf(hf, key, format='table', data_columns=True)
-        else:
-            output_df.to_hdf(filename, key=self.uid)
+                dtype = '{}'.format(type(odf)).lower()
+                if 'dataframe' not in dtype:
+                    warnings.warn(
+                        RuntimeWarning,
+                        'Task "{}" port "{}" port type is not a dataframe.'
+                        ' Attempting to save to hdf with "to_hdf" method.'
+                        .format(self.uid, oport))
+                key = '{}/{}'.format(self.uid, oport)
+                odf.to_hdf(hf, key, format='table', data_columns=True)

@@ -3,13 +3,42 @@ from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts
+from gquant.dataframe_flow.cache import (cache_columns,
+                                         cache_ports, cache_schema)
+import json
+import copy
 
 INPUT_ID = '4fd31358-fb80-4224-b35f-34402c6c3763'
 
 
 class CompositeNode(Node):
 
+    def _compute_hash_key(self):
+        """
+        if hash changed, the port_setup, columns_setup 
+        and conf_json should be different
+        """
+        task_graph = ""
+        inputs = ""
+        replacementObj = {}
+        input_node = ""
+        self.update_replace(replacementObj)
+        if 'taskgraph' in self.conf:
+            task_graph = self.conf['taskgraph']
+        if 'input' in self.conf:
+            input_node = self.conf['input']
+            if hasattr(self, 'inputs'):
+                inputs = copy.deepcopy(self.inputs)
+                for i in inputs:
+                    i['from_node'] = hash(i['from_node'])
+        return hash((task_graph, json.dumps(inputs),
+                     input_node, json.dumps(replacementObj)))
+
     def ports_setup(self):
+        cache_key = self._compute_hash_key()
+        if cache_key in cache_ports:
+            # print('cache hit')
+            return cache_ports[cache_key]
         required = {}
         inports = {}
         outports = {}
@@ -33,9 +62,15 @@ class CompositeNode(Node):
                     outNode.outputs.extend(self.outputs)
                 outports = outNode.ports_setup().outports
         self.required = required
-        return NodePorts(inports=inports, outports=outports)
+        output_port = NodePorts(inports=inports, outports=outports)
+        cache_ports[cache_key] = output_port
+        return output_port
 
     def columns_setup(self):
+        cache_key = self._compute_hash_key()
+        if cache_key in cache_columns:
+            # print('cache hit')
+            return cache_columns[cache_key]
         out_columns = {}
         if 'taskgraph' in self.conf:
             task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
@@ -54,9 +89,14 @@ class CompositeNode(Node):
                 if hasattr(self, 'outputs'):
                     outNode.outputs.extend(self.outputs)
                 out_columns = outNode.columns_setup()
+        cache_columns[cache_key] = out_columns
         return out_columns
 
     def conf_schema(self):
+        cache_key = self._compute_hash_key()
+        if cache_key in cache_schema:
+            # print('cache hit')
+            return cache_schema[cache_key]
         json = {
             "title": "Composite Node configure",
             "type": "object",
@@ -126,22 +166,9 @@ class CompositeNode(Node):
                 nodeObj = task_graphh[subnodeId]
                 schema = nodeObj.conf_schema()
                 json['properties']['conf_id.'+subnodeId] = schema.json    
-        # input_columns = self.get_input_columns()
-        # if (self.INPUT_PORT_LEFT_NAME in input_columns
-        #         and self.INPUT_PORT_RIGHT_NAME in input_columns):
-        #     col_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
-        #     col_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
-        #     enums1 = set([col for col in col_left_inport.keys()])
-        #     enums2 = set([col for col in col_right_inport.keys()])
-        #     json['properties']['column']['enum'] = list(
-        #         enums1.intersection(enums2))
-        #     ui = {}
-        #     return ConfSchema(json=json, ui=ui)
-        # else:
-        #     ui = {
-        #         "column": {"ui:widget": "text"}
-        #     }
-        return ConfSchema(json=json, ui=ui)
+        out_schema = ConfSchema(json=json, ui=ui)
+        cache_schema[cache_key] = out_schema
+        return out_schema
 
     def update_replace(self, replaceObj):
         # find the other replacment conf

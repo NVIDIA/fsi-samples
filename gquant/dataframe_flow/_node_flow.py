@@ -51,7 +51,6 @@ class NodeTaskGraphMixin(object):
             process
             load_cache
             save_cache
-            _using_ports
             _get_input_ports
             _get_output_ports
     '''
@@ -197,42 +196,34 @@ class NodeTaskGraphMixin(object):
 
         inputs_cols = self.get_input_columns()
 
-        if not self._using_ports():
-            # to_port (iport usually used as variable) is always set. Refer to
-            # TaskGraph.build method. In non-port case inputs are enumerated
-            # in the order that inputs are listed in the task spec. The order
-            # idx is used as an ad-hoc ports that aren't used. Below the data
-            # structure of inputs_cols is flattened.
-            incoming_cols = {
-                col_name: col_type for icol_dict in inputs_cols.values()
-                for col_name, col_type in icol_dict.items()
-            }
-            inputs_cols = incoming_cols
+        # to_port (iport usually used as variable) is always set. Refer to
+        # TaskGraph.build method. In non-port case inputs are enumerated
+        # in the order that inputs are listed in the task spec. The order
+        # idx is used as an ad-hoc ports that aren't used. Below the data
+        # structure of inputs_cols is flattened.
+        incoming_cols = {
+            col_name: col_type for icol_dict in inputs_cols.values()
+            for col_name, col_type in icol_dict.items()
+        }
+        inputs_cols = incoming_cols
 
         # check required inpurt columns are there
         if self.required:
             required = self.required
             pinputs = self._task_obj[TaskSpecSchema.inputs]
-            if self._using_ports():
-                for iport in self._get_input_ports():
-                    required_iport = {
-                        col_name: col_type for col_name, col_type in
-                        required.get(iport, {}).items()}
+            for iport in self._get_input_ports():
+                required_iport = {
+                    col_name: col_type for col_name, col_type in
+                    required.get(iport, {}).items()}
 
-                    required_tran = self.__translate_column(required_iport)
-                    if iport in inputs_cols:
-                        incoming_cols = inputs_cols[iport]
-                        in_taskid = pinputs[iport]
+                required_tran = self.__translate_column(required_iport)
+                if iport in inputs_cols:
+                    incoming_cols = inputs_cols[iport]
+                    in_taskid = pinputs[iport]
 
-                        for kcol, kval in required_tran.items():
-                            validate_required(incoming_cols, kcol, kval,
-                                              in_taskid, iport)
-            else:
-                # required_flat = required
-                required_tran = self.__translate_column(required)
-                in_taskids = ', '.join(pinputs)
-                for kcol, kval in required_tran.items():
-                    validate_required(incoming_cols, kcol, kval, in_taskids)
+                    for kcol, kval in required_tran.items():
+                        validate_required(incoming_cols, kcol, kval,
+                                          in_taskid, iport)
 
         # ABOVE validates the columns in dataframe inputs
         # When using ports all the validation logic below add/del/retain
@@ -243,41 +234,7 @@ class NodeTaskGraphMixin(object):
         # a column is renamed dynmically during run-time. The rename is
         # identified via "@" special character and typically configured via
         # task-spec conf.
-        if self._using_ports():
-            self.output_columns = self.columns_setup()
-        else:
-            combined = {}
-            # old API assumes input columns are passed through
-            combined.update(inputs_cols)
-            # compute the output columns
-            output_cols = combined
-
-            if self.addition:
-                add_cols = self.__translate_column(self.addition)
-                output_cols.update(add_cols)
-
-            if self.deletion:
-                for kdel in self.__translate_column(self.deletion).keys():
-                    del output_cols[kdel]
-
-            if self.retention is not None:
-                output_cols = self.__translate_column(self.retention)
-
-            def rename_check(kk, cols):
-                if kk not in cols:
-                    err = 'Not valid replacement column: error for node "%s",'\
-                              ' missing required column "%s"' % (self.uid, kk)
-                    raise Exception(err)
-
-            if self.rename:
-                replacement = self.__translate_column(self.rename)
-                for col_key, repl_name in replacement.items():
-                    rename_check(col_key, output_cols)
-                    types = output_cols[col_key]
-                    del output_cols[col_key]
-                    output_cols[repl_name] = types
-
-            self.output_columns = output_cols
+        self.output_columns = self.columns_setup()
 
         for iout in self.outputs:
             onode = iout['to_node']
@@ -291,17 +248,10 @@ class NodeTaskGraphMixin(object):
                     print("node {}: no col is sending to oport {}".format(
                         self.uid, oport))
                     print(self.output_columns)
-                if self._using_ports():
-                    # oport is not specified but this is a port based Node.
-                    # That means it is outputing to a non-port based Node.
-                    # Flattening output_columns across all output ports:
-                    #     COMPATIBILITY FOR NON-PORT API NODES
                     out_cols = {
                         col_name: col_type
                         for col_dict in self.output_columns.values()
                         for col_name, col_type in col_dict.items()}
-                else:
-                    out_cols = self.output_columns
             onode.set_input_column(iport, out_cols)
             # type computation, only supports the new API
             onode.columns_flow()
@@ -373,58 +323,52 @@ class NodeTaskGraphMixin(object):
         return True
 
     def __valide(self, node_output, ref_cols):
-        if self._using_ports():
-            # Validate each port
-            out_ports = self._get_output_ports(full_port_spec=True)
-            for pname, pspec in out_ports.items():
-                # only validate it if it is connected
-                if not self.outport_connected(pname):
-                    # if the port is not connected skip it
-                    # print('port {} is not connected'.format(pname))
+        # Validate each port
+        out_ports = self._get_output_ports(full_port_spec=True)
+        for pname, pspec in out_ports.items():
+            # only validate it if it is connected
+            if not self.outport_connected(pname):
+                # if the port is not connected skip it
+                # print('port {} is not connected'.format(pname))
+                continue
+            out_optional = pspec.get('optional', False)
+            if pname not in node_output:
+                if out_optional:
                     continue
-                out_optional = pspec.get('optional', False)
-                if pname not in node_output:
-                    if out_optional:
-                        continue
-                    else:
-                        raise Exception('Node "{}" did not produce output "{}"'
-                                        .format(self.uid, pname))
+                else:
+                    raise Exception('Node "{}" did not produce output "{}"'
+                                    .format(self.uid, pname))
 
-                out_val = node_output[pname]
-                out_type = type(out_val)
+            out_val = node_output[pname]
+            out_type = type(out_val)
 
-                expected_type = pspec.get(PortsSpecSchema.port_type)
-                if expected_type:
-                    if not isinstance(expected_type, list):
-                        expected_type = [expected_type]
+            expected_type = pspec.get(PortsSpecSchema.port_type)
+            if expected_type:
+                if not isinstance(expected_type, list):
+                    expected_type = [expected_type]
 
-                    if self.delayed_process and \
-                            cudf.DataFrame in expected_type and \
-                            dask_cudf.DataFrame not in expected_type:
-                        expected_type.extend([dask_cudf.DataFrame])
+                if self.delayed_process and \
+                        cudf.DataFrame in expected_type and \
+                        dask_cudf.DataFrame not in expected_type:
+                    expected_type.extend([dask_cudf.DataFrame])
 
-                    if out_type not in expected_type:
-                        raise Exception(
-                            'Node "{}" output port "{}" produced wrong type '
-                            '"{}". Expected type "{}"'
-                            .format(self.uid, pname, out_type, expected_type))
+                if out_type not in expected_type:
+                    raise Exception(
+                        'Node "{}" output port "{}" produced wrong type '
+                        '"{}". Expected type "{}"'
+                        .format(self.uid, pname, out_type, expected_type))
 
-                cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
+            cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
 
-                if out_type in cudf_types_tuple:
-                    if len(out_val.columns) == 0 and out_optional:
-                        continue
+            if out_type in cudf_types_tuple:
+                if len(out_val.columns) == 0 and out_optional:
+                    continue
 
-                if out_type in cudf_types_tuple:
-                    cols_to_val = ref_cols.get(pname)
-                    val_flag = self._validate_df(out_val, cols_to_val)
-                    if not val_flag:
-                        raise Exception("not valid output")
-        else:
-            val_flag = self._validate_df(node_output, ref_cols)
-
-            if not val_flag:
-                raise Exception("not valid output")
+            if out_type in cudf_types_tuple:
+                cols_to_val = ref_cols.get(pname)
+                val_flag = self._validate_df(out_val, cols_to_val)
+                if not val_flag:
+                    raise Exception("not valid output")
 
     def __input_ready(self):
         if not isinstance(self.load, bool) or self.load:
@@ -445,8 +389,7 @@ class NodeTaskGraphMixin(object):
             if iport not in self.input_columns:
                 return False
 
-        if (self._using_ports() and len(self._get_input_ports(
-        )) != 0 and len(self.inputs) == 0):
+        if (len(self._get_input_ports()) != 0 and len(self.inputs) == 0):
             return False
 
         return True
@@ -502,8 +445,6 @@ class NodeTaskGraphMixin(object):
         inputs_data = self.__get_input_df()
         output_df = self.__call__(inputs_data)
 
-        self_has_ports = self._using_ports()
-
         if self.clear_input:
             self.input_df = {}
 
@@ -511,8 +452,6 @@ class NodeTaskGraphMixin(object):
             onode = out['to_node']
             iport = out['to_port']
             oport = out['from_port']
-
-            onode_has_ports = onode._using_ports()
 
             if oport is not None:
                 if oport not in output_df:
@@ -526,21 +465,6 @@ class NodeTaskGraphMixin(object):
                             oport, self.uid, onode_msg)
                     raise Exception(err_msg)
                 df = output_df[oport]
-            else:
-                if self_has_ports and not onode_has_ports:
-                    # Unpack for convenience when passing data from nodes with
-                    # ports to nodes without ports. If in the future will
-                    # convert to a ports only API then clean up this code.
-                    output_list = list(output_df.values())
-                    if len(output_list) == 1:
-                        output_unpack = output_list[0]
-                    else:
-                        output_unpack = [self.__make_copy(data_input)
-                                         for data_input in output_list]
-
-                    df = output_unpack
-                else:
-                    df = output_df
 
             onode.__set_input_df(iport, df)
 
@@ -768,25 +692,17 @@ class NodeTaskGraphMixin(object):
             else:
                 output_df = self.load
         else:
-            if self._using_ports():
-                # nodes with ports take dictionary as inputs
-                inputs = {iport: self.__make_copy(data_input)
-                          for iport, data_input in inputs_data.items()}
-            else:
-                # nodes without ports take list as inputs
-                inputs = [self.__make_copy(inputs_data[ient['to_port']])
-                          for ient in self.inputs]
+            # nodes with ports take dictionary as inputs
+            inputs = {iport: self.__make_copy(data_input)
+                      for iport, data_input in inputs_data.items()}
             if not self.delayed_process:
                 output_df = self.decorate_process()(inputs)
             else:
-                if self._using_ports():
-                    use_delayed = self.__check_dly_processing_prereq(inputs)
-                    if use_delayed:
-                        output_df = self.__delayed_call(inputs)
-                    else:
-                        output_df = self.decorate_process()(inputs)
+                use_delayed = self.__check_dly_processing_prereq(inputs)
+                if use_delayed:
+                    output_df = self.__delayed_call(inputs)
                 else:
-                    output_df = self.__delayed_call_noports(inputs)
+                    output_df = self.decorate_process()(inputs)
 
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")

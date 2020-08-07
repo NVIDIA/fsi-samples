@@ -314,8 +314,6 @@ class TaskGraph(object):
                 if (to_type == OUTPUT_TYPE):
                     continue
                 task_node = itask.get_node_obj()
-                if not task_node._using_ports():
-                    continue
                 # task_outputs = itask.get(TaskSpecSchema.outputs, [])
                 for pout in task_node._get_output_ports():
                     out_tip = '{}.{}'.format(
@@ -370,14 +368,10 @@ class TaskGraph(object):
             node = self.__node_dict[task_id]
             task_inputs = node._task_obj[TaskSpecSchema.inputs]
             for input_idx, input_key in enumerate(task_inputs):
-                if node._using_ports():
-                    # node_inputs should be a dict with entries:
-                    #     {iport: taskid.oport}
-                    input_task = task_inputs[input_key].split('.')
-                    dst_port = input_key
-                else:
-                    input_task = input_key.split('.')
-                    dst_port = input_idx
+                # node_inputs should be a dict with entries:
+                #     {iport: taskid.oport}
+                input_task = task_inputs[input_key].split('.')
+                dst_port = input_key
 
                 input_id = input_task[0]
                 src_port = input_task[1] if len(input_task) > 1 else None
