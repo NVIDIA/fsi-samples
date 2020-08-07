@@ -37,42 +37,34 @@ class LinePlotNode(Node, _PortTypesMixin):
                     "type": "array",
                     "items": {
                         "type": "object",
-                        "anyOf": [
-                            {
-                                "type": "object",
-                                "title": "Line Information",
-                                "properties": {
-                                    "column": {
-                                        "type": "string",
-                                    },
-                                    "label": {
-                                        "type": "string",
-                                    },
-                                    "color": {
-                                        "type": "string",
-                                        "enum": color_strings
-                                    }
-                                }
+                        "title": "Line Information",
+                        "properties": {
+                            "column": {
+                                "type": "string",
                             },
-
-                        ]
+                            "label": {
+                                "type": "string",
+                            },
+                            "color": {
+                                "type": "string",
+                                "enum": color_strings
+                            }
+                        }
                     }
                 }
             },
             "required": ["points", "title", "lines"],
         }
         input_columns = self.get_input_columns()
+        ui = {
+        }
         if self.INPUT_PORT_NAME in input_columns:
             col_inport = input_columns[self.INPUT_PORT_NAME]
             enums = [col for col in col_inport.keys()]
-            first_item = json['properties']['lines']['items']['anyOf'][0]
+            first_item = json['properties']['lines']['items']
             first_item['properties']['column']['enum'] = enums
-            ui = {}
             return ConfSchema(json=json, ui=ui)
         else:
-            ui = {
-                "column": {"ui:widget": "text"}
-            }
             return ConfSchema(json=json, ui=ui)
 
     def ports_setup(self):

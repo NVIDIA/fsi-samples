@@ -48,15 +48,7 @@ class SortNode(Node, _PortTypesMixin):
         if self.INPUT_PORT_NAME in input_columns:
             col_from_inport = input_columns[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
-            options = []
-            for enum in enums:
-                option = {
-                    "type": "string",
-                    "title": enum,
-                    "enum": [enum]
-                }
-                options.append(option)
-            json['properties']['keys']['items']['anyOf'] = options
+            json['properties']['keys']['items']['enum'] = enums
             ui = {}
             return ConfSchema(json=json, ui=ui)
         else:

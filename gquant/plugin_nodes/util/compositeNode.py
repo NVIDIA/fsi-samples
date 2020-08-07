@@ -156,15 +156,7 @@ class CompositeNode(Node):
                 ids_in_graph.append(t.get('id'))
             json['properties']['input']['enum'] = ids_in_graph
             json['properties']['output']['enum'] = ids_in_graph
-            options = []
-            for idd in ids_in_graph:
-                option = {
-                          "type": "string",
-                          "title": idd,
-                          "enum": [idd]
-                          }
-                options.append(option)
-            json['properties']['subnodes']['items']['anyOf'] = options
+            json['properties']['subnodes']['items']['enum'] = ids_in_graph
         if 'subnodes' in self.conf:
             for subnodeId in self.conf['subnodes']:
                 nodeObj = task_graphh[subnodeId]
