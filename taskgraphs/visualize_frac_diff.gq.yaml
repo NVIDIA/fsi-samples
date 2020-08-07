@@ -1,0 +1,100 @@
+- id: xgboost_graph
+  type: CompositeNode
+  conf:
+    subnodes:
+      - preprocess
+      - technical_indicator
+    conf_id.preprocess:
+      subnodes:
+        - value_filter
+        - drop_columns
+      conf_id.value_filter:
+        - column: min_return
+          min: -10
+        - column: max_return
+          max: 10
+        - column: average_volume
+          min: 400
+      conf_id.drop_columns:
+        columns:
+          - min_return
+          - max_return
+          - average_volume
+      taskgraph: /home/quant/gQuant/taskgraphs/preprocess.gq.yaml
+      input: sort_node
+      output: drop_columns
+    conf_id.technical_indicator:
+      indicators:
+        - function: port_fractional_diff
+          args:
+            - 0.1
+          columns:
+            - close
+        - function: port_fractional_diff
+          args:
+            - 0.3
+          columns:
+            - close
+        - function: port_fractional_diff
+          args:
+            - 0.5
+          columns:
+            - close
+        - function: port_fractional_diff
+          args:
+            - 0.7
+          columns:
+            - close
+        - function: port_fractional_diff
+          args:
+            - 0.9
+          columns:
+            - close
+        - function: port_shift
+          args:
+            - -1
+          columns:
+            - returns
+      remove_na: true
+    taskgraph: /home/quant/gQuant/taskgraphs/xgboost_trade.gq.yaml
+    output: technical_indicator
+    input: preprocess
+  inputs:
+    in: stock_data.cudf_out
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
+    path: /home/quant/gQuant/notebooks/many-small/
+  inputs: {}
+- id: asset_filter
+  type: AssetFilterNode
+  conf: 
+    asset: 22123
+  inputs:
+    stock_in: xgboost_graph.stock_out
+- id: ""
+  type: Output Collector
+  conf: {}
+  inputs:
+    in1: lineplot.lineplot
+- id: lineplot
+  type: LinePlotNode
+  conf: 
+    lines:
+      - column: FR_DI_0.1
+        label: d 0.1
+        color: blue
+      - column: FR_DI_0.3
+        label: d 0.3
+        color: orange
+      - column: FR_DI_0.5
+        label: d 0.5
+        color: green
+      - column: FR_DI_0.7
+        label: d 0.7
+        color: black
+    points: 300
+    title: signals
+  inputs:
+    in: asset_filter.stock_out
