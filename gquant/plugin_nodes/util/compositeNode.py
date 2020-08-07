@@ -19,7 +19,7 @@ class CompositeNode(Node):
         and conf_json should be different
         """
         task_graph = ""
-        inputs = ""
+        inputs = ()
         replacementObj = {}
         input_node = ""
         self.update_replace(replacementObj)
@@ -28,10 +28,10 @@ class CompositeNode(Node):
         if 'input' in self.conf:
             input_node = self.conf['input']
             if hasattr(self, 'inputs'):
-                inputs = copy.deepcopy(self.inputs)
                 for i in inputs:
-                    i['from_node'] = hash(i['from_node'])
-        return hash((task_graph, json.dumps(inputs),
+                    inputs += (hash(i['from_node']),
+                               i['to_port'], i['to_port'])
+        return hash((task_graph, inputs,
                      input_node, json.dumps(replacementObj)))
 
     def ports_setup(self):

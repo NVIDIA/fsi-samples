@@ -395,8 +395,10 @@ class TaskGraph(object):
             self.__find_roots(self.__node_dict[k], raw_inputs,
                               consider_load=False)
 
+        # for i in raw_inputs:
+        #     i.columns_flow()
         for i in raw_inputs:
-            i.columns_flow()
+            i.output_columns = i.columns_setup()
 
         # clean up the visited status for run computations
         for task_id in self.__node_dict:

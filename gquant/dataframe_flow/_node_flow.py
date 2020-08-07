@@ -707,7 +707,7 @@ class NodeTaskGraphMixin(object):
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df, self.output_columns)
+            self.__valide(output_df, self.columns_setup())
 
         if self.save:
             self.save_cache(output_df)

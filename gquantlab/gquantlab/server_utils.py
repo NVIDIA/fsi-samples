@@ -197,8 +197,6 @@ def add_nodes():
                             'inputs': []}
                     t = Task(task)
                     n = node[1](t)
-                    if not n._using_ports():
-                        continue
                     if issubclass(node[1], Node):
                         nodeObj = get_node_obj(n)
                         all_nodes[item[0]].append(nodeObj)
