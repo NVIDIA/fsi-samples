@@ -69,43 +69,6 @@ class NodeTaskGraphMixin(object):
         # Note: that even though the "df" terminology is used the type is
         #     user configurable i.e. "df" is just some python object which is
         #     typically a data container.
-
-        self.input_columns = {}
-        # input_columns format:
-        # {
-        #     iport0: {
-        #         col1_name: col1_type,
-        #         col2_name: col2_type,
-        #         ... etc.
-        #     },
-        #     iport1: { ... }
-        #     ... etc.
-        # }
-
-        # For the input_columns there's a dummy enumerated port for non-ports
-        # API nodes (one can always enumerate the inputs in order) so the
-        # inputs_columns format is always the same. The output_columns will be
-        # different depending on if it's a port based node or non-port.
-
-        self.output_columns = {}
-        # output_columns format when using ports:
-        # {
-        #     oport1: {
-        #         col1_name: col1_type,
-        #         col2_name: col2_type,
-        #         ... etc.
-        #     },
-        #     oport2: { ... }
-        #     ... etc.
-        # }
-        #
-        # output_columns format when not using ports:
-        # {
-        #     col1_name: col1_type,
-        #     col2_name: col2_type,
-        #     ... etc.
-        # }
-
         self.clear_input = True
 
     def __translate_column(self, columns):
@@ -161,11 +124,7 @@ class NodeTaskGraphMixin(object):
 
         return output_df
 
-    def columns_flow(self):
-        """
-        Flow the graph to determine the input output dataframe column names and
-        types.
-        """
+    def validate_required_columns(self):
 
         def validate_required(icols, kcol, kval, in_taskid=None, iport=None):
             if kcol not in icols:
@@ -190,10 +149,6 @@ class NodeTaskGraphMixin(object):
                           "type %s mismatch %s"
                           % (self.uid, kval, icols[kcol]))
 
-        # incols_ready = self.__input_columns_ready()
-        # if not incols_ready:
-        #     return
-
         inputs_cols = self.get_input_columns()
 
         # to_port (iport usually used as variable) is always set. Refer to
@@ -207,7 +162,6 @@ class NodeTaskGraphMixin(object):
         }
         inputs_cols = incoming_cols
 
-        # check required inpurt columns are there
         if self.required:
             required = self.required
             pinputs = self._task_obj[TaskSpecSchema.inputs]
@@ -216,7 +170,8 @@ class NodeTaskGraphMixin(object):
                     col_name: col_type for col_name, col_type in
                     required.get(iport, {}).items()}
 
-                required_tran = self.__translate_column(required_iport)
+                # required_tran = self.__translate_column(required_iport)
+                required_tran = required_iport
                 if iport in inputs_cols:
                     incoming_cols = inputs_cols[iport]
                     in_taskid = pinputs[iport]
@@ -224,37 +179,6 @@ class NodeTaskGraphMixin(object):
                     for kcol, kval in required_tran.items():
                         validate_required(incoming_cols, kcol, kval,
                                           in_taskid, iport)
-
-        # ABOVE validates the columns in dataframe inputs
-        # When using ports all the validation logic below add/del/retain
-        # can just be simplified to having a columns dict for the port.
-        # The operations add/del/retain are internal to the process API
-        # of a Node implementation.
-        # Renaming a column is a special case as it is a meta-operation where
-        # a column is renamed dynmically during run-time. The rename is
-        # identified via "@" special character and typically configured via
-        # task-spec conf.
-        self.output_columns = self.columns_setup()
-
-        for iout in self.outputs:
-            onode = iout['to_node']
-            iport = iout['to_port']
-            oport = iout['from_port']
-#             onode.set_input_column(self, self.output_columns)
-            if oport is not None and oport in self.output_columns:
-                out_cols = self.output_columns[oport]
-            else:
-                if oport not in self.output_columns:
-                    print("node {}: no col is sending to oport {}".format(
-                        self.uid, oport))
-                    print(self.output_columns)
-                    out_cols = {
-                        col_name: col_type
-                        for col_dict in self.output_columns.values()
-                        for col_name, col_type in col_dict.items()}
-            onode.set_input_column(iport, out_cols)
-            # type computation, only supports the new API
-            onode.columns_flow()
 
     def _validate_df(self, df_to_val, ref_cols):
         '''Validate a cudf or dask_cudf DataFrame.
@@ -382,18 +306,6 @@ class NodeTaskGraphMixin(object):
 
         return True
 
-    def __input_columns_ready(self):
-        for ii in self.inputs:
-            iport = ii['to_port']
-
-            if iport not in self.input_columns:
-                return False
-
-        if (len(self._get_input_ports()) != 0 and len(self.inputs) == 0):
-            return False
-
-        return True
-
     def __get_input_df(self):
         return self.input_df
 
@@ -422,9 +334,6 @@ class NodeTaskGraphMixin(object):
 
     def __set_input_df(self, to_port, df):
         self.input_df[to_port] = df
-
-    def set_input_column(self, to_port, columns):
-        self.input_columns[to_port] = columns
 
     def flow(self, progress_fun=None):
         """

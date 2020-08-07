@@ -7,6 +7,8 @@ from gquant.dataframe_flow.cache import (cache_columns,
                                          cache_ports, cache_schema)
 import json
 import copy
+import os
+import hashlib
 
 INPUT_ID = '4fd31358-fb80-4224-b35f-34402c6c3763'
 
@@ -15,7 +17,7 @@ class CompositeNode(Node):
 
     def _compute_hash_key(self):
         """
-        if hash changed, the port_setup, columns_setup 
+        if hash changed, the port_setup, columns_setup
         and conf_json should be different
         """
         task_graph = ""
@@ -25,13 +27,15 @@ class CompositeNode(Node):
         self.update_replace(replacementObj)
         if 'taskgraph' in self.conf:
             task_graph = self.conf['taskgraph']
+            if os.path.exists(task_graph):
+                task_graph = hashlib.md5(task_graph.encode()).hexdigest()
         if 'input' in self.conf:
             input_node = self.conf['input']
             if hasattr(self, 'inputs'):
                 for i in inputs:
                     inputs += (hash(i['from_node']),
                                i['to_port'], i['to_port'])
-        return hash((task_graph, inputs,
+        return hash((self.uid, task_graph, inputs,
                      input_node, json.dumps(replacementObj)))
 
     def ports_setup(self):
