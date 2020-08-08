@@ -180,6 +180,9 @@ class NodeTaskGraphMixin(object):
                         validate_required(incoming_cols, kcol, kval,
                                           in_taskid, iport)
 
+    def get_output_columns(self):
+        return self.columns_setup()
+
     def _validate_df(self, df_to_val, ref_cols):
         '''Validate a cudf or dask_cudf DataFrame.
 

@@ -69,7 +69,7 @@
   inputs: {}
 - id: asset_filter
   type: AssetFilterNode
-  conf: 
+  conf:
     asset: 22123
   inputs:
     stock_in: xgboost_graph.stock_out
@@ -80,7 +80,7 @@
     in1: lineplot.lineplot
 - id: lineplot
   type: LinePlotNode
-  conf: 
+  conf:
     lines:
       - column: FR_DI_0.1
         label: d 0.1

@@ -28,11 +28,12 @@ class CompositeNode(Node):
         if 'taskgraph' in self.conf:
             task_graph = self.conf['taskgraph']
             if os.path.exists(task_graph):
-                task_graph = hashlib.md5(task_graph.encode()).hexdigest()
+                with open(task_graph) as f:
+                    task_graph = hashlib.md5(f.read().encode()).hexdigest()
         if 'input' in self.conf:
             input_node = self.conf['input']
             if hasattr(self, 'inputs'):
-                for i in inputs:
+                for i in self.inputs:
                     inputs += (hash(i['from_node']),
                                i['to_port'], i['to_port'])
         return hash((self.uid, task_graph, inputs,
