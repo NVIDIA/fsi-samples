@@ -167,6 +167,8 @@ class IndicatorNode(Node, _PortTypesMixin):
                 if 'args' in indicator:
                     if len(conf['args']) != 0:
                         conf['args'] = indicator['args']
+                if 'columns' in indicator:
+                    conf['columns'] = indicator['columns']
                 for col in conf['columns']:
                     cols_required[col] = 'float64'
                 if 'outputs' in conf:
@@ -297,6 +299,8 @@ class IndicatorNode(Node, _PortTypesMixin):
                 #  a bug work around to ignore the numbers from the client
                 if len(conf['args']) != 0:
                     conf['args'] = indicator['args']
+            if 'columns' in indicator:
+                conf['columns'] = indicator['columns']
             fun = getattr(ci, indicator['function'])
             parallel = [input_df['indicator']]
             data = [input_df[col] for col in conf['columns']]
