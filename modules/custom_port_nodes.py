@@ -12,25 +12,6 @@ from gquant.dataframe_flow import ConfSchema
 import copy
 
 
-def share_type(ports, connections):
-    """
-    utility function, the input/output type is determinted by the connected
-    input port
-    @params, ports, input or output port
-    @connections, input port connection information, returned by
-     self.get_connected_inports()
-    return
-        the finalized port types
-    """
-    ports_out = copy.deepcopy(ports)
-    for key in ports:
-        if key in connections:
-            # connected
-            types = connections[key]
-            ports_out[key].update({PortsSpecSchema.port_type: types})
-    return ports_out
-
-
 class PointNode(Node):
 
     def ports_setup(self):
@@ -115,6 +96,9 @@ class DistanceNode(Node):
         output_ports = {
             'distance_df': {
                 port_type: [cudf.DataFrame, dask_cudf.DataFrame]
+            },
+            'distance_abs_df': {
+                PortsSpecSchema.port_type:  [cudf.DataFrame, dask_cudf.DataFrame]
             }
         }
         input_connections = self.get_connected_inports()
@@ -122,7 +106,9 @@ class DistanceNode(Node):
             types = input_connections['points_df_in']
             # connected, use the types passed in from parent
             return NodePorts(inports={'points_df_in': {port_type: types}},
-                             outports={'distance_df': {port_type: types}})
+                             outports={'distance_df': {port_type: types},
+                                       'distance_abs_df': {port_type: types},
+                                       })
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
 
@@ -146,29 +132,32 @@ class DistanceNode(Node):
                     'distance_cudf': 'float64',
                     'x': 'float64',
                     'y': 'float64'
+                },
+                'distance_abs_df': {
+                    'distance_abs_cudf': 'float64',
+                    'x': 'float64',
+                    'y': 'float64'
                 }
             })
         if 'points_df_in' in input_columns:
             col_from_inport = input_columns['points_df_in']
             # additional ports
             output_cols['distance_df'].update(col_from_inport)
+            output_cols['distance_abs_df'].update(col_from_inport)
         return output_cols
 
     def process(self, inputs):
         df = inputs['points_df_in']
-
-        # DEBUGGING
-        # try:
-        #     from dask.distributed import get_worker
-        #     worker = get_worker()
-        #     print('worker{} process NODE "{}" worker: {}'.format(
-        #         worker.name, self.uid, worker))
-        # except (ValueError, ImportError):
-        #     pass
-
-        df['distance_cudf'] = (df['x'] ** 2 + df['y'] ** 2).sqrt()
-
-        return {'distance_df': df}
+        output = {}
+        if self.outport_connected('distance_df'):
+            copy_df = df.copy()
+            copy_df['distance_cudf'] = (df['x'] ** 2 + df['y'] ** 2).sqrt()
+            output.update({'distance_df': copy_df})
+        if self.outport_connected('distance_abs_df'):
+            copy_df = df.copy()
+            copy_df['distance_abs_cudf'] = df['x'].abs() + df['y'].abs()
+            output.update({'distance_abs_df': copy_df})
+        return output
 
 
 @cuda.jit
@@ -430,9 +419,13 @@ class VerifyNode(Node):
             }
         }
 
-        input_connections = self.get_connected_inports()
-        input_ports_out = share_type(input_ports, input_connections)
-        return NodePorts(inports=input_ports_out, outports=output_ports)
+        connections = self.get_connected_inports()   
+        for key in input_ports:
+            if key in connections:
+                # connected
+                types = connections[key]
+                input_ports[key].update({PortsSpecSchema.port_type: types})
+        return NodePorts(inports=input_ports, outports=output_ports)
 
     def columns_setup(self):
         return {'max_diff': {}}
