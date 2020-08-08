@@ -35,7 +35,7 @@ class CompositeNode(Node):
             if hasattr(self, 'inputs'):
                 for i in self.inputs:
                     inputs += (hash(i['from_node']),
-                               i['to_port'], i['to_port'])
+                               i['to_port'], i['from_port'])
         return hash((self.uid, task_graph, inputs,
                      input_node, json.dumps(replacementObj)))
 
