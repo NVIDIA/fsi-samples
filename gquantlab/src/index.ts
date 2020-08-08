@@ -318,33 +318,39 @@ function activateFun(
     if (isLinkedView(currentWidget)) {
       return true;
     }
-    //if (currentWidget) {
-    //  for (const view of toArray(currentWidget.children())) {
-    //    if (view.id.startsWith('LinkedOutputView-')) {
-    //      for (const outputs of toArray(view.children())) {
-    //        for (const output of toArray(outputs.children())) {
-    //          if (outputEnabled(output)) {
-    //            return true;
-    //          }
-    //        }
-    //      }
-    //    }
-    //  }
-    //}
-    return (
+    const cellVisible =
       notebookTracker.currentWidget !== null &&
-      notebookTracker.currentWidget === app.shell.currentWidget
-    );
+      notebookTracker.currentWidget === app.shell.currentWidget;
+
+    if (cellVisible) {
+      const mainView = getMainView();
+      if (
+        mainView.contentHandler &&
+        mainView.contentHandler.commandRegistry === undefined
+      ) {
+        mainView.contentHandler.commandRegistry = app.commands;
+      }
+    }
+    return cellVisible;
   }
 
   /**
    * Whether there is an active graph editor
    */
   function isGquantVisible(): boolean {
-    return (
+    const gquantVisible =
       tracker.currentWidget !== null &&
-      tracker.currentWidget === app.shell.currentWidget
-    );
+      tracker.currentWidget === app.shell.currentWidget;
+    const mainView = app.shell.currentWidget as MainView;
+    if (gquantVisible) {
+      if (
+        mainView.contentHandler &&
+        mainView.contentHandler.commandRegistry === undefined
+      ) {
+        mainView.contentHandler.commandRegistry = app.commands;
+      }
+    }
+    return gquantVisible;
   }
 
   /**
@@ -468,6 +474,12 @@ function activateFun(
     app.serviceManager.contents.save(model.path, model);
   };
 
+  function uuidv4(): string {
+    return Math.random()
+      .toString(36)
+      .substring(2, 15);
+  }
+
   app.commands.addCommand('gquant:openeditor', {
     label: 'Task Node Editor',
     caption: 'Open the Task Node Editor',
@@ -490,8 +502,11 @@ function activateFun(
           }
           if (panel === null) {
             panel = new EditorPanel(mainView.contentHandler);
+            panel.id = panel.id + uuidv4();
+            app.shell.add(panel, 'main', { mode: 'split-right' });
+          } else {
+            app.shell.activateById(panel.id);
           }
-          app.shell.add(panel, 'main', { mode: 'split-right' });
         } else if (isLinkedView(app.shell.currentWidget)) {
           const mainView = getMainView();
           let panel = null;
@@ -507,8 +522,11 @@ function activateFun(
           }
           if (panel === null) {
             panel = new EditorPanel(mainView.contentHandler);
+            panel.id = panel.id + uuidv4();
+            app.shell.add(panel, 'main', { mode: 'split-right' });
+          } else {
+            app.shell.activateById(panel.id);
           }
-          app.shell.add(panel, 'main', { mode: 'split-right' });
         }
       } else {
         const wdg = app.shell.currentWidget as any;
@@ -526,8 +544,11 @@ function activateFun(
         }
         if (panel === null) {
           panel = new EditorPanel(wdg.contentHandler);
+          panel.id = panel.id + uuidv4();
+          app.shell.add(panel, 'main', { mode: 'split-right' });
+        } else {
+          app.shell.activateById(panel.id);
         }
-        app.shell.add(panel, 'main', { mode: 'split-right' });
       }
     },
     isVisible

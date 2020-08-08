@@ -10,6 +10,7 @@ import { IEditorProp } from './nodeEditor';
 import { Signal } from '@lumino/signaling';
 import { MainAreaWidget } from '@jupyterlab/apputils';
 import { WidgetModel } from '@jupyter-widgets/base';
+import { CommandRegistry } from '@lumino/commands';
 
 export class ContentHandler {
   private _outputs: string[]; // store a list of outputs
@@ -42,6 +43,16 @@ export class ContentHandler {
   private _reLayout = new Signal<ContentHandler, void>(this);
 
   private _aspectRatio = 0.3;
+
+  private _commandRegistry: CommandRegistry;
+
+  set commandRegistry(commandRegistry: CommandRegistry) {
+    this._commandRegistry = commandRegistry;
+  }
+
+  get commandRegistry(): CommandRegistry {
+    return this._commandRegistry;
+  }
 
   get updateEditor(): Signal<ContentHandler, IEditorProp> {
     return this._updateEditor;

@@ -497,6 +497,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       edges: this.props.edges,
       handler: this.props.contentHandler
     };
+    if (this.props.contentHandler.commandRegistry) {
+      this.props.contentHandler.commandRegistry.execute('gquant:openeditor');
+    }
     this.props.contentHandler.updateEditor.emit(data);
   }
 
