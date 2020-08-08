@@ -6,6 +6,7 @@ import {
 import { MainView } from './mainComponent';
 import { requestAPI } from './gquantlab';
 import YAML from 'yaml';
+import { IEditorProp } from './nodeEditor';
 import { Signal } from '@lumino/signaling';
 import { MainAreaWidget } from '@jupyterlab/apputils';
 import { WidgetModel } from '@jupyter-widgets/base';
@@ -27,6 +28,8 @@ export class ContentHandler {
   private _runGraph = new Signal<ContentHandler, void>(this);
   private _cleanResult = new Signal<ContentHandler, void>(this);
 
+  private _updateEditor = new Signal<ContentHandler, IEditorProp>(this);
+
   // signal used to sync the graph status to server
   private _saveCache = new Signal<ContentHandler, void>(this);
 
@@ -39,6 +42,10 @@ export class ContentHandler {
   private _reLayout = new Signal<ContentHandler, void>(this);
 
   private _aspectRatio = 0.3;
+
+  get updateEditor(): Signal<ContentHandler, IEditorProp> {
+    return this._updateEditor;
+  }
 
   get runGraph(): Signal<ContentHandler, void> {
     return this._runGraph;

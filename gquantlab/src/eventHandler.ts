@@ -12,13 +12,14 @@ export function handleClicked(that: Chart) {
       d3.event.target.tagName === 'text'
     ) {
       const nodeDatum = d3.select(d3.event.target.parentNode).datum();
-      that.setState({
-        opacity: 1,
-        x: that.mousePage.x,
-        y: that.mousePage.y,
-        addMenu: false,
-        nodeDatum: nodeDatum
-      });
+      that.renderEditor(nodeDatum);
+      // that.setState({
+      //   opacity: 1,
+      //   x: that.mousePage.x,
+      //   y: that.mousePage.y,
+      //   addMenu: false,
+      //   nodeDatum: nodeDatum
+      // });
     } else {
       console.log('clicked');
       if (that.isDirty) {

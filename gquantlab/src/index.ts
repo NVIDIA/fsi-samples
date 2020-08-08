@@ -27,6 +27,7 @@ import {
   LabIcon,
   downloadIcon,
   saveIcon,
+  editIcon,
   notebookIcon
 } from '@jupyterlab/ui-components';
 
@@ -58,6 +59,8 @@ import {
 import { CodeCell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 import YAML from 'yaml';
+import { EditorPanel } from './EditorPanel';
+import '../style/editor.css';
 import { DocumentRegistry } from '@jupyterlab/docregistry';
 
 // import { LabIcon } from '@jupyterlab/ui-components';
@@ -218,6 +221,10 @@ function activateFun(
         app.commands.execute('gquant:openAnNewNotebook');
       };
 
+      const editorCallback = (): void => {
+        app.commands.execute('gquant:openeditor');
+      };
+
       const layout = new ToolbarButton({
         className: 'myButton',
         icon: layoutIcon,
@@ -246,11 +253,19 @@ function activateFun(
         tooltip: 'Convert TaskGraph to Notebook'
       });
 
+      const editor = new ToolbarButton({
+        className: 'myButton',
+        icon: editIcon,
+        onClick: editorCallback,
+        tooltip: 'Open Task Node Editor'
+      });
+
       return [
         { name: 'layout', widget: layout },
         { name: 'download', widget: download },
         { name: 'save', widget: save },
-        { name: 'notebook', widget: notebook }
+        { name: 'notebook', widget: notebook },
+        { name: 'editor', widget: editor }
       ];
     }
   });
@@ -453,6 +468,71 @@ function activateFun(
     app.serviceManager.contents.save(model.path, model);
   };
 
+  app.commands.addCommand('gquant:openeditor', {
+    label: 'Task Node Editor',
+    caption: 'Open the Task Node Editor',
+    icon: editIcon,
+    mnemonic: 0,
+    execute: () => {
+      if (isCellVisible()) {
+        if (isEnabled(notebookTracker.activeCell)) {
+          const mainView = getMainView();
+          let panel = null;
+          for (const view of toArray<Widget>(app.shell.widgets())) {
+            if (
+              view instanceof EditorPanel &&
+              (view as EditorPanel).handler === mainView.contentHandler
+            ) {
+              console.log('found it');
+              panel = view;
+              break;
+            }
+          }
+          if (panel === null) {
+            panel = new EditorPanel(mainView.contentHandler);
+          }
+          app.shell.add(panel, 'main', { mode: 'split-right' });
+        } else if (isLinkedView(app.shell.currentWidget)) {
+          const mainView = getMainView();
+          let panel = null;
+          for (const view of toArray<Widget>(app.shell.widgets())) {
+            if (
+              view instanceof EditorPanel &&
+              (view as EditorPanel).handler === mainView.contentHandler
+            ) {
+              console.log('found it');
+              panel = view;
+              break;
+            }
+          }
+          if (panel === null) {
+            panel = new EditorPanel(mainView.contentHandler);
+          }
+          app.shell.add(panel, 'main', { mode: 'split-right' });
+        }
+      } else {
+        const wdg = app.shell.currentWidget as any;
+        wdg.contentHandler.reLayoutSignal.emit();
+        let panel = null;
+        for (const view of toArray<Widget>(app.shell.widgets())) {
+          if (
+            view instanceof EditorPanel &&
+            (view as EditorPanel).handler === wdg.contentHandler
+          ) {
+            console.log('found it');
+            panel = view;
+            break;
+          }
+        }
+        if (panel === null) {
+          panel = new EditorPanel(wdg.contentHandler);
+        }
+        app.shell.add(panel, 'main', { mode: 'split-right' });
+      }
+    },
+    isVisible
+  });
+
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
   const createNewNotebook = async (input1: string, input2: string) => {
     const model = await commands.execute('docmanager:new-untitled', {
@@ -581,6 +661,11 @@ function activateFun(
       mainView.mimerenderWidgetUpdateSize();
     },
     isEnabled: isCellVisible
+  });
+
+  app.contextMenu.addItem({
+    command: 'gquant:openeditor',
+    selector: '.jp-GQuant'
   });
 
   app.contextMenu.addItem({

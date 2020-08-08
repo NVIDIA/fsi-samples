@@ -16,11 +16,11 @@ import {
 import { drag } from './dragHandler';
 import { handleMouseDown, handleMouseUp } from './connectionHandler';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import NodeEditor from './nodeEditor';
 import { validConnection } from './validator';
 import { INode, IEdge, ContentHandler } from './document';
 import { exportWorkFlowNodes, IState } from './chartEngine';
 import { OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
+import { IEditorProp } from './nodeEditor';
 
 interface IPortInfo {
   [key: string]: any;
@@ -37,7 +37,6 @@ interface IMappedEdge {
 }
 
 interface IChartState {
-  addMenu: boolean;
   x: number;
   y: number;
   opacity: number;
@@ -94,7 +93,6 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.g = null;
     this.isDirty = false;
     this.state = {
-      addMenu: true,
       x: -1000,
       y: -1000,
       opacity: 0,
@@ -491,6 +489,17 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.fullUpdate(state.nodes, state.edges);
   }
 
+  renderEditor(datum: any): void {
+    const data: IEditorProp = {
+      nodeDatum: datum,
+      setChartState: this.nodeEditorUpdate.bind(this),
+      nodes: this.props.nodes,
+      edges: this.props.edges,
+      handler: this.props.contentHandler
+    };
+    this.props.contentHandler.updateEditor.emit(data);
+  }
+
   updateInputs(json: string): void {
     /**
      * send the taskgraph to backend to run the column-flow logics so all the output types and names are computed
@@ -560,25 +569,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
             300}`
         );
     }
-
     console.log('rendering');
-    if (this.state.addMenu) {
-      return <div ref={this.myRef} />;
-    } else {
-      return (
-        <div ref={this.myRef}>
-          <NodeEditor
-            x={this.state.x}
-            y={this.state.y}
-            opacity={this.state.opacity}
-            nodeDatum={this.state.nodeDatum}
-            setChartState={this.nodeEditorUpdate.bind(this)}
-            nodes={this.props.nodes}
-            edges={this.props.edges}
-            setMenuState={this.setState.bind(this)}
-          />
-        </div>
-      );
-    }
+    return <div ref={this.myRef} />;
   }
 }
