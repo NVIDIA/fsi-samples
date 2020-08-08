@@ -103,11 +103,15 @@ class TestTaskGraphAPI(unittest.TestCase):
             'points_task', 'points_task.points_df_out',
             'distance_by_cudf', 'distance_by_cudf.distance_df'
         ]
-        nx_edges = [
-            ('points_task', 'points_task.points_df_out'),
-            ('points_task.points_df_out', 'distance_by_cudf'),
-            ('distance_by_cudf', 'distance_by_cudf.distance_df')
-        ]
+        nx_nodes = ['points_task', 'points_task.points_df_out',
+                    'points_task.points_ddf_out',
+                    'distance_by_cudf', 'distance_by_cudf.distance_df',
+                    'distance_by_cudf.distance_abs_df']
+        nx_edges = [('points_task', 'points_task.points_df_out'),
+                    ('points_task', 'points_task.points_ddf_out'),
+                    ('points_task.points_df_out', 'distance_by_cudf'),
+                    ('distance_by_cudf', 'distance_by_cudf.distance_df'),
+                    ('distance_by_cudf', 'distance_by_cudf.distance_abs_df')]
         self.assertEqual(list(nx_graph.nodes), nx_nodes)
         self.assertEqual(list(nx_graph.edges), nx_edges)
 
@@ -128,14 +132,9 @@ class TestTaskGraphAPI(unittest.TestCase):
         }
         self.assertIn(onode_info, points_node.outputs)
 
-        onode_cols = {
-            'points_df_out': {
-                'x': 'float64',
-                'y': 'float64'
-            }
-        }
-
-        self.assertEqual(onode_cols, points_node.output_columns)
+        onode_cols = {'points_df_out': {'x': 'float64', 'y': 'float64'},
+                      'points_ddf_out': {'x': 'float64', 'y': 'float64'}}
+        self.assertEqual(onode_cols, points_node.columns_setup())
 
         inode_info = {
             'from_node': points_node,
@@ -150,16 +149,14 @@ class TestTaskGraphAPI(unittest.TestCase):
                 'y': 'float64'
             }
         }
-        self.assertEqual(inode_in_cols, distance_node.input_columns)
+        self.assertEqual(inode_in_cols, distance_node.get_input_columns())
 
-        inode_out_cols = {
-            'distance_df': {
-                'x': 'float64',
-                'y': 'float64',
-                'distance_cudf': 'float64'
-            }
-        }
-        self.assertEqual(inode_out_cols, distance_node.output_columns)
+        inode_out_cols = {'distance_df': {'distance_cudf': 'float64',
+                                          'x': 'float64',
+                                          'y': 'float64'},
+                          'distance_abs_df': {'distance_abs_cudf': 'float64',
+                                              'x': 'float64', 'y': 'float64'}}
+        self.assertEqual(inode_out_cols, distance_node.columns_setup())
 
     @ordered
     def test_run(self):

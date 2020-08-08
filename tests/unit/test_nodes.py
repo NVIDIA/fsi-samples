@@ -97,10 +97,10 @@ class TestNodes(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "ReturnFeatureNode",
                     "conf": conf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = ReturnFeatureNode(task)
-        o = inN.process([self._cudf_data])
+        o = inN.process({'stock_in': self._cudf_data})['stock_out']
         err, index_err = error_function_index(o['returns'], self.gt)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
@@ -125,10 +125,10 @@ class TestNodes(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "IndicatorNode",
                     "conf": conf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
-        o = inN.process([self._cudf_data])
+        o = inN.process({'stock_in': self._cudf_data})['stock_out']
         err, index_err = error_function_index(o['CH_OS_10_20'], self.gt1)
         msg = "bad error %f\n" % (err,)
         self.assertTrue(np.isclose(err, 0, atol=1e-6), msg)
@@ -155,13 +155,14 @@ class TestNodes(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "AssetIndicatorNode",
                     "conf": conf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = AssetIndicatorNode(task)
 
         gt = self._cudf_data.to_pandas()['indicator']
 
-        o = inN.process([self._cudf_data.drop('indicator')])
+        o = inN.process({'stock_in':
+                         self._cudf_data.drop('indicator')})['stock_out']
 
         err, index_err = error_function_index(o['indicator'], gt)
         msg = "bad error %f\n" % (err,)
