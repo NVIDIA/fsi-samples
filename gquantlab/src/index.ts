@@ -13,7 +13,7 @@ import { IMainMenu } from '@jupyterlab/mainmenu';
 import { Token } from '@lumino/coreutils';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
-
+import { CommandRegistry } from '@lumino/commands';
 import * as widgetExports from './widget';
 
 import { requestAPI } from './gquantlab';
@@ -54,9 +54,10 @@ import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 import {
   INotebookTracker,
   NotebookPanel,
-  INotebookModel
+  INotebookModel,
+  Notebook
 } from '@jupyterlab/notebook';
-import { CodeCell } from '@jupyterlab/cells';
+import { CodeCell, Cell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 import YAML from 'yaml';
 import { EditorPanel } from './EditorPanel';
@@ -321,16 +322,6 @@ function activateFun(
     const cellVisible =
       notebookTracker.currentWidget !== null &&
       notebookTracker.currentWidget === app.shell.currentWidget;
-
-    if (cellVisible) {
-      const mainView = getMainView();
-      if (
-        mainView.contentHandler &&
-        mainView.contentHandler.commandRegistry === undefined
-      ) {
-        mainView.contentHandler.commandRegistry = app.commands;
-      }
-    }
     return cellVisible;
   }
 
@@ -449,7 +440,7 @@ function activateFun(
       }
       const result = await dialog;
       if (result.button.accept) {
-        console.log(result.value);
+        // console.log(result.value);
         const values = result.value;
         if (values.length === 1) {
           return values[0];
@@ -470,7 +461,7 @@ function activateFun(
       });
       const result = await dialog;
       if (result.button.accept) {
-        console.log(result.value);
+        // console.log(result.value);
         const values = result.value;
         if (values.length === 1) {
           return values[0];
@@ -491,7 +482,7 @@ function activateFun(
       });
       const result = await dialog;
       if (result.button.accept) {
-        console.log(result.value);
+        // console.log(result.value);
         const values = result.value;
         if (values.length === 1) {
           // only 1 file is allowed
@@ -547,7 +538,7 @@ function activateFun(
               view instanceof EditorPanel &&
               (view as EditorPanel).handler === mainView.contentHandler
             ) {
-              console.log('found it');
+              // console.log('found it');
               panel = view;
               break;
             }
@@ -555,7 +546,7 @@ function activateFun(
           if (panel === null) {
             panel = new EditorPanel(mainView.contentHandler);
             panel.id = panel.id + uuidv4();
-            app.shell.add(panel, 'main', { mode: 'split-right' });
+            app.shell.add(panel, 'main', { mode: 'split-bottom' });
           } else {
             app.shell.activateById(panel.id);
           }
@@ -567,7 +558,7 @@ function activateFun(
               view instanceof EditorPanel &&
               (view as EditorPanel).handler === mainView.contentHandler
             ) {
-              console.log('found it');
+              // console.log('found it');
               panel = view;
               break;
             }
@@ -575,7 +566,7 @@ function activateFun(
           if (panel === null) {
             panel = new EditorPanel(mainView.contentHandler);
             panel.id = panel.id + uuidv4();
-            app.shell.add(panel, 'main', { mode: 'split-right' });
+            app.shell.add(panel, 'main', { mode: 'split-bottom' });
           } else {
             app.shell.activateById(panel.id);
           }
@@ -589,7 +580,7 @@ function activateFun(
             view instanceof EditorPanel &&
             (view as EditorPanel).handler === wdg.contentHandler
           ) {
-            console.log('found it');
+            // console.log('found it');
             panel = view;
             break;
           }
@@ -597,7 +588,7 @@ function activateFun(
         if (panel === null) {
           panel = new EditorPanel(wdg.contentHandler);
           panel.id = panel.id + uuidv4();
-          app.shell.add(panel, 'main', { mode: 'split-right' });
+          app.shell.add(panel, 'main', { mode: 'split-bottom' });
         } else {
           app.shell.activateById(panel.id);
         }
@@ -642,7 +633,10 @@ function activateFun(
 
     model.content = notebook;
     model.format = 'text';
-    const savedModel = await app.serviceManager.contents.save(model.path, model);
+    const savedModel = await app.serviceManager.contents.save(
+      model.path,
+      model
+    );
     browserFactory.defaultBrowser.model.manager.open(savedModel.path);
   };
 
@@ -1105,6 +1099,41 @@ function activateWidget(
  */
 export class ButtonExtension
   implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
+  private _commandsRegistry: CommandRegistry;
+
+  constructor(commands: CommandRegistry) {
+    this._commandsRegistry = commands;
+  }
+
+  cellChanged(notebook: Notebook, cell: Cell): void {
+    console.log(cell);
+    if (cell instanceof CodeCell) {
+      const outputArea = cell.outputArea;
+      let widget = outputArea.widgets[0];
+      const children = widget.children();
+      //first one is output promot
+      children.next();
+      //second one is output wrapper
+      widget = children.next();
+      if (!widget) {
+        return;
+      }
+      // this is the panel
+      widget = widget.children().next();
+      if (!widget) {
+        return;
+      }
+      // this is the mainview
+      const mainView = widget.children().next() as MainView;
+      if (
+        mainView.contentHandler &&
+        mainView.contentHandler.commandRegistry === undefined
+      ) {
+        mainView.contentHandler.commandRegistry = this._commandsRegistry;
+      }
+    }
+  }
+
   /**
    * Create a new extension object.
    */
@@ -1127,6 +1156,9 @@ export class ButtonExtension
       const mainView = widget.children().next() as MainView;
       return mainView;
     }
+
+
+    panel.content.activeCellChanged.connect(this.cellChanged, this);
 
     const callback = (): void => {
       if (isEnabled(panel.content.activeCell)) {
@@ -1172,7 +1204,10 @@ export class ButtonExtension
  * Activate the extension.
  */
 function activate(app: JupyterFrontEnd): void {
-  app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension());
+  app.docRegistry.addWidgetExtension(
+    'Notebook',
+    new ButtonExtension(app.commands)
+  );
 }
 
 /**

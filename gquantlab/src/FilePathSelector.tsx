@@ -29,9 +29,9 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
         className="custom"
         value={this.props.value}
         required={this.props.required}
-        // onChange={(event): any => {
-        //   return this.props.onChange(event.target.value);
-        // }}
+        onChange={(event): any => {
+          return this.props.onChange(event.target.value);
+        }}
         onClick={(event): any => {
           if (this.props.formContext.commandRegistry) {
             const path = this.props.formContext.commandRegistry.execute(
@@ -41,6 +41,7 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
             path.then(
               (d: any): void => {
                 if (d) {
+                  //event.currentTarget.value = d.path;
                   this.props.onChange(d.path);
                 }
                 // eslint-disable-next-line prettier/prettier
@@ -69,9 +70,9 @@ export class CsvFileSelector extends React.Component<WidgetProps> {
         className="custom"
         value={this.props.value}
         required={this.props.required}
-        // onChange={(event): any => {
-        //   return this.props.onChange(event.target.value);
-        // }}
+        onChange={(event): any => {
+          return this.props.onChange(event.target.value);
+        }}
         onClick={(event): any => {
           if (this.props.formContext.commandRegistry) {
             const path = this.props.formContext.commandRegistry.execute(
@@ -81,6 +82,7 @@ export class CsvFileSelector extends React.Component<WidgetProps> {
             path.then(
               (d: any): void => {
                 if (d) {
+                  //event.currentTarget.value = d.path;
                   this.props.onChange(d.path);
                 }
                 // eslint-disable-next-line prettier/prettier
@@ -109,9 +111,9 @@ export class FileSelector extends React.Component<WidgetProps> {
         className="custom"
         value={this.props.value}
         required={this.props.required}
-        // onChange={(event): any => {
-        //   return this.props.onChange(event.target.value);
-        // }}
+        onChange={(event): any => {
+          return this.props.onChange(event.target.value);
+        }}
         onClick={(event): any => {
           if (this.props.formContext.commandRegistry) {
             const path = this.props.formContext.commandRegistry.execute(
@@ -147,9 +149,9 @@ export class PathSelector extends React.Component<WidgetProps> {
         className="custom"
         value={this.props.value}
         required={this.props.required}
-        // onChange={(event): any => {
-        //   return this.props.onChange(event.target.value);
-        // }}
+        onChange={(event): any => {
+          return this.props.onChange(event.target.value);
+        }}
         onClick={(event): any => {
           console.log('event');
           console.log(this.props);
