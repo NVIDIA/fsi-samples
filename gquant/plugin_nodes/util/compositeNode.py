@@ -130,12 +130,9 @@ class CompositeNode(Node):
             },
             "required": ["taskgraph"],
         }
-        ui = {}
-        # ui = {
-        #     "taskgraph": {"ui:widget": "text"},
-        #     "input": {"ui:widget": "text"},
-        #     "output": {"ui:widget": "text"}
-        # }
+        ui = {
+            "taskgraph": {"ui:widget": "FileSelector"}
+        }
         if 'taskgraph' in self.conf:
             task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
             replacementObj = {}
@@ -160,9 +157,10 @@ class CompositeNode(Node):
             json['properties']['subnodes']['items']['enum'] = ids_in_graph
         if 'subnodes' in self.conf:
             for subnodeId in self.conf['subnodes']:
-                nodeObj = task_graphh[subnodeId]
-                schema = nodeObj.conf_schema()
-                json['properties']['conf_id.'+subnodeId] = schema.json    
+                if subnodeId in task_graphh:
+                    nodeObj = task_graphh[subnodeId]
+                    schema = nodeObj.conf_schema()
+                    json['properties']['conf_id.'+subnodeId] = schema.json    
         out_schema = ConfSchema(json=json, ui=ui)
         cache_schema[cache_key] = out_schema
         return out_schema

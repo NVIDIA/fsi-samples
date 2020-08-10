@@ -428,6 +428,48 @@ function activateFun(
     isVisible: isCellVisible
   });
 
+  commands.addCommand('gquant:selectTheFile', {
+    label: 'Select the file',
+    caption: 'Select the file',
+    icon: folderIcon,
+    execute: async () => {
+      const dialog = FileDialog.getOpenFiles({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        title: 'Select the File'
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          return values[0];
+        }
+        //let files = result.value;
+      }
+    }
+  });
+
+  commands.addCommand('gquant:selectThePath', {
+    label: 'Select the Path',
+    caption: 'Select the Path',
+    icon: folderIcon,
+    execute: async () => {
+      const dialog = FileDialog.getExistingDirectory({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        title: 'Select the Path'
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          return values[0];
+        }
+        //let files = result.value;
+      }
+    }
+  });
+
   commands.addCommand('gquant:openNewFile', {
     label: 'Open TaskGraph file',
     caption: 'Open TaskGraph file',

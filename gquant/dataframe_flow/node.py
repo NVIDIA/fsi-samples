@@ -6,7 +6,7 @@ import cudf
 
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import PortsSpecSchema
+from .portsSpecSchema import PortsSpecSchema, ConfSchema
 
 from ._node import _Node
 
@@ -231,7 +231,7 @@ class Node(_PortsMixin, _Node):
         :rtype: ConfSchema
 
         """
-        raise NotImplementedError
+        return ConfSchema(json={}, ui={})
 
     @abc.abstractmethod
     def columns_setup(self):

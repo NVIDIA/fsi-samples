@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.css';
 import '../style/editor.css';
 import { INode, IEdge, ContentHandler } from './document';
 import { OUTPUT_COLLECTOR } from './mainComponent';
+import { FileSelector, PathSelector } from './FilePathSelector';
 
 export interface IEditorProp {
   handler: ContentHandler;
@@ -117,6 +118,10 @@ class NodeEditor extends React.Component<IEditorProp> {
   }
 
   render(): JSX.Element {
+    const widgets = {
+      FileSelector: FileSelector,
+      PathSelector: PathSelector
+    };
     const Editor = styled.div`
       text-align: left;
       padding: 10px;
@@ -160,6 +165,8 @@ class NodeEditor extends React.Component<IEditorProp> {
           formData={this.props.nodeDatum.conf}
           uiSchema={this.props.nodeDatum.ui}
           onSubmit={this.handleSave}
+          widgets={widgets}
+          formContext={this.props.handler}
         />
         <Button onClick={this.handleDelete}>Delete</Button>
       </Editor>
