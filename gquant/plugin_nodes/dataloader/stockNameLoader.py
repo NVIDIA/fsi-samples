@@ -3,6 +3,7 @@ import cudf
 from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
                                                    NodePorts,
                                                    ConfSchema)
+from gquant.dataframe_flow.cache import (cache_columns)
 
 from .stockMap import StockMap
 STOCK_NAME_PORT_NAME = 'stock_name'
@@ -10,6 +11,9 @@ STOCK_MAP_PORT_NAME = 'map_data'
 
 
 class StockNameLoader(Node):
+
+    def _compute_hash_key(self):
+        return hash((self.uid, self.conf['file']))
 
     def ports_setup(self):
         input_ports = {}
@@ -35,10 +39,18 @@ class StockNameLoader(Node):
         }
         if self.outport_connected(STOCK_MAP_PORT_NAME):
             if 'file' in self.conf:
-                name_df = cudf.read_csv(self.conf['file'])[['SM_ID', 'SYMBOL']]
-                name_df.columns = ["asset", 'asset_name']
-                pdf = name_df.to_pandas()
-                out_cols.update({STOCK_MAP_PORT_NAME: pdf.to_dict('list')})
+                hash_key = self._compute_hash_key()
+                if hash_key in cache_columns:
+                    out_cols.update({
+                        STOCK_MAP_PORT_NAME: cache_columns[hash_key]})
+                else:
+                    name_df = cudf.read_csv(self.conf['file'])[['SM_ID',
+                                                                'SYMBOL']]
+                    name_df.columns = ["asset", 'asset_name']
+                    pdf = name_df.to_pandas()
+                    column_data = pdf.to_dict('list')
+                    cache_columns[hash_key] = column_data
+                    out_cols.update({STOCK_MAP_PORT_NAME: column_data})
         return out_cols
 
     def conf_schema(self):
