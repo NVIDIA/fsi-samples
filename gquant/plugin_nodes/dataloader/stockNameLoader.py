@@ -68,7 +68,7 @@ class StockNameLoader(Node):
         }
 
         ui = {
-            "file": {"ui:widget": "FileSelector"}
+            "file": {"ui:widget": "CsvFileSelector"}
         }
         return ConfSchema(json=json, ui=ui)
 

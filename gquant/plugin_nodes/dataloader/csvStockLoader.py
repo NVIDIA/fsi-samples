@@ -64,7 +64,7 @@ class CsvStockLoader(Node):
         }
 
         ui = {
-            "file": {"ui:widget": "FileSelector"},
+            "file": {"ui:widget": "CsvFileSelector"},
             "path": {"ui:widget": "PathSelector"}
         }
         return ConfSchema(json=json, ui=ui)

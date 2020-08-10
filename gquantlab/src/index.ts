@@ -432,11 +432,21 @@ function activateFun(
     label: 'Select the file',
     caption: 'Select the file',
     icon: folderIcon,
-    execute: async () => {
-      const dialog = FileDialog.getOpenFiles({
-        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
-        title: 'Select the File'
-      });
+    execute: async (args: any) => {
+      let dialog = null;
+      if (args && 'filter' in args) {
+        dialog = FileDialog.getOpenFiles({
+          manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+          title: 'Select the File',
+          filter: model =>
+            args['filter'].some((d: string): boolean => model.path.endsWith(d))
+        });
+      } else {
+        dialog = FileDialog.getOpenFiles({
+          manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+          title: 'Select the File'
+        });
+      }
       const result = await dialog;
       if (result.button.accept) {
         console.log(result.value);

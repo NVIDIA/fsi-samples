@@ -131,7 +131,7 @@ class CompositeNode(Node):
             "required": ["taskgraph"],
         }
         ui = {
-            "taskgraph": {"ui:widget": "FileSelector"}
+            "taskgraph": {"ui:widget": "TaskgraphSelector"}
         }
         if 'taskgraph' in self.conf:
             task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])

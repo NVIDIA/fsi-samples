@@ -5,7 +5,12 @@ import 'bootstrap/dist/css/bootstrap.css';
 import '../style/editor.css';
 import { INode, IEdge, ContentHandler } from './document';
 import { OUTPUT_COLLECTOR } from './mainComponent';
-import { FileSelector, PathSelector } from './FilePathSelector';
+import {
+  FileSelector,
+  PathSelector,
+  TaskgraphSelector,
+  CsvFileSelector
+} from './FilePathSelector';
 
 export interface IEditorProp {
   handler: ContentHandler;
@@ -120,7 +125,9 @@ class NodeEditor extends React.Component<IEditorProp> {
   render(): JSX.Element {
     const widgets = {
       FileSelector: FileSelector,
-      PathSelector: PathSelector
+      PathSelector: PathSelector,
+      TaskgraphSelector: TaskgraphSelector,
+      CsvFileSelector: CsvFileSelector
     };
     const Editor = styled.div`
       text-align: left;
