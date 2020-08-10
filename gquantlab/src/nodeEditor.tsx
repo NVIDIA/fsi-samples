@@ -90,13 +90,13 @@ class NodeEditor extends React.Component<IEditorProp> {
       return d;
     });
     this.props.setChartState({ nodes: this.props.nodes, edges: newEdges });
-    this.props.handler.updateEditor.emit({
-      nodes: [],
-      nodeDatum: {},
-      edges: [],
-      setChartState: null,
-      handler: this.props.handler
-    });
+    // this.props.handler.updateEditor.emit({
+    //   nodes: [],
+    //   nodeDatum: {},
+    //   edges: [],
+    //   setChartState: null,
+    //   handler: this.props.handler
+    // });
   }
 
   handleDelete(): void {

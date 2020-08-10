@@ -12,7 +12,8 @@ export function handleClicked(that: Chart) {
       d3.event.target.tagName === 'text'
     ) {
       const nodeDatum = d3.select(d3.event.target.parentNode).datum();
-      that.renderEditor(nodeDatum);
+      that.datum = nodeDatum;
+      that.renderEditor();
       // that.setState({
       //   opacity: 1,
       //   x: that.mousePage.x,

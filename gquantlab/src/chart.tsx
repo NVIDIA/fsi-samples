@@ -55,6 +55,7 @@ interface IChartProp {
 
 export class Chart extends React.Component<IChartProp, IChartState> {
   myRef: React.RefObject<HTMLDivElement>;
+  datum: any;
   mouse: { x: number; y: number };
   mousePage: { x: number; y: number };
   starting: { groupName: string; from: string; point: IPoint };
@@ -475,23 +476,16 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     const content = exportWorkFlowNodes(nodes, edges);
     const jsonString = JSON.stringify(content);
     this.drawLinks();
-    this.updateInputs(jsonString);
+    this._updateInputs(jsonString, nodes, edges);
   }
 
   nodeEditorUpdate(state: IState): void {
-    this.props.setChartState(
-      {
-        nodes: state.nodes,
-        edges: state.edges
-      },
-      true
-    );
     this.fullUpdate(state.nodes, state.edges);
   }
 
-  renderEditor(datum: any): void {
+  renderEditor(): void {
     const data: IEditorProp = {
-      nodeDatum: datum,
+      nodeDatum: this.datum,
       setChartState: this.nodeEditorUpdate.bind(this),
       nodes: this.props.nodes,
       edges: this.props.edges,
@@ -503,7 +497,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.props.contentHandler.updateEditor.emit(data);
   }
 
-  updateInputs(json: string): void {
+  _updateInputs(json: string, nodes: INode[], edges: IEdge[]): void {
     /**
      * send the taskgraph to backend to run the column-flow logics so all the output types and names are computed
      */
@@ -533,7 +527,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           ui: d.ui
         };
       });
-      this.props.nodes.forEach((d: INode) => {
+      nodes.forEach((d: INode) => {
         if (d.id in newNode) {
           if (d.id === OUTPUT_COLLECTOR) {
             return;
@@ -548,9 +542,37 @@ export class Chart extends React.Component<IChartProp, IChartState> {
         }
       });
       this.props.setChartState({
-        nodes: this.props.nodes,
-        edges: this.props.edges
+        nodes: nodes,
+        edges: edges
       });
+      // update the current datum
+      let editorData: IEditorProp = null;
+      if (this.datum) {
+        const id = nodes.findIndex((d: INode) => {
+          return d.id === this.datum.id;
+        });
+        if (id >= 0) {
+          this.datum = nodes[id];
+          editorData = {
+            nodeDatum: this.datum,
+            setChartState: this.nodeEditorUpdate.bind(this),
+            nodes: nodes,
+            edges: edges,
+            handler: this.props.contentHandler
+          };
+        } else {
+          this.datum = {};
+          editorData = {
+            nodeDatum: this.datum,
+            setChartState: null,
+            nodes: [],
+            edges: [],
+            handler: this.props.contentHandler
+          };
+        }
+      }
+      // update the editor contents if it is attached
+      this.props.contentHandler.updateEditor.emit(editorData);
     });
   }
 
