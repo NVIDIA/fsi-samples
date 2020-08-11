@@ -1,8 +1,8 @@
 - id: stock_data
   type: CsvStockLoader
   conf:
-    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
-    path: /home/quant/gQuant/notebooks/many-small/
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
   inputs: {}
 - id: preprocess
   type: CompositeNode
@@ -22,7 +22,7 @@
         - average_volume
         - min_return
         - max_return
-    taskgraph: /home/quant/gQuant/taskgraphs/preprocess.gq.yaml
+    taskgraph: taskgraphs/preprocess.gq.yaml
     input: sort_node
     output: drop_columns
   inputs:

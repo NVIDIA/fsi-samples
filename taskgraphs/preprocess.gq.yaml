@@ -1,8 +1,8 @@
 - id: stock_data
   type: CsvStockLoader
   conf:
-    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
-    path: /home/quant/gQuant/notebooks/many-small/
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small/
   inputs: {}
 - id: sort_node
   type: SortNode

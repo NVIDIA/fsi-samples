@@ -20,7 +20,7 @@
           - min_return
           - max_return
           - average_volume
-      taskgraph: /home/quant/gQuant/taskgraphs/preprocess.gq.yaml
+      taskgraph: taskgraphs/preprocess.gq.yaml
       input: sort_node
       output: drop_columns
     conf_id.technical_indicator:
@@ -56,7 +56,7 @@
           columns:
             - returns
       remove_na: true
-    taskgraph: /home/quant/gQuant/taskgraphs/xgboost_trade.gq.yaml
+    taskgraph: taskgraphs/xgboost_trade.gq.yaml
     output: technical_indicator
     input: preprocess
   inputs:
@@ -64,8 +64,8 @@
 - id: stock_data
   type: CsvStockLoader
   conf:
-    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
-    path: /home/quant/gQuant/notebooks/many-small/
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
   inputs: {}
 - id: asset_filter
   type: AssetFilterNode
