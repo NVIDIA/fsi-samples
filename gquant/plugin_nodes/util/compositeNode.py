@@ -164,6 +164,7 @@ class CompositeNode(Node):
                     nodeObj = task_graphh[subnodeId]
                     schema = nodeObj.conf_schema()
                     json['properties']['conf_id.'+subnodeId] = schema.json    
+                    ui['conf_id.'+subnodeId] = schema.ui
         out_schema = ConfSchema(json=json, ui=ui)
         cache_schema[cache_key] = out_schema
         return out_schema

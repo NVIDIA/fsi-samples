@@ -13,7 +13,14 @@ import styled from '@emotion/styled';
 //import NodeEditor from './nodeEditor';
 //import { IEditorProp } from './nodeEditor';
 
+function uuidv4(): string {
+  return Math.random()
+    .toString(36)
+    .substring(2, 15);
+}
+
 export class TaskgraphSelector extends React.Component<WidgetProps> {
+  private _id: string;
   constructor(props: any) {
     super(props);
   }
@@ -25,10 +32,11 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
     const Group = styled.div`
       width: 100%;
     `;
+    this._id = 'taskgraph_editor_"' + uuidv4();
     return (
       <Group>
         <Input
-          id="taskgraph_editor"
+          id={this._id}
           type="text"
           className="custom"
           value={this.props.value}
@@ -56,9 +64,8 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
         />
         <button
           onClick={(): void => {
-            console.log('clicked');
             const inputEle: HTMLInputElement = document.getElementById(
-              'taskgraph_editor'
+              this._id
             ) as HTMLInputElement;
             if (this.props.formContext.commandRegistry) {
               this.props.formContext.commandRegistry.execute(
