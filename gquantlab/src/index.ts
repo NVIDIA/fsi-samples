@@ -1100,6 +1100,7 @@ function activateWidget(
 export class ButtonExtension
   implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
   private _commandsRegistry: CommandRegistry;
+  private _panel: NotebookPanel;
 
   constructor(commands: CommandRegistry) {
     this._commandsRegistry = commands;
@@ -1144,6 +1145,7 @@ export class ButtonExtension
     panel: NotebookPanel,
     _context: DocumentRegistry.IContext<INotebookModel>
   ): IDisposable {
+    this._panel = panel;
     function getMainView(): MainView {
       const codecell = panel.content.activeCell as CodeCell;
       const outputArea = codecell.outputArea;
@@ -1160,7 +1162,8 @@ export class ButtonExtension
       return mainView;
     }
 
-    panel.content.activeCellChanged.connect(this.cellChanged, this);
+//    panel.content.activeCellChanged.connect(this.cellChanged, this);
+    panel.model.contentChanged.connect(this.contentChanged, this);
 
     const callback = (): void => {
       if (isEnabled(panel.content.activeCell)) {
@@ -1199,6 +1202,14 @@ export class ButtonExtension
       button.dispose();
       button2.dispose();
     });
+  }
+
+  contentChanged(model: INotebookModel): void {
+    if (this._panel) {
+      for (const cell of toArray(this._panel.content.widgets)) {
+        this.cellChanged(null, cell);
+      }
+    }
   }
 }
 
