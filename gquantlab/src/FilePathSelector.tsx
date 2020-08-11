@@ -22,34 +22,55 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
     const Input = styled.input`
       width: 100%;
     `;
-
+    const Group = styled.div`
+      width: 100%;
+    `;
     return (
-      <Input
-        type="text"
-        className="custom"
-        value={this.props.value}
-        required={this.props.required}
-        onChange={(event): any => {
-          return this.props.onChange(event.target.value);
-        }}
-        onClick={(event): any => {
-          if (this.props.formContext.commandRegistry) {
-            const path = this.props.formContext.commandRegistry.execute(
-              'gquant:selectTheFile',
-              { filter: ['.gq.yaml'] }
-            );
-            path.then(
-              (d: any): void => {
-                if (d) {
-                  //event.currentTarget.value = d.path;
-                  this.props.onChange(d.path);
+      <Group>
+        <Input
+          id="taskgraph_editor"
+          type="text"
+          className="custom"
+          value={this.props.value}
+          required={this.props.required}
+          onChange={(event): any => {
+            return this.props.onChange(event.target.value);
+          }}
+          onClick={(event): any => {
+            if (this.props.formContext.commandRegistry) {
+              const path = this.props.formContext.commandRegistry.execute(
+                'gquant:selectTheFile',
+                { filter: ['.gq.yaml'] }
+              );
+              path.then(
+                (d: any): void => {
+                  if (d) {
+                    //event.currentTarget.value = d.path;
+                    this.props.onChange(d.path);
+                  }
+                  // eslint-disable-next-line prettier/prettier
                 }
-                // eslint-disable-next-line prettier/prettier
+              );
             }
-            );
-          }
-        }}
-      />
+          }}
+        />
+        <button
+          onClick={(): void => {
+            console.log('clicked');
+            const inputEle: HTMLInputElement = document.getElementById(
+              'taskgraph_editor'
+            ) as HTMLInputElement;
+            if (this.props.formContext.commandRegistry) {
+              this.props.formContext.commandRegistry.execute(
+                'docmanager:open',
+                { path: inputEle.value }
+              );
+            }
+          }}
+        >
+          Show Taskgraph
+        </button>
+      </Group>
     );
   }
 }
