@@ -6,9 +6,9 @@ from gquant.dataframe_flow.portsSpecSchema import NodePorts
 from gquant.dataframe_flow.cache import (cache_columns,
                                          cache_ports, cache_schema)
 import json
-import copy
 import os
 import hashlib
+from gquant.dataframe_flow.util import get_file_path
 
 INPUT_ID = '4fd31358-fb80-4224-b35f-34402c6c3763'
 
@@ -26,7 +26,7 @@ class CompositeNode(Node):
         input_node = ""
         self.update_replace(replacementObj)
         if 'taskgraph' in self.conf:
-            task_graph = self.conf['taskgraph']
+            task_graph = get_file_path(self.conf['taskgraph'])
             if os.path.exists(task_graph):
                 with open(task_graph) as f:
                     task_graph = hashlib.md5(f.read().encode()).hexdigest()
@@ -48,7 +48,8 @@ class CompositeNode(Node):
         inports = {}
         outports = {}
         if 'taskgraph' in self.conf:
-            task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            task_graphh = TaskGraph.load_taskgraph(
+                get_file_path(self.conf['taskgraph']))
             replacementObj = {}
             self.update_replace(replacementObj)
             task_graphh.build(replace=replacementObj)
@@ -78,7 +79,8 @@ class CompositeNode(Node):
             return cache_columns[cache_key]
         out_columns = {}
         if 'taskgraph' in self.conf:
-            task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            task_graphh = TaskGraph.load_taskgraph(
+                get_file_path(self.conf['taskgraph']))
             replacementObj = {}
             self.update_replace(replacementObj)
             task_graphh.build(replace=replacementObj)
@@ -134,7 +136,8 @@ class CompositeNode(Node):
             "taskgraph": {"ui:widget": "TaskgraphSelector"}
         }
         if 'taskgraph' in self.conf:
-            task_graphh = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            task_graphh = TaskGraph.load_taskgraph(
+                get_file_path(self.conf['taskgraph']))
             replacementObj = {}
             self.update_replace(replacementObj)
             task_graphh.build(replace=replacementObj)
@@ -189,7 +192,8 @@ class CompositeNode(Node):
         dataframe
         """
         if 'taskgraph' in self.conf:
-            task_graph = TaskGraph.load_taskgraph(self.conf['taskgraph'])
+            task_graph = TaskGraph.load_taskgraph(
+                get_file_path(self.conf['taskgraph']))
             task_graph.build()
             if 'input' in self.conf and self.conf['input'] in task_graph:
                 inputNode = task_graph[self.conf['input']]

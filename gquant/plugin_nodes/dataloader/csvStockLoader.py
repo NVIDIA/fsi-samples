@@ -5,6 +5,7 @@ from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
 import cudf
 import dask_cudf
 import pandas as pd
+from gquant.dataframe_flow.util import get_file_path
 
 CUDF_PORT_NAME = 'cudf_out'
 DASK_CUDF_PORT_NAME = 'dask_cudf_out'
@@ -27,7 +28,7 @@ class CsvStockLoader(Node):
             }
         }
         return NodePorts(inports=input_ports, outports=output_ports)
-    
+
     def init(self):
         self.required = {}
 
@@ -83,13 +84,15 @@ class CsvStockLoader(Node):
         """
         output = {}
         if self.outport_connected(CUDF_PORT_NAME):
-            df = cudf.read_csv(self.conf['file'])
+            path = get_file_path(self.conf['file'])
+            df = cudf.read_csv(path)
             # extract the year, month, day
-            ymd = df['DTE'].astype('str').str.extract(r'(\d\d\d\d)(\d\d)(\d\d)')
+            ymd = df['DTE'].astype(
+                'str').str.extract(r'(\d\d\d\d)(\d\d)(\d\d)')
             # construct the standard datetime str
-            df['DTE'] = ymd[0].str.cat(ymd[1],
-                                       '-').str.cat(ymd[2],
-                                                    '-').astype('datetime64[ms]')
+            df['DTE'] = ymd[0].str.cat(
+                ymd[1],
+                '-').str.cat(ymd[2], '-').astype('datetime64[ms]')
             df = df[['DTE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'SM_ID', 'VOLUME']]
             df['VOLUME'] /= 1000
             # change the names
@@ -97,7 +100,8 @@ class CsvStockLoader(Node):
                           'high', 'low', "asset", 'volume']
             output.update({CUDF_PORT_NAME: df})
         if self.outport_connected(PANDAS_PORT_NAME):
-            df = pd.read_csv(self.conf['file'],
+            path = get_file_path(self.conf['file'])
+            df = pd.read_csv(path,
                              converters={'DTE':
                                          lambda x: pd.Timestamp(str(x))})
             df = df[['DTE', 'OPEN',
@@ -108,7 +112,8 @@ class CsvStockLoader(Node):
                           'low', "asset", 'volume']
             output.update({PANDAS_PORT_NAME: df})
         if self.outport_connected(DASK_CUDF_PORT_NAME):
-            df = dask_cudf.read_csv(self.conf['path']+'/*.csv',
+            path = get_file_path(self.conf['path'])
+            df = dask_cudf.read_csv(path+'/*.csv',
                                     parse_dates=['datetime'])
             output.update({DASK_CUDF_PORT_NAME: df})
         return output

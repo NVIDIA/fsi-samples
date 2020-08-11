@@ -1106,10 +1106,13 @@ export class ButtonExtension
   }
 
   cellChanged(notebook: Notebook, cell: Cell): void {
-    console.log(cell);
+    //console.log(cell);
     if (cell instanceof CodeCell) {
       const outputArea = cell.outputArea;
       let widget = outputArea.widgets[0];
+      if (!widget) {
+        return;
+      }
       const children = widget.children();
       //first one is output promot
       children.next();
@@ -1156,7 +1159,6 @@ export class ButtonExtension
       const mainView = widget.children().next() as MainView;
       return mainView;
     }
-
 
     panel.content.activeCellChanged.connect(this.cellChanged, this);
 

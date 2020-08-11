@@ -5,7 +5,7 @@ from notebook.utils import url_path_join
 import tornado
 from gquant.dataframe_flow import TaskGraph
 from .server_utils import (get_nodes, add_nodes)
-
+import os
 
 class RouteHandlerLoadGraph(APIHandler):
     @tornado.web.authenticated
@@ -44,7 +44,7 @@ class RouteHandlerLoadAllNodes(APIHandler):
 def setup_handlers(web_app):
     host_pattern = ".*$"
     base_url = web_app.settings["base_url"]
-
+    os.environ['GQUANTROOT'] = os.getcwd()
     # load all the graphs given the input gq.yaml file contents
     route_pattern0 = url_path_join(base_url, "gquantlab", "load_graph")
     route_pattern1 = url_path_join(base_url, "gquantlab", "all_nodes")
