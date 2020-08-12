@@ -13,7 +13,6 @@ import { IMainMenu } from '@jupyterlab/mainmenu';
 import { Token } from '@lumino/coreutils';
 
 import { MODULE_NAME, MODULE_VERSION } from './version';
-import { CommandRegistry } from '@lumino/commands';
 import * as widgetExports from './widget';
 
 import { requestAPI } from './gquantlab';
@@ -54,10 +53,9 @@ import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 import {
   INotebookTracker,
   NotebookPanel,
-  INotebookModel,
-  Notebook
+  INotebookModel
 } from '@jupyterlab/notebook';
-import { CodeCell, Cell } from '@jupyterlab/cells';
+import { CodeCell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 import YAML from 'yaml';
 import { EditorPanel } from './EditorPanel';
@@ -202,7 +200,10 @@ function activateFun(
     name: FACTORY,
     fileTypes: ['gq.yaml'],
     defaultFor: ['gq.yaml'],
-    toolbarFactory: (widget: Widget) => {
+    toolbarFactory: (widget: Widget): DocumentRegistry.IToolbarItem[] => {
+      const main = widget as MainView;
+      main.contentHandler.commandRegistry = app.commands;
+
       const layoutCallback = (): void => {
         const mainView = widget as MainView;
         mainView.contentHandler.reLayoutSignal.emit();
@@ -332,15 +333,6 @@ function activateFun(
     const gquantVisible =
       tracker.currentWidget !== null &&
       tracker.currentWidget === app.shell.currentWidget;
-    const mainView = app.shell.currentWidget as MainView;
-    if (gquantVisible) {
-      if (
-        mainView.contentHandler &&
-        mainView.contentHandler.commandRegistry === undefined
-      ) {
-        mainView.contentHandler.commandRegistry = app.commands;
-      }
-    }
     return gquantVisible;
   }
 
@@ -1087,6 +1079,8 @@ function activateWidget(
   app: JupyterFrontEnd,
   jupyterWidgetRegistry: IJupyterWidgetRegistry
 ): void {
+  // passing the commands registry
+  widgetExports.GQuantView.commands = app.commands;
   jupyterWidgetRegistry.registerWidget({
     name: MODULE_NAME,
     version: MODULE_VERSION,
@@ -1099,44 +1093,6 @@ function activateWidget(
  */
 export class ButtonExtension
   implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
-  private _commandsRegistry: CommandRegistry;
-
-  constructor(commands: CommandRegistry) {
-    this._commandsRegistry = commands;
-  }
-
-  cellChanged(notebook: Notebook, cell: Cell): void {
-    //console.log(cell);
-    if (cell instanceof CodeCell) {
-      const outputArea = cell.outputArea;
-      let widget = outputArea.widgets[0];
-      if (!widget) {
-        return;
-      }
-      const children = widget.children();
-      //first one is output promot
-      children.next();
-      //second one is output wrapper
-      widget = children.next();
-      if (!widget) {
-        return;
-      }
-      // this is the panel
-      widget = widget.children().next();
-      if (!widget) {
-        return;
-      }
-      // this is the mainview
-      const mainView = widget.children().next() as MainView;
-      if (
-        mainView.contentHandler &&
-        mainView.contentHandler.commandRegistry === undefined
-      ) {
-        mainView.contentHandler.commandRegistry = this._commandsRegistry;
-      }
-    }
-  }
-
   /**
    * Create a new extension object.
    */
@@ -1159,11 +1115,6 @@ export class ButtonExtension
       const mainView = widget.children().next() as MainView;
       return mainView;
     }
-
-    panel.model.contentChanged.connect(
-      this.contentChanged.bind(this, panel),
-      this
-    );
 
     const callback = (): void => {
       if (isEnabled(panel.content.activeCell)) {
@@ -1203,22 +1154,13 @@ export class ButtonExtension
       button2.dispose();
     });
   }
-
-  contentChanged(notebook: NotebookPanel, model: INotebookModel): void {
-    for (const cell of toArray(notebook.content.widgets)) {
-      this.cellChanged(null, cell);
-    }
-  }
 }
 
 /**
  * Activate the extension.
  */
 function activate(app: JupyterFrontEnd): void {
-  app.docRegistry.addWidgetExtension(
-    'Notebook',
-    new ButtonExtension(app.commands)
-  );
+  app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension());
 }
 
 /**

@@ -8,6 +8,7 @@ import { MODULE_NAME, MODULE_VERSION } from './version';
 import { ContentHandler } from './document';
 import { MainView } from './mainComponent';
 import { Panel } from '@lumino/widgets';
+import { CommandRegistry } from '@lumino/commands';
 
 export class GQuantModel extends DOMWidgetModel {
   static serializers = {
@@ -39,12 +40,16 @@ export class GQuantModel extends DOMWidgetModel {
 }
 
 export class GQuantView extends DOMWidgetView {
+  static commands: CommandRegistry = null;
   private _contentHandler: ContentHandler;
   private _widget: MainView;
   views: ViewList<DOMWidgetView>;
 
   render(): void {
     this._contentHandler = new ContentHandler(null);
+    if (GQuantView.commands) {
+      this._contentHandler.commandRegistry = GQuantView.commands;
+    }
     this._contentHandler.runGraph.connect(this.run, this);
     this._contentHandler.cleanResult.connect(this.clean, this);
     const pane = new Panel();
