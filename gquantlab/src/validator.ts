@@ -5,7 +5,14 @@ function valid(required: any, outputs: any): boolean {
   const keys = Object.keys(required);
   for (let i = 0; i < keys.length; i++) {
     const d = keys[i];
-    if (!(d in outputs && required[d] === outputs[d])) {
+    if (
+      !(
+        d in outputs &&
+        (outputs[d] === null ||
+          required[d] === null ||
+          required[d] === outputs[d])
+      )
+    ) {
       return false;
     }
   }

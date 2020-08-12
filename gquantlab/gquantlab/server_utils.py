@@ -127,12 +127,12 @@ def get_node_obj(node):
                 'conf': conf,
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
-    out_node['required'] = node.required
     out_node['output_columns'] = node.columns_setup()
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
     if node._task_obj.get('module'):
         out_node['module'] = node._task_obj.get('module')
+    out_node['required'] = node.required
     return out_node
 
 
