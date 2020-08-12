@@ -121,19 +121,26 @@ class CompositeNode(Node):
                     "type": "string",
                     "description": "the output node id"
                 },
-                "subnodes":  {
+                "subnode_ids":  {
+                    "title": self.uid+" subnode ids",
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
-                    "description": """sub graph node ids that need 
+                    "description": """sub graph node ids that need
                     to be reconfigured"""
+                },
+                "subnodes_conf":  {
+                    "title": self.uid+" subnodes configuration",
+                    "type": "object",
+                    "properties": {}
                 }
             },
             "required": ["taskgraph"],
         }
         ui = {
-            "taskgraph": {"ui:widget": "TaskgraphSelector"}
+            "taskgraph": {"ui:widget": "TaskgraphSelector"},
+            "subnodes_conf": {}
         }
         if 'taskgraph' in self.conf:
             task_graphh = TaskGraph.load_taskgraph(
@@ -157,28 +164,40 @@ class CompositeNode(Node):
                 ids_in_graph.append(t.get('id'))
             json['properties']['input']['enum'] = ids_in_graph
             json['properties']['output']['enum'] = ids_in_graph
-            json['properties']['subnodes']['items']['enum'] = ids_in_graph
-        if 'subnodes' in self.conf:
-            for subnodeId in self.conf['subnodes']:
+            json['properties']['subnode_ids']['items']['enum'] = ids_in_graph
+        if 'subnode_ids' in self.conf:
+            for subnodeId in self.conf['subnode_ids']:
                 if subnodeId in task_graphh:
                     nodeObj = task_graphh[subnodeId]
                     schema = nodeObj.conf_schema()
-                    json['properties']['conf_id.'+subnodeId] = schema.json    
-                    ui['conf_id.'+subnodeId] = schema.ui
+                    json['properties'][
+                        "subnodes_conf"]['properties'][subnodeId] = {
+                            "type": "object",
+                            "properties": {
+                                "conf": schema.json
+                            }
+                    }
+                    ui["subnodes_conf"].update({
+                        subnodeId: {
+                            'conf': schema.ui
+                        }
+                    })
         out_schema = ConfSchema(json=json, ui=ui)
         cache_schema[cache_key] = out_schema
         return out_schema
 
     def update_replace(self, replaceObj):
         # find the other replacment conf
-        for key in self.conf:
-            if key.startswith('conf_id.'):
-                newid = key.split('.')[1]
+        if 'subnodes_conf' in self.conf:
+            for key in self.conf['subnodes_conf'].keys():
+                newid = key
                 if newid in replaceObj:
-                    replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
+                    replaceObj[newid].update(self.conf[
+                        'subnodes_conf'][key])
                 else:
                     replaceObj[newid] = {}
-                    replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
+                    replaceObj[newid].update(self.conf[
+                        'subnodes_conf'][key])
 
     def process(self, inputs):
         """
@@ -257,16 +276,7 @@ class CompositeNode(Node):
                  TaskSpecSchema.inputs: newInputs
                 }
             }
-            # find the other replacment conf
-            for key in self.conf:
-                if key.startswith('conf_id.'):
-                    newid = key.split('.')[1]
-                    if newid in replaceObj:
-                        replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
-                    else:
-                        replaceObj[newid] = {}
-                        replaceObj[newid][TaskSpecSchema.conf] = self.conf[key]
-
+            self.update_replace(replaceObj)
             result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():

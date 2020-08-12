@@ -1,66 +1,3 @@
-- id: xgboost_graph
-  type: CompositeNode
-  conf:
-    subnodes:
-      - preprocess
-      - technical_indicator
-    conf_id.preprocess:
-      subnodes:
-        - value_filter
-        - drop_columns
-      conf_id.value_filter:
-        - column: min_return
-          min: -10
-        - column: max_return
-          max: 10
-        - column: average_volume
-          min: 400
-      conf_id.drop_columns:
-        columns:
-          - min_return
-          - max_return
-          - average_volume
-      taskgraph: taskgraphs/preprocess.gq.yaml
-      input: sort_node
-      output: drop_columns
-    conf_id.technical_indicator:
-      indicators:
-        - function: port_fractional_diff
-          args:
-            - 0.1
-          columns:
-            - close
-        - function: port_fractional_diff
-          args:
-            - 0.3
-          columns:
-            - close
-        - function: port_fractional_diff
-          args:
-            - 0.5
-          columns:
-            - close
-        - function: port_fractional_diff
-          args:
-            - 0.7
-          columns:
-            - close
-        - function: port_fractional_diff
-          args:
-            - 0.9
-          columns:
-            - close
-        - function: port_shift
-          args:
-            - -1
-          columns:
-            - returns
-      remove_na: true
-    taskgraph: taskgraphs/xgboost_trade.gq.yaml
-    output: technical_indicator
-    input: preprocess
-  inputs:
-    in: stock_data.cudf_out
 - id: stock_data
   type: CsvStockLoader
   conf:
@@ -98,3 +35,72 @@
     title: signals
   inputs:
     in: asset_filter.stock_out
+- id: xgboost_graph
+  type: CompositeNode
+  conf:
+    subnode_ids:
+      - preprocess
+      - technical_indicator
+    subnodes_conf:
+      preprocess:
+        conf:
+          subnode_ids:
+            - value_filter
+            - drop_columns
+          subnodes_conf:
+            value_filter:
+              conf:
+                - column: average_volume
+                  min: 400
+                - column: min_return
+                  min: -10
+                - column: max_return
+                  max: 10
+            drop_columns:
+              conf:
+                columns:
+                  - min_return
+                  - max_return
+                  - average_volume
+          taskgraph: taskgraphs/preprocess.gq.yaml
+          input: sort_node
+          output: drop_columns
+      technical_indicator:
+        conf:
+          indicators:
+            - function: port_fractional_diff
+              args:
+                - 0.1
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.3
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.5
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.7
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.9
+              columns:
+                - close
+            - function: port_shift
+              args:
+                - -1
+              columns:
+                - returns
+          remove_na: true
+    taskgraph: taskgraphs/xgboost_trade.gq.yaml
+    input: preprocess
+    output: technical_indicator
+  inputs:
+    in: stock_data.cudf_out

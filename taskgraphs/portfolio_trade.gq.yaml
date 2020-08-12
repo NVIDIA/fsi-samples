@@ -7,15 +7,17 @@
 - id: preprocess
   type: CompositeNode
   conf:
-    subnodes:
+    subnode_ids:
       - value_filter
-    conf_id.value_filter:
-      - column: average_volume
-        min: 400
-      - column: min_return
-        min: -10
-      - column: max_return
-        max: 10
+    subnodes_conf:
+      value_filter:
+        conf:
+          - column: min_return
+            min: -10
+          - column: max_return
+            max: 10
+          - column: average_volume
+            min: 400
     taskgraph: taskgraphs/preprocess.gq.yaml
     input: sort_node
     output: drop_columns

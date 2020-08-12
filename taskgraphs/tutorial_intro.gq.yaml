@@ -12,12 +12,14 @@
 - id: get_return
   type: CompositeNode
   conf:
-    subnodes:
+    subnode_ids:
       - volume_filter
-    conf_id.volume_filter:
-      - column: volume
-        min: 100
-    taskgraph: /home/quant/gQuant/taskgraphs/get_return_feature.gq.yaml
+    subnodes_conf:
+      volume_filter:
+        conf:
+          - column: volume
+            min: 100
+    taskgraph: taskgraphs/get_return_feature.gq.yaml
     input: volume_filter
     output: add_return_feature
   inputs:
