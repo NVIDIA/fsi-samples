@@ -9,14 +9,18 @@ import { ContentHandler, INode } from './document';
 import { MainView } from './mainComponent';
 import { Panel, Widget } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
+import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
+
 import { Toolbar, CommandToolbarButton } from '@jupyterlab/apputils';
 import {
-  COMMAND_TOOL_BAR_RELAYOUT,
-  COMMAND_TOOL_BAR_EXECUTE,
-  COMMAND_TOOL_BAR_CLEAN,
-  COMMAND_TOOL_BAR_OPEN_NEW_FILE,
-  COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE
+    COMMAND_TOOL_BAR_RELAYOUT,
+    COMMAND_TOOL_BAR_EXECUTE,
+    COMMAND_TOOL_BAR_CLEAN,
+    COMMAND_TOOL_BAR_OPEN_NEW_FILE,
+    COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE,
+    setupToolBarCommands
 } from './commands';
+import { JupyterFrontEnd } from '@jupyterlab/application';
 
 export class GQuantModel extends DOMWidgetModel {
   static serializers = {
@@ -48,14 +52,13 @@ export class GQuantModel extends DOMWidgetModel {
 }
 
 export class GQuantView extends DOMWidgetView {
-  static commands: CommandRegistry = null;
+  static apps: JupyterFrontEnd = null;
+  static browserFactory: IFileBrowserFactory = null;
   private _contentHandler: ContentHandler;
   private _widget: MainView;
   views: ViewList<DOMWidgetView>;
 
-  addCommands(toolBar: Toolbar, contentHandler: ContentHandler): void {
-    const commands = GQuantView.commands;
-
+  addCommands(commands: CommandRegistry, toolBar: Toolbar): void {
     const item0 = new CommandToolbarButton({
       commands: commands,
       id: COMMAND_TOOL_BAR_RELAYOUT
@@ -86,8 +89,8 @@ export class GQuantView extends DOMWidgetView {
 
   render(): void {
     this._contentHandler = new ContentHandler(null);
-    if (GQuantView.commands) {
-      this._contentHandler.commandRegistry = GQuantView.commands;
+    if (GQuantView.apps) {
+      this._contentHandler.commandRegistry = GQuantView.apps.commands;
     }
     this._contentHandler.runGraph.connect(this.run, this);
     this._contentHandler.cleanResult.connect(this.clean, this);
@@ -102,8 +105,15 @@ export class GQuantView extends DOMWidgetView {
     this.model.on('change:cache', this.cache_changed, this);
     this.views = new ViewList<DOMWidgetView>(this.addView, null, this);
     this.model.on('change:sub', this.sub_changed, this);
-    this.addCommands(toolBar, this._contentHandler);
-    //this.views.update([this.model.get('sub')]);
+    const commands = new CommandRegistry();
+    setupToolBarCommands(
+      commands,
+      this._contentHandler,
+      GQuantView.browserFactory,
+      GQuantView.apps.commands,
+      GQuantView.apps
+    );
+    this.addCommands(commands, toolBar);
   }
 
   run(): void {

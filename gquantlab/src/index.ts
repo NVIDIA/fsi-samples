@@ -180,7 +180,7 @@ const extension: JupyterFrontEndPlugin<void> = {
 
 const gquantWidget: JupyterFrontEndPlugin<void> = {
   id: 'gquantlab',
-  requires: [IJupyterWidgetRegistry],
+  requires: [IFileBrowserFactory, IJupyterWidgetRegistry],
   optional: [ILauncher],
   autoStart: true,
   activate: activateWidget
@@ -614,10 +614,12 @@ function activateFun(
 
 function activateWidget(
   app: JupyterFrontEnd,
+  browserFactory: IFileBrowserFactory,
   jupyterWidgetRegistry: IJupyterWidgetRegistry
 ): void {
   // passing the commands registry
-  widgetExports.GQuantView.commands = app.commands;
+  widgetExports.GQuantView.apps = app;
+  widgetExports.GQuantView.browserFactory = browserFactory;
   jupyterWidgetRegistry.registerWidget({
     name: MODULE_NAME,
     version: MODULE_VERSION,

@@ -13,7 +13,7 @@ import {
 } from '.';
 import { IFileBrowserFactory, FileDialog } from '@jupyterlab/filebrowser';
 import { folderIcon, editIcon, notebookIcon } from '@jupyterlab/ui-components';
-import { IChartInput, INode } from './document';
+import { IChartInput, INode, ContentHandler } from './document';
 import { requestAPI } from './gquantlab';
 import { Widget } from '@lumino/widgets';
 import { EditorPanel } from './EditorPanel';
@@ -158,17 +158,6 @@ export function setupCommands(
     isVisible: isCellVisible
   });
 
-  commands.addCommand(COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE, {
-    label: '',
-    caption: 'Create Taskgraph from this Cell',
-    icon: gqIcon,
-    execute: async (args: any) => {
-      //const cwd = notebookTracker.currentWidget.context.path;
-      const cwd = browserFactory.defaultBrowser.model.path;
-      return convertToGQFile(cwd);
-    }
-  });
-
   commands.addCommand(COMMAND_SELECT_FILE, {
     label: 'Select the file',
     caption: 'Select the file',
@@ -248,16 +237,6 @@ export function setupCommands(
       }
     },
     isVisible: isCellVisible
-  });
-
-  commands.addCommand(COMMAND_TOOL_BAR_OPEN_NEW_FILE, {
-    label: '',
-    caption: 'Open TaskGraph file',
-    icon: folderIcon,
-    mnemonic: 0,
-    execute: async () => {
-      commands.execute(COMMAND_OPEN_NEW_FILE);
-    }
   });
 
   commands.addCommand(COMMAND_NEW_TASK_GRAPH, {
@@ -421,16 +400,6 @@ export function setupCommands(
     isVisible
   });
 
-  commands.addCommand(COMMAND_TOOL_BAR_RELAYOUT, {
-    label: '',
-    caption: 'Taskgraph Nodes Auto Layout',
-    icon: layoutIcon,
-    mnemonic: 0,
-    execute: () => {
-      commands.execute(COMMAND_RELAYOUT);
-    }
-  });
-
   commands.addCommand(COMMAND_CHANGE_ASPECT_RATIO, {
     label: args => 'AspectRatio ' + args.aspect.toString(),
     caption: 'AspectRatio 1.0',
@@ -464,16 +433,6 @@ export function setupCommands(
     isVisible: isCellVisible
   });
 
-  commands.addCommand(COMMAND_TOOL_BAR_EXECUTE, {
-    label: '',
-    caption: 'Run',
-    icon: runIcon,
-    mnemonic: 0,
-    execute: async () => {
-      commands.execute(COMMAND_EXECUTE);
-    }
-  });
-
   commands.addCommand(COMMAND_CLEAN, {
     label: 'Clean Result',
     caption: 'Clean Result',
@@ -488,16 +447,6 @@ export function setupCommands(
       }
     },
     isVisible: isCellVisible
-  });
-
-  commands.addCommand(COMMAND_TOOL_BAR_CLEAN, {
-    label: '',
-    caption: 'Clean Result',
-    icon: cleanIcon,
-    mnemonic: 0,
-    execute: async () => {
-      commands.execute(COMMAND_CLEAN);
-    }
   });
 
   commands.addCommand(COMMAND_ADD_OUTPUT_COLLECTOR, {
@@ -529,5 +478,98 @@ export function setupCommands(
       }
     },
     isVisible: isVisible
+  });
+}
+
+export function setupToolBarCommands(
+  commands: CommandRegistry,
+  contentHandler: ContentHandler,
+  browserFactory: IFileBrowserFactory,
+  systemCommands: CommandRegistry,
+  app: JupyterFrontEnd
+): void {
+  const convertToGQFile = async (cwd: string): Promise<void> => {
+    const model = await systemCommands.execute('docmanager:new-untitled', {
+      path: cwd,
+      type: 'file',
+      ext: '.gq.yaml'
+    });
+    const obj = contentHandler.privateCopy.get('value');
+    model.content = YAML.stringify(obj);
+    model.format = 'text';
+    app.serviceManager.contents.save(model.path, model);
+  };
+
+  commands.addCommand(COMMAND_TOOL_BAR_OPEN_NEW_FILE, {
+    label: '',
+    caption: 'Open TaskGraph file',
+    icon: folderIcon,
+    mnemonic: 0,
+    execute: async () => {
+      const dialog = FileDialog.getOpenFiles({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        filter: model => model.path.endsWith('.gq.yaml')
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        // console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          // only 1 file is allowed
+          const payload = { path: values[0].path };
+          const workflows: IChartInput = await requestAPI<any>(
+            'load_graph_path',
+            {
+              body: JSON.stringify(payload),
+              method: 'POST'
+            }
+          );
+          contentHandler.contentReset.emit(workflows);
+        }
+        //let files = result.value;
+      }
+    }
+  });
+
+  commands.addCommand(COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE, {
+    label: '',
+    caption: 'Create Taskgraph from this Cell',
+    icon: gqIcon,
+    execute: async (args: any) => {
+      //const cwd = notebookTracker.currentWidget.context.path;
+      const cwd = browserFactory.defaultBrowser.model.path;
+      return convertToGQFile(cwd);
+    }
+  });
+
+  commands.addCommand(COMMAND_TOOL_BAR_RELAYOUT, {
+    label: '',
+    caption: 'Taskgraph Nodes Auto Layout',
+    icon: layoutIcon,
+    mnemonic: 0,
+    execute: () => {
+      contentHandler.reLayoutSignal.emit();
+    }
+  });
+
+  commands.addCommand(COMMAND_TOOL_BAR_EXECUTE, {
+    label: '',
+    caption: 'Run',
+    icon: runIcon,
+    mnemonic: 0,
+    execute: async () => {
+      contentHandler.saveCache.emit();
+      contentHandler.runGraph.emit();
+    }
+  });
+
+  commands.addCommand(COMMAND_TOOL_BAR_CLEAN, {
+    label: '',
+    caption: 'Clean Result',
+    icon: cleanIcon,
+    mnemonic: 0,
+    execute: async () => {
+      contentHandler.cleanResult.emit();
+    }
   });
 }
