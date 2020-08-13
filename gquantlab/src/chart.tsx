@@ -175,7 +175,6 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       const findDup = this.props.nodes.findIndex(
         (d: INode) => d.id === OUTPUT_COLLECTOR
       );
-      console.log(findDup);
       if (findDup >= 0) {
         return;
       }
@@ -475,7 +474,6 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   fullUpdate(nodes: INode[], edges: IEdge[]): void {
     const content = exportWorkFlowNodes(nodes, edges);
     const jsonString = JSON.stringify(content);
-    this.drawLinks();
     this._updateInputs(jsonString, nodes, edges);
   }
 

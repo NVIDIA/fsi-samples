@@ -75,27 +75,35 @@ class NodeEditor extends React.Component<IEditorProp> {
 
   handleSave(d: any): void {
     const id = this.props.nodeDatum.id;
-    const newNodes = this.props.nodes.filter(d => d.id !== id);
+    const newNodes = this.props.nodes.filter(node => node.id !== id);
     const nodeName = this.myRef.current.value;
     //let nodeConf = d.currentTarget.parentElement.getElementsByTagName('textarea')[0].value;
-    if (newNodes.findIndex(d => d.id === nodeName) >= 0) {
+    if (newNodes.findIndex(node => node.id === nodeName) >= 0) {
       window.alert(`the node id ${nodeName} is not unique`);
       return;
     }
-    this.props.nodeDatum.id = nodeName;
-    this.props.nodeDatum.conf = d.formData;
-    const newEdges = this.props.edges.map(d => {
-      let oldNodeName = d.from.split('.')[0];
+    // this.props.nodeDatum.id = nodeName;
+    // this.props.nodeDatum.conf = d.formData;
+    const newEdges = this.props.edges.map(edge => {
+      let oldNodeName = edge.from.split('.')[0];
       if (oldNodeName === id) {
-        d.from = nodeName + '.' + d.from.split('.')[1];
+        edge.from = nodeName + '.' + edge.from.split('.')[1];
       }
-      oldNodeName = d.to.split('.')[0];
+      oldNodeName = edge.to.split('.')[0];
       if (oldNodeName === id) {
-        d.to = nodeName + '.' + d.to.split('.')[1];
+        edge.to = nodeName + '.' + edge.to.split('.')[1];
       }
-      return d;
+      return edge;
     });
-    this.props.setChartState({ nodes: this.props.nodes, edges: newEdges });
+
+    const outNewNodes = this.props.nodes.map(node => {
+      if (node.id === id) {
+        node.id = nodeName;
+        node.conf = d.formData;
+      }
+      return node;
+    });
+    this.props.setChartState({ nodes: outNewNodes, edges: newEdges });
     // this.props.handler.updateEditor.emit({
     //   nodes: [],
     //   nodeDatum: {},
