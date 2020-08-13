@@ -34,7 +34,6 @@ import { folderIcon } from '@jupyterlab/ui-components';
 
 import { ToolbarButton } from '@jupyterlab/apputils';
 
-import { IDisposable, DisposableDelegate } from '@lumino/disposable';
 import { toArray } from '@lumino/algorithm';
 import {
   ICommandPalette,
@@ -50,11 +49,7 @@ import {
 } from './document';
 import { Menu, Widget } from '@lumino/widgets';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
-import {
-  INotebookTracker,
-  NotebookPanel,
-  INotebookModel
-} from '@jupyterlab/notebook';
+import { INotebookTracker } from '@jupyterlab/notebook';
 import { CodeCell } from '@jupyterlab/cells';
 import { MainView, OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 import YAML from 'yaml';
@@ -411,6 +406,17 @@ function activateFun(
     isVisible: isCellVisible
   });
 
+  commands.addCommand('gquant:toolbarConvertCellToFile', {
+    label: '',
+    caption: 'Create Taskgraph from this Cell',
+    icon: gqIcon,
+    execute: async (args: any) => {
+      //const cwd = notebookTracker.currentWidget.context.path;
+      const cwd = browserFactory.defaultBrowser.model.path;
+      return convertToGQFile(cwd);
+    }
+  });
+
   commands.addCommand('gquant:selectTheFile', {
     label: 'Select the file',
     caption: 'Select the file',
@@ -493,6 +499,16 @@ function activateFun(
       }
     },
     isVisible: isCellVisible
+  });
+
+  commands.addCommand('gquant:toolbaropenTaskGraph', {
+    label: '',
+    caption: 'Open TaskGraph file',
+    icon: folderIcon,
+    mnemonic: 0,
+    execute: async () => {
+      commands.execute('gquant:openNewFile');
+    }
   });
 
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -674,6 +690,16 @@ function activateFun(
     isVisible
   });
 
+  commands.addCommand('gquant:toolbarReLayout', {
+    label: '',
+    caption: 'Taskgraph Nodes Auto Layout',
+    icon: layoutIcon,
+    mnemonic: 0,
+    execute: () => {
+      commands.execute('gquant:reLayout');
+    }
+  });
+
   commands.addCommand('gquant:aspect1', {
     label: 'AspectRatio 1.0',
     caption: 'AspectRatio 1.0',
@@ -835,6 +861,16 @@ function activateFun(
     isVisible: isCellVisible
   });
 
+  commands.addCommand('gquant:toolbarexecute', {
+    label: '',
+    caption: 'Run',
+    icon: runIcon,
+    mnemonic: 0,
+    execute: async () => {
+      commands.execute(commandExecute);
+    }
+  });
+
   commands.addCommand(commandClean, {
     label: 'Clean Result',
     caption: 'Clean Result',
@@ -849,6 +885,16 @@ function activateFun(
       }
     },
     isVisible: isCellVisible
+  });
+
+  commands.addCommand('gquant:toolbarcleanResult', {
+    label: '',
+    caption: 'Clean Result',
+    icon: cleanIcon,
+    mnemonic: 0,
+    execute: async () => {
+      commands.execute(commandClean);
+    }
   });
 
   app.contextMenu.addItem({
@@ -1089,95 +1135,7 @@ function activateWidget(
 }
 
 /**
- * A notebook widget extension that adds a button to the toolbar.
- */
-export class ButtonExtension
-  implements DocumentRegistry.IWidgetExtension<NotebookPanel, INotebookModel> {
-  /**
-   * Create a new extension object.
-   */
-  createNew(
-    panel: NotebookPanel,
-    _context: DocumentRegistry.IContext<INotebookModel>
-  ): IDisposable {
-    function getMainView(): MainView {
-      const codecell = panel.content.activeCell as CodeCell;
-      const outputArea = codecell.outputArea;
-      let widget = outputArea.widgets[0];
-      const children = widget.children();
-      //first one is output promot
-      children.next();
-      //second one is output wrapper
-      widget = children.next();
-      // this is the panel
-      widget = widget.children().next();
-      // this is the mainview
-      const mainView = widget.children().next() as MainView;
-      return mainView;
-    }
-
-    const callback = (): void => {
-      if (isEnabled(panel.content.activeCell)) {
-        const mainView = getMainView();
-        mainView.contentHandler.saveCache.emit();
-        mainView.contentHandler.runGraph.emit();
-      }
-    };
-
-    const layoutCallback = (): void => {
-      if (isEnabled(panel.content.activeCell)) {
-        const mainView = getMainView();
-        mainView.contentHandler.saveCache.emit();
-        mainView.contentHandler.reLayoutSignal.emit();
-      }
-    };
-
-    const button = new ToolbarButton({
-      className: 'myButton',
-      icon: runIcon,
-      onClick: callback,
-      tooltip: 'Run GQuant TaskGraph'
-    });
-
-    const button2 = new ToolbarButton({
-      className: 'myButton',
-      icon: layoutIcon,
-      onClick: layoutCallback,
-      tooltip: 'Taskgraph Nodes Auto Layout'
-    });
-
-    panel.toolbar.insertItem(0, 'runAll', button);
-    panel.toolbar.insertAfter('runAll', 'layout', button2);
-
-    return new DisposableDelegate(() => {
-      button.dispose();
-      button2.dispose();
-    });
-  }
-}
-
-/**
- * Activate the extension.
- */
-function activate(app: JupyterFrontEnd): void {
-  app.docRegistry.addWidgetExtension('Notebook', new ButtonExtension());
-}
-
-/**
- * The plugin registration information.
- */
-const buttonExtension: JupyterFrontEndPlugin<void> = {
-  activate,
-  id: 'my-extension-name:buttonPlugin',
-  autoStart: true
-};
-
-/**
  * Export the plugins as default.
  */
-const plugins: JupyterFrontEndPlugin<any>[] = [
-  extension,
-  gquantWidget,
-  buttonExtension
-];
+const plugins: JupyterFrontEndPlugin<any>[] = [extension, gquantWidget];
 export default plugins;

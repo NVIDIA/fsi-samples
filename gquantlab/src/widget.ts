@@ -7,8 +7,9 @@ import * as widgets from '@jupyter-widgets/base';
 import { MODULE_NAME, MODULE_VERSION } from './version';
 import { ContentHandler } from './document';
 import { MainView } from './mainComponent';
-import { Panel } from '@lumino/widgets';
+import { Panel, Widget } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
+import { Toolbar, CommandToolbarButton } from '@jupyterlab/apputils';
 
 export class GQuantModel extends DOMWidgetModel {
   static serializers = {
@@ -45,6 +46,42 @@ export class GQuantView extends DOMWidgetView {
   private _widget: MainView;
   views: ViewList<DOMWidgetView>;
 
+  addCommands(toolBar: Toolbar, contentHandler: ContentHandler): void {
+    const commands = GQuantView.commands;
+    const LAYOUT_COMMAND = 'gquant:toolbarReLayout';
+    const COMMANDEXECUTE = 'gquant:toolbarexecute';
+    const COMMANDCLEAN = 'gquant:toolbarcleanResult';
+    const OPENTASKGRAPH = 'gquant:toolbaropenTaskGraph';
+    const CREATEFILE = 'gquant:toolbarConvertCellToFile';
+
+    const item0 = new CommandToolbarButton({
+      commands: commands,
+      id: LAYOUT_COMMAND
+    });
+    const item1 = new CommandToolbarButton({
+      commands: commands,
+      id: COMMANDEXECUTE
+    });
+    const item2 = new CommandToolbarButton({
+      commands: commands,
+      id: COMMANDCLEAN
+    });
+    const item3 = new CommandToolbarButton({
+      commands: commands,
+      id: OPENTASKGRAPH
+    });
+    const item4 = new CommandToolbarButton({
+      commands: commands,
+      id: CREATEFILE
+    });
+
+    toolBar.addItem('relayout', item0);
+    toolBar.addItem('run', item1);
+    toolBar.addItem('clean', item2);
+    toolBar.addItem('open', item3);
+    toolBar.addItem('create', item4);
+  }
+
   render(): void {
     this._contentHandler = new ContentHandler(null);
     if (GQuantView.commands) {
@@ -54,13 +91,16 @@ export class GQuantView extends DOMWidgetView {
     this._contentHandler.cleanResult.connect(this.clean, this);
     const pane = new Panel();
     this._widget = new MainView(this._contentHandler);
+    const toolBar = new Toolbar<Widget>();
     pane.addWidget(this._widget);
+    pane.addWidget(toolBar);
     this.pWidget = pane;
     this._contentHandler.renderGraph(this.model.get('value'));
     this._contentHandler.setPrivateCopy(this.model);
     this.model.on('change:cache', this.cache_changed, this);
     this.views = new ViewList<DOMWidgetView>(this.addView, null, this);
     this.model.on('change:sub', this.sub_changed, this);
+    this.addCommands(toolBar, this._contentHandler);
     //this.views.update([this.model.get('sub')]);
   }
 
@@ -80,10 +120,10 @@ export class GQuantView extends DOMWidgetView {
     const subView = this.create_child_view(value);
     subView.then(view => {
       const pane = this.pWidget as Panel;
-      if (pane.widgets.length === 2) {
-        pane.layout.removeWidget(pane.widgets[1]);
+      if (pane.widgets.length === 3) {
+        pane.layout.removeWidget(pane.widgets[2]);
       }
-      pane.insertWidget(1, view.pWidget);
+      pane.insertWidget(2, view.pWidget);
     });
     this.views.update([value]);
   }
