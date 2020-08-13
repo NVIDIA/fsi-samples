@@ -1,17 +1,8 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-//import { ReactWidget } from '@jupyterlab/apputils';
 import React from 'react';
+import { COMMAND_SELECT_FILE, COMMAND_SELECT_PATH } from './commands';
 import { WidgetProps } from '@rjsf/core';
 import styled from '@emotion/styled';
-//import { UseSignal } from '@jupyterlab/apputils';
-//import { ContentHandler, IChartInput } from './document';
-//import { ContentHandler } from './document';
-//import { Widget } from '@lumino/widgets';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-// import { ChartEngine } from './chartEngine';
-// import { Message } from '@lumino/messaging';
-//import NodeEditor from './nodeEditor';
-//import { IEditorProp } from './nodeEditor';
 
 function uuidv4(): string {
   return Math.random()
@@ -47,7 +38,7 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
           onClick={(event): any => {
             if (this.props.formContext.commandRegistry) {
               const path = this.props.formContext.commandRegistry.execute(
-                'gquant:selectTheFile',
+                COMMAND_SELECT_FILE,
                 { filter: ['.gq.yaml'] }
               );
               path.then(
@@ -104,7 +95,7 @@ export class CsvFileSelector extends React.Component<WidgetProps> {
         onClick={(event): any => {
           if (this.props.formContext.commandRegistry) {
             const path = this.props.formContext.commandRegistry.execute(
-              'gquant:selectTheFile',
+              COMMAND_SELECT_FILE,
               { filter: ['.csv', '.csv.gz'] }
             );
             path.then(
@@ -145,7 +136,7 @@ export class FileSelector extends React.Component<WidgetProps> {
         onClick={(event): any => {
           if (this.props.formContext.commandRegistry) {
             const path = this.props.formContext.commandRegistry.execute(
-              'gquant:selectTheFile'
+              COMMAND_SELECT_FILE
             );
             path.then(
               (d: any): void => {
@@ -185,7 +176,7 @@ export class PathSelector extends React.Component<WidgetProps> {
           console.log(this.props);
           if (this.props.formContext.commandRegistry) {
             const path = this.props.formContext.commandRegistry.execute(
-              'gquant:selectThePath'
+              COMMAND_SELECT_PATH
             );
             path.then(
               (d: any): void => {

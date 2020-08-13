@@ -21,6 +21,7 @@ import { INode, IEdge, ContentHandler } from './document';
 import { exportWorkFlowNodes, IState } from './chartEngine';
 import { OUTPUT_COLLECTOR, OUTPUT_TYPE } from './mainComponent';
 import { IEditorProp } from './nodeEditor';
+import { COMMAND_OPEN_EDITOR } from './commands';
 
 interface IPortInfo {
   [key: string]: any;
@@ -490,7 +491,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       handler: this.props.contentHandler
     };
     if (this.props.contentHandler.commandRegistry) {
-      this.props.contentHandler.commandRegistry.execute('gquant:openeditor');
+      this.props.contentHandler.commandRegistry.execute(COMMAND_OPEN_EDITOR);
     }
     this.props.contentHandler.updateEditor.emit(data);
   }

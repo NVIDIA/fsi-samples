@@ -5,11 +5,18 @@
 import { DOMWidgetModel, DOMWidgetView, ViewList } from '@jupyter-widgets/base';
 import * as widgets from '@jupyter-widgets/base';
 import { MODULE_NAME, MODULE_VERSION } from './version';
-import { ContentHandler } from './document';
+import { ContentHandler, INode } from './document';
 import { MainView } from './mainComponent';
 import { Panel, Widget } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
 import { Toolbar, CommandToolbarButton } from '@jupyterlab/apputils';
+import {
+  COMMAND_TOOL_BAR_RELAYOUT,
+  COMMAND_TOOL_BAR_EXECUTE,
+  COMMAND_TOOL_BAR_CLEAN,
+  COMMAND_TOOL_BAR_OPEN_NEW_FILE,
+  COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE
+} from './commands';
 
 export class GQuantModel extends DOMWidgetModel {
   static serializers = {
@@ -48,31 +55,26 @@ export class GQuantView extends DOMWidgetView {
 
   addCommands(toolBar: Toolbar, contentHandler: ContentHandler): void {
     const commands = GQuantView.commands;
-    const LAYOUT_COMMAND = 'gquant:toolbarReLayout';
-    const COMMANDEXECUTE = 'gquant:toolbarexecute';
-    const COMMANDCLEAN = 'gquant:toolbarcleanResult';
-    const OPENTASKGRAPH = 'gquant:toolbaropenTaskGraph';
-    const CREATEFILE = 'gquant:toolbarConvertCellToFile';
 
     const item0 = new CommandToolbarButton({
       commands: commands,
-      id: LAYOUT_COMMAND
+      id: COMMAND_TOOL_BAR_RELAYOUT
     });
     const item1 = new CommandToolbarButton({
       commands: commands,
-      id: COMMANDEXECUTE
+      id: COMMAND_TOOL_BAR_EXECUTE
     });
     const item2 = new CommandToolbarButton({
       commands: commands,
-      id: COMMANDCLEAN
+      id: COMMAND_TOOL_BAR_CLEAN
     });
     const item3 = new CommandToolbarButton({
       commands: commands,
-      id: OPENTASKGRAPH
+      id: COMMAND_TOOL_BAR_OPEN_NEW_FILE
     });
     const item4 = new CommandToolbarButton({
       commands: commands,
-      id: CREATEFILE
+      id: COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE
     });
 
     toolBar.addItem('relayout', item0);
@@ -111,6 +113,12 @@ export class GQuantView extends DOMWidgetView {
   }
 
   clean(): void {
+    const cache = this.model.get('cache');
+    cache.nodes.forEach((node: INode) => {
+      node.busy = false;
+    });
+    this._contentHandler.chartStateUpdate.emit(cache);
+    this._contentHandler.privateCopy.set('cache', cache);
     this.send({
       event: 'clean'
     });
