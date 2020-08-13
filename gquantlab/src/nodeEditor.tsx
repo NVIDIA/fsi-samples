@@ -26,6 +26,7 @@ class NodeEditor extends React.Component<IEditorProp> {
     super(props);
     this.handleSave = this.handleSave.bind(this);
     this.handleDelete = this.handleDelete.bind(this);
+    this.handleClone = this.handleClone.bind(this);
     this.myRef = React.createRef<any>();
   }
 
@@ -130,6 +131,20 @@ class NodeEditor extends React.Component<IEditorProp> {
     });
   }
 
+  handleClone(): void {
+    const newNode = JSON.parse(JSON.stringify(this.props.nodeDatum));
+    newNode.id = Math.random()
+      .toString(36)
+      .substring(2, 15);
+    newNode.x += 20;
+    newNode.y += 20;
+    this.props.nodes.push(newNode);
+    this.props.setChartState({
+      nodes: this.props.nodes,
+      edges: this.props.edges
+    });
+  }
+
   render(): JSX.Element {
     const widgets = {
       FileSelector: FileSelector,
@@ -144,9 +159,9 @@ class NodeEditor extends React.Component<IEditorProp> {
       overflow-y: auto;
       height: 100%;
     `;
-    const Button = styled.button`
-      background-color: red;
-    `;
+    // const Button = styled.button`
+    //   background-color: red;
+    // `;
     // console.log(this.props.nodeDatum);
     if (this.props.setChartState === null) {
       return (
@@ -159,7 +174,9 @@ class NodeEditor extends React.Component<IEditorProp> {
     if (this.props.nodeDatum.id === OUTPUT_COLLECTOR) {
       return (
         <Editor>
-          <Button onClick={this.handleDelete}>Delete</Button>
+          <button className={'btn btn-danger'} onClick={this.handleDelete}>
+            Delete
+          </button>
         </Editor>
       );
     }
@@ -183,7 +200,12 @@ class NodeEditor extends React.Component<IEditorProp> {
           widgets={widgets}
           formContext={this.props.handler}
         />
-        <Button onClick={this.handleDelete}>Delete</Button>
+        <button className={'btn btn-primary'} onClick={this.handleClone}>
+          Clone
+        </button>
+        <button className={'btn btn-danger'} onClick={this.handleDelete}>
+          Delete
+        </button>
       </Editor>
     );
   }
