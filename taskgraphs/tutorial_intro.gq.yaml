@@ -20,22 +20,24 @@
           - column: volume
             min: 100
     taskgraph: taskgraphs/get_return_feature.gq.yaml
-    input: volume_filter
-    output: add_return_feature
+    input:
+      - volume_filter
+    output:
+      - add_return_feature
   inputs:
-    in: stock_data.cudf_out
+    volume_filter@in: stock_data.cudf_out
 - id: average_volume
   type: AverageNode
   conf:
     column: volume
   inputs:
-    stock_in: get_return.stock_out
+    stock_in: get_return.add_return_feature@stock_out
 - id: average_return
   type: AverageNode
   conf:
     column: returns
   inputs:
-    stock_in: get_return.stock_out
+    stock_in: get_return.add_return_feature@stock_out
 - id: stock_name
   type: StockNameLoader
   conf:

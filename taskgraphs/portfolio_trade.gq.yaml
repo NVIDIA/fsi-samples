@@ -19,10 +19,12 @@
           - column: average_volume
             min: 400
     taskgraph: taskgraphs/preprocess.gq.yaml
-    input: sort_node
-    output: drop_columns
+    input:
+      - sort_node
+    output: 
+      - drop_columns
   inputs:
-    in: stock_data.cudf_out
+    sort_node@in: stock_data.cudf_out
 - id: sort_after
   type: SortNode
   conf:
@@ -30,7 +32,7 @@
       - asset
       - datetime
   inputs:
-    in: preprocess.out
+    in: preprocess.drop_columns@out
 - id: exp_mean_reversion
   type: PortExpMovingAverageStrategyNode
   conf:

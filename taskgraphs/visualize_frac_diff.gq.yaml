@@ -9,7 +9,7 @@
   conf:
     asset: 22123
   inputs:
-    stock_in: xgboost_graph.stock_out
+    stock_in: xgboost_graph.technical_indicator@stock_out
 - id: ""
   type: Output Collector
   conf: {}
@@ -38,12 +38,20 @@
 - id: xgboost_graph
   type: CompositeNode
   conf:
+    input:
+      - preprocess
+    output:
+      - technical_indicator
     subnode_ids:
       - preprocess
       - technical_indicator
     subnodes_conf:
       preprocess:
         conf:
+          input:
+            - sort_node
+          output:
+            - drop_columns
           subnode_ids:
             - value_filter
             - drop_columns
@@ -59,28 +67,16 @@
             drop_columns:
               conf:
                 columns:
+                  - average_volume
                   - min_return
                   - max_return
-                  - average_volume
           taskgraph: taskgraphs/preprocess.gq.yaml
-          input: sort_node
-          output: drop_columns
       technical_indicator:
         conf:
           indicators:
             - function: port_fractional_diff
               args:
-                - 0.1
-              columns:
-                - close
-            - function: port_fractional_diff
-              args:
-                - 0.3
-              columns:
-                - close
-            - function: port_fractional_diff
-              args:
-                - 0.5
+                - 0.9
               columns:
                 - close
             - function: port_fractional_diff
@@ -90,7 +86,17 @@
                 - close
             - function: port_fractional_diff
               args:
-                - 0.9
+                - 0.5
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.3
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.1
               columns:
                 - close
             - function: port_shift
@@ -100,7 +106,5 @@
                 - returns
           remove_na: true
     taskgraph: taskgraphs/xgboost_trade.gq.yaml
-    input: preprocess
-    output: technical_indicator
   inputs:
-    in: stock_data.cudf_out
+    preprocess@sort_node@in: stock_data.cudf_out

@@ -4,7 +4,10 @@ import os
 def get_file_path(path):
     if path.startswith('/'):
         return path
-    ROOT = os.environ['GQUANTROOT']
+    if 'GQUANTROOT' in os.environ:
+        ROOT = os.environ['GQUANTROOT']
+    else:
+        ROOT = os.getcwd()
     if os.path.exists(path):
         return path
     elif os.path.exists(ROOT+'/'+path):

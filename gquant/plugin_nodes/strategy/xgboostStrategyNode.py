@@ -35,7 +35,7 @@ class XGBoostStrategyNode(Node):
         self.OUTPUT_PORT_NAME = 'stock_out'
         cols_required = {'datetime': 'date',
                          "asset": "int64"}
-        self.delayed_process = True
+        # self.delayed_process = True
         self.required = {
             self.INPUT_PORT_NAME: cols_required
         }

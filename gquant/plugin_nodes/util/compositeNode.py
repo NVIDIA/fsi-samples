@@ -10,17 +10,14 @@ import os
 import hashlib
 from gquant.dataframe_flow.util import get_file_path
 import uuid
-import copy
-
-INPUT_ID = '4fd31358-fb80-4224-b35f-34402c6c3763'
 
 
 def _get_node(port_name):
-    return '@'.join(port_name.split('@')[:-1])
+    return port_name.split('@')[0]
 
 
 def _get_port(port_name):
-    return port_name.split('@')[-1] 
+    return '@'.join(port_name.split('@')[1:])
 
 
 def fix_port_name(obj, subgraph_node_name):
