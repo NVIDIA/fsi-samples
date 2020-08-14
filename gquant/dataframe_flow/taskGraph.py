@@ -451,6 +451,15 @@ class TaskGraph(object):
 
         outputs_collector_node.clear_input = False
         if not found_output_node or outputs is not None:
+            if found_output_node:
+                # clean all the connections to this output node
+                for uid in self.__node_dict.keys():
+                    node = self.__node_dict[uid]
+                    node.outputs = list(filter(
+                        lambda x: x['to_node'] != outputs_collector_node,
+                        node.outputs))
+
+                # remove the output
             # set the connection only if output_node is manullay created
             # or the output is overwritten
             outputs_collector_node.inputs.clear()
