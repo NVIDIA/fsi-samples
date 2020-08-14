@@ -380,7 +380,8 @@ class NodeTaskGraphMixin(object):
 
             onode.__set_input_df(iport, df)
 
-            onode.flow(progress_fun)
+            if onode.visited:
+                onode.flow(progress_fun)
 
     def __make_copy(self, df_obj):
         if isinstance(df_obj, cudf.DataFrame):
