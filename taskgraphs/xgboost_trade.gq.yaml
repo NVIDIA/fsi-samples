@@ -27,9 +27,9 @@
             - max_return
     taskgraph: taskgraphs/preprocess.gq.yaml
     input: 
-      - sort_node
+      - sort_node.in
     output: 
-      - drop_columns
+      - drop_columns.out
   inputs:
     sort_node@in: stock_data.cudf_out
 - id: sort_after

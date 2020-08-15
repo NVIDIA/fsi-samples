@@ -27,6 +27,24 @@ def fix_port_name(obj, subgraph_node_name):
     return output
 
 
+def group_ports(input_list):
+    """
+    group inputs ports by node id
+    returns a dictionary, keys are node id
+    values are list of ports
+    """
+    nodes_group = {}
+    for inp_port in input_list:
+        inp = inp_port.split('.')[0]  # node id 
+        port_name = inp_port.split('.')[1]  # port name
+        if inp in nodes_group:
+            port_list = nodes_group.get(inp)
+        else:
+            port_list = []
+            nodes_group[inp] = port_list
+        port_list.append(port_name)
+    return nodes_group
+
 class CompositeNode(Node):
 
     def _compute_hash_key(self):
@@ -67,47 +85,56 @@ class CompositeNode(Node):
         it processes the outNode logics
         """
         if 'input' in self.conf:
-            for inp in self.conf['input']:
+            # group input ports by node id
+            inp_groups = group_ports(self.conf['input'])
+            for inp in inp_groups.keys():
                 if inp in task_graph:
                     inputNode = task_graph[inp]
-                    inputNode.inputs.clear()
-                    if hasattr(self, 'inputs'):
-                        for currentInput in self.inputs:
-                            if _get_node(
-                                    currentInput[
-                                        'to_port']) == inputNode.uid:
-                                # change the input name
-                                newInput = {}
-                                newInput['to_port'] = _get_port(
-                                    currentInput['to_port'])
-                                newInput['from_port'] = currentInput['from_port']
-                                newInput['from_node'] = currentInput['from_node']
-                                inputNode.inputs.append(newInput)
-                    inputNode_fun(inputNode)
-                    # required.update(fix_port_name(inputNode.required,
-                    #                               inputNode.uid))
-                    # inports.update(fix_port_name(
-                    #     inputNode.ports_setup().inports, inputNode.uid))
+                    update_inputs = []
+                    replaced_ports = set(inp_groups[inp])
+                    for oldInput in inputNode.inputs:
+                        if oldInput['to_port'] in replaced_ports:
+                            # we want to disconnect this old one and connect to external node
+                            if hasattr(self, 'inputs'):
+                                for externalInput in self.inputs:
+                                    if (_get_node(externalInput['to_port']) == inputNode.uid
+                                            and _get_port(externalInput['to_port']) == oldInput['to_port']):
+                                        newInput = {}
+                                        newInput['to_port'] = _get_port(
+                                            externalInput['to_port'])
+                                        newInput['from_port'] = externalInput['from_port']
+                                        newInput['from_node'] = externalInput['from_node']
+                                        update_inputs.append(newInput)
+                        else:
+                            update_inputs.append(oldInput)
+                    inputNode.inputs = update_inputs
+                    inputNode_fun(inputNode, inp_groups[inp])
+
         if 'output' in self.conf:
-            for oup in self.conf['output']:
+            oup_groups = group_ports(self.conf['output'])
+            for oup in oup_groups.keys():
                 if oup in task_graph:
                     outNode = task_graph[oup]
-                    outNode.outputs.clear()
-                    if hasattr(self, 'outputs'):
-                        for currentOutput in self.outputs:
-                            if _get_node(
-                                currentOutput[
-                                    'from_port']) == outNode.uid:
-                                # change the input name
-                                newOutput = {}
-                                newOutput['from_port'] = _get_port(
-                                    currentOutput['from_port'])
-                                newOutput['to_port'] = currentOutput['to_port']
-                                newOutput['to_node'] = currentOutput['to_node']
-                                outNode.outputs.append(newOutput)
-                    outNode_fun(outNode)
-                    # outports.update(fix_port_name(
-                    #     outNode.ports_setup().outports, outNode.uid))
+                    update_outputs = []
+                    replaced_ports = set(oup_groups[oup])
+                    for oldOutput in outNode.outputs:
+                        if oldOutput['from_port'] in replaced_ports:
+                            # we want to disconnect this old one and connect to external node
+                            if hasattr(self, 'outputs'):
+                                for externalOutput in self.outputs:
+                                    if (_get_node(externalOutput['from_port']) == outNode.uid
+                                            and _get_port(externalOutput['from_port']) == oldOutput['from_port']):
+                                        # change the output name
+                                        newOutput = {}
+                                        newOutput['from_port'] = _get_port(
+                                            externalOutput['from_port'])
+                                        newOutput['to_port'] = externalOutput['to_port']
+                                        newOutput['to_node'] = externalOutput['to_node']
+                                        update_outputs.append(newOutput)
+                        else:
+                            update_outputs.append(oldOutput)
+                    outNode.outputs = update_outputs
+                    outNode_fun(outNode, oup_groups[oup])
 
     def ports_setup(self):
         cache_key = self._compute_hash_key()
@@ -124,15 +151,27 @@ class CompositeNode(Node):
             self.update_replace(replacementObj)
             task_graph.build(replace=replacementObj)
 
-            def inputNode_fun(inputNode):
-                required.update(fix_port_name(inputNode.required,
-                                              inputNode.uid))
-                inports.update(fix_port_name(
-                    inputNode.ports_setup().inports, inputNode.uid))
+            def inputNode_fun(inputNode, in_ports):
+                req = {}
+                for key in inputNode.required.keys():
+                    if key in in_ports:
+                        req[key] = inputNode.required[key]
+                required.update(fix_port_name(req, inputNode.uid))
 
-            def outNode_fun(outNode):
-                outports.update(fix_port_name(
-                    outNode.ports_setup().outports, outNode.uid))
+                inport = {}
+                before_fix = inputNode.ports_setup().inports
+                for key in before_fix.keys():
+                    if key in in_ports:
+                        inport[key] = before_fix[key]
+                inports.update(fix_port_name(inport, inputNode.uid))
+
+            def outNode_fun(outNode, out_ports):
+                ouport = {}
+                before_fix = outNode.ports_setup().outports
+                for key in before_fix.keys():
+                    if key in out_ports:
+                        ouport[key] = before_fix[key]
+                outports.update(fix_port_name(ouport, outNode.uid))
 
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
@@ -154,11 +193,16 @@ class CompositeNode(Node):
             self.update_replace(replacementObj)
             task_graph.build(replace=replacementObj)
 
-            def inputNode_fun(inputNode):
+            def inputNode_fun(inputNode, in_ports):
                 pass
 
-            def outNode_fun(outNode):
-                out_columns.update(fix_port_name(outNode.columns_setup(),
+            def outNode_fun(outNode, out_ports):
+                oucols = {}
+                before_fix = outNode.columns_setup()
+                for key in before_fix.keys():
+                    if key in out_ports:
+                        oucols[key] = before_fix[key]
+                out_columns.update(fix_port_name(oucols,
                                                  outNode.uid))
 
             self._make_sub_graph_connection(task_graph,
@@ -223,20 +267,30 @@ class CompositeNode(Node):
             self.update_replace(replacementObj)
             task_graphh.build(replace=replacementObj)
 
-            def inputNode_fun(inputNode):
+            def inputNode_fun(inputNode, in_ports):
                 pass
 
-            def outNode_fun(outNode):
+            def outNode_fun(outNode, out_ports):
                 pass
 
             self._make_sub_graph_connection(task_graphh,
                                             inputNode_fun, outNode_fun)
 
             ids_in_graph = []
+            in_ports = []
+            out_ports = []
             for t in task_graphh:
-                ids_in_graph.append(t.get('id'))
-            json['properties']['input']['items']['enum'] = ids_in_graph
-            json['properties']['output']['items']['enum'] = ids_in_graph
+                node_id = t.get('id')
+                if node_id != '':
+                    node = task_graphh[node_id]
+                    all_ports = node.ports_setup()
+                    for port in all_ports.inports.keys():
+                        in_ports.append(node_id+'.'+port)
+                    for port in all_ports.outports.keys():
+                        out_ports.append(node_id+'.'+port)
+                    ids_in_graph.append(node_id)
+            json['properties']['input']['items']['enum'] = in_ports
+            json['properties']['output']['items']['enum'] = out_ports
             json['properties']['subnode_ids']['items']['enum'] = ids_in_graph
         if 'subnode_ids' in self.conf:
             for subnodeId in self.conf['subnode_ids']:
@@ -293,7 +347,7 @@ class CompositeNode(Node):
             replaceObj = {}
             input_feeders = []
 
-            def inputNode_fun(inputNode):
+            def inputNode_fun(inputNode, in_ports):
                 inports = inputNode.ports_setup().inports
 
                 class InputFeed(Node):
@@ -337,7 +391,7 @@ class CompositeNode(Node):
                     TaskSpecSchema.inputs: newInputs}
                 })
 
-            def outNode_fun(outNode):
+            def outNode_fun(outNode, out_ports):
                 out_ports = outNode.ports_setup().outports
                 # fixed_outports = fix_port_name(out_ports, outNode.uid)
                 for key in out_ports.keys():

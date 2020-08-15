@@ -39,9 +39,9 @@
   type: CompositeNode
   conf:
     input:
-      - preprocess
+      - preprocess.sort_node@in
     output:
-      - technical_indicator
+      - technical_indicator.stock_out
     subnode_ids:
       - preprocess
       - technical_indicator
@@ -49,9 +49,9 @@
       preprocess:
         conf:
           input:
-            - sort_node
+            - sort_node.in
           output:
-            - drop_columns
+            - drop_columns.out
           subnode_ids:
             - value_filter
             - drop_columns

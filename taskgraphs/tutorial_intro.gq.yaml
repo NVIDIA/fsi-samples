@@ -21,9 +21,9 @@
             min: 100
     taskgraph: taskgraphs/get_return_feature.gq.yaml
     input:
-      - volume_filter
+      - volume_filter.in
     output:
-      - add_return_feature
+      - add_return_feature.stock_out
   inputs:
     volume_filter@in: stock_data.cudf_out
 - id: average_volume
