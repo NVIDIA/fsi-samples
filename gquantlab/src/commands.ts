@@ -482,6 +482,16 @@ export function setupCommands(
     },
     isVisible: isVisible
   });
+
+  commands.addCommand(COMMAND_OPEN_DOC_FORWARD, {
+    label: 'Task Node Editor',
+    caption: 'Open the Task Node Editor',
+    icon: editIcon,
+    mnemonic: 0,
+    execute: args => {
+      app.commands.execute('docmanager:open', args);
+    }
+  });
 }
 
 export function setupToolBarCommands(
