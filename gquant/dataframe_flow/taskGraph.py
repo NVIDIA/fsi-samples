@@ -485,22 +485,6 @@ class TaskGraph(object):
 
         inputs = []
         self.__find_roots(outputs_collector_node, inputs, consider_load=True)
-        # now clean up the graph, removed the node that is not used for
-        # computation, this is not needed?
-        # for key in self.__node_dict:
-        #     node_check_visit = self.__node_dict[key]
-        #     if not node_check_visit.visited:
-        #         for inode_info in node_check_visit.inputs:
-        #             inode = inode_info['from_node']
-        #             oport = inode_info['from_port']
-        #             iport = inode_info['to_port']
-        #             onode_info = {
-        #                 'to_node': node_check_visit,
-        #                 'to_port': iport,
-        #                 'from_port': oport
-        #             }
-        #             inode.outputs.remove(onode_info)
-        #         node_check_visit.inputs = []
 
         if self.__widget is not None:
             def progress_fun(uid):

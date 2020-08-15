@@ -45,6 +45,7 @@ def group_ports(input_list):
         port_list.append(port_name)
     return nodes_group
 
+
 class CompositeNode(Node):
 
     def _compute_hash_key(self):
@@ -94,16 +95,24 @@ class CompositeNode(Node):
                     replaced_ports = set(inp_groups[inp])
                     for oldInput in inputNode.inputs:
                         if oldInput['to_port'] in replaced_ports:
-                            # we want to disconnect this old one and connect to external node
+                            # we want to disconnect this old one and
+                            # connect to external node
                             if hasattr(self, 'inputs'):
                                 for externalInput in self.inputs:
-                                    if (_get_node(externalInput['to_port']) == inputNode.uid
-                                            and _get_port(externalInput['to_port']) == oldInput['to_port']):
+                                    if (_get_node(
+                                        externalInput[
+                                            'to_port']) == inputNode.uid
+                                            and _get_port(
+                                                externalInput[
+                                                    'to_port']) == oldInput[
+                                                        'to_port']):
                                         newInput = {}
                                         newInput['to_port'] = _get_port(
                                             externalInput['to_port'])
-                                        newInput['from_port'] = externalInput['from_port']
-                                        newInput['from_node'] = externalInput['from_node']
+                                        newInput['from_port'] = externalInput[
+                                            'from_port']
+                                        newInput['from_node'] = externalInput[
+                                            'from_node']
                                         update_inputs.append(newInput)
                         else:
                             update_inputs.append(oldInput)
@@ -115,25 +124,6 @@ class CompositeNode(Node):
             for oup in oup_groups.keys():
                 if oup in task_graph:
                     outNode = task_graph[oup]
-                    update_outputs = []
-                    replaced_ports = set(oup_groups[oup])
-                    for oldOutput in outNode.outputs:
-                        if oldOutput['from_port'] in replaced_ports:
-                            # we want to disconnect this old one and connect to external node
-                            if hasattr(self, 'outputs'):
-                                for externalOutput in self.outputs:
-                                    if (_get_node(externalOutput['from_port']) == outNode.uid
-                                            and _get_port(externalOutput['from_port']) == oldOutput['from_port']):
-                                        # change the output name
-                                        newOutput = {}
-                                        newOutput['from_port'] = _get_port(
-                                            externalOutput['from_port'])
-                                        newOutput['to_port'] = externalOutput['to_port']
-                                        newOutput['to_node'] = externalOutput['to_node']
-                                        update_outputs.append(newOutput)
-                        else:
-                            update_outputs.append(oldOutput)
-                    outNode.outputs = update_outputs
                     outNode_fun(outNode, oup_groups[oup])
 
     def ports_setup(self):
@@ -352,23 +342,23 @@ class CompositeNode(Node):
 
                 class InputFeed(Node):
 
-                    def columns_setup(self2):
+                    def columns_setup(self):
                         output = {}
-                        if hasattr(self, 'inputs'):
-                            # inputNode.inputs.extend(self.inputs)
-                            for inp in inputNode.inputs:
-                                output[inp['to_port']] = inp['from_node'].columns_setup()[inp['from_port']]
+                        for inp in inputNode.inputs:
+                            output[inp['to_port']] = inp[
+                                'from_node'].columns_setup()[
+                                    inp['from_port']]
                         # it will be something like { input_port: columns }
-                        return output 
+                        return output
 
-                    def ports_setup(self2):
+                    def ports_setup(self):
                         # it will be something like { input_port: types }
                         return NodePorts(inports={}, outports=inports)
 
-                    def conf_schema(self2):
+                    def conf_schema(self):
                         return ConfSchema()
 
-                    def process(self2, empty):
+                    def process(self, empty):
                         output = {}
                         for key in inports.keys():
                             if inputNode.uid+'@'+key in inputs:
@@ -406,7 +396,7 @@ class CompositeNode(Node):
             result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():
-                splits = key.split('.') 
+                splits = key.split('.')
                 output['@'.join(splits)] = result[key]
             return output
         else:
