@@ -35,7 +35,7 @@ def group_ports(input_list):
     """
     nodes_group = {}
     for inp_port in input_list:
-        inp = inp_port.split('.')[0]  # node id 
+        inp = inp_port.split('.')[0]  # node id
         port_name = inp_port.split('.')[1]  # port name
         if inp in nodes_group:
             port_list = nodes_group.get(inp)
@@ -52,6 +52,9 @@ class CompositeNode(Node):
         """
         if hash changed, the port_setup, columns_setup
         and conf_json should be different
+        In very rara case, might have the problem of hash collision,
+        It affects the column, port and conf calculation. It won't
+        change the computation result though.
         """
         task_graph = ""
         inputs = ()
@@ -76,14 +79,13 @@ class CompositeNode(Node):
     def _make_sub_graph_connection(self, task_graph,
                                    inputNode_fun,
                                    outNode_fun):
-
         """
-        connects the current composite node's inputs and outputs to 
-        the subgraph-task_graph's inputs and outputs. 
-        inputNode_fun has subgraph inputNode as argument, 
-        it processes the inputNode logics
-        outputNode_fun has subgraph outputNode as argument, 
-        it processes the outNode logics
+        connects the current composite node's inputs and outputs to
+        the subgraph-task_graph's inputs and outputs.
+        inputNode_fun has subgraph inputNode and all the input ports
+        as argument, it processes the inputNode logics
+        outputNode_fun has subgraph outputNode and all the outpout ports
+        as argument, it processes the outNode logics
         """
         if 'input' in self.conf:
             # group input ports by node id
@@ -124,6 +126,11 @@ class CompositeNode(Node):
             for oup in oup_groups.keys():
                 if oup in task_graph:
                     outNode = task_graph[oup]
+                    # we do not disconnect anything here, as we take extra
+                    # outputs for composite node.
+                    # Node, we rely on the fact that taskgraph.run method
+                    # will remove the output collector from taskgraph if
+                    # the outputlist is set
                     outNode_fun(outNode, oup_groups[oup])
 
     def ports_setup(self):
