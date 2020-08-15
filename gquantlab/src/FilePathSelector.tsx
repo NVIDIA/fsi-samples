@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React from 'react';
-import { COMMAND_SELECT_FILE, COMMAND_SELECT_PATH } from './commands';
+import { COMMAND_SELECT_FILE, COMMAND_SELECT_PATH, COMMAND_OPEN_DOC_FORWARD } from './commands';
 import { WidgetProps } from '@rjsf/core';
 import styled from '@emotion/styled';
 
@@ -60,7 +60,7 @@ export class TaskgraphSelector extends React.Component<WidgetProps> {
             ) as HTMLInputElement;
             if (this.props.formContext.commandRegistry) {
               this.props.formContext.commandRegistry.execute(
-                'docmanager:open',
+                COMMAND_OPEN_DOC_FORWARD,
                 { path: inputEle.value }
               );
             }

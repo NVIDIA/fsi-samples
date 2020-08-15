@@ -89,9 +89,9 @@ export class GQuantView extends DOMWidgetView {
 
   render(): void {
     this._contentHandler = new ContentHandler(null);
-    if (GQuantView.apps) {
-      this._contentHandler.commandRegistry = GQuantView.apps.commands;
-    }
+
+    const commands = new CommandRegistry();
+    this._contentHandler.commandRegistry = commands; // use its local command registry
     this._contentHandler.runGraph.connect(this.run, this);
     this._contentHandler.cleanResult.connect(this.clean, this);
     const pane = new Panel();
@@ -105,7 +105,6 @@ export class GQuantView extends DOMWidgetView {
     this.model.on('change:cache', this.cache_changed, this);
     this.views = new ViewList<DOMWidgetView>(this.addView, null, this);
     this.model.on('change:sub', this.sub_changed, this);
-    const commands = new CommandRegistry();
     setupToolBarCommands(
       commands,
       this._contentHandler,

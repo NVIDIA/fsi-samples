@@ -41,6 +41,14 @@ export const COMMAND_CLEAN = 'gquant:cleanResult';
 export const COMMAND_TOOL_BAR_EXECUTE = 'gquant:toolbarexecute';
 export const COMMAND_TOOL_BAR_CLEAN = 'gquant:toolbarcleanResult';
 export const COMMAND_ADD_OUTPUT_COLLECTOR = 'gquant:addOutputCollector';
+export const COMMAND_OPEN_DOC_FORWARD = 'gquant:openDocumentForward';
+
+function uuidv4(): string {
+  return Math.random()
+    .toString(36)
+    .substring(2, 15);
+}
+
 export function setupCommands(
   commands: CommandRegistry,
   app: JupyterFrontEnd,
@@ -93,11 +101,6 @@ export function setupCommands(
     browserFactory.defaultBrowser.model.manager.open(savedModel.path);
   };
 
-  function uuidv4(): string {
-    return Math.random()
-      .toString(36)
-      .substring(2, 15);
-  }
   /**
    * Whether there is an active graph editor
    */
@@ -570,6 +573,112 @@ export function setupToolBarCommands(
     mnemonic: 0,
     execute: async () => {
       contentHandler.cleanResult.emit();
+    }
+  });
+
+  commands.addCommand(COMMAND_SELECT_FILE, {
+    label: 'Select the file',
+    caption: 'Select the file',
+    icon: folderIcon,
+    execute: async (args: any) => {
+      let dialog = null;
+      if (args && 'filter' in args) {
+        dialog = FileDialog.getOpenFiles({
+          manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+          title: 'Select the File',
+          filter: model =>
+            args['filter'].some((d: string): boolean => model.path.endsWith(d))
+        });
+      } else {
+        dialog = FileDialog.getOpenFiles({
+          manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+          title: 'Select the File'
+        });
+      }
+      const result = await dialog;
+      if (result.button.accept) {
+        // console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          return values[0];
+        }
+      }
+    }
+  });
+
+  commands.addCommand(COMMAND_SELECT_PATH, {
+    label: 'Select the Path',
+    caption: 'Select the Path',
+    icon: folderIcon,
+    execute: async () => {
+      const dialog = FileDialog.getExistingDirectory({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        title: 'Select the Path'
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        const values = result.value;
+        if (values.length === 1) {
+          return values[0];
+        }
+      }
+    }
+  });
+
+  commands.addCommand(COMMAND_OPEN_EDITOR, {
+    label: 'Task Node Editor',
+    caption: 'Open the Task Node Editor',
+    icon: editIcon,
+    mnemonic: 0,
+    execute: () => {
+      if (isLinkedView(app.shell.currentWidget)) {
+        let panel = null;
+        for (const view of toArray<Widget>(app.shell.widgets())) {
+          if (
+            view instanceof EditorPanel &&
+            (view as EditorPanel).handler === contentHandler
+          ) {
+            // console.log('found it');
+            panel = view;
+            break;
+          }
+        }
+        if (panel === null) {
+          panel = new EditorPanel(contentHandler);
+          panel.id = panel.id + uuidv4();
+          app.shell.add(panel, 'main', { mode: 'split-bottom' });
+        } else {
+          app.shell.activateById(panel.id);
+        }
+      } else {
+        let panel = null;
+        for (const view of toArray<Widget>(app.shell.widgets())) {
+          if (
+            view instanceof EditorPanel &&
+            (view as EditorPanel).handler === contentHandler
+          ) {
+            // console.log('found it');
+            panel = view;
+            break;
+          }
+        }
+        if (panel === null) {
+          panel = new EditorPanel(contentHandler);
+          panel.id = panel.id + uuidv4();
+          app.shell.add(panel, 'main', { mode: 'split-bottom' });
+        } else {
+          app.shell.activateById(panel.id);
+        }
+      }
+    }
+  });
+  commands.addCommand(COMMAND_OPEN_DOC_FORWARD, {
+    label: 'Task Node Editor',
+    caption: 'Open the Task Node Editor',
+    icon: editIcon,
+    mnemonic: 0,
+    execute: args => {
+      app.commands.execute('docmanager:open', args);
     }
   });
 }
