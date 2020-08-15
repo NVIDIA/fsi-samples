@@ -73,7 +73,7 @@ class CompositeNode(Node):
                     for i in self.inputs:
                         inputs += (hash(i['from_node']),
                                    i['to_port'], i['from_port'])
-        return hash((self.uid, task_graph, inputs,
+        return hash((self.uid, task_graph, inputs, json.dumps(self.conf),
                      input_node, json.dumps(replacementObj)))
 
     def _make_sub_graph_connection(self, task_graph,

@@ -4,6 +4,7 @@ import Form from '@rjsf/core';
 import 'bootstrap/dist/css/bootstrap.css';
 import '../style/editor.css';
 import { INode, IEdge, ContentHandler } from './document';
+import { InputDialog } from '@jupyterlab/apputils';
 import { OUTPUT_COLLECTOR } from './mainComponent';
 import {
   FileSelector,
@@ -11,6 +12,7 @@ import {
   TaskgraphSelector,
   CsvFileSelector
 } from './FilePathSelector';
+import { COMMAND_CREATE_CUST_NODE } from './commands';
 
 export interface IEditorProp {
   handler: ContentHandler;
@@ -27,6 +29,7 @@ class NodeEditor extends React.Component<IEditorProp> {
     this.handleSave = this.handleSave.bind(this);
     this.handleDelete = this.handleDelete.bind(this);
     this.handleClone = this.handleClone.bind(this);
+    this.handleConvert = this.handleConvert.bind(this);
     this.myRef = React.createRef<any>();
   }
 
@@ -145,6 +148,19 @@ class NodeEditor extends React.Component<IEditorProp> {
     });
   }
 
+  handleConvert(): void {
+    // Request a text
+    InputDialog.getText({ title: 'Provide a customized Node name' }).then(
+      value => {
+        console.log('text ' + value.value);
+        this.props.handler.commandRegistry.execute(COMMAND_CREATE_CUST_NODE, {
+          nodeName: value.value,
+          conf: this.props.nodeDatum.conf
+        });
+      }
+    );
+  }
+
   render(): JSX.Element {
     const widgets = {
       FileSelector: FileSelector,
@@ -174,6 +190,39 @@ class NodeEditor extends React.Component<IEditorProp> {
     if (this.props.nodeDatum.id === OUTPUT_COLLECTOR) {
       return (
         <Editor>
+          <button className={'btn btn-danger'} onClick={this.handleDelete}>
+            Delete
+          </button>
+        </Editor>
+      );
+    }
+    if (this.props.nodeDatum.type === 'CompositeNode') {
+      return (
+        //     <Draggable>
+        <Editor>
+          <div>
+            <span>Node id:</span>
+            <input
+              type="text"
+              placeholder="unique node name"
+              defaultValue={this.props.nodeDatum.id}
+              ref={this.myRef}
+            />
+          </div>
+          <Form
+            schema={this.props.nodeDatum.schema}
+            formData={this.props.nodeDatum.conf}
+            uiSchema={this.props.nodeDatum.ui}
+            onSubmit={this.handleSave}
+            widgets={widgets}
+            formContext={this.props.handler}
+          />
+          <button className={'btn btn-primary'} onClick={this.handleConvert}>
+            Convert it To Node
+          </button>
+          <button className={'btn btn-primary'} onClick={this.handleClone}>
+            Clone
+          </button>
           <button className={'btn btn-danger'} onClick={this.handleDelete}>
             Delete
           </button>

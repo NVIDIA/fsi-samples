@@ -42,6 +42,7 @@ export const COMMAND_TOOL_BAR_EXECUTE = 'gquant:toolbarexecute';
 export const COMMAND_TOOL_BAR_CLEAN = 'gquant:toolbarcleanResult';
 export const COMMAND_ADD_OUTPUT_COLLECTOR = 'gquant:addOutputCollector';
 export const COMMAND_OPEN_DOC_FORWARD = 'gquant:openDocumentForward';
+export const COMMAND_CREATE_CUST_NODE = 'gquant:createCustomizedNode';
 
 function uuidv4(): string {
   return Math.random()
@@ -207,6 +208,56 @@ export function setupCommands(
           return values[0];
         }
       }
+    }
+  });
+
+  commands.addCommand(COMMAND_CREATE_CUST_NODE, {
+    label: 'Create Customized Node',
+    caption: 'Create Customized Node',
+    icon: folderIcon,
+    execute: async args => {
+      const cwd = browserFactory.defaultBrowser.model.path;
+      const model = await commands.execute('docmanager:new-untitled', {
+        path: cwd,
+        type: 'file',
+        ext: '.py'
+      });
+      const confContent = JSON.stringify({ conf: args['conf'] }, null, 2);
+      const fileContent = `
+import gquant
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+
+data = ${confContent}
+
+
+class ${args['nodeName']}(gquant.plugin_nodes.util.CompositeNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # modify the self.conf to the one that this Composite node wants
+        node_conf = self.conf
+        data['conf']['subnodes_conf'].update(node_conf)
+        self.conf = data['conf']
+
+    def conf_schema(self):
+        full_schema = super().conf_schema()
+        full_schema_json = full_schema.json
+        ui = full_schema.ui
+        json = {
+            "title": "${args['nodeName']} configure",
+            "type": "object",
+            "description": "Enter your node description here",
+            "properties": {
+            }
+        }
+        item_dict = full_schema_json['properties']["subnodes_conf"]['properties']
+        for key in item_dict.keys():
+            json['properties'][key] = item_dict[key]
+        return ConfSchema(json=json, ui=ui)
+
+      `;
+      model.content = fileContent;
+      model.format = 'text';
+      app.serviceManager.contents.save(model.path, model);
     }
   });
 
@@ -591,28 +642,7 @@ export function setupToolBarCommands(
     caption: 'Select the file',
     icon: folderIcon,
     execute: async (args: any) => {
-      let dialog = null;
-      if (args && 'filter' in args) {
-        dialog = FileDialog.getOpenFiles({
-          manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
-          title: 'Select the File',
-          filter: model =>
-            args['filter'].some((d: string): boolean => model.path.endsWith(d))
-        });
-      } else {
-        dialog = FileDialog.getOpenFiles({
-          manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
-          title: 'Select the File'
-        });
-      }
-      const result = await dialog;
-      if (result.button.accept) {
-        // console.log(result.value);
-        const values = result.value;
-        if (values.length === 1) {
-          return values[0];
-        }
-      }
+      app.commands.execute(COMMAND_SELECT_FILE, args);
     }
   });
 
@@ -621,17 +651,7 @@ export function setupToolBarCommands(
     caption: 'Select the Path',
     icon: folderIcon,
     execute: async () => {
-      const dialog = FileDialog.getExistingDirectory({
-        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
-        title: 'Select the Path'
-      });
-      const result = await dialog;
-      if (result.button.accept) {
-        const values = result.value;
-        if (values.length === 1) {
-          return values[0];
-        }
-      }
+      app.commands.execute(COMMAND_SELECT_PATH);
     }
   });
 
@@ -689,6 +709,14 @@ export function setupToolBarCommands(
     mnemonic: 0,
     execute: args => {
       app.commands.execute('docmanager:open', args);
+    }
+  });
+  commands.addCommand(COMMAND_CREATE_CUST_NODE, {
+    label: 'Create Customized Node',
+    caption: 'Create Customized Node',
+    icon: folderIcon,
+    execute: args => {
+      app.commands.execute(COMMAND_CREATE_CUST_NODE, args);
     }
   });
 }
