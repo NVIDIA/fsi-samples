@@ -138,7 +138,6 @@ class CompositeNode(Node):
         if cache_key in cache_ports:
             # print('cache hit')
             return cache_ports[cache_key]
-        required = {}
         inports = {}
         outports = {}
         if 'taskgraph' in self.conf:
@@ -149,12 +148,6 @@ class CompositeNode(Node):
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
-                req = {}
-                for key in inputNode.required.keys():
-                    if key in in_ports:
-                        req[key] = inputNode.required[key]
-                required.update(fix_port_name(req, inputNode.uid))
-
                 inport = {}
                 before_fix = inputNode.ports_setup().inports
                 for key in before_fix.keys():
@@ -172,7 +165,6 @@ class CompositeNode(Node):
 
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
-        self.required = required
         output_port = NodePorts(inports=inports, outports=outports)
         cache_ports[cache_key] = output_port
         return output_port
@@ -182,6 +174,7 @@ class CompositeNode(Node):
         if cache_key in cache_columns:
             # print('cache hit')
             return cache_columns[cache_key]
+        required = {}
         out_columns = {}
         if 'taskgraph' in self.conf:
             task_graph = TaskGraph.load_taskgraph(
@@ -191,7 +184,13 @@ class CompositeNode(Node):
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
-                pass
+                req = {}
+                # do columns_setup so required columns are ready
+                inputNode.columns_setup()
+                for key in inputNode.required.keys():
+                    if key in in_ports:
+                        req[key] = inputNode.required[key]
+                required.update(fix_port_name(req, inputNode.uid))
 
             def outNode_fun(outNode, out_ports):
                 oucols = {}
@@ -205,6 +204,7 @@ class CompositeNode(Node):
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
 
+        self.required = required
         cache_columns[cache_key] = out_columns
         return out_columns
 
