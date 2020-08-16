@@ -21,6 +21,9 @@ export class ContentHandler {
   // this reset the content, leave the size as before
   private _contentReset = new Signal<ContentHandler, IChartInput>(this);
 
+  // this add extra graph to current graph, leave the size as before
+  private _includeContent = new Signal<ContentHandler, IChartInput>(this);
+
   // this one just update the graphs, no relayout
   private _chartStateUpdate = new Signal<ContentHandler, IChartInput>(this);
   // this one just update the size of the chart
@@ -108,6 +111,10 @@ export class ContentHandler {
 
   get contentReset(): Signal<ContentHandler, IChartInput> {
     return this._contentReset;
+  }
+
+  get includeContent(): Signal<ContentHandler, IChartInput> {
+    return this._includeContent;
   }
 
   get chartStateUpdate(): Signal<ContentHandler, IChartInput> {

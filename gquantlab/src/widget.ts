@@ -13,12 +13,13 @@ import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
 
 import { Toolbar, CommandToolbarButton } from '@jupyterlab/apputils';
 import {
-    COMMAND_TOOL_BAR_RELAYOUT,
-    COMMAND_TOOL_BAR_EXECUTE,
-    COMMAND_TOOL_BAR_CLEAN,
-    COMMAND_TOOL_BAR_OPEN_NEW_FILE,
-    COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE,
-    setupToolBarCommands
+  COMMAND_TOOL_BAR_RELAYOUT,
+  COMMAND_TOOL_BAR_EXECUTE,
+  COMMAND_TOOL_BAR_CLEAN,
+  COMMAND_TOOL_BAR_OPEN_NEW_FILE,
+  COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE,
+  COMMAND_TOOL_BAR_INCLUDE_NEW_FILE,
+  setupToolBarCommands
 } from './commands';
 import { JupyterFrontEnd } from '@jupyterlab/application';
 
@@ -79,11 +80,16 @@ export class GQuantView extends DOMWidgetView {
       commands: commands,
       id: COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE
     });
+    const item5 = new CommandToolbarButton({
+      commands: commands,
+      id: COMMAND_TOOL_BAR_INCLUDE_NEW_FILE
+    });
 
     toolBar.addItem('relayout', item0);
     toolBar.addItem('run', item1);
     toolBar.addItem('clean', item2);
     toolBar.addItem('open', item3);
+    toolBar.addItem('add', item5);
     toolBar.addItem('create', item4);
   }
 

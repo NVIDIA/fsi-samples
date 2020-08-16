@@ -14,6 +14,26 @@ interface IProps {
 const DefaultWidth = 100;
 const DefaultHeight = 100;
 
+function duplicateName(sourceList: INode[], checkName: string): boolean {
+  const id = sourceList.findIndex(item => item.id === checkName);
+  return id >= 0;
+}
+
+const nameReg = /-(\d+)$/;
+
+function changeName(oldname: string): string {
+  const matchResult = oldname.match(nameReg);
+  if (matchResult) {
+    const number = matchResult[1];
+    const newNumber = (parseInt(number) + 1).toString();
+    const index = matchResult['index'];
+    const newName = oldname.substr(0, index) + '-' + newNumber;
+    return newName;
+  } else {
+    return oldname + '-1';
+  }
+}
+
 export interface IState {
   height: number;
   width: number;
@@ -97,6 +117,10 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this
     );
     this.props.contentHandler.saveCache.connect(this.saveCacheHandler, this);
+    this.props.contentHandler.includeContent.connect(
+      this.contentIncludeHandler,
+      this
+    );
   }
 
   componentWillUnmount(): void {
@@ -117,6 +141,10 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this
     );
     this.props.contentHandler.saveCache.disconnect(this.saveCacheHandler, this);
+    this.props.contentHandler.includeContent.disconnect(
+      this.contentIncludeHandler,
+      this
+    );
   }
 
   /**
@@ -166,6 +194,61 @@ export class ChartEngine extends React.Component<IProps, IState> {
       this.props.contentHandler.privateCopy.set('cache', stateCopy);
       this.props.contentHandler.privateCopy.save();
     }
+  }
+
+  /**
+   *  handle importing raw graph nodes and edges,
+   * resolve the name collision,
+   *  recalculate the layout, no size information
+   * @param sender
+   * @param inputs
+   */
+
+  contentIncludeHandler(sender: ContentHandler, inputs: IChartInput): void {
+    const currentNodes = this.state.nodes;
+    const currentEdges = this.state.edges;
+    let outputCollectorDup = false;
+
+    inputs.nodes.forEach(d => {
+      let name = d.id;
+      if (d.id === OUTPUT_COLLECTOR) {
+        if (duplicateName(currentNodes, name)) {
+          outputCollectorDup = true;
+        }
+        // do nothing about the output collector
+        return;
+      }
+      while (duplicateName(currentNodes, name)) {
+        name = changeName(name);
+      }
+      if (name !== d.id) {
+        // need to clean up the edges
+        inputs.edges.forEach(edge => {
+          if (edge.from.split('.')[0] === d.id) {
+            edge.from = name + '.' + edge.from.split('.')[1];
+          }
+          if (edge.to.split('.')[0] === d.id) {
+            edge.to = name + '.' + edge.to.split('.')[1];
+          }
+        });
+        d.id = name;
+      }
+    });
+
+    // add nodes
+    currentNodes.forEach(d => {
+      if (outputCollectorDup && d.id === OUTPUT_COLLECTOR) {
+        return;
+      }
+      inputs.nodes.push(d);
+    });
+
+    // add edges
+    currentEdges.forEach(d => {
+      inputs.edges.push(d);
+    });
+
+    this.contentResetHandler(sender, inputs);
   }
 
   /**

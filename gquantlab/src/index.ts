@@ -27,7 +27,8 @@ import {
   downloadIcon,
   saveIcon,
   editIcon,
-  notebookIcon
+  notebookIcon,
+  addIcon
 } from '@jupyterlab/ui-components';
 
 import { ToolbarButton } from '@jupyterlab/apputils';
@@ -50,6 +51,7 @@ import {
   COMMAND_CONVERT_CELL_TO_FILE,
   setupCommands,
   COMMAND_OPEN_NEW_FILE,
+  COMMAND_INCLUDE_NEW_FILE,
   COMMAND_NEW_TASK_GRAPH,
   COMMAND_NEW_OPEN_TASK_GRAPH,
   COMMAND_OPEN_EDITOR,
@@ -227,6 +229,10 @@ function activateFun(
         app.commands.execute(COMMAND_OPEN_EDITOR);
       };
 
+      const addGraphCallback = (): void => {
+        app.commands.execute(COMMAND_INCLUDE_NEW_FILE);
+      };
+
       const layout = new ToolbarButton({
         className: 'myButton',
         icon: layoutIcon,
@@ -262,12 +268,20 @@ function activateFun(
         tooltip: 'Open Task Node Editor'
       });
 
+      const addGraph = new ToolbarButton({
+        className: 'myButton',
+        icon: addIcon,
+        onClick: addGraphCallback,
+        tooltip: 'Import a TaskGraph from file'
+      });
+
       return [
         { name: 'layout', widget: layout },
         { name: 'download', widget: download },
         { name: 'save', widget: save },
         { name: 'notebook', widget: notebook },
-        { name: 'editor', widget: editor }
+        { name: 'editor', widget: editor },
+        { name: 'add', widget: addGraph }
       ];
     }
   });
@@ -396,6 +410,11 @@ function activateFun(
 
   app.contextMenu.addItem({
     command: COMMAND_OPEN_NEW_FILE,
+    selector: '.jp-GQuant'
+  });
+
+  app.contextMenu.addItem({
+    command: COMMAND_INCLUDE_NEW_FILE,
     selector: '.jp-GQuant'
   });
 

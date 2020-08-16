@@ -12,7 +12,12 @@ import {
   runIcon
 } from '.';
 import { IFileBrowserFactory, FileDialog } from '@jupyterlab/filebrowser';
-import { folderIcon, editIcon, notebookIcon } from '@jupyterlab/ui-components';
+import {
+  folderIcon,
+  editIcon,
+  notebookIcon,
+  addIcon
+} from '@jupyterlab/ui-components';
 import { IChartInput, INode, ContentHandler } from './document';
 import { requestAPI } from './gquantlab';
 import { Widget } from '@lumino/widgets';
@@ -27,6 +32,8 @@ export const COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE =
 export const COMMAND_SELECT_FILE = 'gquant:selectTheFile';
 export const COMMAND_SELECT_PATH = 'gquant:selectThePath';
 export const COMMAND_OPEN_NEW_FILE = 'gquant:openNewFile';
+export const COMMAND_INCLUDE_NEW_FILE = 'gquant:includeNewFile';
+export const COMMAND_TOOL_BAR_INCLUDE_NEW_FILE = 'gquant:includeNewFile';
 export const COMMAND_TOOL_BAR_OPEN_NEW_FILE = 'gquant:toolbaropenTaskGraph';
 export const COMMAND_NEW_TASK_GRAPH = 'gquant:export-yaml';
 export const COMMAND_NEW_OPEN_TASK_GRAPH = 'gquant:create-new';
@@ -60,7 +67,11 @@ export function setupCommands(
   notebookTracker: INotebookTracker
 ): void {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-  const createNewNotebook = async (input1: string, input2: string) => {
+  const createNewNotebook = async (
+    input1: string,
+    input2: string,
+    input3: string
+  ) => {
     const model = await commands.execute('docmanager:new-untitled', {
       type: 'notebook'
     });
@@ -80,6 +91,13 @@ export function setupCommands(
           metadata: {},
           outputs: empty,
           source: input2
+        },
+        {
+          cell_type: 'code',
+          execution_count: 3,
+          metadata: {},
+          outputs: empty,
+          source: input3
         }
       ],
       metadata: {
@@ -223,8 +241,7 @@ export function setupCommands(
         ext: '.py'
       });
       const confContent = JSON.stringify({ conf: args['conf'] }, null, 2);
-      const fileContent = `
-import gquant
+      const fileContent = `import gquant
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 data = ${confContent}
@@ -284,13 +301,49 @@ class ${args['nodeName']}(gquant.plugin_nodes.util.CompositeNode):
               method: 'POST'
             }
           );
-          const mainView = getMainView();
+          const mainView = getMainView() as MainView;
           mainView.contentHandler.contentReset.emit(workflows);
         }
         //let files = result.value;
       }
     },
     isVisible: isCellVisible
+  });
+
+  commands.addCommand(COMMAND_INCLUDE_NEW_FILE, {
+    label: 'Import TaskGraph from file',
+    caption: 'Import TaskGraph from file',
+    icon: addIcon,
+    execute: async () => {
+      const dialog = FileDialog.getOpenFiles({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        filter: model => model.path.endsWith('.gq.yaml')
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        // console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          // only 1 file is allowed
+          const payload = { path: values[0].path };
+          const workflows: IChartInput = await requestAPI<any>(
+            'load_graph_path',
+            {
+              body: JSON.stringify(payload),
+              method: 'POST'
+            }
+          );
+          if (isCellVisible()) {
+            const mainView = getMainView() as MainView;
+            mainView.contentHandler.includeContent.emit(workflows);
+          } else if (isGquantVisible()) {
+            const mainView = app.shell.currentWidget as any;
+            mainView.contentHandler.includeContent.emit(workflows);
+          }
+        }
+        //let files = result.value;
+      }
+    }
   });
 
   commands.addCommand(COMMAND_NEW_TASK_GRAPH, {
@@ -409,9 +462,21 @@ class ${args['nodeName']}(gquant.plugin_nodes.util.CompositeNode):
           2
         );
       }
-      const input1 = `import json\nfrom gquant.dataframe_flow import TaskGraph\nobj="""${objStr}"""\ntaskList=json.loads(obj)\ntaskGraph=TaskGraph(taskList)\ntaskGraph.draw()`;
-      const input2 = 'taskGraph.run(formated=True)';
-      return createNewNotebook(input1, input2);
+      const input1 = `# run this cell if you need Dask
+from dask_cuda import LocalCUDACluster
+cluster = LocalCUDACluster()
+from dask.distributed import Client
+client = Client(cluster)
+client
+`;
+      const input2 = `import json
+from gquant.dataframe_flow import TaskGraph
+obj="""${objStr}"""
+taskList=json.loads(obj)
+taskGraph=TaskGraph(taskList)
+taskGraph.draw()`;
+      const input3 = 'taskGraph.run(formated=True)';
+      return createNewNotebook(input1, input2, input3);
       // Execute the statement
     },
     isVisible: isGquantVisible
@@ -719,6 +784,36 @@ export function setupToolBarCommands(
     icon: folderIcon,
     execute: args => {
       app.commands.execute(COMMAND_CREATE_CUST_NODE, args);
+    }
+  });
+
+  commands.addCommand(COMMAND_TOOL_BAR_INCLUDE_NEW_FILE, {
+    label: '',
+    caption: 'Import TaskGraph from file',
+    icon: addIcon,
+    execute: async () => {
+      const dialog = FileDialog.getOpenFiles({
+        manager: browserFactory.defaultBrowser.model.manager, // IDocumentManager
+        filter: model => model.path.endsWith('.gq.yaml')
+      });
+      const result = await dialog;
+      if (result.button.accept) {
+        // console.log(result.value);
+        const values = result.value;
+        if (values.length === 1) {
+          // only 1 file is allowed
+          const payload = { path: values[0].path };
+          const workflows: IChartInput = await requestAPI<any>(
+            'load_graph_path',
+            {
+              body: JSON.stringify(payload),
+              method: 'POST'
+            }
+          );
+          contentHandler.includeContent.emit(workflows);
+        }
+        //let files = result.value;
+      }
     }
   });
 }
