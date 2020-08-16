@@ -642,7 +642,8 @@ export function setupToolBarCommands(
     caption: 'Select the file',
     icon: folderIcon,
     execute: async (args: any) => {
-      app.commands.execute(COMMAND_SELECT_FILE, args);
+      const value = await app.commands.execute(COMMAND_SELECT_FILE, args);
+      return value;
     }
   });
 
@@ -651,7 +652,8 @@ export function setupToolBarCommands(
     caption: 'Select the Path',
     icon: folderIcon,
     execute: async () => {
-      app.commands.execute(COMMAND_SELECT_PATH);
+      const value = app.commands.execute(COMMAND_SELECT_PATH);
+      return value;
     }
   });
 
