@@ -76,7 +76,7 @@ WORKDIR /home/quant/gQuant/gquantlab
 RUN pip install .
 RUN jupyter lab build
 WORKDIR /home/quant/gQuant
-ENTRYPOINT MODULEPATH=\$HOME/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+ENTRYPOINT MODULEPATH=\$HOME/gQuant/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 EOM
     MODE_STR="prod"
 	;;
