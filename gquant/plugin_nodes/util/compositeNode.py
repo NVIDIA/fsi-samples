@@ -384,6 +384,11 @@ class CompositeNode(Node):
                 for key in inports.keys():
                     if inputNode.uid+'@'+key in inputs:
                         newInputs[key] = uni_id+'.'+key
+                for inp in inputNode.inputs:
+                    if inp['to_port'] not in in_ports:
+                        # need to keep the old connections
+                        newInputs[inp['to_port']] = (inp['from_node'].uid
+                                                     + '.' + inp['from_port'])
                 replaceObj.update({inputNode.uid: {
                     TaskSpecSchema.inputs: newInputs}
                 })
