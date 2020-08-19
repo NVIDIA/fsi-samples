@@ -243,17 +243,21 @@ export function setupCommands(
       const confContent = JSON.stringify({ conf: args['conf'] }, null, 2);
       const fileContent = `import gquant
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+import json
 
-data = ${confContent}
+data = """${confContent}
+"""
 
 
 class ${args['nodeName']}(gquant.plugin_nodes.util.CompositeNode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # modify the self.conf to the one that this Composite node wants
+        global data
         node_conf = self.conf
-        data['conf']['subnodes_conf'].update(node_conf)
-        self.conf = data['conf']
+        data_obj = json.loads(data)
+        data_obj['conf']['subnodes_conf'].update(node_conf)
+        self.conf = data_obj['conf']
 
     def conf_schema(self):
         full_schema = super().conf_schema()
