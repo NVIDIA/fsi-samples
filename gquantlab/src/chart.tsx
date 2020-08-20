@@ -172,7 +172,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   addNewNode(sender: ContentHandler, inputs: INode): void {
     const result: INode = JSON.parse(JSON.stringify(inputs));
     if (inputs.id === OUTPUT_COLLECTOR) {
-      // if the Output Collector is already added, ignore it
+      // if the Output_Collector is already added, ignore it
       const findDup = this.props.nodes.findIndex(
         (d: INode) => d.id === OUTPUT_COLLECTOR
       );

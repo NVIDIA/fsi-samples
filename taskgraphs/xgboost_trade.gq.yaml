@@ -63,7 +63,7 @@
   inputs:
     in: portfolio_opt_train.stock_out
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: sharpe_ratio_trn.sharpe_out

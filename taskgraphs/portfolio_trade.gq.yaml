@@ -63,7 +63,7 @@
   inputs:
     in: portfolio_opt.stock_out
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: cumulative_return.cum_return

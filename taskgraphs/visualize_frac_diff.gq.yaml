@@ -11,7 +11,7 @@
   inputs:
     stock_in: xgboost_graph.technical_indicator@stock_out
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: lineplot.lineplot

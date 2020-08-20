@@ -13,7 +13,7 @@
   inputs:
     in: stock_data.dask_cudf_out
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: output_csv.df_out

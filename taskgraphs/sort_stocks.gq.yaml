@@ -13,7 +13,7 @@
   inputs:
     in: stock_data.cudf_out
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: sort_node.out

@@ -16,7 +16,7 @@
     name_map: stock_name.map_data
     stock_in: stock_data.cudf_out
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: stock_selector.stock_name

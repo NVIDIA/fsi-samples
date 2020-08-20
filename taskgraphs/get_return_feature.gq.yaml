@@ -4,7 +4,7 @@
     file: notebooks/data/stock_price_hist.csv.gz
   inputs: {}
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: stock_data.cudf_out

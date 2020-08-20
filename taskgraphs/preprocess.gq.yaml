@@ -83,7 +83,7 @@
     right: rename_max_return.out
     left: merge_min_return.merged
 - id: ""
-  type: Output Collector
+  type: Output_Collector
   conf: {}
   inputs:
     in1: drop_columns.out
