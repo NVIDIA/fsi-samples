@@ -17,22 +17,23 @@ OPERATING_SYSTEM=${OPERATING_SYSTEM:-1}
 case $OPERATING_SYSTEM in
     1)
         echo "Ubuntu 16.04 selected."
-        OS_STR="10.2-runtime-ubuntu16.04"
+        OS_STR="ubuntu16.04"
         ;;
     2)
         echo "Ubuntu 18.04 selected."
-        OS_STR="10.2-runtime-ubuntu18.04"
+        OS_STR="ubuntu18.04"
         ;;
     *)
         echo "Ubuntu 20.04 selected."
-        OS_STR="11.0-runtime-ubuntu20.04"
+        OS_STR="runtime-ubuntu20.04"
         ;;
 esac
 
 echo -e "\nPlease, select your CUDA version:\n" \
     "- '1' for cuda 10.0\n" \
     "- '2' for cuda 10.1\n" \
-    "- '3' for cuda 10.2\n"
+    "- '3' for cuda 10.2\n" \
+    "- '4' for cuda 11.0 (minimum requirement for Ubuntu 20.04)\n"
 
 read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
 
@@ -47,6 +48,10 @@ case $CUDA_VERSION in
     3)
         echo "CUDA 10.2 is selected"
         CUDA_STR="10.2"
+        ;;
+    4)
+        echo "CUDA 10.2 is selected"
+        CUDA_STR="11.0"
         ;;
     *)
         echo "CUDA 10.0 is selected"
@@ -82,10 +87,9 @@ EOM
 	;;
 esac
 
-
-
-
-D_CONT=${D_CONT:="gquant/gquant:${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
+gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
+CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
+D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
 
 mkdir -p gQuant
 cp -r ../gquant ./gQuant
@@ -102,7 +106,7 @@ rsync -av --progress ../gquantlab ./gQuant --exclude node_modules
 
 
 cat > $D_FILE <<EOF
-FROM nvidia/cuda:$OS_STR
+FROM $CONTAINER
 EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
