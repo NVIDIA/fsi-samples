@@ -22,10 +22,11 @@ The gQuant Juyterlab extension provides the user interface to build the datafram
 3. Visually presents the TaskGraph as a DAG graph. Users can zoom in and out, freely move the nodes around, and make connections between nodes.
 4. Use the special `Ouput Collector` to gather the results and organize them in a tab widget. The IPython [rich display](https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display) is fully supported.
 5. Visually shows the progress of graph evaluation and computation dependence.
-6. Automatically generate the UI elements to edit and validate the Node configuration given the configuration JSON schema. User can change the configuration and re-run the computation to test out the hyperparameters easily. 
+6. Automatically generate the UI elements to edit and validate the Node configuration given the configuration JSON schema. It exposes the function API in a user-friendly way. User can change the configuration and re-run the computation to test out the hyperparameters easily.
 7. Dynamically compute the input-output ports compatibility, dataframe columns names and types, ports types to prevent connection errors. 
-8. Nodes can have multiple output ports that can be used to generate different output types. E.g. it can provide both `cudf` and `dask_cudf` output ports so the nodes connected to `dask_cudf` port are doing distributed computation automatically. 
+8. Nodes can have multiple output ports that can be used to generate different output types. E.g. some data loader Node provides both `cudf` and `dask_cudf` output ports. The multiple GPUs distributed computation computation is automatically enabled by switching to the `dask_cudf` output port. 
 9. Provides the standard API to extend your computation Nodes.
+10. The composite node can encapsulate the TaskGraph into a single node for easy reuse. The composite node can be exported as a regular gQuant node without any coding.
 
 
 ### Prerequisites
@@ -55,10 +56,15 @@ $ git clone https://github.com/rapidsai/gQuant.git
 
 
 - Build and run the container:
+
 ```bash
 $ cd gQuant/docker && . build.sh
+```
+When building the container, you can run gQuant in two modes: dev or prod. In the dev mode, please check the README file in `gquantlab` directory to install the plugins and Python libraries. 
+
+In the production mode, you can launch the container by following command and start to use it 
+```bash
 $ docker run --runtime=nvidia --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 gquant/gquant:[tag from the build]
-$ bash rapids/notebooks/utils/start-jupyter.sh 
 ```
 
 ### Example notebooks

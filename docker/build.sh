@@ -25,7 +25,7 @@ case $OPERATING_SYSTEM in
         ;;
     *)
         echo "Ubuntu 20.04 selected."
-        OS_STR="runtime-ubuntu20.04"
+        OS_STR="ubuntu20.04"
         ;;
 esac
 
@@ -50,7 +50,7 @@ case $CUDA_VERSION in
         CUDA_STR="10.2"
         ;;
     4)
-        echo "CUDA 10.2 is selected"
+        echo "CUDA 11.0 is selected"
         CUDA_STR="11.0"
         ;;
     *)
@@ -87,10 +87,6 @@ EOM
 	;;
 esac
 
-gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
-CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
-D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
-
 mkdir -p gQuant
 cp -r ../gquant ./gQuant
 cp -r ../task_example ./gQuant
@@ -104,6 +100,9 @@ cp ../gquantrc ./gQuant
 rsync -av --progress ../notebooks ./gQuant --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
 rsync -av --progress ../gquantlab ./gQuant --exclude node_modules 
 
+gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
+CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
+D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
 
 cat > $D_FILE <<EOF
 FROM $CONTAINER
