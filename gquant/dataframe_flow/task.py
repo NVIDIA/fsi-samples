@@ -45,29 +45,6 @@ __all__ = ['Task']
 DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
 
 
-def load_modules_from_file(modulefile, modulepaths):
-    """
-    Given a py filename without path information and modulepaths
-    this method will find it from a set of paths from settings.MODULE_PATHS
-    check for https://github.com/charlsagente/python-settings to
-    learn how to set up the setting file. It will load the file as a python
-    module, put it into the sys.modules and add the path into the pythonpath.
-    @param modulefile
-        string, file name
-    @returns
-        namedtuple, absolute path and loaded module
-    """
-    found = False
-    for path in modulepaths:
-        filename = Path(path+'/'+modulefile)
-        if filename.exists():
-            found = True
-            break
-    if (not found):
-        raise ("cannot find file %s" % (modulefile))
-    return load_modules(str(filename))
-
-
 def load_modules(pathfile, name=None):
     """
     Given a py filename with path information,

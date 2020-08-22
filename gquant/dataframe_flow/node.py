@@ -45,27 +45,15 @@ class Node(_PortsMixin, _Node):
     '''Base class for implementing gQuant plugins i.e. nodes. A node processes
     tasks within a gQuant task graph.
 
-    If one desires to use ports API then must implement the following method:
+    must implement the following method:
 
         :meth: ports_setup
             Defines ports for the node. Refer to ports_setup docstring for
             further details.
 
-    A node implementation must override the following methods:
-
         :meth: columns_setup
-            Define expected columns in dataframe processing. If
-            inputs/outputs are not dataframes then implement a pass through
-            without details. Ex.:
-                def columns_setup(self):
-                    pass
+            Define expected columns in dataframe processing.
             When processing dataframes define expected columns. Ex.:
-                # non-port API
-                def columns_setup(self):
-                    self.required = {'x': 'float64',
-                                     'y': 'float64'}
-
-                # ports API
                 def columns_setup(self):
                     self.required = {
                         'iport0_name': {'x': 'float64',
@@ -74,6 +62,11 @@ class Node(_PortsMixin, _Node):
                         etc.
                     }
             Refer to columns_setup docstring for further details.
+
+        :meth: conf_schema
+            Define the json schema for the Node configuration. The client
+            can automatically generate the UI elements based on the schema
+            Refer to process docstring for further details.
 
         :meth: process
             Main functionaliy or processing logic of the Node. Refer to
@@ -93,13 +86,6 @@ class Node(_PortsMixin, _Node):
         self.save = task.get(TaskSpecSchema.save, False)
 
         self.required = {}
-        self.addition = {}
-        self.deletion = {}
-        # Retention must be None instead of empty dict. This replaces anything
-        # set by required/addition/retention. An empty dict is a valid setting
-        # for retention therefore use None instead of empty dict.
-        self.retention = None
-        self.rename = {}
         self.delayed_process = False
         # customized the column setup
         self.init()
@@ -108,17 +94,11 @@ class Node(_PortsMixin, _Node):
         PortsSpecSchema.validate_ports(self.ports_setup())
 
     def ports_setup(self):
-        """Virtual method for specifying inputs/outputs ports. Implement if
-        desire to use ports API for Nodes in a TaskGraph. Leave un-implemented
-        for non-ports API.
+        """Virtual method for specifying inputs/outputs ports.
 
         Must return an instance of NodePorts that adheres to PortsSpecSchema.
         Refer to PortsSpecSchema and NodePorts in module:
             gquant.dataframe_flow.portsSpecSchema
-
-        Ex. empty no-ports but still implement ports API.
-            node_ports = NodePorts()
-            return node_ports
 
         Ex. ports for inputs and outputs. (typical case)
             inports = {
@@ -143,6 +123,10 @@ class Node(_PortsMixin, _Node):
 
             node_ports = NodePorts(inports=inports, outports=outports)
             return node_ports
+
+        The output port type can be dynamically calculated based on the input
+        port types. The input port type can be obtained by
+        `self.get_connected_inports` method.
 
         :return: Node ports
         :rtype: NodePorts
@@ -176,9 +160,8 @@ class Node(_PortsMixin, _Node):
 
     def init(self):
         """
-        Initialize the node. Usually it is used to setup the required
-        column types and self.delayed_process flag and other special
-        initialzation.
+        Initialize the node. Usually it is used to self.delayed_process flag
+         and other special initialzation.
 
         The self.delayed_process flag is by default set to False. It can be
         overwritten here to True. For native dataframe API calls, dask cudf
@@ -188,25 +171,13 @@ class Node(_PortsMixin, _Node):
         In order to use Dask (for distributed computation i.e. multi-gpu in
         examples later on) we set the flag and the framework
         handles dask_cudf dataframes automatically under the hood.
-
-        `self.required`, where keys are column names and values are
-        column types.
-
-        `self.required` defines the required columns in the input dataframes
-
-         Example column types:
-            * int64
-            * int32
-            * float64
-            * float32
-            * datetime64[ms]
         """
         pass
 
     def get_input_columns(self):
         """
-        Get the input column information. It is used by individual node to
-         compute the output column information
+        Get the input column information. It is usually used by individual
+         node to compute the output column information
         returns
             dict, key is the node input port name, value is the dict with keys
             column names, and values column types
@@ -237,29 +208,12 @@ class Node(_PortsMixin, _Node):
     def columns_setup(self):
         """
         All children class should implement this.
-        It is used to compute the input/output column names and types by
-        defining the diff between input and output dataframe columns.
-
-        The self.delayed_process flag is by default set to False. It can be
-        overwritten here to True. For native dataframe API calls, dask cudf
-        support the distribution computation. But the dask_cudf dataframe does
-        not support GPU customized kernels directly. We can use to_delayed and
-        from_delayed low level interfaces of dask_cudf to add this support.
-        In order to use Dask (for distributed computation i.e. multi-gpu in
-        examples later on) we set the flag and the framework
-        handles dask_cudf dataframes automatically under the hood.
-
-        `self.required`, `self.addition`, `self.deletion` and `self.retention`
-        are python dictionaries, where keys are column names and values are
-        column types. `self.rename` is a python dictionary where both keys and
-        values are column names.
+        It is used to compute the required and output column names and types.
 
         `self.required` defines the required columns in the input dataframes
-        `self.addition` defines the addional columns in the output dataframe
-        Only one of `self.deletion` and `self.retention` is needed to define
-        removed columns. `self.deletion` is to define the removed columns in
-        the output dataframe. `self.retention` defines the remaining columns.
-
+        `self.required` is python dictionaries, where keys are column names
+         and values are column types.
+       
         Example column types:
             * int64
             * int32
@@ -267,9 +221,9 @@ class Node(_PortsMixin, _Node):
             * float32
             * datetime64[ms]
 
-        There is a special syntax to use variable for column names. If the
-        the key is `@xxxx`, it will `xxxx` as key to look up the value in the
-        `self.conf` variable.
+        The output columns are calcuated based on the input columns. The input
+        column name and types can be obtained by `self.get_input_columns` method.
+
         returns:
             dict, key is the node output port name, value is the dict with keys
             column names, and values column types
@@ -292,40 +246,18 @@ class Node(_PortsMixin, _Node):
 
         Arguments
         -------
-        inputs: list or dictionary
-            Depending on if ports_setup is implemented or not i.e. ports API
-            or no-ports API, the inputs is a list (no ports API) or a
-            dictionary (ports API).
-            NO PORTS:
-                list of input dataframes. dataframes order in the list matters
-                Ex: inputs = [df0, df1, df2, etc.]
-                Within the context of connected nodes in a task-graph a
-                task spec specifies inputs as a list of task-ids of input
-                tasks. During task-graph run the inputs setup for process
-                will be a list of outputs from those tasks (corresponding
-                to task-spec task-ids ) in the order set in the task-spec.
-                Ex.:
-                    TaskSpecSchema.inputs: [
-                        some_task_id,
-                        some_other_task_id,
-                        etc.
-                    ]
-                Within the process access the dataframes (data inputs) as:
-                    df0 = inputs[0] # from some_task_id
-                    df1 = inputs[1] # from some_other_task_id
-                    etc.
-            PORTS:
-                dictionary keyed by port name as defined in ports_setup.
+        inputs: dictionary
+            the inputs is a dictionary keyed by port name as defined in 
+            ports_setup.
                 Ex.:
                     inputs = {
                         iport0: df0,
                         iport1: df1,
                         etc.
                     }
-                The difference with no-ports case is that the task-spec
-                for inputs is a dictionary keyed by port names with values
-                being task-ids of input tasks "." port output of the input
-                tasks. Ex.:
+                The task-spec for inputs is a dictionary keyed by port names
+                 with values being task-ids of input tasks "." port output of 
+                 the input tasks. Ex.:
                     TaskSpecSchema.inputs: {
                         iport0: some_task_id.some_oport,
                         iport1: some_other_task_id.some_oport,
@@ -341,17 +273,17 @@ class Node(_PortsMixin, _Node):
         dataframe
             The output can be anything representable in python. Typically it's
             a processed dataframe.
-            NO PORTS:
-                Return some dataframe or output. Ex.:
-                    df = cudf.DataFrame()  # or maybe it can from an input
-                    # do some calculations and populate df.
-                    return df
-            PORTS:
-                Mostly the same as NO PORTS but must return a dictionary keyed
-                by output ports (as defined in ports_setup). Ex.:
-                    df = cudf.DataFrame()  # or maybe it can from an input
-                    # do some calculations and populate df.
-                    return {oport: df}
+
+            It return a dictionary keyed by output ports (as defined in 
+            ports_setup). Ex.:
+                df = cudf.DataFrame()  # or maybe it can from an input
+                # do some calculations and populate df.
+                return {oport: df}
+
+            If there are mutliple output ports, the computation can be done
+            on demand depending on whether the output port is connected or
+            not. The output connection can be queried by
+            `self.outport_connected` method
         """
         output = None
         return output
