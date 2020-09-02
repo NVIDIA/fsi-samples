@@ -461,13 +461,11 @@ class VerifyNode(Node):
 
         df1_col = df1[col_df1]
         if isinstance(df1, dask_cudf.DataFrame):
-            # df1_col = df1_col.compute()
-            pass
+            df1_col = df1_col.compute()
 
         df2_col = df2[col_df2]
         if isinstance(df2, dask_cudf.DataFrame):
-            # df2_col = df2_col.compute()
-            pass
+            df2_col = df2_col.compute()
 
         max_difference = (df1_col - df2_col).abs().max()
 

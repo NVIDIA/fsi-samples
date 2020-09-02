@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/camelcase */
-// Copyright (c) Yi Dong
-// Distributed under the terms of the Modified BSD License.
 
 import { DOMWidgetModel, DOMWidgetView, ViewList } from '@jupyter-widgets/base';
 import * as widgets from '@jupyter-widgets/base';

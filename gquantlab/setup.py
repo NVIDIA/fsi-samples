@@ -55,7 +55,7 @@ with open("README.md", "r") as fh:
 setup_args = dict(
     name=name,
     version=version,
-    url="https://github.com/rapidsai/gQuant/gquantlab",
+    url="https://github.com/rapidsai/gQuant",
     author="Yi",
     description="gQuant Jupyterlab extension",
     long_description= long_description,
@@ -67,11 +67,11 @@ setup_args = dict(
     ],
     zip_safe=False,
     include_package_data=True,
-    license="BSD-3-Clause",
+    license="Apache",
     platforms="Linux, Mac OS X, Windows",
     keywords=["Jupyter", "JupyterLab"],
     classifiers=[
-        "License :: OSI Approved :: BSD License",
+        "License :: Apache",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
