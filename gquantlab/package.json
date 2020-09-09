@@ -7,9 +7,9 @@
     "jupyterlab",
     "jupyterlab-extension"
   ],
-  "homepage": "https://github.com/rapidsai/gQuant/gquantlab",
+  "homepage": "https://github.com/rapidsai/gQuant",
   "bugs": {
-    "url": "https://github.com/rapidsai/gQuant/gquantlab/issues"
+    "url": "https://github.com/rapidsai/gQuant/issues"
   },
   "license": "Apache-2.0",
   "author": {
@@ -25,7 +25,7 @@
   "style": "style/index.css",
   "repository": {
     "type": "git",
-    "url": "https://github.com/rapidsai/gQuant/gquantlab.git"
+    "url": "https://github.com/rapidsai/gQuant.git"
   },
   "scripts": {
     "build": "jlpm run build:lib",

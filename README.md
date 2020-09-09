@@ -70,3 +70,24 @@ $ docker run --runtime=nvidia --rm -it -p 8888:8888 -p 8787:8787 -p 8786:8786 gq
 ### Example notebooks
 
 Example notebooks, tutorial showcasing, can be found in __notebooks__ folder.
+
+
+### System environment 
+
+There are a few system environment that the user can overwrite. 
+
+The custom module files are specified in the `gquantrc` file. `GQUANT_CONFIG` enviroment variable points to the location of this file. By default, it points to 
+`$CWD\gquantrc`. 
+
+In the example `gquantrc`, system environment variable `MODULEPATH` is used to point to the paths of the module files.
+To start the jupyterlab, please make sure `MODULEPATH` is set properly. 
+
+For example, if you want to start the jupyterlab in the gQuant root directory.
+```bash
+MODULEPATH=$PWD/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+```
+
+Or, if you want to start the jupyterlab in the gquantlab directory.
+```bash
+GQUANT_CONFIG=../gquantrc MODULEPATH=$PWD/../modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+```

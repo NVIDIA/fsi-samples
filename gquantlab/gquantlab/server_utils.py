@@ -166,10 +166,9 @@ def get_nodes_from_file(file):
 def add_nodes():
     """
     It will load all the nodes for the UI client so user can add new node
-    to the graph. The nodes are from two sources:
-    default gQuant nodes and customized node modules. Currently gQuant default
-    nodes are still using old API. So all the nodes are coming from customized
-    node modules in the 'modules' directory.
+    to the graph. The nodes are from two sources: default gQuant nodes and
+    customized node modules.
+
     The output is a dictionary whose keys are module names and values are a
     list of the nodes inside that module.
 

@@ -55,7 +55,7 @@ with open("README.md", "r") as fh:
 setup_args = dict(
     name=name,
     version=version,
-    url="https://github.com/rapidsai/gQuant",
+    url="https://github.com/rapidsai/gQuant/gquantlab",
     author="Yi",
     description="gQuant Jupyterlab extension",
     long_description= long_description,

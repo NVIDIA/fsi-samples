@@ -7,6 +7,7 @@ from gquant.dataframe_flow import TaskGraph
 from .server_utils import (get_nodes, add_nodes)
 import os
 
+
 class RouteHandlerLoadGraph(APIHandler):
     @tornado.web.authenticated
     def get(self):
@@ -44,6 +45,11 @@ class RouteHandlerLoadAllNodes(APIHandler):
 def setup_handlers(web_app):
     host_pattern = ".*$"
     base_url = web_app.settings["base_url"]
+    # pass the jupyterlab server root directory to
+    # environment variable `GQUANTROOT`. Note, this
+    # variable is not meant to be overwritten by user.
+    # This variable can be used by other utility function
+    # to compute the absolute path of the files.
     os.environ['GQUANTROOT'] = os.getcwd()
     # load all the graphs given the input gq.yaml file contents
     route_pattern0 = url_path_join(base_url, "gquantlab", "load_graph")

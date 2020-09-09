@@ -14,13 +14,12 @@ for the frontend extension.
 
 In the gQuant root direction
 ```bash
-bash docker/build_dev.sh
+bash docker/build.sh
 ```
 Launch your development container, make sure mounting your gQuant directory
-to the container and open `8080` and `8888` ports.
+to the container and open `8888` ports.
 
-The code-server starts and hosts at port `8080`. Set the 
-gQuant path as the folder to start the development or you can open the 
+Set the gQuant path as the folder to start the development or you can open the 
 `workspace.code-workspace` file.
 
 
