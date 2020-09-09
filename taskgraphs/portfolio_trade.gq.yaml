@@ -1,0 +1,70 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  inputs: {}
+- id: preprocess
+  type: CompositeNode
+  conf:
+    subnode_ids:
+      - value_filter
+    subnodes_conf:
+      value_filter:
+        conf:
+          - column: min_return
+            min: -10
+          - column: max_return
+            max: 10
+          - column: average_volume
+            min: 400
+    taskgraph: taskgraphs/preprocess.gq.yaml
+    input:
+      - sort_node.in
+    output: 
+      - drop_columns.out
+  inputs:
+    sort_node@in: stock_data.cudf_out
+- id: sort_after
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: preprocess.drop_columns@out
+- id: exp_mean_reversion
+  type: PortExpMovingAverageStrategyNode
+  conf:
+    fast: 5
+    slow: 20
+  inputs:
+    stock_in: sort_after.out
+- id: backtest
+  type: SimpleBackTestNode
+  conf: {}
+  inputs:
+    bardata_in: exp_mean_reversion.stock_out
+- id: portfolio_opt
+  type: SimpleAveragePortOpt
+  conf: {}
+  inputs:
+    stock_in: backtest.backtest_out
+- id: sharpe_ratio
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    stock_in: portfolio_opt.stock_out
+- id: cumulative_return
+  type: CumReturnNode
+  conf:
+    points: 300
+    label: cumulative return
+  inputs:
+    in: portfolio_opt.stock_out
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: cumulative_return.cum_return
+    in2: sharpe_ratio.sharpe_out

@@ -1,11 +1,13 @@
-from gquant.dataframe_flow import Node
 import datetime
+from gquant.dataframe_flow import Node
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
 __all__ = ['DatetimeFilterNode']
 
 
-class DatetimeFilterNode(Node):
+class DatetimeFilterNode(Node, _PortTypesMixin):
     """
     A node that is used to select datapoints based on range of time.
     conf["beg"] defines the beginning of the date inclusively and
@@ -14,9 +16,59 @@ class DatetimeFilterNode(Node):
 
     """
 
+    def init(self):
+        _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'stock_out'
+        cols_required = {"datetime": "date"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+
+    def columns_setup(self):
+        return _PortTypesMixin.columns_setup(self)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def conf_schema(self):
+        json = {
+            "title": "Asset indicator configure",
+            "type": "object",
+            "description": """Select the data based on an range of datetime""",
+            "properties": {
+                "beg":  {
+                    "type": "string",
+                    "description": """start date, inclusive"""
+                },
+                "end":  {
+                    "type": "string",
+                    "description": """end date, exclusive"""
+                }
+            },
+            "required": ["beg", "end"],
+        }
+        ui = {
+            "beg": {"ui:widget": "alt-date",
+                    "ui:options": {
+                        "yearsRange": [1985, 2025],
+                        "hideNowButton": True,
+                        "hideClearButton": True,
+                    }
+                    },
+            "end": {"ui:widget": "alt-date",
+                    "ui:options": {
+                        "yearsRange": [1985, 2025],
+                        "hideNowButton": True,
+                        "hideClearButton": True,
+                    }
+                    }
+        }
+        return ConfSchema(json=json, ui=ui)
+
     def process(self, inputs):
         """
-        select the data based on an range of datetime, which is defined in
+        Select the data based on an range of datetime, which is defined in
         `beg` and `end` in the nodes' conf
 
         Arguments
@@ -27,23 +79,12 @@ class DatetimeFilterNode(Node):
         -------
         dataframe
         """
-        df = inputs[0]
+        df = inputs[self.INPUT_PORT_NAME]
         beg_date = \
             datetime.datetime.strptime(self.conf['beg'], '%Y-%m-%d')
         end_date = \
             datetime.datetime.strptime(self.conf['end'], '%Y-%m-%d')
-        return df.query('datetime<@end_date and datetime>=@beg_date',
-                        local_dict={'beg_date': beg_date,
-                                    'end_date': end_date})
-
-    def columns_setup(self):
-        self.required = {"datetime": "date"}
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-
-    loader = CsvStockLoader("node_csvdata", {}, True, False)
-    df = loader([])
-    sf = DatetimeFilterNode("id2", {"beg": '2011-01-01', "end": '2012-01-01'})
-    df2 = sf([df])
+        df = df.query('datetime<@end_date and datetime>=@beg_date',
+                      local_dict={'beg_date': beg_date,
+                                  'end_date': end_date})
+        return {self.OUTPUT_PORT_NAME: df}

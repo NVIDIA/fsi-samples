@@ -1,0 +1,31 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+  inputs: {}
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: stock_data.cudf_out
+    in2: add_return_feature.stock_out
+- id: volume_filter
+  type: ValueFilterNode
+  conf:
+    - column: volume
+      min: 50
+  inputs:
+    in: stock_data.cudf_out
+- id: sort_node
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: volume_filter.out
+- id: add_return_feature
+  type: ReturnFeatureNode
+  conf: {}
+  inputs:
+    stock_in: sort_node.out

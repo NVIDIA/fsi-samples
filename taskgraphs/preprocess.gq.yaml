@@ -1,0 +1,113 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small/
+  inputs: {}
+- id: sort_node
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: stock_data.cudf_out
+- id: add_return_feature
+  type: ReturnFeatureNode
+  conf: {}
+  inputs:
+    stock_in: sort_node.out
+- id: find_stock_row
+  type: AssetIndicatorNode
+  conf: {}
+  inputs:
+    stock_in: add_return_feature.stock_out
+- id: average_volume
+  type: AverageNode
+  conf:
+    column: volume
+  inputs:
+    stock_in: find_stock_row.stock_out
+- id: rename_average_volume
+  type: RenameNode
+  conf:
+    old: volume
+    new: average_volume
+  inputs:
+    in: average_volume.stock_out
+- id: merge_average_volume
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    left: find_stock_row.stock_out
+    right: rename_average_volume.out
+- id: min_return
+  type: MinNode
+  conf:
+    column: returns
+  inputs:
+    in: find_stock_row.stock_out
+- id: rename_min_return
+  type: RenameNode
+  conf:
+    old: returns
+    new: min_return
+  inputs:
+    in: min_return.out
+- id: merge_min_return
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    right: rename_min_return.out
+    left: merge_average_volume.merged
+- id: max_return
+  type: MaxNode
+  conf:
+    column: returns
+  inputs:
+    in: find_stock_row.stock_out
+- id: rename_max_return
+  type: RenameNode
+  conf:
+    old: returns
+    new: max_return
+  inputs:
+    in: max_return.out
+- id: merge_max_return
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    right: rename_max_return.out
+    left: merge_min_return.merged
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: drop_columns.out
+- id: value_filter
+  type: ValueFilterNode
+  conf:
+    - column: average_volume
+      min: 10
+    - column: min_return
+      min: -10
+    - column: max_return
+      max: 10
+  inputs:
+    in: merge_max_return.merged
+- id: drop_columns
+  type: DropNode
+  conf:
+    columns:
+      - average_volume
+      - min_return
+      - max_return
+      - open
+      - high
+      - low
+      - volume
+  inputs:
+    in: value_filter.out

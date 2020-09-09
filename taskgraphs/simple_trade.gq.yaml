@@ -1,0 +1,85 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+  inputs: {}
+- id: stock_name
+  type: StockNameLoader
+  conf:
+    file: notebooks/data/security_master.csv.gz
+  inputs: {}
+- id: stock_selector
+  type: AssetFilterNode
+  conf:
+    asset: 4330
+  inputs:
+    name_map: stock_name.map_data
+    stock_in: stock_data.cudf_out
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: stock_selector.stock_name
+    in2: lineplot.lineplot
+    in3: barplot.barplot
+    in4: sharpe_ratio.sharpe_out
+    in5: cumulative_return.cum_return
+    in6: stock_data.cudf_out
+- id: sort_node
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: stock_selector.stock_out
+- id: add_return
+  type: ReturnFeatureNode
+  conf: {}
+  inputs:
+    stock_in: sort_node.out
+- id: mean_reversion
+  type: MovingAverageStrategyNode
+  conf:
+    fast: 5
+    slow: 10
+  inputs:
+    stock_in: add_return.stock_out
+- id: backtest
+  type: SimpleBackTestNode
+  conf: {}
+  inputs:
+    bardata_in: mean_reversion.stock_out
+- id: barplot
+  type: BarPlotNode
+  conf:
+    points: 300
+    label: barplot
+  inputs:
+    stock_in: backtest.backtest_out
+- id: lineplot
+  type: LinePlotNode
+  conf:
+    lines:
+      - column: ma_slow
+        label: slow
+        color: blue
+      - column: ma_fast
+        label: fast
+        color: green
+    points: 300
+    title: signals
+  inputs:
+    in: backtest.backtest_out
+- id: sharpe_ratio
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    stock_in: backtest.backtest_out
+- id: cumulative_return
+  type: CumReturnNode
+  conf:
+    points: 300
+    label: cumulative_return
+  inputs:
+    in: backtest.backtest_out

@@ -1,0 +1,110 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  inputs: {}
+- id: asset_filter
+  type: AssetFilterNode
+  conf:
+    asset: 22123
+  inputs:
+    stock_in: xgboost_graph.technical_indicator@stock_out
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: lineplot.lineplot
+- id: lineplot
+  type: LinePlotNode
+  conf:
+    lines:
+      - column: FR_DI_0.1
+        label: d 0.1
+        color: blue
+      - column: FR_DI_0.3
+        label: d 0.3
+        color: orange
+      - column: FR_DI_0.5
+        label: d 0.5
+        color: green
+      - column: FR_DI_0.7
+        label: d 0.7
+        color: black
+    points: 300
+    title: signals
+  inputs:
+    in: asset_filter.stock_out
+- id: xgboost_graph
+  type: CompositeNode
+  conf:
+    input:
+      - preprocess.sort_node@in
+    output:
+      - technical_indicator.stock_out
+    subnode_ids:
+      - preprocess
+      - technical_indicator
+    subnodes_conf:
+      preprocess:
+        conf:
+          input:
+            - sort_node.in
+          output:
+            - drop_columns.out
+          subnode_ids:
+            - value_filter
+            - drop_columns
+          subnodes_conf:
+            value_filter:
+              conf:
+                - column: average_volume
+                  min: 400
+                - column: min_return
+                  min: -10
+                - column: max_return
+                  max: 10
+            drop_columns:
+              conf:
+                columns:
+                  - average_volume
+                  - min_return
+                  - max_return
+          taskgraph: taskgraphs/preprocess.gq.yaml
+      technical_indicator:
+        conf:
+          indicators:
+            - function: port_fractional_diff
+              args:
+                - 0.9
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.7
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.5
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.3
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.1
+              columns:
+                - close
+            - function: port_shift
+              args:
+                - -1
+              columns:
+                - returns
+          remove_na: true
+    taskgraph: taskgraphs/xgboost_trade.gq.yaml
+  inputs:
+    preprocess@sort_node@in: stock_data.cudf_out

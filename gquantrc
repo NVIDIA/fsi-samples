@@ -1,0 +1,3 @@
+[ModuleFiles]
+custom_port_nodes= %(MODULEPATH)s/custom_port_nodes.py
+custom_port_nodes2= %(MODULEPATH)s/custom_port_nodes.py

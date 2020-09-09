@@ -1,11 +1,56 @@
 from gquant.dataframe_flow import Node
-from .volumeFilterNode import VolumeFilterNode
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class ValueFilterNode(Node):
+class ValueFilterNode(Node, _PortTypesMixin):
+
+    def init(self):
+        _PortTypesMixin.init(self)
+        cols_required = {"asset": "int64"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.required = {"asset": "int64"}
+        return _PortTypesMixin.columns_setup(self)
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def conf_schema(self):
+        json = {
+            "title": "Value Filter Node configure",
+            "type": "array",
+            "description": """Filter the dataframe based on a list of
+            min/max values.""",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "column":  {
+                        "type": "string",
+                        "description": "dataframe column to be filered on"
+                    },
+                    "min": {
+                        "type": "number",
+                        "description": "min value, inclusive"
+                    },
+                    "max": {
+                        "type": "number",
+                        "description": "max value, inclusive"
+                    }
+                }
+            }
+        }
+        ui = {}
+        input_columns = self.get_input_columns()
+        if self.INPUT_PORT_NAME in input_columns:
+            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            enums = [col for col in col_from_inport.keys()]
+            json['items']['properties']['column']['enum'] = enums
+            return ConfSchema(json=json, ui=ui)
+        else:
+            return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -22,7 +67,7 @@ class ValueFilterNode(Node):
         dataframe
         """
 
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         str_list = []
         for column_item in self.conf:
             column_name = column_item['column']
@@ -35,13 +80,4 @@ class ValueFilterNode(Node):
                 str_item = '%s <= %f' % (column_name, maxValue)
                 str_list.append(str_item)
         input_df = input_df.query(" and ".join(str_list))
-        return input_df
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    vf = VolumeFilterNode("id1", {"min": 50.0})
-    df2 = vf([df])
+        return {self.OUTPUT_PORT_NAME: input_df}

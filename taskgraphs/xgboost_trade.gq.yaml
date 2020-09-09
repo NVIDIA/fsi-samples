@@ -1,0 +1,152 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  inputs: {}
+- id: preprocess
+  type: CompositeNode
+  conf:
+    subnode_ids:
+      - value_filter
+      - drop_columns
+    subnodes_conf:
+      value_filter:
+        conf:
+          - column: min_return
+            min: -10
+          - column: max_return
+            max: 10
+          - column: average_volume
+            min: 400
+      drop_columns:
+        conf:
+          columns:
+            - average_volume
+            - min_return
+            - max_return
+    taskgraph: taskgraphs/preprocess.gq.yaml
+    input: 
+      - sort_node.in
+    output: 
+      - drop_columns.out
+  inputs:
+    sort_node@in: stock_data.cudf_out
+- id: sort_after
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: preprocess.drop_columns@out
+- id: backtest
+  type: SimpleBackTestNode
+  conf: {}
+  inputs:
+    bardata_in: xgboost.stock_out
+- id: portfolio_opt_train
+  type: SimpleAveragePortOpt
+  conf: {}
+  inputs:
+    stock_in: train_df.stock_out
+- id: sharpe_ratio_trn
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    stock_in: portfolio_opt_train.stock_out
+- id: cumulative_return_trn
+  type: CumReturnNode
+  conf:
+    points: 300
+    label: training cumulative return
+  inputs:
+    in: portfolio_opt_train.stock_out
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: sharpe_ratio_trn.sharpe_out
+    in2: cumulative_return_trn.cum_return
+    in3: sharpe_ratio_val.sharpe_out
+    in4: cumulative_return_val.cum_return
+- id: technical_indicator
+  type: IndicatorNode
+  conf:
+    indicators:
+      - function: port_chaikin_oscillator
+        args:
+          - 10
+          - 20
+        columns:
+          - high
+          - low
+          - close
+          - volume
+      - function: port_bollinger_bands
+        args:
+          - 10
+        columns:
+          - close
+      - function: port_shift
+        args:
+          - -1
+        columns:
+          - returns
+    remove_na: true
+  inputs:
+    stock_in: sort_after.out
+- id: xgboost
+  type: XGBoostStrategyNode
+  conf:
+    num_of_rounds: 100
+    no_feature:
+      - asset
+      - datetime
+      - volume
+      - close
+      - high
+      - low
+      - returns
+      - indicator
+      - open
+    xgboost_parameters:
+      max_depth: 8
+      max_leaves: 256
+      gamma: 0
+      objective: reg:squarederror
+    train_date: 2010-01-01
+    target: SHIFT_-1
+  inputs:
+    stock_in: technical_indicator.stock_out
+- id: train_df
+  type: DatetimeFilterNode
+  conf:
+    end: 2010-01-01
+    beg: 1985-01-01
+  inputs:
+    stock_in: backtest.backtest_out
+- id: validation_df
+  type: DatetimeFilterNode
+  conf:
+    beg: 2010-01-01
+    end: 2025-01-01
+  inputs:
+    stock_in: backtest.backtest_out
+- id: portfolio_opt_validation
+  type: SimpleAveragePortOpt
+  conf: {}
+  inputs:
+    stock_in: validation_df.stock_out
+- id: sharpe_ratio_val
+  type: SharpeRatioNode
+  conf: {}
+  inputs:
+    stock_in: portfolio_opt_validation.stock_out
+- id: cumulative_return_val
+  type: CumReturnNode
+  conf:
+    points: 300
+    label: validation cumulative return
+  inputs:
+    in: portfolio_opt_validation.stock_out

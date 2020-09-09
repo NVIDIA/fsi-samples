@@ -1,0 +1,19 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  inputs: {}
+- id: sort_node
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: stock_data.cudf_out
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: sort_node.out

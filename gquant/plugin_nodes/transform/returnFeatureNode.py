@@ -1,56 +1,40 @@
 from gquant.dataframe_flow import Node
-from numba import cuda
-import numpy as np
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-def mask_returns(close, indicator):
-    # print(len(close), cuda.threadIdx.x, cuda.blockDim.x, len(indicator))
-    for i in range(cuda.threadIdx.x, len(close), cuda.blockDim.x):
-        if i == 0:
-            indicator[i] = 1
-        else:
-            indicator[i] = 0
+class ReturnFeatureNode(Node, _PortTypesMixin):
 
-
-def clean(df):
-    df.iloc[0] = np.nan
-    return df
-
-
-class ReturnFeatureNode(Node):
+    def init(self):
+        self.delayed_process = True
+        _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'stock_out'
+        cols_required = {"close": "float64",
+                         "asset": "int64"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.delayed_process = True
+        addition = {"returns": "float64"}
+        return _PortTypesMixin.addition_columns_setup(self,
+                                                      addition)
 
-        self.required = {"close": "float64",
-                         "asset": "int64"}
-        self.addition = {"returns": "float64"}
+    def conf_schema(self):
+        json = {
+            "title": "Add Returen Feature Node configure",
+            "type": "object",
+            "description": """Add the rate of of return column based
+            on the `close` price for each of the asset in the dataframe.
+            """,
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
-    def process(self, inputs):
-        """
-        Add the rate of of return column based on the `close` price for each
-        of the asset in the dataframe. The result column is named as `returns`
-
-        Arguments
-        -------
-         inputs: list
-            list of input dataframes.
-        Returns
-        -------
-        dataframe
-        """
-        input_df = inputs[0]
-        shifted = input_df['close'].shift(1)
-        input_df['returns'] = (input_df['close'] - shifted) / shifted
-        input_df['returns'] = input_df['returns'].fillna(0.0)
-        input_df['indicator'] = (input_df['asset'] -
-                                 input_df['asset'].shift(1)).fillna(1)
-        input_df['indicator'] = (input_df['indicator'] != 0).astype('int32')
-        input_df['indicator'][input_df['indicator'] == 1] = None
-        return input_df.dropna(subset=['indicator']).drop('indicator')
-
-
-class CpuReturnFeatureNode(ReturnFeatureNode):
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
 
     def process(self, inputs):
         """
@@ -65,19 +49,14 @@ class CpuReturnFeatureNode(ReturnFeatureNode):
         -------
         dataframe
         """
-        input_df = inputs[0]
+        tmp_col = "ae699380a8834957b3a8b7ad60192dd7"
+        input_df = inputs[self.INPUT_PORT_NAME]
         shifted = input_df['close'].shift(1)
         input_df['returns'] = (input_df['close'] - shifted) / shifted
         input_df['returns'] = input_df['returns'].fillna(0.0)
-        input_df = input_df.groupby('asset').apply(clean)
-        return input_df.dropna()
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    df = df.sort_values(["asset", 'datetime'])
-    sf = ReturnFeatureNode("id2", {})
-    df2 = sf([df])
+        input_df[tmp_col] = (input_df['asset'] -
+                             input_df['asset'].shift(1)).fillna(1)
+        input_df[tmp_col] = (input_df[tmp_col] != 0).astype('int32')
+        input_df[tmp_col][input_df[tmp_col] == 1] = None
+        return {self.OUTPUT_PORT_NAME: input_df.dropna(
+            subset=[tmp_col]).drop(tmp_col, axis=1)}

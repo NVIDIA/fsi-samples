@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="16" viewBox="-2 -2 34 34">
+    <rect
+       y="-1.7763568e-15"
+       x="0"
+       height="30"
+       width="10"
+       id="rect22"
+       style="fill:#2e8b57;fill-opacity:1;fill-rule:evenodd;stroke-width:0.183308" />
+    <rect
+       style="fill:#2e8b57;fill-opacity:1;fill-rule:evenodd;stroke-width:0.183309;stroke:none;stroke-opacity:1"
+       id="rect22-9"
+       width="10"
+       height="30"
+       x="20"
+       y="0" />
+    <circle
+       r="5"
+       cy="10"
+       cx="10"
+       id="path1050"
+       style="fill:#2e8b57;fill-opacity:1;stroke:none;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       d="m 10,15 a 5,5 0 0 1 -4.330127,-2.5 5,5 0 0 1 0,-5 A 5,5 0 0 1 10,5"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path1050-2" />
+    <circle
+       r="5"
+       cx="20"
+       cy="20"
+       id="path1050-2-5"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <path
+       d="m 20,25 a 5,5 0 0 1 -4.330127,-2.5 5,5 0 0 1 0,-5 A 5,5 0 0 1 20,15 v 5 z"
+       style="fill:#2e8b57;fill-opacity:1;stroke:none;stroke-width:1;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       id="path1050-2-5-1" />
+</svg>

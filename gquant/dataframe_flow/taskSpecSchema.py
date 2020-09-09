@@ -11,6 +11,7 @@ class TaskSpecSchema(object):
     :cvar conf: Configuration for the plugin i.e. parameterization. This is a
         dictionary.
     :cvar filepath: Path to python module for custom plugin types.
+    :cvar module: optional field for the name of the module.
     :cvar inputs: List of ids of other tasks or an empty list.
     '''
 
@@ -18,6 +19,7 @@ class TaskSpecSchema(object):
     node_type = 'type'
     conf = 'conf'
     filepath = 'filepath'
+    module = 'module'
     inputs = 'inputs'
     # outputs = 'outputs'
     load = 'load'
@@ -25,29 +27,35 @@ class TaskSpecSchema(object):
 
     @classmethod
     def _typecheck(cls, schema_field, value):
-        if (schema_field == cls.task_id):
-            assert isinstance(value, str)
-        elif schema_field == cls.node_type:
-            assert (isinstance(value, str) or issubclass(value, _Node))
-        elif schema_field == cls.conf:
-            assert (isinstance(value, dict) or isinstance(value, list))
-        elif schema_field == cls.filepath:
-            assert isinstance(value, str)
-        elif schema_field == cls.inputs:
-            assert (isinstance(value, list) or isinstance(value, dict))
-            for item in value:
-                assert isinstance(item, str)
-        # elif schema_field == cls.outputs:
-        #     assert isinstance(value, list)
-        #     for item in value:
-        #         assert isinstance(item, str)
-        elif schema_field == cls.load:
-            pass
-        elif schema_field == cls.save:
-            assert isinstance(value, bool)
-        else:
-            raise KeyError('Uknown schema field "{}" in the task spec.'.format(
-                schema_field))
+        try:
+            if (schema_field == cls.task_id):
+                assert isinstance(value, str)
+            elif schema_field == cls.node_type:
+                assert (isinstance(value, str) or issubclass(value, _Node))
+            elif schema_field == cls.conf:
+                assert (isinstance(value, dict) or isinstance(value, list))
+            elif schema_field == cls.filepath:
+                assert isinstance(value, str)
+            elif schema_field == cls.module:
+                assert isinstance(value, str)
+            elif schema_field == cls.inputs:
+                assert (isinstance(value, list) or isinstance(value, dict))
+                for item in value:
+                    assert isinstance(item, str)
+            # elif schema_field == cls.outputs:
+            #     assert isinstance(value, list)
+            #     for item in value:
+            #         assert isinstance(item, str)
+            elif schema_field == cls.load:
+                pass
+            elif schema_field == cls.save:
+                assert isinstance(value, bool)
+            else:
+                raise KeyError('Uknown schema field "{}" in the task spec.'.format(
+                    schema_field))
+        except AssertionError as e:
+            print(schema_field, value)
+            raise e
 
     _schema_req_fields = [task_id, node_type, conf, inputs]
 

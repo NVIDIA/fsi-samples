@@ -1,0 +1,22 @@
+{
+    "image": "gquant/gquant:10.1_10.2-runtime-ubuntu18.04_0.14.1_dev",
+    "workspaceFolder": "/workspace/",
+    "workspaceMount": "source=${localEnv:GQUANT_ROOT},target=/workspace,type=bind,consistency=cached",
+    "extensions": [
+        "ms-python.python", "dbaeumer.vscode-eslint"
+    ],
+    "settings": { 
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.pythonPath": "/home/quant/miniconda3/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "/home/quant/miniconda3/bin/autopep8",
+        "python.linting.flake8Path": "/home/quant/miniconda3/bin/flake8",
+        "python.linting.pylintPath": "/home/quant/miniconda3/bin/pylint",
+        "python.testing.pytestPath": "/home/quant/miniconda3/bin/pytest"
+    },
+    "forwardPorts": [8080, 8888],
+    "remoteUser": "quant",
+    "containerUser": "quant",
+    "runArgs": ["--runtime=nvidia"]
+}

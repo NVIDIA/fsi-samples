@@ -4,14 +4,17 @@ import pandas as pd
 import dask
 import cudf
 import dask_cudf
+import copy
 
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
 
-OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
+# OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
+OUTPUT_ID = 'collector_id_fd9567b6'
+OUTPUT_TYPE = 'Output_Collector'
 
 
-__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID']
+__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
 
 # class NodeIncomingEdge(object):
 #     from_node = 'from_node'
@@ -48,7 +51,6 @@ class NodeTaskGraphMixin(object):
             process
             load_cache
             save_cache
-            _using_ports
             _get_input_ports
             _get_output_ports
     '''
@@ -67,43 +69,6 @@ class NodeTaskGraphMixin(object):
         # Note: that even though the "df" terminology is used the type is
         #     user configurable i.e. "df" is just some python object which is
         #     typically a data container.
-
-        self.input_columns = {}
-        # input_columns format:
-        # {
-        #     iport0: {
-        #         col1_name: col1_type,
-        #         col2_name: col2_type,
-        #         ... etc.
-        #     },
-        #     iport1: { ... }
-        #     ... etc.
-        # }
-
-        # For the input_columns there's a dummy enumerated port for non-ports
-        # API nodes (one can always enumerate the inputs in order) so the
-        # inputs_columns format is always the same. The output_columns will be
-        # different depending on if it's a port based node or non-port.
-
-        self.output_columns = {}
-        # output_columns format when using ports:
-        # {
-        #     oport1: {
-        #         col1_name: col1_type,
-        #         col2_name: col2_type,
-        #         ... etc.
-        #     },
-        #     oport2: { ... }
-        #     ... etc.
-        # }
-        #
-        # output_columns format when not using ports:
-        # {
-        #     col1_name: col1_type,
-        #     col2_name: col2_type,
-        #     ... etc.
-        # }
-
         self.clear_input = True
 
     def __translate_column(self, columns):
@@ -159,11 +124,7 @@ class NodeTaskGraphMixin(object):
 
         return output_df
 
-    def columns_flow(self):
-        """
-        Flow the graph to determine the input output dataframe column names and
-        types.
-        """
+    def validate_required_columns(self):
 
         def validate_required(icols, kcol, kval, in_taskid=None, iport=None):
             if kcol not in icols:
@@ -175,11 +136,12 @@ class NodeTaskGraphMixin(object):
                     err_msg = '{}\nIncoming columns from "{}" do not match '\
                         'columns_setup for "{}".'.format(
                             err_msg, in_taskid, dst_uid)
-                raise Exception(err_msg)
-            if kval != icols[kcol]:
+                # raise Exception(err_msg)
+                print(err_msg)
+            if (kcol in icols) and kval != icols[kcol]:
                 # special case for 'date'
                 if (kval == 'date' and icols[kcol]
-                   in ('datetime64[ms]', 'date', 'datetime64[ns]')):
+                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
                     # continue
                     return
                 else:
@@ -187,158 +149,39 @@ class NodeTaskGraphMixin(object):
                           "type %s mismatch %s"
                           % (self.uid, kval, icols[kcol]))
 
-        incols_ready = self.__input_columns_ready()
-        if not incols_ready:
-            return
+        inputs_cols = self.get_input_columns()
 
-        inputs_cols = self.__get_input_columns()
+        # to_port (iport usually used as variable) is always set. Refer to
+        # TaskGraph.build method. In non-port case inputs are enumerated
+        # in the order that inputs are listed in the task spec. The order
+        # idx is used as an ad-hoc ports that aren't used. Below the data
+        # structure of inputs_cols is flattened.
+        incoming_cols = {
+            col_name: col_type for icol_dict in inputs_cols.values()
+            for col_name, col_type in icol_dict.items()
+        }
+        inputs_cols = incoming_cols
 
-        if not self._using_ports():
-            # to_port (iport usually used as variable) is always set. Refer to
-            # TaskGraph.build method. In non-port case inputs are enumerated
-            # in the order that inputs are listed in the task spec. The order
-            # idx is used as an ad-hoc ports that aren't used. Below the data
-            # structure of inputs_cols is flattened.
-            incoming_cols = {
-                col_name: col_type for icol_dict in inputs_cols.values()
-                for col_name, col_type in icol_dict.items()
-            }
-            inputs_cols = incoming_cols
-
-        # check required inpurt columns are there
         if self.required:
             required = self.required
             pinputs = self._task_obj[TaskSpecSchema.inputs]
-            if self._using_ports():
-                for iport in self._get_input_ports():
-                    required_iport = {
-                        col_name: col_type for col_name, col_type in
-                        required.get(iport, {}).items()}
+            for iport in self._get_input_ports():
+                required_iport = {
+                    col_name: col_type for col_name, col_type in
+                    required.get(iport, {}).items()}
 
-                    required_tran = self.__translate_column(required_iport)
+                # required_tran = self.__translate_column(required_iport)
+                required_tran = required_iport
+                if iport in inputs_cols:
                     incoming_cols = inputs_cols[iport]
                     in_taskid = pinputs[iport]
 
                     for kcol, kval in required_tran.items():
                         validate_required(incoming_cols, kcol, kval,
                                           in_taskid, iport)
-            else:
-                # required_flat = required
-                required_tran = self.__translate_column(required)
-                in_taskids = ', '.join(pinputs)
-                for kcol, kval in required_tran.items():
-                    validate_required(incoming_cols, kcol, kval, in_taskids)
 
-        # ABOVE validates the columns in dataframe inputs
-
-        combined = {}
-        # When using ports all the validation logic below add/del/retain
-        # can just be simplified to having a columns dict for the port.
-        # The operations add/del/retain are internal to the process API
-        # of a Node implementation.
-        # Renaming a column is a special case as it is a meta-operation where
-        # a column is renamed dynmically during run-time. The rename is
-        # identified via "@" special character and typically configured via
-        # task-spec conf.
-        if self._using_ports():
-            out_ports = self._get_output_ports()
-            for oport in out_ports:
-                # TODO: Translate needs to be port aware. Assumes
-                #     translation is defined in self.conf:
-                #         types = self.conf[types[1:]]
-                #     The conf should then be ports aware.
-                oport_req_cols_tran = self.__translate_column(
-                    self.required.get(oport, {}))
-                combined[oport] = oport_req_cols_tran
-        else:
-            # old API assumes input columns are passed through
-            combined.update(inputs_cols)
-
-        # compute the output columns
-        output_cols = combined
-
-        if self.addition:
-            if self._using_ports():
-                for oport in out_ports:
-                    add_cols = self.__translate_column(
-                        self.addition.get(oport, {}))
-                    col_dict = output_cols.get(oport, {})
-                    col_dict.update(add_cols)
-                    output_cols[oport] = col_dict
-            else:
-                add_cols = self.__translate_column(self.addition)
-                output_cols.update(add_cols)
-
-        if self.deletion:
-            if self._using_ports():
-                for oport in out_ports:
-                    del_cols = self.__translate_column(
-                        self.deletion.get(oport, {}))
-                    col_dict = output_cols.get(oport, {})
-                    for kdel in del_cols:
-                        del col_dict[kdel]
-                    output_cols[oport] = col_dict
-            else:
-                for kdel in self.__translate_column(self.deletion).keys():
-                    del output_cols[kdel]
-
-        if self.retention is not None:
-            if self._using_ports():
-                for oport in out_ports:
-                    output_cols[oport] = self.__translate_column(
-                        self.retention.get(oport, {}))
-            else:
-                output_cols = self.__translate_column(self.retention)
-
-        def rename_check(kk, cols):
-            if kk not in cols:
-                err_msg = 'Not valid replacement column: error for node "%s",'\
-                          ' missing required column "%s"' % (self.uid, kk)
-                raise Exception(err_msg)
-
-        if self.rename:
-            if self._using_ports():
-                for oport in out_ports:
-                    replacement = self.__translate_column(
-                        self.rename.get(oport, {}))
-                    col_dict = output_cols.get(oport, {})
-                    for col_key, repl_name in replacement.items():
-                        rename_check(col_key, col_dict)
-                        types = col_dict[col_key]
-                        del col_dict[col_key]
-                        col_dict[repl_name] = types
-                    output_cols[oport] = col_dict
-            else:
-                replacement = self.__translate_column(self.rename)
-                for col_key, repl_name in replacement.items():
-                    rename_check(col_key, output_cols)
-                    types = output_cols[col_key]
-                    del output_cols[col_key]
-                    output_cols[repl_name] = types
-
-        self.output_columns = output_cols
-
-        for iout in self.outputs:
-            onode = iout['to_node']
-            iport = iout['to_port']
-            oport = iout['from_port']
-#             onode.__set_input_column(self, self.output_columns)
-            if oport is not None:
-                out_cols = self.output_columns[oport]
-            else:
-                if self._using_ports():
-                    # oport is not specified but this is a port based Node.
-                    # That means it is outputing to a non-port based Node.
-                    # Flattening output_columns across all output ports:
-                    #     COMPATIBILITY FOR NON-PORT API NODES
-                    out_cols = {
-                        col_name: col_type
-                        for col_dict in self.output_columns.values()
-                        for col_name, col_type in col_dict.items()}
-                else:
-                    out_cols = self.output_columns
-            onode.__set_input_column(iport, out_cols)
-            onode.columns_flow()
+    def get_output_columns(self):
+        return self.columns_setup()
 
     def _validate_df(self, df_to_val, ref_cols):
         '''Validate a cudf or dask_cudf DataFrame.
@@ -407,53 +250,52 @@ class NodeTaskGraphMixin(object):
         return True
 
     def __valide(self, node_output, ref_cols):
-        if self._using_ports():
-            # Validate each port
-            out_ports = self._get_output_ports(full_port_spec=True)
-            for pname, pspec in out_ports.items():
-                out_optional = pspec.get('optional', False)
-                if pname not in node_output:
-                    if out_optional:
-                        continue
-                    else:
-                        raise Exception('Node "{}" did not produce output "{}"'
-                                        .format(self.uid, pname))
+        # Validate each port
+        out_ports = self._get_output_ports(full_port_spec=True)
+        for pname, pspec in out_ports.items():
+            # only validate it if it is connected
+            if not self.outport_connected(pname):
+                # if the port is not connected skip it
+                # print('port {} is not connected'.format(pname))
+                continue
+            out_optional = pspec.get('optional', False)
+            if pname not in node_output:
+                if out_optional:
+                    continue
+                else:
+                    raise Exception('Node "{}" did not produce output "{}"'
+                                    .format(self.uid, pname))
 
-                out_val = node_output[pname]
-                out_type = type(out_val)
+            out_val = node_output[pname]
+            out_type = type(out_val)
 
-                expected_type = pspec.get(PortsSpecSchema.port_type)
-                if expected_type:
-                    if not isinstance(expected_type, list):
-                        expected_type = [expected_type]
+            expected_type = pspec.get(PortsSpecSchema.port_type)
+            if expected_type:
+                if not isinstance(expected_type, list):
+                    expected_type = [expected_type]
 
-                    if self.delayed_process and \
-                            cudf.DataFrame in expected_type and \
-                            dask_cudf.DataFrame not in expected_type:
-                        expected_type.extend([dask_cudf.DataFrame])
+                if self.delayed_process and \
+                        cudf.DataFrame in expected_type and \
+                        dask_cudf.DataFrame not in expected_type:
+                    expected_type.extend([dask_cudf.DataFrame])
 
-                    if out_type not in expected_type:
-                        raise Exception(
-                            'Node "{}" output port "{}" produced wrong type '
-                            '"{}". Expected type "{}"'
-                            .format(self.uid, pname, out_type, expected_type))
+                if out_type not in expected_type:
+                    raise Exception(
+                        'Node "{}" output port "{}" produced wrong type '
+                        '"{}". Expected type "{}"'
+                        .format(self.uid, pname, out_type, expected_type))
 
-                cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
+            cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
 
-                if out_type in cudf_types_tuple:
-                    if len(out_val.columns) == 0 and out_optional:
-                        continue
+            if out_type in cudf_types_tuple:
+                if len(out_val.columns) == 0 and out_optional:
+                    continue
 
-                if out_type in cudf_types_tuple:
-                    cols_to_val = ref_cols.get(pname)
-                    val_flag = self._validate_df(out_val, cols_to_val)
-                    if not val_flag:
-                        raise Exception("not valid output")
-        else:
-            val_flag = self._validate_df(node_output, ref_cols)
-
-            if not val_flag:
-                raise Exception("not valid output")
+            if out_type in cudf_types_tuple:
+                cols_to_val = ref_cols.get(pname)
+                val_flag = self._validate_df(out_val, cols_to_val)
+                if not val_flag:
+                    raise Exception("not valid output")
 
     def __input_ready(self):
         if not isinstance(self.load, bool) or self.load:
@@ -467,47 +309,53 @@ class NodeTaskGraphMixin(object):
 
         return True
 
-    def __input_columns_ready(self):
-        for ii in self.inputs:
-            iport = ii['to_port']
-
-            if iport not in self.input_columns:
-                return False
-
-        if (self._using_ports() and len(self._get_input_ports(
-        )) != 0 and len(self.inputs) == 0):
-            return False
-
-        return True
-
     def __get_input_df(self):
         return self.input_df
 
-    def __get_input_columns(self):
-        return self.input_columns
+    def get_input_columns(self):
+        """
+        get all the connected input columns information
+        returns
+            dict, key is the current node input port name, value is the column
+            name and types
+        """
+        output = {}
+        if not hasattr(self, 'inputs'):
+            return output
+        for node_input in self.inputs:
+            from_node = node_input['from_node']
+            columns = copy.deepcopy(from_node.columns_setup())
+            from_port_name = node_input['from_port']
+            to_port_name = node_input['to_port']
+            if from_port_name not in columns:
+                print('node {},  from {} oport {} not in out cols'.format(
+                    self.uid, from_node, from_port_name))
+                print(columns)
+            else:
+                output[to_port_name] = columns[from_port_name]
+        return output
 
     def __set_input_df(self, to_port, df):
         self.input_df[to_port] = df
 
-    def __set_input_column(self, to_port, columns):
-        self.input_columns[to_port] = columns
-
-    def flow(self):
+    def flow(self, progress_fun=None):
         """
+        progress_fun is used to show the progress of computaion
+        it is function that takes node id as argument
         flow from this node to do computation.
             * it will check all the input dataframe are ready or not
             * calls its process function to manipulate the input dataframes
             * set the resulting dataframe to the children nodes as inputs
             * flow each of the chidren nodes
         """
+        if progress_fun is not None:
+            progress_fun(self.uid)
         input_ready = self.__input_ready()
         if not input_ready:
             return
 
         inputs_data = self.__get_input_df()
         output_df = self.__call__(inputs_data)
-
-        self_has_ports = self._using_ports()
 
         if self.clear_input:
             self.input_df = {}
@@ -516,8 +364,6 @@ class NodeTaskGraphMixin(object):
             onode = out['to_node']
             iport = out['to_port']
             oport = out['from_port']
-
-            onode_has_ports = onode._using_ports()
 
             if oport is not None:
                 if oport not in output_df:
@@ -531,25 +377,11 @@ class NodeTaskGraphMixin(object):
                             oport, self.uid, onode_msg)
                     raise Exception(err_msg)
                 df = output_df[oport]
-            else:
-                if self_has_ports and not onode_has_ports:
-                    # Unpack for convenience when passing data from nodes with
-                    # ports to nodes without ports. If in the future will
-                    # convert to a ports only API then clean up this code.
-                    output_list = list(output_df.values())
-                    if len(output_list) == 1:
-                        output_unpack = output_list[0]
-                    else:
-                        output_unpack = [self.__make_copy(data_input)
-                                         for data_input in output_list]
-
-                    df = output_unpack
-                else:
-                    df = output_df
 
             onode.__set_input_df(iport, df)
 
-            onode.flow()
+            if onode.visited:
+                onode.flow(progress_fun)
 
     def __make_copy(self, df_obj):
         if isinstance(df_obj, cudf.DataFrame):
@@ -711,6 +543,47 @@ class NodeTaskGraphMixin(object):
 
         return output_df
 
+    def outport_connected(self, port_name):
+        """
+        test whether this node's output port is connected.
+        @params port_name
+            string, outpout port name
+        returns
+            boolean, whehther this port is connected or not
+        """
+        found = False
+        for iout in self.outputs:
+            oport = iout['from_port']
+            if (port_name == oport):
+                found = True
+                break
+        return found
+
+    def get_connected_inports(self):
+        """
+        get all the connected input port information
+        returns
+            dict, key is the current node input port name, value is the port
+            type passed from parent
+        """
+
+        def get_type(type_def):
+            if isinstance(type_def, list):
+                return type_def
+            else:
+                return [type_def]
+        output = {}
+        if not hasattr(self, 'inputs'):
+            return output
+        for node_input in self.inputs:
+            from_node = node_input['from_node']
+            ports = from_node.ports_setup()
+            from_port_name = node_input['from_port']
+            to_port_name = node_input['to_port']
+            types = get_type(ports.outports[from_port_name]['type'])
+            output[to_port_name] = types
+        return output
+
     def decorate_process(self):
 
         def timer(*argv):
@@ -732,30 +605,22 @@ class NodeTaskGraphMixin(object):
             else:
                 output_df = self.load
         else:
-            if self._using_ports():
-                # nodes with ports take dictionary as inputs
-                inputs = {iport: self.__make_copy(data_input)
-                          for iport, data_input in inputs_data.items()}
-            else:
-                # nodes without ports take list as inputs
-                inputs = [self.__make_copy(inputs_data[ient['to_port']])
-                          for ient in self.inputs]
+            # nodes with ports take dictionary as inputs
+            inputs = {iport: self.__make_copy(data_input)
+                      for iport, data_input in inputs_data.items()}
             if not self.delayed_process:
                 output_df = self.decorate_process()(inputs)
             else:
-                if self._using_ports():
-                    use_delayed = self.__check_dly_processing_prereq(inputs)
-                    if use_delayed:
-                        output_df = self.__delayed_call(inputs)
-                    else:
-                        output_df = self.decorate_process()(inputs)
+                use_delayed = self.__check_dly_processing_prereq(inputs)
+                if use_delayed:
+                    output_df = self.__delayed_call(inputs)
                 else:
-                    output_df = self.__delayed_call_noports(inputs)
+                    output_df = self.decorate_process()(inputs)
 
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df, self.output_columns)
+            self.__valide(output_df, self.columns_setup())
 
         if self.save:
             self.save_cache(output_df)

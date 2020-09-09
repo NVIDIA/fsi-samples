@@ -1,33 +1,44 @@
 from gquant.dataframe_flow import Node
-from .returnFeatureNode import ReturnFeatureNode
-from numba import cuda
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-def indicator_fun(indicator):
-    for i in range(cuda.threadIdx.x, indicator.size, cuda.blockDim.x):
-        if i == 0:
-            indicator[i] = 1
-        else:
-            indicator[i] = 0
+class AssetIndicatorNode(Node, _PortTypesMixin):
 
-
-def cpu_indicator_fun(df):
-    df['indicator'] = 0
-    df['indicator'].values[0] = 1
-    return df
-
-
-class AssetIndicatorNode(Node):
+    def init(self):
+        self.delayed_process = True
+        _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'stock_out'
+        cols_required = {"asset": "int64"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.delayed_process = True
-        self.required = {"asset": "int64"}
-        self.addition = {"indicator": "int32"}
+        return _PortTypesMixin.addition_columns_setup(self,
+                                                      {"indicator": "int32"})
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def conf_schema(self):
+        json = {
+            "title": "Asset indicator configure",
+            "type": "object",
+            "description": """Add the indicator column in the dataframe which
+             set 1 at the beginning of the each of the assets, assuming the
+             rows are sorted so same asset are grouped together""",
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
         Add the indicator column in the dataframe which set 1 at the beginning
-        of the each of the assets
+        of the each of the assets, assuming the rows are sorted so same asset
+        are grouped together
 
         Arguments
         -------
@@ -38,38 +49,8 @@ class AssetIndicatorNode(Node):
         dataframe
         """
 
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         input_df['indicator'] = (input_df['asset'] -
                                  input_df['asset'].shift(1)).fillna(1)
         input_df['indicator'] = (input_df['indicator'] != 0).astype('int32')
-        return input_df
-
-
-class CpuAssetIndicatorNode(AssetIndicatorNode):
-
-    def process(self, inputs):
-        """
-        Add the indicator column in the dataframe which set 1 at the beginning
-        of the each of the assets
-
-        Arguments
-        -------
-         inputs: list
-            list of input dataframes.
-        Returns
-        -------
-        dataframe
-        """
-        input_df = inputs[0]
-        input_df = input_df.groupby("asset").apply(cpu_indicator_fun)
-        return input_df
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    df = df.sort_values(["asset", 'datetime'])
-    sf = ReturnFeatureNode("id2", {})
-    df2 = sf([df])
+        return {self.OUTPUT_PORT_NAME: input_df}

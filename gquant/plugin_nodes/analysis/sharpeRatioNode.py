@@ -1,13 +1,39 @@
 from gquant.dataframe_flow import Node
 import math
 import dask_cudf
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 
-class SharpeRatioNode(Node):
+class SharpeRatioNode(Node, _PortTypesMixin):
+
+    def init(self):
+        self.INPUT_PORT_NAME = 'stock_in'
+        self.OUTPUT_PORT_NAME = 'sharpe_out'
+        cols_required = {"strategy_returns": "float64"}
+        self.required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
 
     def columns_setup(self):
-        self.required = {"strategy_returns": "float64"}
-        self.retentation = {}
+        return {self.OUTPUT_PORT_NAME: {}}
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup_different_output_type(self,
+                                                                 float)
+
+    def conf_schema(self):
+        json = {
+            "title": "Calculate Sharpe Ratio configure",
+            "type": "object",
+            "description": """Compute the yearly Sharpe Ratio from the
+            input dataframe `strategy_returns` column. Assume it is
+            daily return. Asumes 252 trading days per year
+            """,
+        }
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
         """
@@ -25,22 +51,9 @@ class SharpeRatioNode(Node):
             the sharpe ratio
         """
 
-        input_df = inputs[0]
+        input_df = inputs[self.INPUT_PORT_NAME]
         if isinstance(input_df,  dask_cudf.DataFrame):
             input_df = input_df.compute()  # get the computed value
         daily_mean = input_df['strategy_returns'].mean()
         daily_std = input_df['strategy_returns'].std()
-        return daily_mean / daily_std * math.sqrt(252)
-
-
-if __name__ == "__main__":
-    from gquant.dataloader.csvStockLoader import CsvStockLoader
-    from gquant.transform.averageNode import AverageNode
-    from gquant.analysis.outCsvNode import OutCsvNode
-
-    loader = CsvStockLoader("id0", {}, True, False)
-    df = loader([])
-    vf = AverageNode("id1", {"column": "volume"})
-    df2 = vf([df])
-    o = OutCsvNode("id3", {"path": "o.csv"})
-    o([df2])
+        return {self.OUTPUT_PORT_NAME: float(daily_mean / daily_std * math.sqrt(252))}

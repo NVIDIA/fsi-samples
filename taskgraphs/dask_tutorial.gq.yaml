@@ -1,0 +1,31 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
+    path: /home/quant/gQuant/notebooks/many-small
+  inputs: {}
+- id: sort_node
+  type: SortNode
+  conf:
+    keys:
+      - asset
+      - datetime
+  inputs:
+    in: stock_data.dask_cudf_out
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: output_csv.df_out
+- id: average_volume
+  type: AverageNode
+  conf:
+    column: volume
+  inputs:
+    stock_in: sort_node.out
+- id: output_csv
+  type: OutCsvNode
+  conf:
+    path: /home/quant/gQuant/notebooks/dask_average_volume.csv
+  inputs:
+    df_in: average_volume.stock_out

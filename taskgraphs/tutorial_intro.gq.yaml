@@ -1,0 +1,71 @@
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+  inputs: {}
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: csv_output2.df_out
+    in2: csv_output1.df_out
+- id: get_return
+  type: CompositeNode
+  conf:
+    subnode_ids:
+      - volume_filter
+    subnodes_conf:
+      volume_filter:
+        conf:
+          - column: volume
+            min: 100
+    taskgraph: taskgraphs/get_return_feature.gq.yaml
+    input:
+      - volume_filter.in
+    output:
+      - add_return_feature.stock_out
+  inputs:
+    volume_filter@in: stock_data.cudf_out
+- id: average_volume
+  type: AverageNode
+  conf:
+    column: volume
+  inputs:
+    stock_in: get_return.add_return_feature@stock_out
+- id: average_return
+  type: AverageNode
+  conf:
+    column: returns
+  inputs:
+    stock_in: get_return.add_return_feature@stock_out
+- id: stock_name
+  type: StockNameLoader
+  conf:
+    file: notebooks/data/security_master.csv.gz
+  inputs: {}
+- id: left_merge1
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    left: average_volume.stock_out
+    right: stock_name.stock_name
+- id: left_merge2
+  type: LeftMergeNode
+  conf:
+    column: asset
+  inputs:
+    left: average_return.stock_out
+    right: stock_name.stock_name
+- id: csv_output1
+  type: OutCsvNode
+  conf:
+    path: /home/quant/gQuant/notebooks/average_return.csv
+  inputs:
+    df_in: left_merge2.merged
+- id: csv_output2
+  type: OutCsvNode
+  conf:
+    path: /home/quant/gQuant/notebooks/average_volume.csv
+  inputs:
+    df_in: left_merge1.merged

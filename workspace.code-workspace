@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "gquantlab"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+        "terminal.integrated.shell.linux": "/bin/bash",
+        "python.pythonPath": "${env:HOME}/miniconda3/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": true,
+        "python.formatting.autopep8Path": "${env:HOME}/miniconda3/bin/autopep8",
+        "python.linting.flake8Path": "${env:HOME}/miniconda3/bin/flake8",
+        "python.linting.pylintPath": "${env:HOME}/miniconda3/bin/pylint",
+        "python.testing.pytestPath": "${env:HOME}/miniconda3/bin/pytest"
+    }
+
+}
