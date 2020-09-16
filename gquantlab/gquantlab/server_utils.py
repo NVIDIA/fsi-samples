@@ -93,7 +93,7 @@ def get_nodes(task_graph):
                 num = max(int(port[2:]), num)
             inputs.append({'name': 'in'+str(num+1), "type": ["any"]})
             out_node['inputs'] = inputs
-    task_graph.nemo_cleanup()
+    task_graph.run_cleanup()
     return {'nodes': nodes, 'edges': edges}
 
 

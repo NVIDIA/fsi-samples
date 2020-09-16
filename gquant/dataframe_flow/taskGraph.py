@@ -9,6 +9,7 @@ from .portsSpecSchema import NodePorts, ConfSchema
 import warnings
 import copy
 import traceback
+import dask
 
 __all__ = ['TaskGraph', 'OutputCollector']
 
@@ -507,14 +508,14 @@ class TaskGraph(object):
         result = Results(results)
         ####
         # this is for nemo work around, to clean up the nemo graph
-        self.nemo_cleanup()
+        self.run_cleanup()
         ####
         if formated:
             return formated_result(result)
         else:
             return result
     
-    def nemo_cleanup(self, clean_module=False):
+    def run_cleanup(self, clean_module=False):
         import nemo
         nf = nemo.core.NeuralModuleFactory.get_default_factory()
         if nf is not None:
@@ -523,6 +524,13 @@ class TaskGraph(object):
                 state = nemo.utils.app_state.AppState()
                 state._module_registry.clear()
                 state.active_graph.modules.clear()
+        if clean_module:
+            import dask.distributed
+            try:
+                client = dask.distributed.client.default_client()
+                client.restart()
+            except Exception:
+                err = traceback.format_exc()
 
     def run(self, outputs=None, replace=None, profile=False, formated=False):
         """
