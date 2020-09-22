@@ -97,7 +97,7 @@ def get_nodes(task_graph):
     return {'nodes': nodes, 'edges': edges}
 
 
-def get_node_obj(node):
+def get_node_obj(node, count_id=True):
     """
     It is a private function to convert a Node instance into a dictionary for
     client to consume.
@@ -119,7 +119,10 @@ def get_node_obj(node):
         width = 160
         typeName = OUTPUT_TYPE
     else:
-        width = max(max(len(node.uid), len(typeName)) * 10, 100)
+        if count_id:
+            width = max(max(len(node.uid), len(typeName)) * 10, 100)
+        else:
+            width = max(len(typeName) * 10, 100)
     conf = node._task_obj.get('conf')
     out_node = {'width': width,
                 'id': node.uid,
@@ -207,7 +210,7 @@ def add_nodes():
                         'inputs': []}
                 t = Task(task)
                 n = nodecls(t)
-                nodeObj = get_node_obj(n)
+                nodeObj = get_node_obj(n, False)
                 all_nodes[labmod_pkg].append(nodeObj)
                 loaded_node_classes.append(nodecls)
 
@@ -239,7 +242,7 @@ def add_nodes():
                     }
             t = Task(task)
             n = nodecls(t)
-            nodeObj = get_node_obj(n)
+            nodeObj = get_node_obj(n, False)
             if module_file_or_path.is_dir():
                 # submod = nodecls.__module__.split('.')[1:]
                 # flatten out the namespace hierarchy
