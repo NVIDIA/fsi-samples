@@ -23,7 +23,9 @@
   conf: {}
   inputs:
     in1: model_export.filename
-    in2: tree_inference.out
+    in2: test_data.out
+    in3: test_infer.out
+    in4: xgboost_infer.out
 - id: data_generator
   type: CompositeNode
   conf:
@@ -96,4 +98,20 @@
     prediction: predict
     file: xgboost_model_file
   inputs:
-    data_in: xgboost_model.test_infer@out
+    model_file: model_export.filename
+    data_in: xgboost_model.test_norm@df_out
+- id: test_data
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: xgboost_model.test_norm@df_out
+- id: test_infer
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: tree_inference.out
+- id: xgboost_infer
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: xgboost_model.test_infer@out
