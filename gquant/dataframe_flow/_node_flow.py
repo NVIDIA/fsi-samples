@@ -418,7 +418,6 @@ class NodeTaskGraphMixin(object):
         '''
         # check if dask future or delayed
         use_delayed = False
-        # dictionary, key is input port name, value is input type for the port
         in_types = {}
         for iport, ival in inputs.items():
             itype = type(ival)
@@ -428,22 +427,29 @@ class NodeTaskGraphMixin(object):
 
         if use_delayed:
             warn_msg = \
-                'None of the Node oport'\
-                'is cudf.DataFrame or dask_cudf.DataFrame. Ignoring '\
+                'Node "{}" iport "{}" is of type "{}" and it '\
+                'should be dask_cudf.DataFrame. Ignoring '\
                 '"delayed_process" setting.'
-            any_one = False
+            for iport, itype in in_types.items():
+                if itype not in (dask_cudf.DataFrame,):
+                    warnings.warn(warn_msg.format(self.uid, iport, itype))
+                    use_delayed = False
+
+        if use_delayed:
+            warn_msg = \
+                'Node "{}" oport "{}" is of type "{}" and it '\
+                'should be cudf.DataFrame or dask_cudf.DataFrame. Ignoring '\
+                '"delayed_process" setting.'
             for oport, oport_spec in \
                     self._get_output_ports(full_port_spec=True).items():
                 otype = oport_spec.get('type', [])
                 if not isinstance(otype, list):
                     otype = [otype]
-                if dask_cudf.DataFrame in otype or \
-                        cudf.DataFrame in otype:
-                    any_one = True
-                    break
-            if not any_one:
-                use_delayed = False
-                warnings.warn(warn_msg)
+                if dask_cudf.DataFrame not in otype and \
+                        cudf.DataFrame not in otype:
+                    warnings.warn(warn_msg.format(self.uid, oport, otype))
+                    use_delayed = False
+
         return use_delayed
 
     def __delayed_call(self, inputs):
@@ -488,13 +494,11 @@ class NodeTaskGraphMixin(object):
         #         p0: {
         #             iport0: ddf_dly_i0_p0,
         #             iport1: ddf_dly_i1_p0,
-        #             iport2: non-dask_cudf obj
         #             ... for all iports
         #         },
         #         p1: {
         #             iport0: ddf_dly_i0_p1,
         #             iport1: ddf_dly_i1_p1,
-        #             iport2: non-dask_cudf obj
         #             ... for all iports
         #         },
         #         ... for all partitions
@@ -503,28 +507,20 @@ class NodeTaskGraphMixin(object):
 
         npartitions = None
         for iport, dcudf in inputs.items():
-            if isinstance(dcudf, dask_cudf.DataFrame):
-                ddf_dly_list = dcudf.to_delayed()
-                npartitions_ = len(ddf_dly_list)
-                if npartitions is None:
-                    npartitions = npartitions_
-                if npartitions != npartitions_:
-                    raise Exception(
-                        'Error DASK_CUDF PARTITIONS MISMATCH: Node "{}" input'
-                        '"{}" has {} npartitions and other inputs have {}'
-                        ' partitions'
-                        .format(self.uid, iport, npartitions_, npartitions))
-                for idly, dly in enumerate(ddf_dly_list):
-                    inputs_dly.setdefault(idly, {}).update({
-                        # iport: dly.persist()  # DON'T PERSIST HERE
-                        iport: dly
-                    })
-        for iport, obj in inputs.items():
-            if not isinstance(obj, dask_cudf.DataFrame):
-                for idly in range(npartitions):
-                    inputs_dly.setdefault(idly, {}).update({
-                        iport: obj
-                    })
+            ddf_dly_list = dcudf.to_delayed()
+            npartitions_ = len(ddf_dly_list)
+            if npartitions is None:
+                npartitions = npartitions_
+            if npartitions != npartitions_:
+                raise Exception(
+                    'Error DASK_CUDF PARTITIONS MISMATCH: Node "{}" input "{}"'
+                    ' has {} npartitions and other inputs have {} partitions'
+                    .format(self.uid, iport, npartitions_, npartitions))
+            for idly, dly in enumerate(ddf_dly_list):
+                inputs_dly.setdefault(idly, {}).update({
+                    # iport: dly.persist()  # DON'T PERSIST HERE
+                    iport: dly
+                })
 
         # DEBUGGING
         # print('INPUTS_DLY:\n{}'.format(inputs_dly))
@@ -536,8 +532,6 @@ class NodeTaskGraphMixin(object):
         #     outputs_dly = {
         #         o0: [ddf_dly_o0_p0, ddf_dly_o0_p1, ... _pN]
         #         o1: [ddf_dly_o1_p0, ddf_dly_o1_p1, ... _pN]
-        #         o2: [other_delayed, other_delayed, ..., _pN]
-        #Assume non-dataframe delayed obj are all the same for different chunks
         #         ... for all output ports
         #     }
         # o_x - output port
@@ -560,16 +554,9 @@ class NodeTaskGraphMixin(object):
         output_df = {}
         # A dask_cudf object is synthesized from a list of delayed objects.
         # Per outputs_dly above use dask_cudf.from_delayed API.
-        for oport, oport_spec in \
-                self._get_output_ports(full_port_spec=True).items():
-            otype = oport_spec.get('type', [])
-            if not isinstance(otype, list):
-                otype = [otype]
-            if dask_cudf.DataFrame in otype or \
-                    cudf.DataFrame in otype:
-                output_df[oport] = dask_cudf.from_delayed(outputs_dly[oport])
-            else:
-                output_df[oport] = outputs_dly[oport][0]
+        for oport in self._get_output_ports():
+            output_df[oport] = dask_cudf.from_delayed(outputs_dly[oport])
+
         return output_df
 
     def outport_connected(self, port_name):

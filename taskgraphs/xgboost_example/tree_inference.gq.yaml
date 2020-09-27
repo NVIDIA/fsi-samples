@@ -22,7 +22,8 @@
   type: Output_Collector
   conf: {}
   inputs:
-    in1: tree_inference.out
+    in1: model_export.filename
+    in2: tree_inference.out
 - id: data_generator
   type: CompositeNode
   conf:
@@ -96,4 +97,3 @@
     file: xgboost_model_file
   inputs:
     data_in: xgboost_model.test_infer@out
-    model_file: model_export.filename
