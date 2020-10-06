@@ -190,7 +190,7 @@ def add_nodes():
     for item in inspect.getmembers(plugin_nodes):
         if inspect.ismodule(item[1]):
             print(item)
-            labmod_pkg = 'builtins.{}'.format(item[0])
+            labmod_pkg = 'gquant.{}'.format(item[0])
             all_nodes[labmod_pkg] = []
             for node in inspect.getmembers(item[1]):
                 nodecls = node[1]

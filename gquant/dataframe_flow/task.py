@@ -73,7 +73,8 @@ def import_submodules(package, recursive=True, _main_package=None):
         full_name = package.__name__ + '.' + name
         mod = importlib.import_module(full_name)
         if recursive and is_pkg:
-            import_submodules(full_name, _main_package=_main_package)
+            # import_submodules(full_name, _main_package=_main_package)
+            import_submodules(mod, _main_package=_main_package)
 
         for node in inspect.getmembers(mod):
             nodecls = node[1]
