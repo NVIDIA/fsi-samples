@@ -1,7 +1,5 @@
-from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 from nemo.core.neural_types import NmTensor
 import inspect
@@ -90,10 +88,9 @@ def get_conf_parameters(class_obj):
     return init_para
 
 
-class NeMoBase(Node, _PortTypesMixin):
+class NeMoBase:
 
     def init(self, class_obj):
-        _PortTypesMixin.init(self)
         if nemo.core.NeuralModuleFactory.get_default_factory() is None:
             nemo.core.NeuralModuleFactory()
         self.instanceClass = class_obj

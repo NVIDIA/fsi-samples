@@ -1,5 +1,7 @@
 import os
 import importlib
+import pkgutil
+import inspect
 import copy
 from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
@@ -8,6 +10,11 @@ from pathlib import Path
 import sys
 from collections import namedtuple
 import configparser
+
+
+__all__ = ['Task']
+
+DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
 
 
 class ConfigParser(configparser.ConfigParser):
@@ -40,9 +47,42 @@ def get_gquant_config_modules():
     return modules_list
 
 
-__all__ = ['Task']
+# create a task to add path path
+def append_path(path):
+    if path not in sys.path:
+        sys.path.append(path)
 
-DEFAULT_MODULE = os.getenv('GQUANT_PLUGIN_MODULE', "gquant.plugin_nodes")
+
+def import_submodules(package, recursive=True, _main_package=None):
+    """Import all submodules of a module, recursively, including subpackages.
+    Finds members of those packages. If a member is a gQuant Node subclass then
+    sets the top level package attribute with the class. This is done so that
+    the class can be accessed via:
+        NodeClass = getattr(mod, node_type)
+    Where mod is the package.
+
+    :param package: package (name or actual module)
+    :type package: module, str
+    """
+    if isinstance(package, str):
+        package = importlib.import_module(package)
+
+    _main_package = package if _main_package is None else _main_package
+    # for loader, name, is_pkg
+    for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
+        full_name = package.__name__ + '.' + name
+        mod = importlib.import_module(full_name)
+        if recursive and is_pkg:
+            import_submodules(full_name, _main_package=_main_package)
+
+        for node in inspect.getmembers(mod):
+            nodecls = node[1]
+            if not inspect.isclass(nodecls):
+                continue
+            if not issubclass(nodecls, _Node):
+                continue
+
+            setattr(_main_package, nodecls.__name__, nodecls)
 
 
 def load_modules(pathfile, name=None):
@@ -60,10 +100,21 @@ def load_modules(pathfile, name=None):
         modulename = filename.stem
     else:
         modulename = name
-    spec = importlib.util.spec_from_file_location(modulename, str(filename))
+
+    module_dir = str(filename.parent.absolute())
+
+    if filename.is_dir():
+        modulepath = filename.joinpath('__init__.py')
+        modulename = filename.stem
+    else:
+        modulepath = filename
+
+    spec = importlib.util.spec_from_file_location(modulename, str(modulepath))
     mod = importlib.util.module_from_spec(spec)
     sys.modules[spec.name] = mod
-    module_dir = str(filename.parent.absolute())
+    if filename.is_dir():
+        import_submodules(mod)
+
     spec.loader.exec_module(mod)
     Load = namedtuple("Load", "path mod")
     return Load(module_dir, mod)
@@ -126,16 +177,41 @@ class Task(object):
         node_type = task_spec[TaskSpecSchema.node_type]
         task = Task(task_spec)
 
-        # create a task to add path path
-        def append_path(path):
-            if path not in sys.path:
-                sys.path.append(path)
-
+        NodeClass = None
+        module_dir = None
         if isinstance(node_type, str):
             if modulepath is not None:
                 loaded = load_modules(modulepath)
                 module_dir = loaded.path
                 mod = loaded.mod
+                NodeClass = getattr(mod, node_type)
+            elif (module_name is not None):
+                modules = get_gquant_config_modules()
+                loaded = load_modules(modules[module_name], name=module_name)
+                module_dir = loaded.path
+                mod = loaded.mod
+                NodeClass = getattr(mod, node_type)
+            else:
+                try:
+                    global DEFAULT_MODULE
+                    plugmod = os.getenv('GQUANT_PLUGIN_MODULE', DEFAULT_MODULE)
+                    MODLIB = importlib.import_module(plugmod)
+                    NodeClass = getattr(MODLIB, node_type)
+                except AttributeError:
+                    modules = get_gquant_config_modules()
+                    for key in modules:
+                        loaded = load_modules(modules[key], name=key)
+                        module_dir = loaded.path
+                        mod = loaded.mod
+                        try:
+                            NodeClass = getattr(mod, node_type)
+                            break
+                        except AttributeError:
+                            continue
+            if NodeClass is None:
+                raise Exception("Cannot find the Node Class:" +
+                                node_type)
+            if module_dir:
                 append_path(module_dir)
                 try:
                     # add python path to all the client workers
@@ -146,49 +222,7 @@ class Task(object):
                     client.run(append_path, module_dir)
                 except (ValueError, ImportError):
                     pass
-                NodeClass = getattr(mod, node_type)
-            else:
-                NodeClass = None
-                try:
-                    global DEFAULT_MODULE
-                    plugmod = os.getenv('GQUANT_PLUGIN_MODULE', DEFAULT_MODULE)
-                    MODLIB = importlib.import_module(plugmod)
-                    NodeClass = getattr(MODLIB, node_type)
-                except AttributeError:
-                    modules = get_gquant_config_modules()
-                    if (module_name is not None):
-                        loaded = load_modules(
-                            modules[module_name], name=module_name)
-                        module_dir = loaded.path
-                        mod = loaded.mod
-                        try:
-                            NodeClass = getattr(mod, node_type)
-                        except AttributeError:
-                            pass
-                    else:
-                        for key in modules:
-                            loaded = load_modules(modules[key], name=key)
-                            module_dir = loaded.path
-                            mod = loaded.mod
-                            try:
-                                NodeClass = getattr(mod, node_type)
-                                break
-                            except AttributeError:
-                                continue
-                    if NodeClass is None:
-                        raise Exception("Cannot find the Node Class:" +
-                                        node_type)
-                    else:
-                        append_path(module_dir)
-                        try:
-                            # add python path to all the client workers
-                            # assume all the worikers share the same directory
-                            # structure
-                            import dask.distributed
-                            client = dask.distributed.client.default_client()
-                            client.run(append_path, module_dir)
-                        except (ValueError, ImportError):
-                            pass
+
         elif issubclass(node_type, _Node):
             NodeClass = node_type
         else:

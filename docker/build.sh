@@ -104,6 +104,31 @@ gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/"
 CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
 D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
 
+
+cat << 'EOF' > sacrebleu.patch
+--- nemo/collections/nlp/metrics/sacrebleu.py
++++ sacrebleu_fix.py
+@@ -61,13 +61,16 @@
+ VERSION = '1.3.5'
+ 
+ try:
++    import threading
+     # SIGPIPE is not available on Windows machines, throwing an exception.
+     from signal import SIGPIPE
+ 
+     # If SIGPIPE is available, change behaviour to default instead of ignore.
+     from signal import signal, SIG_DFL
+ 
+-    signal(SIGPIPE, SIG_DFL)
++
++    if threading.current_thread() == threading.main_thread():
++        signal(SIGPIPE, SIG_DFL)
+ 
+ except ImportError:
+     logging.warning('Could not import signal.SIGPIPE (this is expected on Windows machines)')
+EOF
+
+
 cat > $D_FILE <<EOF
 FROM $CONTAINER
 EXPOSE 8888
@@ -167,10 +192,11 @@ RUN pip install jsonpath-ng ray[tune] Cython
 
 ## install the NemO
 WORKDIR /home/quant/
-RUN git clone https://github.com/NVIDIA/NeMo.git 
+RUN git clone -b v0.11.1 https://github.com/NVIDIA/NeMo.git 
 WORKDIR /home/quant/NeMo
 RUN sed -i 's/numba<=0.48/numba==0.49.1/g' requirements/requirements_asr.txt
-RUN bash reinstall.sh
+COPY sacrebleu.patch /home/quant/NeMo/
+RUN patch -u nemo/collections/nlp/metrics/sacrebleu.py -i sacrebleu.patch && bash reinstall.sh
 
 RUN conda install -y ruamel.yaml
 
@@ -179,3 +205,7 @@ WORKDIR /home/quant/gQuant
 $INSTALL_GQUANT
 EOF
 docker build -f $D_FILE -t $D_CONT .
+
+if [ -f "sacrebleu.patch" ] ; then
+    rm sacrebleu.patch
+fi
