@@ -215,12 +215,27 @@ class Task(object):
             if module_dir:
                 append_path(module_dir)
                 try:
-                    # add python path to all the client workers
-                    # assume all the worikers share the same directory
+                    # Add python path to all the client workers
+                    # assume all the workers share the same directory
                     # structure
                     import dask.distributed
                     client = dask.distributed.client.default_client()
                     client.run(append_path, module_dir)
+                except (ValueError, ImportError):
+                    pass
+
+                try:
+                    import ray
+
+                    def ray_append_path(worker):
+                        import sys  # @Reimport
+                        if module_dir not in sys.path:
+                            sys.path.append(module_dir)
+
+                    # TODO: This could be a Ray Driver functionality. Add
+                    #     module path to all workers.
+                    ray.worker.global_worker.run_function_on_all_workers(
+                        ray_append_path)
                 except (ValueError, ImportError):
                     pass
 

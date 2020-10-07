@@ -238,19 +238,6 @@ class NemoHyperTuneNode(GridRandomSearchNode):
 
         import ray
         from ray import tune
-        import sys
-
-        all_paths = sys.path
-
-        def append_path(worker):
-            for ipath in all_paths:
-                if ipath not in sys.path:
-                    sys.path.append(ipath)
-
-        # TODO: This could be a Ray Driver functionality. Add module paths
-        #     that might have been imported in
-        #         task.py:Task:get_node_obj
-        ray.worker.global_worker.run_function_on_all_workers(append_path)
 
         if self.INPUT_CONFIG in inputs:
             self.conf.update(inputs[self.INPUT_CONFIG].data)
