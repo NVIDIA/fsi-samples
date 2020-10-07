@@ -514,7 +514,7 @@ class TaskGraph(object):
             return formated_result(result)
         else:
             return result
-    
+
     def run_cleanup(self, clean_module=False):
         import nemo
         nf = nemo.core.NeuralModuleFactory.get_default_factory()

@@ -1,10 +1,7 @@
 [ModuleFiles]
+
 custom_port_nodes= %(MODULEPATH)s/custom_port_nodes.py
-nemo.asr= %(MODULEPATH)s/asr.py
-nemo.common= %(MODULEPATH)s/common.py
-nemo.cv= %(MODULEPATH)s/cv.py
-nemo.nlp= %(MODULEPATH)s/nlp.py
-nemo.simple_gan= %(MODULEPATH)s/simple_gan.py
-nemo.tts= %(MODULEPATH)s/tts.py
-nemo.tutorials= %(MODULEPATH)s/tutorials.py
+
+nemo_modules= %(MODULEPATH)s/nemo_gquant_modules
+
 my_node= %(MODULEPATH)s/my_node.py
