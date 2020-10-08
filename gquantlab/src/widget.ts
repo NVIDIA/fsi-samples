@@ -8,6 +8,7 @@ import { MainView } from './mainComponent';
 import { Panel, Widget } from '@lumino/widgets';
 import { CommandRegistry } from '@lumino/commands';
 import { IFileBrowserFactory } from '@jupyterlab/filebrowser';
+// import { Message } from '@lumino/messaging';
 
 import { Toolbar, CommandToolbarButton } from '@jupyterlab/apputils';
 import {
@@ -20,6 +21,7 @@ import {
   setupToolBarCommands
 } from './commands';
 import { JupyterFrontEnd } from '@jupyterlab/application';
+import { Cell } from '@jupyterlab/cells';
 
 export class GQuantModel extends DOMWidgetModel {
   static serializers = {
@@ -145,8 +147,19 @@ export class GQuantView extends DOMWidgetView {
         pane.layout.removeWidget(pane.widgets[2]);
       }
       pane.insertWidget(2, view.pWidget);
+      // const message: Message = new Message('resize');
+      //this._widget.processMessage(message);
     });
-    this.views.update([value]);
+    this.views.update([value]).then(() => {
+      const pane = this.pWidget as Panel;
+      if (pane.widgets.length === 3) {
+        const w = pane.widgets[2];
+        const cell: Cell = this._widget.parent.parent.parent.parent.parent
+          .parent as Cell;
+        const _width = cell.inputArea.editorWidget.node.clientWidth - 5;
+        w.node.style.width = _width + 'px';
+      }
+    });
   }
 
   protected getFigureSize(): DOMRect {

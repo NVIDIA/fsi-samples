@@ -516,8 +516,11 @@ class TaskGraph(object):
             return result
 
     def run_cleanup(self, clean_module=False):
-        import nemo
-        nf = nemo.core.NeuralModuleFactory.get_default_factory()
+        try:
+            import nemo
+            nf = nemo.core.NeuralModuleFactory.get_default_factory()
+        except ModuleNotFoundError:
+            nf = None
         if nf is not None:
             nf.reset_trainer()
             if clean_module:

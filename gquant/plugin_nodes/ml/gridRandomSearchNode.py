@@ -71,10 +71,12 @@ class GridRandomSearchNode(ContextCompositeNode):
                                               "items": [
                                                   {
                                                       "type": "number",
+                                                      "description": "Lower boundary",
                                                       "default": 0.0
                                                   },
                                                   {
                                                       "type": "number",
+                                                      "description": "Upper boundary",
                                                       "default": 10.0
                                                   }
                                               ]
