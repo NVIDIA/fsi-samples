@@ -10,11 +10,306 @@ from jsonpath_ng import parse
 import uuid
 import cudf
 import pandas
+from copy import deepcopy
 
 __all__ = ["GridRandomSearchNode"]
 
 
+_CONF_JSON = {
+    "description": """
+    Use Tune to specify a grid search
+    or random search for a context composite node.
+    """,
+    "definitions": {
+        "number": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "title": "randn",
+                    "description": """Wraps
+                     tune.sample_from around
+                     np.random.randn.
+                     tune.randn(10)
+                      is equivalent to
+                      np.random.randn(10)""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "randn"
+                            ],
+                            "default": "randn"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": [
+                                {
+                                    "description": "number of samples",
+                                    "type": "number",
+                                    "default": 1.0
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "title": "uniform",
+                    "description": """Wraps tune.sample_from around
+                     np.random.uniform""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "uniform"
+                            ],
+                            "default": "uniform"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": [
+                                {
+                                    "type": "number",
+                                    "description": "Lower boundary",
+                                    "default": 0.0
+                                },
+                                {
+                                    "type": "number",
+                                    "description": "Upper boundary",
+                                    "default": 10.0
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "title": "loguniform",
+                    "description": """Sugar for sampling
+                    in different orders of magnitude.,
+                    parameters, min_bound – Lower
+                    boundary of the output interval,
+                    max_bound (float) – Upper boundary
+                    of the output interval (1e-2),
+                    base – Base of the log.""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "loguniform"
+                            ],
+                            "default": "loguniform"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": [
+                                {
+                                    "type": "number",
+                                    "description": "Lower boundary",
+                                    "default": 0.0001
+                                },
+                                {
+                                    "type": "number",
+                                    "description": "Upper boundary",
+                                    "default": 0.01
+                                },
+                                {
+                                    "type": "number",
+                                    "description": "Log base",
+                                    "default": 10
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "title": "choice",
+                    "description": """Wraps tune.sample_from
+                    around random.choice.""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "choice"
+                            ],
+                            "default": "choice"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                },
+                {
+                    "title": "grid_search",
+                    "description": """Convenience method for
+                    specifying grid search over a value.""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "grid_search"
+                            ],
+                            "default": "grid_search"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    }
+                }
+            ]
+        },
+        "string": {
+            "type": "object",
+            "oneOf": [
+                {
+                    "title": "choice",
+                    "description": """Wraps tune.sample_from
+                    around random.choice.""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "choice"
+                            ],
+                            "default": "choice"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                {
+                    "title": "grid_search",
+                    "description": """Convenience method for
+                    specifying grid search over a value.""",
+                    "properties": {
+                        "function": {
+                            "type": "string",
+                            "enum": [
+                                "grid_search"
+                            ],
+                            "default": "grid_search"
+                        },
+                        "args": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            ]
+        }
+    },
+    "type": "object",
+    "properties": {
+        "parameters": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "dependencies": {
+                    "name": {
+                        "oneOf": []
+                    }
+                }
+            }
+        },
+        "metrics": {
+            "type": "array",
+            "description": """the metrics that is going to be
+             recorded""",
+            "items": {
+                "type": "string"
+            },
+            "default": []
+        },
+        "best": {
+            "description": """the metric that is used for
+             best configuration""",
+            "type": "object",
+            "properties": {
+                "metric": {
+                    "type": "string"
+                },
+                "mode": {
+                    "type": "string",
+                    "enum": [
+                        "min",
+                        "max"
+                    ],
+                    "default": "max"
+                }
+            }
+        },
+        "tune": {
+            "type": "object",
+            "properties": {
+                "local_dir": {
+                    "type": "string",
+                    "description": """
+                     Local dir to save training results to.
+                    """,
+                    "default": "./ray"
+                },
+                "name": {
+                    "type": "string",
+                    "description": "Name of experiment",
+                    "default": "exp"
+                },
+                "num_samples": {
+                    "type": "number",
+                    "description": """
+                     Number of times to sample from
+                     the hyperparameter space.
+                     If grid_search is provided
+                     as an argument, the grid will be
+                     repeated num_samples of times.
+                    """,
+                    "default": 1
+                },
+                "resources_per_trial": {
+                    "type": "object",
+                    "description": """
+                    Machine resources to allocate per trial,
+                     e.g. {"cpu": 64, "gpu": 8}. Note that
+                     GPUs will not be assigned unless you
+                     specify them here.""",
+                    "properties": {
+                        "cpu": {
+                            "type": "number",
+                            "default": 1
+                        },
+                        "gpu": {
+                            "type": "number",
+                            "default": 1
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 class GridRandomSearchNode(ContextCompositeNode):
+
+    def init(self):
+        ContextCompositeNode.init(self)
+
+    def ports_setup(self):
+        return ContextCompositeNode.ports_setup(self)
 
     def conf_schema(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
@@ -26,273 +321,7 @@ class GridRandomSearchNode(ContextCompositeNode):
         if self.INPUT_CONFIG in input_columns:
             conf = input_columns[self.INPUT_CONFIG]
             if 'context' in conf:
-                json = {
-                    "definitions": {
-                        "number": {
-                            "type": "object",
-                            "oneOf": [
-                                  {
-                                    "title": 'randn',
-                                    "description": """Wraps
-                                     tune.sample_from around
-                                     np.random.randn.
-                                     tune.randn(10)
-                                      is equivalent to
-                                      np.random.randn(10)""",
-                                    "properties": {
-                                        "function": {
-                                            "type": "string",
-                                            "enum": ['randn'],
-                                            "default": 'randn'
-                                        },
-                                        "args": {
-                                            "type": "array",
-                                            "items": [
-                                               {
-                                                   "type": "number",
-                                                   "default": 1.0
-                                               }
-                                            ]
-                                        }
-                                    }
-                                  },
-                                {
-                                      "title": "uniform",
-                                      "description": """Wraps tune.sample_from
-                                    around np.random.uniform""",
-                                      "properties": {
-                                          "function": {
-                                              "type": "string",
-                                              "enum": ['uniform'],
-                                              "default": 'uniform'
-                                          },
-                                          "args": {
-                                              "type": "array",
-                                              "items": [
-                                                  {
-                                                      "type": "number",
-                                                      "description": "Lower boundary",
-                                                      "default": 0.0
-                                                  },
-                                                  {
-                                                      "type": "number",
-                                                      "description": "Upper boundary",
-                                                      "default": 10.0
-                                                  }
-                                              ]
-                                          }
-                                      }
-                                  },
-                                {
-                                    "title": "loguniform",
-                                    "description": """Sugar for sampling
-                                    in different orders of magnitude.,
-                                    parameters, min_bound – Lower
-                                    boundary of the output interval,
-                                    max_bound (float) – Upper boundary
-                                    of the output interval (1e-2),
-                                    base – Base of the log.""",
-                                    "properties": {
-                                        "function": {
-                                            "type": "string",
-                                            "enum": ['loguniform'],
-                                            "default": 'loguniform'
-                                        },
-                                        "args": {
-                                            "type": "array",
-                                            "items": [
-                                                {
-                                                    "type": "number",
-                                                    "default": 1e-4
-                                                },
-                                                {
-                                                    "type": "number",
-                                                    "default": 1e-2
-                                                },
-                                                {
-                                                    "type": "number",
-                                                    "default": 10
-                                                }
-                                            ]
-                                        }
-                                    }
-                                  },
-                                {
-                                    "title": "choice",
-                                      "description": """Wraps tune.sample_from
-                                    around random.choice.""",
-                                      "properties": {
-                                          "function": {
-                                              "type": "string",
-                                              "enum": ['choice'],
-                                              "default": 'choice'
-                                          },
-                                          "args": {
-                                              "type": "array",
-                                              "items": {
-                                                      "type": "number"
-                                              }
-                                          }
-                                      }
-                                  },
-                                {
-                                    "title": "grid_search",
-                                      "description": """Convenience method for
-                                    specifying grid search over a value.""",
-                                      "properties": {
-                                          "function": {
-                                              "type": "string",
-                                              "enum": ['grid_search'],
-                                              "default": 'grid_search'
-                                          },
-                                          "args": {
-                                              "type": "array",
-                                              "items": {
-                                                      "type": "number"
-                                              }
-                                          }
-                                      }
-                                  }
-                            ]
-                        },
-                        "string": {
-                            "type": "object",
-                            "oneOf": [
-                                  {
-                                    "title": "choice",
-                                      "description": """Wraps tune.sample_from
-                                    around random.choice.""",
-                                      "properties": {
-                                          "function": {
-                                              "type": "string",
-                                              "enum": ['choice'],
-                                              "default": 'choice'
-                                          },
-                                          "args": {
-                                              "type": "array",
-                                              "items": {
-                                                      "type": "string"
-                                              }
-                                          }
-
-                                      }
-                                  },
-                                {
-                                    "title": "grid_search",
-                                      "description": """Convenience method for
-                                    specifying grid search over a value.""",
-                                      "properties": {
-                                          "function": {
-                                              "type": "string",
-                                              "enum": ['grid_search'],
-                                              "default": 'grid_search'
-                                          },
-                                          "args": {
-                                              "type": "array",
-                                              "items": {
-                                                      "type": "string"
-                                              }
-                                          }
-
-                                      }
-                                  }
-                            ]
-                        }
-                    },
-                    "description": """
-                    Use Tune to specify a grid search
-                    or random search for a context composite node.
-                    """,
-                    "type": "object",
-                    "properties": {
-                        "parameters": {
-                            "type": "array",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                    }
-                                },
-                                "dependencies": {
-                                    "name": {
-                                        "oneOf": [],
-                                    }
-                                }
-                            },
-                        },
-                        "metrics": {
-                            "type": "array",
-                            "description": """the metrics that is going to be
-                             recorded""",
-                            "items": {
-                                "type": "string"
-                            },
-                            "default": []
-                        },
-                        "best": {
-                            "description": """the metric that is used for
-                             best configuration""",
-                            "type": "object",
-                            "properties": {
-                                "metric": {
-                                    "type": "string"
-                                },
-                                "mode": {
-                                    "type": "string",
-                                    "enum": ['min', 'max'],
-                                    "default": 'max'
-                                }
-                            }
-                        },
-                        "tune": {
-                            "type": "object",
-                            "properties": {
-                                "local_dir": {
-                                    "type": "string",
-                                    "description": """
-                                     Local dir to save training results to.
-                                    """,
-                                    "default": "./ray"
-                                },
-                                "name": {
-                                    "type": "string",
-                                    "description": """Name of experiment""",
-                                    "default": "exp"
-                                },
-                                "num_samples": {
-                                    "type": "number",
-                                    "description": """
-                                     Number of times to sample from
-                                     the hyperparameter space.
-                                     If grid_search is provided
-                                     as an argument, the grid will be
-                                     repeated num_samples of times.
-                                    """,
-                                    "default": 1
-                                },
-                                "resources_per_trial": {
-                                    "type": "object",
-                                    "description": """
-                                    Machine resources to allocate per trial,
-                                     e.g. {"cpu": 64, "gpu": 8}. Note that
-                                     GPUs will not be assigned unless you
-                                     specify them here.""",
-                                    "properties": {
-                                        "cpu": {
-                                            "type": 'number',
-                                            "default": 1
-                                        },
-                                        "gpu": {
-                                            "type": 'number',
-                                            "default": 1
-                                        },
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                json = deepcopy(_CONF_JSON)
                 metrics = []
                 task_graph.build(replace=replacementObj)
                 for t in task_graph:
@@ -342,7 +371,7 @@ class GridRandomSearchNode(ContextCompositeNode):
 
     def columns_setup(self):
         from ray.tune import Analysis
-        out_columns = super().columns_setup()
+        out_columns = ContextCompositeNode.columns_setup(self)
         if 'tune' in self.conf:
             if 'local_dir' in self.conf['tune']:
                 path = self.conf['tune']['local_dir']
@@ -471,7 +500,7 @@ class GridRandomSearchNode(ContextCompositeNode):
             for key in best.keys():
                 self.conf['context'][key]['value'] = best[key]
             output[self.OUTPUT_CONFIG] = self.conf
-        more_output = super().process(inputs)
+        more_output = ContextCompositeNode.process(self, inputs)
         output.update(more_output)
         return output
 

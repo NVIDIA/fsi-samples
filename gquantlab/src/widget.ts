@@ -18,6 +18,7 @@ import {
   COMMAND_TOOL_BAR_OPEN_NEW_FILE,
   COMMAND_TOOL_BAR_CONVERT_CELL_TO_FILE,
   COMMAND_TOOL_BAR_INCLUDE_NEW_FILE,
+  COMMAND_TOOL_BAR_SHOW_LOG,
   setupToolBarCommands
 } from './commands';
 import { JupyterFrontEnd } from '@jupyterlab/application';
@@ -84,6 +85,10 @@ export class GQuantView extends DOMWidgetView {
       commands: commands,
       id: COMMAND_TOOL_BAR_INCLUDE_NEW_FILE
     });
+    const item6 = new CommandToolbarButton({
+      commands: commands,
+      id: COMMAND_TOOL_BAR_SHOW_LOG
+    });
 
     toolBar.addItem('relayout', item0);
     toolBar.addItem('run', item1);
@@ -91,6 +96,7 @@ export class GQuantView extends DOMWidgetView {
     toolBar.addItem('open', item3);
     toolBar.addItem('add', item5);
     toolBar.addItem('create', item4);
+    toolBar.addItem('log', item6);
   }
 
   render(): void {

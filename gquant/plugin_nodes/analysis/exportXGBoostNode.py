@@ -1,14 +1,12 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                    NodePorts, PortsSpecSchema)
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 from xgboost import Booster
 
 
-class XGBoostExportNode(Node, _PortTypesMixin):
+class XGBoostExportNode(Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'model_in'
         self.OUTPUT_PORT_NAME = 'filename'
         required = {}

@@ -10,11 +10,10 @@ import copy
 __all__ = ['DataSplittingNode']
 
 
-class DataSplittingNode(Node, _PortTypesMixin):
+class DataSplittingNode(Node):
 
     def init(self):
         self.delayed_process = True
-        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME_TRAIN = 'train'
         self.OUTPUT_PORT_NAME_TEST = 'test'

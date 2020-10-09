@@ -197,6 +197,15 @@ _SCHED_CONF = {
 
 class NemoHyperTuneNode(GridRandomSearchNode):
 
+    def init(self):
+        GridRandomSearchNode.init(self)
+
+    def ports_setup(self):
+        return GridRandomSearchNode.ports_setup(self)
+
+    def columns_setup(self):
+        return GridRandomSearchNode.columns_setup(self)
+
     def conf_schema(self):
         cache_key, task_graph, _ = self._compute_hash_key()
         if cache_key in cache_schema:
@@ -211,7 +220,7 @@ class NemoHyperTuneNode(GridRandomSearchNode):
                         tensors = conf['eval_callback']['eval_tensors']
                         tensors = [t.split('@')[-1] for t in tensors]
                         print(tensors)
-        conf = super().conf_schema()
+        conf = GridRandomSearchNode.conf_schema(self)
         json = conf.json
         if 'properties' in json:
             del json['properties']['metrics']

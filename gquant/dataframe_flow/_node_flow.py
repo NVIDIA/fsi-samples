@@ -420,39 +420,16 @@ class NodeTaskGraphMixin(object):
         '''
         # check if dask future or delayed
         use_delayed = False
-        in_types = {}
-        for iport, ival in inputs.items():
-            itype = type(ival)
-            in_types[iport] = itype
+        for _, ival in inputs.items():
             if isinstance(ival, DaskDataFrame):
                 use_delayed = True
                 break
-
-        # if use_delayed:
-        #     warn_msg = \
-        #         'Node "{}" iport "{}" is of type "{}" and it '\
-        #         'should be dask_cudf.DataFrame. Ignoring '\
-        #         '"delayed_process" setting.'
-        #     for iport, itype in in_types.items():
-        #         if itype not in (dask_cudf.DataFrame,):
-        #             warnings.warn(warn_msg.format(self.uid, iport, itype))
-        #             use_delayed = False
-        #
-        # if use_delayed:
-        #     warn_msg = \
-        #         'Node "{}" oport "{}" is of type "{}" and it '\
-        #         'should be cudf.DataFrame or dask_cudf.DataFrame. Ignoring '\
-        #         '"delayed_process" setting.'
-        #     for oport, oport_spec in \
-        #             self._get_output_ports(full_port_spec=True).items():
-        #         otype = oport_spec.get('type', [])
-        #         if not isinstance(otype, list):
-        #             otype = [otype]
-        #         if dask_cudf.DataFrame not in otype and \
-        #                 cudf.DataFrame not in otype:
-        #             warnings.warn(warn_msg.format(self.uid, oport, otype))
-        #             use_delayed = False
-
+        if not use_delayed:
+            warn_msg = \
+                'None of the Node "{}" inputs '\
+                'is cudf.DataFrame or dask_cudf.DataFrame. Ignoring '\
+                '"delayed_process" setting.'.format(self.uid)
+            warnings.warn(warn_msg)
         return use_delayed
 
     def __delayed_call(self, inputs):
