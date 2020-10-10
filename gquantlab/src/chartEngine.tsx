@@ -490,6 +490,8 @@ export class ChartEngine extends React.Component<IProps, IState> {
 
   updateWorkFlow(state: IState, update = true): void {
     if (state.edges && state.nodes) {
+      //TODO need Need to think about how the logic to handle dynamic ports can be refactored in a generic manner in the future. 
+      // Maybe a node could have a self state flag to indicate that it creates ports dynamically.
       this._fixOutputCollectorPorts(state);
       this._fixNeMoPorts(state);
       const output = exportWorkFlowNodes(state.nodes, state.edges);

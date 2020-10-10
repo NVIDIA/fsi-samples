@@ -21,6 +21,10 @@ class NormalizationNode(Node, _PortTypesMixin):
         }
 
     def ports_setup_from_types(self, types):
+        """
+        overwrite the _PortTypesMixin.ports_setup_from_types
+        method, which is invoked by the _PortTypesMixin.ports_setup
+        """
         port_type = PortsSpecSchema.port_type
         input_ports = {
             self.INPUT_PORT_NAME: {

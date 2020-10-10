@@ -13,7 +13,7 @@ type_map = {
 
 
 def parse_config(json_obj):
-    expr = parse('$..*')
+    expr = parse('$..*')  # search for all the fields in the json file
     matches = expr.find(json_obj)
     map_result = {}
     for match in matches:

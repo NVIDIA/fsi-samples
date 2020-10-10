@@ -1,6 +1,7 @@
 import { IEdge } from './document';
 import { Chart } from './chart';
 
+//TODO, need to refactor this to handle dynamcially added module type checks 
 function valid(required: any, outputs: any): boolean {
   const keys = Object.keys(required);
   for (let i = 0; i < keys.length; i++) {
