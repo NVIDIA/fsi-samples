@@ -429,6 +429,36 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
+  private _fixNeMoPorts(state: IState): void {
+    // fix the nemo train node
+    const NeMoTrainNode = 'NemoTrainNode';
+    const NeMoInferNode = 'NemoInferNode';
+    const inputTensorPort = 'input_tensor';
+
+    const nemoNodes = state.nodes.filter(
+      (d: INode) => d.type === NeMoTrainNode || d.type === NeMoInferNode
+    );
+
+    const nodeIds = nemoNodes.map(d => d.id);
+
+    if (nemoNodes.length === 0) {
+      return;
+    }
+    // fixed the port and connections
+    state.edges.forEach((d: IEdge) => {
+      if (nodeIds.includes(d.to.split('.')[0])) {
+        if (d.to.split('.')[1] === inputTensorPort) {
+          d.to =
+            d.to.split('.')[0] +
+            '.' +
+            d.from.split('.')[0] +
+            '@' +
+            d.from.split('.')[1];
+        }
+      }
+    });
+  }
+
   private _fixOutputCollectorPorts(state: IState): void {
     const index = state.nodes.findIndex(
       (d: INode) => d.id === OUTPUT_COLLECTOR
@@ -460,7 +490,10 @@ export class ChartEngine extends React.Component<IProps, IState> {
 
   updateWorkFlow(state: IState, update = true): void {
     if (state.edges && state.nodes) {
+      //TODO need Need to think about how the logic to handle dynamic ports can be refactored in a generic manner in the future. 
+      // Maybe a node could have a self state flag to indicate that it creates ports dynamically.
       this._fixOutputCollectorPorts(state);
+      this._fixNeMoPorts(state);
       const output = exportWorkFlowNodes(state.nodes, state.edges);
       if (this.props.contentHandler.privateCopy) {
         this.props.contentHandler.privateCopy.set('value', output);

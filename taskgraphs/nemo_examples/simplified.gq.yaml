@@ -1,0 +1,15 @@
+- id: chat
+  type: CompositeNode
+  conf:
+    output:
+      - inference.torch_tensor
+      - data.out_nm
+    subnodes_conf: {}
+    taskgraph: taskgraphs/nemo_examples/chatbot_example.gq.yaml
+  inputs: {}
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: chat.inference@torch_tensor
+    in2: chat.data@out_nm

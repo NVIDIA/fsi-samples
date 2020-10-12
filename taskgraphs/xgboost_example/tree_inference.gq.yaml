@@ -1,0 +1,117 @@
+- id: data_gen
+  type: ClassificationData
+  conf:
+    n_samples: 10000
+    n_features: 10
+    n_informative: 4
+    n_redundant: 0
+    n_repeated: 0
+    n_classes: 2
+    n_clusters_per_class: 2
+    flip_y: 0.01
+    class_sep: 1
+    hypercube: true
+    shift: 0
+    scale: 1
+    shuffle: true
+    order: F
+    dtype: float64
+    n_parts: 4
+  inputs: {}
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: model_export.filename
+    in2: test_data.out
+    in3: test_infer.out
+    in4: xgboost_infer.out
+- id: data_generator
+  type: CompositeNode
+  conf:
+    input:
+      - x2_to_sign.in
+    output:
+      - drop_x2_x3.out
+    subnode_ids:
+      - data_gen
+    subnodes_conf:
+      data_gen:
+        conf:
+          n_samples: 10000
+          n_features: 10
+          n_informative: 4
+          n_redundant: 0
+          n_repeated: 0
+          n_classes: 2
+          n_clusters_per_class: 2
+          flip_y: 0.1
+          class_sep: 1
+          hypercube: true
+          shift: 0
+          scale: 1
+          shuffle: true
+          order: F
+          dtype: float64
+          n_parts: 4
+          random_state: 10
+    taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+  inputs:
+    x2_to_sign@in: data_gen.dask_cudf_out
+- id: xgboost_model
+  type: CompositeNode
+  conf:
+    input:
+      - train_norm.df_in
+      - test_norm.df_in
+    output:
+      - train_infer.out
+      - test_infer.out
+      - train_xgboost.model_out
+      - train_norm.df_out
+      - test_norm.df_out
+    subnode_ids: []
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model.gq.yaml
+  inputs:
+    test_norm@df_in: data_splitter.test
+    train_norm@df_in: data_splitter.train
+- id: data_splitter
+  type: DataSplittingNode
+  conf:
+    train_size: 0.8
+    target: y
+  inputs:
+    in: data_generator.drop_x2_x3@out
+- id: model_export
+  type: XGBoostExportNode
+  conf:
+    path: xgboost_model_file
+  inputs:
+    model_in: xgboost_model.train_xgboost@model_out
+- id: tree_inference
+  type: ForestInferenceNode
+  conf:
+    columns:
+      - y
+    include: false
+    prediction: predict
+    file: xgboost_model_file
+  inputs:
+    model_file: model_export.filename
+    data_in: xgboost_model.test_norm@df_out
+- id: test_data
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: xgboost_model.test_norm@df_out
+- id: test_infer
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: tree_inference.out
+- id: xgboost_infer
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: xgboost_model.test_infer@out

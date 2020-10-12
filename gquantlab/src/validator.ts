@@ -1,6 +1,7 @@
 import { IEdge } from './document';
 import { Chart } from './chart';
 
+//TODO, need to refactor this to handle dynamcially added module type checks 
 function valid(required: any, outputs: any): boolean {
   const keys = Object.keys(required);
   for (let i = 0; i < keys.length; i++) {
@@ -12,6 +13,56 @@ function valid(required: any, outputs: any): boolean {
           required[d] === null ||
           required[d] === outputs[d])
       )
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function validNmType(required: any, outputs: any): boolean {
+  //first check types
+
+  const reqElement = required['element'];
+  const outElement = outputs['element'];
+  if (
+    outElement['types'][0] !== 'VoidType' &&
+    reqElement['types'][0] !== 'VoidType'
+  ) {
+    if (
+      outElement['types'].findIndex(
+        (d: string) => d === reqElement['types'][0]
+      ) < 0
+    ) {
+      // req type should be more specific,
+      // out type should be generic
+      // first out type should be the parent type of required
+      return false;
+    }
+    if (outElement['fields'] !== reqElement['fields']) {
+      return false;
+    }
+    if (outElement['parameters'] !== reqElement['parameters']) {
+      return false;
+    }
+  }
+
+  const reqAxes = required['axes'];
+  const outAxes = outputs['axes'];
+  if (reqAxes.length === 0) {
+    return true;
+  }
+  if (reqAxes.length !== outAxes.length) {
+    return false;
+  }
+  for (let i = 0; i < reqAxes.length; i++) {
+    if (reqAxes[i]['kind'] !== outAxes[i]['kind']) {
+      return false;
+    }
+    if (
+      reqAxes[i]['size'] !== null &&
+      outAxes[i]['size'] !== null &&
+      reqAxes[i]['size'] !== outAxes['size']
     ) {
       return false;
     }
@@ -59,7 +110,17 @@ export function validConnection(that: Chart) {
 
       // make sure the requirement is met
       if (from in that.outputColumns && to in that.inputRequriements) {
-        return valid(that.inputRequriements[to], that.outputColumns[from]);
+        const nmType = toTypes.findIndex(d => {
+          return d.indexOf('NmTensor') >= 0;
+        });
+        if (nmType >= 0) {
+          return validNmType(
+            that.inputRequriements[to],
+            that.outputColumns[from]
+          );
+        } else {
+          return valid(that.inputRequriements[to], that.outputColumns[from]);
+        }
       } else if (
         !(from in that.outputColumns) &&
         to in that.inputRequriements
@@ -92,7 +153,17 @@ export function validConnection(that: Chart) {
 
       // make sure the requirement is met
       if (to in that.outputColumns && from in that.inputRequriements) {
-        return valid(that.inputRequriements[from], that.outputColumns[to]);
+        const nmType = toTypes.findIndex(d => {
+          return d.indexOf('NmTensor') >= 0;
+        });
+        if (nmType >= 0) {
+          return validNmType(
+            that.inputRequriements[from],
+            that.outputColumns[to]
+          );
+        } else {
+          return valid(that.inputRequriements[from], that.outputColumns[to]);
+        }
       } else if (
         !(to in that.outputColumns) &&
         from in that.inputRequriements

@@ -11,6 +11,7 @@ import {
   cleanIcon,
   runIcon
 } from '.';
+import { listIcon } from '@jupyterlab/ui-components';
 import { IFileBrowserFactory, FileDialog } from '@jupyterlab/filebrowser';
 import {
   folderIcon,
@@ -50,6 +51,7 @@ export const COMMAND_TOOL_BAR_CLEAN = 'gquant:toolbarcleanResult';
 export const COMMAND_ADD_OUTPUT_COLLECTOR = 'gquant:addOutputCollector';
 export const COMMAND_OPEN_DOC_FORWARD = 'gquant:openDocumentForward';
 export const COMMAND_CREATE_CUST_NODE = 'gquant:createCustomizedNode';
+export const COMMAND_TOOL_BAR_SHOW_LOG = 'gquant:showLogBox';
 
 function uuidv4(): string {
   return Math.random()
@@ -693,6 +695,20 @@ export function setupToolBarCommands(
     execute: async () => {
       contentHandler.saveCache.emit();
       contentHandler.runGraph.emit();
+    }
+  });
+
+  commands.addCommand(COMMAND_TOOL_BAR_SHOW_LOG, {
+    label: '',
+    caption: 'Show Log Console',
+    icon: listIcon,
+    mnemonic: 0,
+    execute: async () => {
+      app.commands.execute('logconsole:open', {
+        insertMode: 'split-bottom',
+        // eslint-disable-next-line prettier/prettier
+        ref: app.shell.currentWidget?.id
+      });
     }
   });
 

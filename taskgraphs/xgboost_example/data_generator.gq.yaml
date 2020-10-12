@@ -1,0 +1,68 @@
+- id: data_gen
+  type: ClassificationData
+  conf:
+    n_samples: 10000
+    n_features: 10
+    n_informative: 4
+    n_redundant: 0
+    n_repeated: 0
+    n_classes: 2
+    n_clusters_per_class: 2
+    flip_y: 0.01
+    class_sep: 1
+    hypercube: true
+    shift: 0
+    scale: 1
+    shuffle: true
+    order: F
+    dtype: float64
+    n_parts: 4
+  inputs: {}
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: drop_x2_x3.out
+- id: x2_to_sign
+  type: AddSignIndicatorNode
+  conf:
+    sign: x2_sign
+    column: x2
+  inputs:
+    in: data_gen.cudf_out
+- id: x3_to_sign
+  type: AddSignIndicatorNode
+  conf:
+    sign: x3_sign
+    column: x3
+  inputs:
+    in: x2_to_sign.out
+- id: drop_x2_x3
+  type: DropNode
+  conf:
+    columns:
+      - x2
+      - x3
+      - x3_sign
+      - x2_sign
+  inputs:
+    in: one_hot_encoding.out
+- id: one_hot_encoding
+  type: OneHotEncodingNode
+  conf:
+    - cats:
+        - 0
+        - 1
+      prefix_sep: _
+      dtype: float64
+      column: x3_sign
+      prefix: x3
+    - cats:
+        - 0
+        - 1
+      prefix_sep: _
+      dtype: float64
+      column: x2_sign
+      prefix: x2
+  inputs:
+    in: x3_to_sign.out

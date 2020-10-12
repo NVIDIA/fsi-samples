@@ -12,6 +12,9 @@ from gquant.dataframe_flow.util import get_file_path
 import uuid
 
 
+__all__ = ["CompositeNode"]
+
+
 def _get_node(port_name):
     return port_name.split('@')[0]
 
@@ -48,6 +51,13 @@ def group_ports(input_list):
 
 class CompositeNode(Node):
 
+    def conf_update(self):
+        """
+        This method is used to overwrite the conf from
+        external sources
+        """
+        pass
+
     def _compute_hash_key(self):
         """
         if hash changed, the port_setup, columns_setup
@@ -55,17 +65,22 @@ class CompositeNode(Node):
         In very rara case, might have the problem of hash collision,
         It affects the column, port and conf calculation. It won't
         change the computation result though.
+        It returns the hash code, the loaded task_graph, the replacement conf obj
         """
+        self.conf_update()
         task_graph = ""
         inputs = ()
         replacementObj = {}
         input_node = ""
-        self.update_replace(replacementObj)
+        task_graph_obj = None
         if 'taskgraph' in self.conf:
             task_graph = get_file_path(self.conf['taskgraph'])
             if os.path.exists(task_graph):
                 with open(task_graph) as f:
                     task_graph = hashlib.md5(f.read().encode()).hexdigest()
+                task_graph_obj = TaskGraph.load_taskgraph(
+                    get_file_path(self.conf['taskgraph']))
+        self.update_replace(replacementObj, task_graph_obj)
         if 'input' in self.conf:
             for inp in self.conf['input']:
                 input_node += inp+","
@@ -73,8 +88,9 @@ class CompositeNode(Node):
                     for i in self.inputs:
                         inputs += (hash(i['from_node']),
                                    i['to_port'], i['from_port'])
-        return hash((self.uid, task_graph, inputs, json.dumps(self.conf),
-                     input_node, json.dumps(replacementObj)))
+        return (hash((self.uid, task_graph, inputs, json.dumps(self.conf),
+                      input_node, json.dumps(replacementObj))), task_graph_obj,
+                replacementObj)
 
     def _make_sub_graph_connection(self, task_graph,
                                    inputNode_fun,
@@ -134,17 +150,13 @@ class CompositeNode(Node):
                     outNode_fun(outNode, oup_groups[oup])
 
     def ports_setup(self):
-        cache_key = self._compute_hash_key()
+        cache_key, task_graph, replacementObj = self._compute_hash_key()
         if cache_key in cache_ports:
             # print('cache hit')
             return cache_ports[cache_key]
         inports = {}
         outports = {}
         if 'taskgraph' in self.conf:
-            task_graph = TaskGraph.load_taskgraph(
-                get_file_path(self.conf['taskgraph']))
-            replacementObj = {}
-            self.update_replace(replacementObj)
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
@@ -170,17 +182,13 @@ class CompositeNode(Node):
         return output_port
 
     def columns_setup(self):
-        cache_key = self._compute_hash_key()
+        cache_key, task_graph, replacementObj = self._compute_hash_key()
         if cache_key in cache_columns:
             # print('cache hit')
             return cache_columns[cache_key]
         required = {}
         out_columns = {}
         if 'taskgraph' in self.conf:
-            task_graph = TaskGraph.load_taskgraph(
-                get_file_path(self.conf['taskgraph']))
-            replacementObj = {}
-            self.update_replace(replacementObj)
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
@@ -209,7 +217,7 @@ class CompositeNode(Node):
         return out_columns
 
     def conf_schema(self):
-        cache_key = self._compute_hash_key()
+        cache_key, task_graph, replacementObj = self._compute_hash_key()
         if cache_key in cache_schema:
             # print('cache hit')
             return cache_schema[cache_key]
@@ -258,11 +266,7 @@ class CompositeNode(Node):
             "subnodes_conf": {}
         }
         if 'taskgraph' in self.conf:
-            task_graphh = TaskGraph.load_taskgraph(
-                get_file_path(self.conf['taskgraph']))
-            replacementObj = {}
-            self.update_replace(replacementObj)
-            task_graphh.build(replace=replacementObj)
+            task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -270,16 +274,16 @@ class CompositeNode(Node):
             def outNode_fun(outNode, out_ports):
                 pass
 
-            self._make_sub_graph_connection(task_graphh,
+            self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
 
             ids_in_graph = []
             in_ports = []
             out_ports = []
-            for t in task_graphh:
+            for t in task_graph:
                 node_id = t.get('id')
                 if node_id != '':
-                    node = task_graphh[node_id]
+                    node = task_graph[node_id]
                     all_ports = node.ports_setup()
                     for port in all_ports.inports.keys():
                         in_ports.append(node_id+'.'+port)
@@ -291,8 +295,8 @@ class CompositeNode(Node):
             json['properties']['subnode_ids']['items']['enum'] = ids_in_graph
         if 'subnode_ids' in self.conf:
             for subnodeId in self.conf['subnode_ids']:
-                if subnodeId in task_graphh:
-                    nodeObj = task_graphh[subnodeId]
+                if subnodeId in task_graph:
+                    nodeObj = task_graph[subnodeId]
                     schema = nodeObj.conf_schema()
                     json['properties'][
                         "subnodes_conf"]['properties'][subnodeId] = {
@@ -310,7 +314,7 @@ class CompositeNode(Node):
         cache_schema[cache_key] = out_schema
         return out_schema
 
-    def update_replace(self, replaceObj):
+    def update_replace(self, replaceObj, task_graph=None):
         # find the other replacment conf
         if 'subnodes_conf' in self.conf:
             for key in self.conf['subnodes_conf'].keys():
@@ -404,7 +408,7 @@ class CompositeNode(Node):
                                             inputNode_fun, outNode_fun)
 
             task_graph.extend(input_feeders)
-            self.update_replace(replaceObj)
+            self.update_replace(replaceObj, task_graph)
             result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():

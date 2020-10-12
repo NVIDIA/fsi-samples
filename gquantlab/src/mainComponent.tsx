@@ -3,10 +3,11 @@ import { ReactWidget } from '@jupyterlab/apputils';
 import React from 'react';
 //import { ContentHandler, IChartInput } from './document';
 import { ContentHandler } from './document';
-import { Widget } from '@lumino/widgets';
+import { Panel, Widget } from '@lumino/widgets';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { ChartEngine } from './chartEngine';
 import { Message } from '@lumino/messaging';
+import { Cell } from '@jupyterlab/cells';
 
 const OUTPUT_CELL_HEIGHT = 300;
 
@@ -21,7 +22,9 @@ export class MainView extends ReactWidget {
 
   private _calclateSize(): void {
     this._height = OUTPUT_CELL_HEIGHT;
-    this._width = this.parent.parent.parent.node.clientWidth;
+    const cell: Cell = this.parent.parent.parent.parent.parent.parent as Cell;
+    this._width = cell.inputArea.editorWidget.node.clientWidth - 5;
+    //this._width = this.parent.parent.parent.node.clientWidth;
     // console.log('nsize', this._height, this._width);
     if (!this._contentHandler) {
       return;
@@ -55,6 +58,13 @@ export class MainView extends ReactWidget {
       width: this._width,
       height: this._height
     });
+    // update the result size
+    const pane = this.parent as Panel;
+    if (pane.widgets.length === 3) {
+      const view = pane.widgets[2];
+      view.node.style.width = this._width + 'px';
+    }
+
     // const content: IChartInput = this._contentHandler.privateCopy.get('cache');
     // content['width'] = this._width;
     // content['height'] = this._height;

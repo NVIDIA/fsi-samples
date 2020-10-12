@@ -514,6 +514,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           outputs: any;
           ui: any;
           schema: any;
+          conf: any;
         };
       } = {};
       data.nodes.forEach((d: INode) => {
@@ -523,7 +524,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           inputs: d.inputs,
           outputs: d.outputs,
           schema: d.schema,
-          ui: d.ui
+          ui: d.ui,
+          conf: d.conf
         };
       });
       nodes.forEach((d: INode) => {
@@ -538,6 +540,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           d.outputs = newNode[d.id].outputs;
           d.schema = newNode[d.id].schema;
           d.ui = newNode[d.id].ui;
+          d.conf = newNode[d.id].conf;
         }
       });
       this.props.setChartState({
