@@ -7,6 +7,8 @@ from dask.dataframe import DataFrame as DaskDataFrame
 import cudf
 import dask_cudf
 import copy
+from dask.base import is_dask_collection
+from dask.distributed import Future
 
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
@@ -419,17 +421,30 @@ class NodeTaskGraphMixin(object):
         currently only cudf/dask_cudf dataframes are supported.)
         '''
         # check if dask future or delayed
+        ivals = inputs.values()
+        if not any((is_dask_collection(iv) for iv in ivals)) and \
+                not any((isinstance(iv, Future) for iv in ivals)):
+            # None of the inputs are Delayed or Futures so no intention of
+            # using delayed processing. Return False and avoid printing
+            # non-applicable warning.
+            return False
+
         use_delayed = False
-        for _, ival in inputs.items():
+        for ival in ivals:
             if isinstance(ival, DaskDataFrame):
                 use_delayed = True
                 break
+
+        # NOTE: Currently only support delayed processing when one of the
+        #     inputs is a dask_cudf.DataFrame. In the future might generalize
+        #     to support dask processing of other delayed/future type inputs.
         if not use_delayed:
             warn_msg = \
                 'None of the Node "{}" inputs '\
-                'is cudf.DataFrame or dask_cudf.DataFrame. Ignoring '\
+                'is a dask_cudf.DataFrame. Ignoring '\
                 '"delayed_process" setting.'.format(self.uid)
             warnings.warn(warn_msg)
+
         return use_delayed
 
     def __delayed_call(self, inputs):
