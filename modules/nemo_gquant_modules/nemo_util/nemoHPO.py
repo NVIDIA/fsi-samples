@@ -372,6 +372,15 @@ class NemoHyperTuneNode(GridRandomSearchNode):
             for key in best.keys():
                 self.conf['context'][key]['value'] = best[key]
             output[self.OUTPUT_CONFIG] = self.conf
+
+        # TODO: Fix the check point directory loading. Ray creates checkpoint
+        #     directories under its "tune->local_dir". The directory names are
+        #     taken from the taskgraph on which the HPO is being perfomed.
+        #     These checkpoint directories within ray subdirectory need to
+        #     override or deal with the checkpoint directories that might be
+        #     set for the taskgraph for which the HPO is being performed.
+        # print('NemoHyperTuneNode CONF:\n{}'.format(self.conf))
+
         more_output = ContextCompositeNode.process(self, inputs)
         output.update(more_output)
 

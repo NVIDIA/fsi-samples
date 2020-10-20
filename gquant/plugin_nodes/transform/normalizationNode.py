@@ -88,7 +88,6 @@ class NormalizationNode(Node, _PortTypesMixin):
                 self.OUTPUT_PORT_NAME: col_from_inport,
                 self.OUTPUT_NORM_MODEL_NAME: cols_required
             }
-            return output_cols
         elif (self.INPUT_NORM_MODEL_NAME in input_columns and
               self.INPUT_PORT_NAME not in input_columns):
             cols_required = input_columns[self.INPUT_NORM_MODEL_NAME]
@@ -100,7 +99,6 @@ class NormalizationNode(Node, _PortTypesMixin):
                 self.OUTPUT_PORT_NAME: cols_required,
                 self.OUTPUT_NORM_MODEL_NAME: cols_required
             }
-            return output_cols
         elif (self.INPUT_NORM_MODEL_NAME not in input_columns and
               self.INPUT_PORT_NAME in input_columns):
             col_from_inport = input_columns[self.INPUT_PORT_NAME]
@@ -125,7 +123,14 @@ class NormalizationNode(Node, _PortTypesMixin):
                     self.OUTPUT_PORT_NAME: col_from_inport,
                     self.OUTPUT_NORM_MODEL_NAME: cols_required
                 }
-            return output_cols
+
+        # The port INPUT_NORM_MODEL_NAME connection is optional. If not
+        # connected do not set in self.required
+        isconnected = \
+            self.INPUT_NORM_MODEL_NAME in self.get_connected_inports()
+        if not isconnected:
+            self.required.pop(self.INPUT_NORM_MODEL_NAME, None)
+
         return output_cols
 
     def ports_setup(self):

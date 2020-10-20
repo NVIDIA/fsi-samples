@@ -16,8 +16,11 @@ class RocCurveNode(Node, _PortTypesMixin):
 
     def columns_setup(self):
         cols_required = {}
+        icols = self.get_input_columns()
         if 'label' in self.conf:
-            cols_required[self.conf['label']] = None
+            label = self.conf['label']
+            labeltype = icols.get(self.INPUT_PORT_NAME, {}).get(label)
+            cols_required[label] = labeltype
         if 'prediction' in self.conf:
             cols_required[self.conf['prediction']] = None
         self.required = {
