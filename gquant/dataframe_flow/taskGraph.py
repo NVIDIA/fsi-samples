@@ -126,6 +126,9 @@ class TaskGraph(object):
                 raise Exception(error_msg.format(task_id))
             self.__task_list[task_id] = task
 
+        if self.__widget is not None:
+            self.__widget.value = self.export_task_speclist()
+
     def extend(self, task_spec_list=None, replace=False):
         '''
         Add more task-spec dicts to the graph
@@ -347,16 +350,23 @@ class TaskGraph(object):
         for task_id in self.__node_dict:
             node = self.__node_dict[task_id]
             task_inputs = node._task_obj[TaskSpecSchema.inputs]
-            for input_idx, input_key in enumerate(task_inputs):
+            for iport in task_inputs:
                 # node_inputs should be a dict with entries:
                 #     {iport: taskid.oport}
-                input_task = task_inputs[input_key].split('.')
-                dst_port = input_key
+                input_task = task_inputs[iport].split('.')
+                dst_port = iport
 
                 input_id = input_task[0]
-                src_port = input_task[1] if len(input_task) > 1 else None
+                # src_port = input_task[1] if len(input_task) > 1 else None
+                src_port = input_task[1]
 
-                input_node = self.__node_dict[input_id]
+                try:
+                    input_node = self.__node_dict[input_id]
+                except KeyError:
+                    raise LookupError(
+                        'Missing task "{}". Add task spec to TaskGraph.'
+                        .format(input_id))
+
                 node.inputs.append({
                     'from_node': input_node,
                     'from_port': src_port,
@@ -369,18 +379,21 @@ class TaskGraph(object):
                     'from_port': src_port
                 })
 
-        # this part is to do static type checks
-        raw_inputs = []
-        for k in self.__node_dict.keys():
-            self.__find_roots(self.__node_dict[k], raw_inputs,
-                              consider_load=False)
+        # Columns type checking is done in the :meth:`TaskGraph._run` after the
+        # outputs are specified and participating tasks are determined.
 
-        for i in raw_inputs:
-            i.validate_required_columns()
-
-        # clean up the visited status for run computations
-        for task_id in self.__node_dict:
-            self.__node_dict[task_id].visited = False
+        # # this part is to do static type checks
+        # raw_inputs = []
+        # for k in self.__node_dict.keys():
+        #     self.__find_roots(self.__node_dict[k], raw_inputs,
+        #                       consider_load=False)
+        #
+        # for i in raw_inputs:
+        #     i.validate_required_columns()
+        #
+        # # clean up the visited status for run computations
+        # for task_id in self.__node_dict:
+        #     self.__node_dict[task_id].visited = False
 
     def __getitem__(self, key):
         return self.__node_dict[key]
@@ -439,7 +452,7 @@ class TaskGraph(object):
                         lambda x: x['to_node'] != outputs_collector_node,
                         node.outputs))
 
-                # remove the output
+            # remove the output
             # set the connection only if output_node is manullay created
             # or the output is overwritten
             outputs_collector_node.inputs.clear()
@@ -465,6 +478,19 @@ class TaskGraph(object):
 
         inputs = []
         self.__find_roots(outputs_collector_node, inputs, consider_load=True)
+
+        # Validate columns prior to running heavy compute
+        for node in self.__node_dict.values():
+            if not node.visited:
+                continue
+
+            # Run ports validation.
+            node.validate_connected_ports()
+
+            # Run columns setup in case the required columns are calculated
+            # within the columns_setup and are NodeTaskGraphMixin dependent.
+            node.columns_setup()
+            node.validate_required_columns()
 
         if self.__widget is not None:
             def progress_fun(uid):

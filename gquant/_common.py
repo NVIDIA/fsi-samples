@@ -1,4 +1,5 @@
-from collections import namedtuple, Mapping
+from collections import namedtuple
+from collections.abc import Mapping
 
 __all__ = ['_namedtuple_with_defaults']
 

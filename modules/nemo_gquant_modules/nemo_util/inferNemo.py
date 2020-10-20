@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts
@@ -11,6 +13,21 @@ import copy
 __all__ = ["NemoInferNode"]
 
 
+def _isempty(pp):
+    '''pp is pathlib Path
+    :type pp: Path
+    '''
+    if not pp.is_dir():
+        return True
+
+    try:
+        next(pp.rglob('*'))
+    except StopIteration:
+        return True
+
+    return False
+
+
 class NemoInferNode(Node, _PortTypesMixin):
     def init(self):
         _PortTypesMixin.init(self)
@@ -21,12 +38,13 @@ class NemoInferNode(Node, _PortTypesMixin):
         port_type = PortsSpecSchema.port_type
         o_inports = {}
         o_inports[self.INPUT_PORT_NAME] = {port_type: str}
-        o_outports = {}
         o_inports['input_tensor'] = {port_type: NmTensor}
         if hasattr(self, 'inputs'):
             for inp in self.inputs:
-                if inp['to_port'] == self.INPUT_PORT_NAME:
+                if inp['to_port'] in (self.INPUT_PORT_NAME,):
                     continue
+                # TODO: Move TaskGrah rewire logic here instead of in
+                #     chartEngine.tsx ChartEngine._fixNeMoPorts
                 o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
                     port_type: NmTensor}
         o_outports = {}
@@ -43,12 +61,21 @@ class NemoInferNode(Node, _PortTypesMixin):
         output['element']['parameters'] = '{}'
         ports = self.ports_setup()
         inports = ports.inports
-        if inports is not None:
-            for k in inports.keys():
-                if k == self.INPUT_PORT_NAME:
-                    continue
-                self.required[k] = output
-        return {}
+
+        iports_connected = self.get_connected_inports()
+        iports_cols = self.get_input_columns()
+        for iport in inports.keys():
+            if iport in (self.INPUT_PORT_NAME,):
+                continue
+            if iport in iports_connected and iport in iports_cols:
+                self.required[iport] = copy.deepcopy(iports_cols[iport])
+            else:
+                self.required[iport] = copy.deepcopy(output)
+
+        if 'input_tensor' not in iports_connected:
+            self.required.pop('input_tensor', None)
+
+        return {self.OUTPUT_PORT_NAME: {}}
 
     def conf_schema(self):
         json = {
@@ -114,7 +141,7 @@ class NemoInferNode(Node, _PortTypesMixin):
         count = 1
         if hasattr(self, 'inputs'):
             for i in self.inputs:
-                if i['to_port'] == self.INPUT_PORT_NAME:
+                if i['to_port'] in (self.INPUT_PORT_NAME,):
                     continue
                 enum.append(i['from_node'].uid+'@'+i['from_port'])
                 enumNames.append(i['from_node'].uid+'.'+i['from_port'])
@@ -125,10 +152,12 @@ class NemoInferNode(Node, _PortTypesMixin):
 
     def process(self, inputs):
         nf = nemo.core.NeuralModuleFactory.get_default_factory()
-        input_columns = self.get_input_columns()
+
         conf = copy.copy(self.conf)
-        if self.INPUT_PORT_NAME in input_columns:
-            conf['checkpoint_dir'] = inputs[self.INPUT_PORT_NAME]
+        log_dir = inputs.get(self.INPUT_PORT_NAME, conf['checkpoint_dir'])
+        if not _isempty(Path(log_dir)):
+            conf['checkpoint_dir'] = log_dir
+
         conf['tensors'] = [inputs[i] for i in conf['tensors']]
         result = nf.infer(**conf)
         return {self.OUTPUT_PORT_NAME: result}
