@@ -20,7 +20,7 @@
   conf:
     window: 50
   inputs:
-    stream_in: double_again.stream_out
+    stream_in: double.stream_out
   module: streamz
 - id: plot
   type: PlotSinkNode
@@ -46,5 +46,5 @@
   conf:
     window: 50
   inputs:
-    stream_in: double.stream_out
+    stream_in: double_again.stream_out
   module: streamz

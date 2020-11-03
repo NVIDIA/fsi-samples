@@ -99,10 +99,6 @@ class TestTaskGraphAPI(unittest.TestCase):
         '''Test taskgraph to networkx graph conversion for graph visualization.
         '''
         nx_graph = self.tgraph.viz_graph(show_ports=True)
-        nx_nodes = [
-            'points_task', 'points_task.points_df_out',
-            'distance_by_cudf', 'distance_by_cudf.distance_df'
-        ]
         nx_nodes = ['points_task', 'points_task.points_df_out',
                     'points_task.points_ddf_out',
                     'distance_by_cudf', 'distance_by_cudf.distance_df',

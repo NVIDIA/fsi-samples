@@ -13,8 +13,8 @@
   type: Output_Collector
   conf: {}
   inputs:
-    in1: plot.fig_out
-    in2: source.stream_out
+    in1: source.stream_out
+    in2: plot.fig_out
 - id: slide_window
   type: SlideWindowNode
   conf:
