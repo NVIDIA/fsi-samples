@@ -199,6 +199,7 @@ COPY sacrebleu.patch /home/quant/NeMo/
 RUN patch -u nemo/collections/nlp/metrics/sacrebleu.py -i sacrebleu.patch && bash reinstall.sh
 
 RUN conda install -y ruamel.yaml
+RUN conda install -c conda-forge -y cloudpickle
 
 RUN mkdir -p /home/quant/gQuant
 WORKDIR /home/quant/gQuant
