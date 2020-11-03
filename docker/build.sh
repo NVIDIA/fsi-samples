@@ -202,9 +202,6 @@ RUN conda install -y ruamel.yaml
 
 RUN mkdir -p /home/quant/gQuant
 WORKDIR /home/quant/gQuant
-
-RUN pip install streamz
-
 $INSTALL_GQUANT
 EOF
 docker build -f $D_FILE -t $D_CONT .

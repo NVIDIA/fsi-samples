@@ -6,7 +6,6 @@ import tornado
 from gquant.dataframe_flow import TaskGraph
 from .server_utils import (get_nodes, add_nodes)
 import os
-from gquant.dataframe_flow.taskGraph import add_module_from_base64
 
 
 class RouteHandlerLoadGraph(APIHandler):
@@ -34,20 +33,6 @@ class RouteHandlerLoadGraphFromPath(APIHandler):
         self.finish(json.dumps(nodes_and_edges))
 
 
-class RouteHandlerRegister(APIHandler):
-
-    @tornado.web.authenticated
-    def post(self):
-        from .server_utils import register_node
-        # input_data is a dictionnary with a key "name"
-        input_data = self.get_json_body()
-        module_name = input_data['module']
-        class_str = input_data['class']
-        class_obj = add_module_from_base64(module_name, class_str)
-        register_node(module_name, class_obj)
-        self.finish(json.dumps(class_obj.__name__))
-
-
 class RouteHandlerLoadAllNodes(APIHandler):
 
     @tornado.web.authenticated
@@ -70,9 +55,7 @@ def setup_handlers(web_app):
     route_pattern0 = url_path_join(base_url, "gquantlab", "load_graph")
     route_pattern1 = url_path_join(base_url, "gquantlab", "all_nodes")
     route_pattern2 = url_path_join(base_url, "gquantlab", "load_graph_path")
-    route_pattern3 = url_path_join(base_url, "gquantlab", "register_node")
     handlers = [(route_pattern0, RouteHandlerLoadGraph),
                 (route_pattern1, RouteHandlerLoadAllNodes),
-                (route_pattern2, RouteHandlerLoadGraphFromPath),
-                (route_pattern3, RouteHandlerRegister)]
+                (route_pattern2, RouteHandlerLoadGraphFromPath)]
     web_app.add_handlers(host_pattern, handlers)
