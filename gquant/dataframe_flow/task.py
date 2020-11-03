@@ -181,24 +181,17 @@ class Task(object):
         NodeClass = None
         module_dir = None
         if isinstance(node_type, str):
-            modules = get_gquant_config_modules()
             if modulepath is not None:
                 loaded = load_modules(modulepath)
                 module_dir = loaded.path
                 mod = loaded.mod
                 NodeClass = getattr(mod, node_type)
             elif (module_name is not None):
-                if module_name in sys.modules:
-                    mod = sys.modules[module_name]
-                else:
-                    loaded = load_modules(
-                        modules[module_name], name=module_name)
-                    module_dir = loaded.path
-                    mod = loaded.mod
-                try:
-                    NodeClass = getattr(mod, node_type)
-                except AttributeError:
-                    pass
+                modules = get_gquant_config_modules()
+                loaded = load_modules(modules[module_name], name=module_name)
+                module_dir = loaded.path
+                mod = loaded.mod
+                NodeClass = getattr(mod, node_type)
             else:
                 try:
                     global DEFAULT_MODULE
@@ -206,6 +199,7 @@ class Task(object):
                     MODLIB = importlib.import_module(plugmod)
                     NodeClass = getattr(MODLIB, node_type)
                 except AttributeError:
+                    modules = get_gquant_config_modules()
                     for key in modules:
                         loaded = load_modules(modules[key], name=key)
                         module_dir = loaded.path
