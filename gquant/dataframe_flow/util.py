@@ -1,4 +1,6 @@
 import os
+import cloudpickle
+import base64
 
 
 def get_file_path(path):
@@ -17,3 +19,9 @@ def get_file_path(path):
         print('input path', path)
         print('cannot find the file')
         raise Exception("File cannnot be found")
+
+
+def get_encoded_class(classObj):
+    pickled = cloudpickle.dumps(classObj)
+    encoding = base64.b64encode(pickled).decode()
+    return encoding

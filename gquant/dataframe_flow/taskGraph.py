@@ -10,8 +10,26 @@ import warnings
 import copy
 import traceback
 import dask
+import cloudpickle
+import base64
+from types import ModuleType
+from .util import get_encoded_class
 
 __all__ = ['TaskGraph', 'OutputCollector']
+
+server_task_graph = None
+
+def add_module_from_base64(module_name, class_str):
+    class_obj = cloudpickle.loads(base64.b64decode(class_str))
+    class_name = class_obj.__name__
+    import sys
+    if module_name in sys.modules:
+        mod = sys.modules[module_name]
+    else:
+        mod = ModuleType(module_name)
+        sys.modules[module_name] = mod
+    setattr(mod, class_name, class_obj)
+    return class_obj
 
 
 class OutputCollector(Node):
@@ -195,6 +213,42 @@ class TaskGraph(object):
         for node_in in node.inputs:
             inode = node_in['from_node']
             self.__find_roots(inode, inputs, consider_load)
+
+    def start_labwidget(self):
+        from IPython.display import display
+        display(self.draw())
+
+    @staticmethod
+    def register_lab_node(module_name, class_obj):
+        """
+        Register the node class for the GQuantlab. It put the class_obj
+        into a sys.modules with `module_name`. It will register the node
+        class into the Jupyterlab kernel space, communicate with the
+         client to populate the add nodes menus, sync up with
+         Jupyterlab Server space to register the node class.
+
+        The latest registered `class_obj` overwrites the old one.
+
+        Arguments
+        -------
+        module_name: str
+            the module name for `class_obj`. It will also be the menu name for
+             the node. Note, if use '.' inside the 'module_name', the client
+              will automatically construct the hierachical menus based on '.'
+
+        class_obj: Node
+            The node class that is the subclass of gQuant 'Node'. It is usually
+            defined dynamically so it can be registered.
+
+        Returns
+        -----
+        None
+        """
+        global server_task_graph
+        if server_task_graph is None:
+            server_task_graph = TaskGraph()
+            server_task_graph.start_labwidget()
+        server_task_graph.register_node(module_name, class_obj)
 
     @staticmethod
     def load_taskgraph(filename):
@@ -408,6 +462,20 @@ class TaskGraph(object):
         self.__node_dict.clear()
         self.__task_list.clear()
         self.__index = None
+
+    def register_node(self, module_name, classObj):
+        """
+        Check `TaskGraph.register_lab_node`
+        """
+        if self.__widget is not None:
+            encoded_class = get_encoded_class(classObj)
+            cacheCopy = copy.deepcopy(self.__widget.cache)
+            cacheCopy['register'] = {
+                "module": module_name,
+                "class": encoded_class
+            }
+            add_module_from_base64(module_name, encoded_class)
+            self.__widget.cache = cacheCopy
 
     def _run(self, outputs=None, replace=None, profile=False, formated=False):
         replace = dict() if replace is None else replace
