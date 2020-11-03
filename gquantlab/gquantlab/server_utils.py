@@ -8,8 +8,18 @@ import gquant.plugin_nodes as plugin_nodes
 import inspect
 import uuid
 from pathlib import Path
-# import sys
-# sys.path.append('modules') # noqa E262
+
+dynamic_modules = {}
+
+
+def register_node(module, classObj):
+    if module not in dynamic_modules:
+        container = {}
+        dynamic_modules[module] = container
+    else:
+        container = dynamic_modules[module]
+    key = classObj.__name__
+    container[key] = classObj
 
 
 def _format_port(port):
@@ -254,5 +264,21 @@ def add_nodes():
                 all_nodes.setdefault(modulename, []).append(nodeObj)
 
             loaded_node_classes.append(nodecls)
-
+    for module in dynamic_modules.keys():
+        modulename = module
+        node_lists = []
+        all_nodes[modulename] = node_lists
+        for class_name in dynamic_modules[module].keys():
+            classObj = dynamic_modules[module][class_name]
+            if issubclass(classObj, Node):
+                task = {'id': 'node_'+str(uuid.uuid4()),
+                        'type': classObj.__name__,
+                        'conf': {},
+                        'inputs': [],
+                        'module': module
+                        }
+                t = Task(task)
+                n = classObj(t)
+                nodeObj = get_node_obj(n, False)
+                node_lists.append(nodeObj)
     return all_nodes
