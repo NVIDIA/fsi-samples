@@ -42,6 +42,8 @@ class NemoTrainNode(Node, _PortTypesMixin):
         o_inports['input_tensor'] = {port_type: NmTensor}
         if hasattr(self, 'inputs'):
             for inp in self.inputs:
+                # TODO: Move TaskGrah rewire logic here instead of in
+                #     chartEngine.tsx ChartEngine._fixNeMoPorts
                 o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
                     port_type: NmTensor}
         o_outports[self.OUTPUT_PORT_NAME] = {port_type: str}
@@ -57,10 +59,21 @@ class NemoTrainNode(Node, _PortTypesMixin):
         output['element']['parameters'] = '{}'
         ports = self.ports_setup()
         inports = ports.inports
-        if inports is not None:
-            for k in inports.keys():
-                self.required[k] = output
-        return {}
+
+        iports_connected = self.get_connected_inports()
+        iports_cols = self.get_input_columns()
+        for iport in inports.keys():
+            if iport in iports_connected and iport in iports_cols:
+                self.required[iport] = copy.deepcopy(iports_cols[iport])
+            else:
+                self.required[iport] = copy.deepcopy(output)
+
+        if 'input_tensor' not in iports_connected:
+            self.required.pop('input_tensor', None)
+
+        return {
+            self.OUTPUT_PORT_NAME: {},
+        }
 
     def conf_schema(self):
         json = {
@@ -1025,4 +1038,6 @@ class NemoTrainNode(Node, _PortTypesMixin):
                 **self.conf["warmup_policy"]['parameters'])
             all_args['lr_policy'] = lr_policy
         nf.train(**all_args)
-        return {self.OUTPUT_PORT_NAME: self.conf['check_point']['folder']}
+        return {
+            self.OUTPUT_PORT_NAME: self.conf['check_point']['folder'],
+        }

@@ -1,7 +1,3 @@
 [ModuleFiles]
-
-custom_port_nodes= %(MODULEPATH)s/custom_port_nodes.py
-
 nemo_modules= %(MODULEPATH)s/nemo_gquant_modules
-
 my_node= %(MODULEPATH)s/my_node.py

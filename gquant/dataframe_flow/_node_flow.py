@@ -12,6 +12,7 @@ from dask.distributed import Future
 
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
+from ._node import _Node
 
 # OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
 OUTPUT_ID = 'collector_id_fd9567b6'
@@ -32,6 +33,24 @@ __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
 #     from_port = 'from_port'
 
 
+def _get_nodetype(node):
+    '''Identify the implementation node class. A node might be mixed in with
+    other classes. Ideally get the primary implementation class.
+    '''
+    nodetypes = node.__class__.mro()
+    keeptypes = []
+    for nodet in nodetypes:
+        # Exclude base Node classes i.e. _Node, NodeTaskGraphMixin, Node.
+        # Using nodet.__name__ != 'Node' to avoid cyclic dependencies.
+        if issubclass(nodet, _Node) and \
+                not issubclass(nodet, NodeTaskGraphMixin) and \
+                nodet is not _Node and \
+                nodet.__name__ != 'Node':
+            keeptypes.append(nodet)
+
+    return keeptypes
+
+
 class NodeTaskGraphMixin(object):
     '''Relies on mixing in with a Node class that has the following attributes
     and methods:
@@ -45,10 +64,6 @@ class NodeTaskGraphMixin(object):
             delayed_process
 
             required
-            addition
-            deletion
-            retention
-            rename
 
         METHODS
         -------
@@ -138,61 +153,155 @@ class NodeTaskGraphMixin(object):
 
         return output_df
 
+    def validate_connected_ports(self):
+        self_nodetype = _get_nodetype(self)
+        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
+        if 'OutputCollector' in nodetype_names:
+            # Don't validate for OutputCollector
+            return
+
+        msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
+            'type(s) "{ioport_types}"'
+
+        iports_connected = self.get_connected_inports()
+        iports_spec = self._get_input_ports(full_port_spec=True)
+        for iport in iports_connected.keys():
+            iport_spec = iports_spec[iport]
+            iport_type = iport_spec[PortsSpecSchema.port_type]
+            iport_types = [iport_type] \
+                if not isinstance(iport_type, Iterable) else iport_type
+
+            for ient in self.inputs:
+                # find input node edge entry with to_port, from_port, from_node
+                if not iport == ient['to_port']:
+                    continue
+                ientnode = ient
+                break
+            else:
+                intask = self._task_obj[TaskSpecSchema.inputs][iport]
+                # this should never happen
+                raise LookupError(
+                    'Task "{}" not connected to "{}.{}". Add task spec to '
+                    'TaskGraph.'.format(intask, self.uid, iport))
+
+            from_node = ientnode['from_node']
+            oport = ientnode['from_port']
+            oports_spec = from_node._get_output_ports(full_port_spec=True)
+            oport_spec = oports_spec[oport]
+            oport_type = oport_spec[PortsSpecSchema.port_type]
+            oport_types = [oport_type] \
+                if not isinstance(oport_type, Iterable) else oport_type
+
+            for optype in oport_types:
+                if issubclass(optype, tuple(iport_types)):
+                    break
+            else:
+                # Port types do not match
+                msgi = msgfmt.format(
+                    task=self.uid,
+                    nodetype=self_nodetype,
+                    inout='input',
+                    ioport=iport,
+                    ioport_types=iport_types)
+
+                msgo = msgfmt.format(
+                    task=from_node.uid,
+                    nodetype=_get_nodetype(from_node),
+                    inout='output',
+                    ioport=oport,
+                    ioport_types=oport_types)
+
+                errmsg = 'Port Types Validation\n{}\n{}\n'\
+                    'Connected nodes do not have matching port types. Fix '\
+                    'port types.'.format(msgo, msgi)
+
+                raise TypeError(errmsg)
+
     def validate_required_columns(self):
 
-        def validate_required(icols, kcol, kval, in_taskid=None, iport=None):
+        def validate_required(iport, kcol, kval, ientnode, icols):
+            node = ientnode['from_node']
+            oport = ientnode['from_port']
+            src_task = '{}.{}'.format(node.uid, oport)
+            src_type = _get_nodetype(node)
+            # incoming "task.port":"Node-type":{{column:column-type}}
+            msgi = \
+                '"{task}":"{nodetype}" produces columns {colinfo}'.format(
+                    task=src_task,
+                    nodetype=src_type,
+                    colinfo=icols)
+
+            dst_task = '{}.{}'.format(self.uid, iport)
+            dst_type = _get_nodetype(self)
+            # expecting "task.port":"Node-type":{{column:column-type}}
+            msge = \
+                '"{task}":"{nodetype}" requires columns {colinfo}'.format(
+                    task=dst_task,
+                    nodetype=dst_type,
+                    colinfo={kcol: kval})
+
+            header = \
+                'Columns Validation\n'\
+                'Format "task.port":"Node-type":{{column:column-type}}'
+            info_msg = '{}\n{}\n{}'.format(header, msgi, msge)
+
             if kcol not in icols:
-                err_msg = 'Incoming columns not valid: error for node "%s", '\
-                    'missing required column "%s".' % (self.uid, kcol)
-                if in_taskid:
-                    dst_uid = self.uid if iport is None else \
-                        '{}.{}'.format(self.uid, iport)
-                    err_msg = '{}\nIncoming columns from "{}" do not match '\
-                        'columns_setup for "{}".'.format(
-                            err_msg, in_taskid, dst_uid)
-                # raise Exception(err_msg)
-                print(err_msg)
-            if (kcol in icols) and kval != icols[kcol]:
+                err_msg = \
+                    'Task "{}" missing required column "{}" '\
+                    'from "{}".'.format(self.uid, kcol, src_task)
+                out_err = '{}\n{}'.format(info_msg, err_msg)
+                raise LookupError(out_err)
+
+            ival = icols[kcol]
+            if kval != ival:
                 # special case for 'date'
-                if (kval == 'date' and icols[kcol]
+                if (kval == 'date' and ival
                         in ('datetime64[ms]', 'date', 'datetime64[ns]')):
-                    # continue
                     return
                 else:
-                    print("error for node %s, "
-                          "type %s mismatch %s"
-                          % (self.uid, kval, icols[kcol]))
+                    err_msg = 'Task "{}" column "{}" expected type "{}" got '\
+                        'type "{}" instead.'.format(self.uid, kcol, kval, ival)
+                    out_err = '{}\n{}'.format(info_msg, err_msg)
+                    raise LookupError(out_err)
 
         inputs_cols = self.get_input_columns()
 
-        # to_port (iport usually used as variable) is always set. Refer to
-        # TaskGraph.build method. In non-port case inputs are enumerated
-        # in the order that inputs are listed in the task spec. The order
-        # idx is used as an ad-hoc ports that aren't used. Below the data
-        # structure of inputs_cols is flattened.
-        incoming_cols = {
-            col_name: col_type for icol_dict in inputs_cols.values()
-            for col_name, col_type in icol_dict.items()
-        }
-        inputs_cols = incoming_cols
+        if not self.required:
+            return
 
-        if self.required:
-            required = self.required
-            pinputs = self._task_obj[TaskSpecSchema.inputs]
-            for iport in self._get_input_ports():
-                required_iport = {
-                    col_name: col_type for col_name, col_type in
-                    required.get(iport, {}).items()}
+        required = self.required
+        for iport in self._get_input_ports():
+            if iport not in required:
+                continue
+            required_iport = required[iport]
 
-                # required_tran = self.__translate_column(required_iport)
-                required_tran = required_iport
-                if iport in inputs_cols:
-                    incoming_cols = inputs_cols[iport]
-                    in_taskid = pinputs[iport]
+            if iport not in inputs_cols:
+                # Is it possible that iport not connected? If so iport should
+                # not be in required. Should raise an exception here.
+                warn_msg = \
+                    'Task "{}" Node Type "{}" missing required port "{}" in '\
+                    'incoming columns. Should the port be connected?'.format(
+                        self.uid, _get_nodetype(self), iport)
+                warnings.warn(warn_msg)
+                continue
+            incoming_cols = inputs_cols[iport]
 
-                    for kcol, kval in required_tran.items():
-                        validate_required(incoming_cols, kcol, kval,
-                                          in_taskid, iport)
+            for ient in self.inputs:
+                # find input node edge entry with to_port, from_port, from_node
+                if not iport == ient['to_port']:
+                    continue
+                ientnode = ient
+                break
+            else:
+                intask = self._task_obj[TaskSpecSchema.inputs][iport]
+                # this should never happen
+                raise LookupError(
+                    'Task "{}" not connected to "{}.{}". Add task spec to '
+                    'TaskGraph.'.format(intask, self.uid, iport))
+
+            for kcol, kval in required_iport.items():
+                validate_required(iport, kcol, kval,
+                                  ientnode, incoming_cols)
 
     def get_output_columns(self):
         return self.columns_setup()
@@ -300,7 +409,7 @@ class NodeTaskGraphMixin(object):
                         break
 
                 if not match:
-                    raise Exception(
+                    raise TypeError(
                         'Node "{}" output port "{}" produced wrong type '
                         '"{}". Expected type "{}"'
                         .format(self.uid, pname, out_type, expected_type))
@@ -348,9 +457,18 @@ class NodeTaskGraphMixin(object):
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name not in columns:
-                print('node {},  from {} oport {} not in out cols'.format(
-                    self.uid, from_node, from_port_name))
-                print(columns)
+                nodetype_list = _get_nodetype(self)
+                nodetype_names = [inodet.__name__ for inodet in nodetype_list]
+                if 'OutputCollector' in nodetype_names:
+                    continue
+                warnings.warn(
+                    'node "{}" node-type "{}" to port "{}", from node "{}" '
+                    'node-type "{}" oport "{}" missing oport in columns for '
+                    'node "{}" output cols: {}'.format(
+                        self.uid, nodetype_list, to_port_name,
+                        from_node.uid, _get_nodetype(from_node),
+                        from_port_name, from_node.uid, columns)
+                )
             else:
                 output[to_port_name] = columns[from_port_name]
         return output
@@ -634,8 +752,9 @@ class NodeTaskGraphMixin(object):
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name in ports.outports:
-                types = get_type(ports.outports[from_port_name]['type'])
-                output[to_port_name] = types
+                oport_types = get_type(
+                    ports.outports[from_port_name][PortsSpecSchema.port_type])
+                output[to_port_name] = oport_types
             else:
                 continue
         return output

@@ -34,9 +34,9 @@ function validNmType(required: any, outputs: any): boolean {
         (d: string) => d === reqElement['types'][0]
       ) < 0
     ) {
-      // req type should be more specific,
-      // out type should be generic
-      // first out type should be the parent type of required
+      // req type should be generic,
+      // out type should be specific, i.e. subclass of req
+      // first required element type should be the parent type of the output element
       return false;
     }
     if (outElement['fields'] !== reqElement['fields']) {

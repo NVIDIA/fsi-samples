@@ -28,8 +28,11 @@ import {
   saveIcon,
   editIcon,
   notebookIcon,
-  addIcon
+  addIcon,
+  ContextMenuSvg
 } from '@jupyterlab/ui-components';
+
+import { CommandRegistry } from '@lumino/commands';
 
 import { ToolbarButton } from '@jupyterlab/apputils';
 
@@ -161,6 +164,165 @@ export function isEnabled(cell: any): boolean {
   const codecell = cell as CodeCell;
   const outputArea = codecell.outputArea;
   return outputEnabled(outputArea);
+}
+
+export function setupContextMenu(
+  contextMenu: ContextMenuSvg,
+  commands: CommandRegistry,
+  palette: ICommandPalette
+): Menu {
+  contextMenu.addItem({
+    command: COMMAND_OPEN_EDITOR,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: 'docmanager:save',
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: 'filebrowser:download',
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_CONVERT_CELL_TO_FILE,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_OPEN_NEW_FILE,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_INCLUDE_NEW_FILE,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_RELAYOUT,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    type: 'separator',
+    selector: '.jp-GQuant'
+  });
+
+  const addNodeMenu = new Menu({ commands });
+  addNodeMenu.title.label = 'Add Nodes';
+  addNodeMenu.title.mnemonic = 4;
+  const subMenuDict: { [key: string]: Menu } = {};
+  const allNodes = requestAPI<any>('all_nodes');
+  allNodes.then((allNodes: IAllNodes) => {
+    for (const k in allNodes) {
+      const splits = k.split('.');
+      let subMenu: Menu = null;
+      for (let i = 0; i < splits.length; i++) {
+        const key = splits.slice(0, i + 1).join('.');
+        if (key in subMenuDict) {
+          subMenu = subMenuDict[key];
+        } else {
+          subMenu = new Menu({ commands });
+          subMenu.title.label = splits[i];
+          subMenu.title.mnemonic = 0;
+          subMenuDict[key] = subMenu;
+          if (i > 0) {
+            // add this submenu to parent
+            const parentKey = splits.slice(0, i).join('.');
+            const pMenu = subMenuDict[parentKey];
+            pMenu.addItem({
+              type: 'submenu',
+              submenu: subMenu
+            });
+          } else {
+            addNodeMenu.addItem({
+              type: 'submenu',
+              submenu: subMenu
+            });
+          }
+        }
+      }
+
+      //const submenu = new Menu({ commands });
+      //submenu.title.label = k;
+      //submenu.title.mnemonic = 0;
+      for (let i = 0; i < allNodes[k].length; i++) {
+        const name = allNodes[k][i].type;
+        const args = {
+          name: name,
+          node: (allNodes[k][i] as unknown) as ReadonlyJSONObject
+        };
+        subMenu.addItem({
+          command: COMMAND_ADD_NODE,
+          args: args
+        });
+        if (palette) {
+          palette.addItem({
+            command: COMMAND_ADD_NODE,
+            category: 'Add New Nodes',
+            args: args
+          });
+        }
+      }
+      // addNodeMenu.addItem({
+      //   type: 'submenu',
+      //   submenu: submenu
+      // });
+    }
+  });
+
+  contextMenu.addItem({
+    type: 'submenu',
+    submenu: addNodeMenu,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    type: 'separator',
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_EXECUTE,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_CLEAN,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    command: COMMAND_ADD_OUTPUT_COLLECTOR,
+    selector: '.jp-GQuant'
+  });
+
+  contextMenu.addItem({
+    type: 'separator',
+    selector: '.jp-GQuant'
+  });
+
+  const submenu = new Menu({ commands });
+  submenu.title.label = 'Change Aspect Ratio';
+  submenu.title.mnemonic = 0;
+
+  [0.3, 0.5, 0.7, 1.0].forEach(d => {
+    submenu.addItem({
+      command: COMMAND_CHANGE_ASPECT_RATIO,
+      args: { aspect: d }
+    });
+  });
+
+  contextMenu.addItem({
+    type: 'submenu',
+    submenu: submenu,
+    selector: '.jp-GQuant'
+  });
+
+  return addNodeMenu;
 }
 
 /**
@@ -388,156 +550,6 @@ function activateFun(
     notebookTracker
   );
 
-  app.contextMenu.addItem({
-    command: COMMAND_OPEN_EDITOR,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: 'docmanager:save',
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: 'filebrowser:download',
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_CONVERT_CELL_TO_FILE,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_OPEN_NEW_FILE,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_INCLUDE_NEW_FILE,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_RELAYOUT,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    type: 'separator',
-    selector: '.jp-GQuant'
-  });
-
-  const addNodeMenu = new Menu({ commands });
-  addNodeMenu.title.label = 'Add Nodes';
-  addNodeMenu.title.mnemonic = 4;
-  const subMenuDict: { [key: string]: Menu } = {};
-  const allNodes = requestAPI<any>('all_nodes');
-  allNodes.then((allNodes: IAllNodes) => {
-    for (const k in allNodes) {
-      const splits = k.split('.');
-      let subMenu: Menu = null;
-      for (let i = 0; i < splits.length; i++) {
-        const key = splits.slice(0, i + 1).join('.');
-        if (key in subMenuDict) {
-          subMenu = subMenuDict[key];
-        } else {
-          subMenu = new Menu({ commands });
-          subMenu.title.label = splits[i];
-          subMenu.title.mnemonic = 0;
-          subMenuDict[key] = subMenu;
-          if (i > 0) {
-            // add this submenu to parent
-            const parentKey = splits.slice(0, i).join('.');
-            const pMenu = subMenuDict[parentKey];
-            pMenu.addItem({
-              type: 'submenu',
-              submenu: subMenu
-            });
-          } else {
-            addNodeMenu.addItem({
-              type: 'submenu',
-              submenu: subMenu
-            });
-          }
-        }
-      }
-
-      //const submenu = new Menu({ commands });
-      //submenu.title.label = k;
-      //submenu.title.mnemonic = 0;
-      for (let i = 0; i < allNodes[k].length; i++) {
-        const name = allNodes[k][i].type;
-        const args = {
-          name: name,
-          node: (allNodes[k][i] as unknown) as ReadonlyJSONObject
-        };
-        subMenu.addItem({
-          command: COMMAND_ADD_NODE,
-          args: args
-        });
-        if (palette) {
-          palette.addItem({
-            command: COMMAND_ADD_NODE,
-            category: 'Add New Nodes',
-            args: args
-          });
-        }
-      }
-      // addNodeMenu.addItem({
-      //   type: 'submenu',
-      //   submenu: submenu
-      // });
-    }
-  });
-
-  app.contextMenu.addItem({
-    type: 'submenu',
-    submenu: addNodeMenu,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    type: 'separator',
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_EXECUTE,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_CLEAN,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    command: COMMAND_ADD_OUTPUT_COLLECTOR,
-    selector: '.jp-GQuant'
-  });
-
-  app.contextMenu.addItem({
-    type: 'separator',
-    selector: '.jp-GQuant'
-  });
-
-  const submenu = new Menu({ commands });
-  submenu.title.label = 'Change Aspect Ratio';
-  submenu.title.mnemonic = 0;
-
-  [0.3, 0.5, 0.7, 1.0].forEach(d => {
-    submenu.addItem({
-      command: COMMAND_CHANGE_ASPECT_RATIO,
-      args: { aspect: d }
-    });
-  });
-
-  app.contextMenu.addItem({
-    type: 'submenu',
-    submenu: submenu,
-    selector: '.jp-GQuant'
-  });
 
   // Add a launcher item if the launcher is available.
   if (launcher) {
@@ -547,6 +559,8 @@ function activateFun(
       category: 'Other'
     });
   }
+
+  const addNodeMenu = setupContextMenu(app.contextMenu, commands, palette);
 
   if (menu) {
     // Add new text file creation to the file menu.
