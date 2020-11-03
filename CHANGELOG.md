@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.0](https://github.com/rapidsai/gQuant/tree/1.0) (2020-11-03)
+
+[Full Changelog](https://github.com/rapidsai/gQuant/compare/0.5...1.0)
+
+**Closed issues:**
+
+- \[FEA\]Migrate to the new input/output port API [\#97](https://github.com/rapidsai/gQuant/issues/97)
+- \[FEA\]Add the gQuant Web UI [\#95](https://github.com/rapidsai/gQuant/issues/95)
+- \[DOC\] Add CHANGELOG.md [\#48](https://github.com/rapidsai/gQuant/issues/48)
+
+**Merged pull requests:**
+
+- Streamz gQuant example 2 [\#109](https://github.com/rapidsai/gQuant/pull/109) ([yidong72](https://github.com/yidong72))
+- Revert "Streamz gQuant example" [\#108](https://github.com/rapidsai/gQuant/pull/108) ([yidong72](https://github.com/yidong72))
+- Streamz gQuant example [\#107](https://github.com/rapidsai/gQuant/pull/107) ([yidong72](https://github.com/yidong72))
+- FIX Update change log check [\#102](https://github.com/rapidsai/gQuant/pull/102) ([mike-wendt](https://github.com/mike-wendt))
+- \[REVIEW\] Update CI scripts to remove references to master \[skip ci\] [\#99](https://github.com/rapidsai/gQuant/pull/99) ([dillon-cullinan](https://github.com/dillon-cullinan))
+- \[REVIEW\]gQuant UI, first version [\#89](https://github.com/rapidsai/gQuant/pull/89) ([yidong72](https://github.com/yidong72))
+
 ## [0.5](https://github.com/rapidsai/gQuant/tree/0.5) (2020-07-10)
 
 [Full Changelog](https://github.com/rapidsai/gQuant/compare/0.4.1...0.5)
@@ -21,6 +40,7 @@
 
 **Merged pull requests:**
 
+- \[REIVEW\]gQuant 0.5 release [\#94](https://github.com/rapidsai/gQuant/pull/94) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\] Fix mortgage e2e example for rapids 0.14. [\#93](https://github.com/rapidsai/gQuant/pull/93) ([avolkov1](https://github.com/avolkov1))
 - \[REVIEW\] Update RAPIDS to version 0.14 [\#92](https://github.com/rapidsai/gQuant/pull/92) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\]Multiple gpu xgboost - Dask performance fix [\#91](https://github.com/rapidsai/gQuant/pull/91) ([yidong72](https://github.com/yidong72))
@@ -105,7 +125,6 @@
 - Fix \#35 - Refactor 01\_tutorial.ipynb notebook [\#36](https://github.com/rapidsai/gQuant/pull/36) ([miguelusque](https://github.com/miguelusque))
 - Fix \#26b - Add new issue templates [\#30](https://github.com/rapidsai/gQuant/pull/30) ([miguelusque](https://github.com/miguelusque))
 - Revert "fix \#26 - Add new issues template" [\#29](https://github.com/rapidsai/gQuant/pull/29) ([yidong72](https://github.com/yidong72))
-- Fix \#26 - Add new issues template [\#27](https://github.com/rapidsai/gQuant/pull/27) ([miguelusque](https://github.com/miguelusque))
 - added workflow class [\#22](https://github.com/rapidsai/gQuant/pull/22) ([yidong72](https://github.com/yidong72))
 - Fix \#19b - Combine OS/Cuda versions user input [\#21](https://github.com/rapidsai/gQuant/pull/21) ([miguelusque](https://github.com/miguelusque))
 - Fix \#19 - build.sh - Move pip dependencies to conda dependencies [\#20](https://github.com/rapidsai/gQuant/pull/20) ([miguelusque](https://github.com/miguelusque))
@@ -118,6 +137,8 @@
 - Feature mulit assets indicator [\#7](https://github.com/rapidsai/gQuant/pull/7) ([yidong72](https://github.com/yidong72))
 - Update build.sh [\#6](https://github.com/rapidsai/gQuant/pull/6) ([phogan-nvidia](https://github.com/phogan-nvidia))
 - Feature environment [\#5](https://github.com/rapidsai/gQuant/pull/5) ([yidong72](https://github.com/yidong72))
+- added unit tests for the cuindicator [\#3](https://github.com/rapidsai/gQuant/pull/3) ([yidong72](https://github.com/yidong72))
+- Add download script and instructions in the readme [\#1](https://github.com/rapidsai/gQuant/pull/1) ([yidong72](https://github.com/yidong72))
 
 ## [v0.1](https://github.com/rapidsai/gQuant/tree/v0.1) (2019-08-13)
 
@@ -137,11 +158,10 @@
 **Merged pull requests:**
 
 - Revert "gQuant34 - Update build.sh to make use of RAPIDS v0.8 container" [\#33](https://github.com/rapidsai/gQuant/pull/33) ([yidong72](https://github.com/yidong72))
+- Fix \#26 - Add new issues template [\#27](https://github.com/rapidsai/gQuant/pull/27) ([miguelusque](https://github.com/miguelusque))
 - gQuant34 - Update build.sh to make use of RAPIDS v0.8 container [\#12](https://github.com/rapidsai/gQuant/pull/12) ([miguelusque](https://github.com/miguelusque))
 - Synch master with develop [\#4](https://github.com/rapidsai/gQuant/pull/4) ([avolkov1](https://github.com/avolkov1))
-- added unit tests for the cuindicator [\#3](https://github.com/rapidsai/gQuant/pull/3) ([yidong72](https://github.com/yidong72))
 - CUQ-21: Improving tutorials for gQuant [\#2](https://github.com/rapidsai/gQuant/pull/2) ([avolkov1](https://github.com/avolkov1))
-- Add download script and instructions in the readme [\#1](https://github.com/rapidsai/gQuant/pull/1) ([yidong72](https://github.com/yidong72))
 
 
 
