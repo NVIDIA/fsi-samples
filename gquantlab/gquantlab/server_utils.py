@@ -251,16 +251,7 @@ def add_nodes():
                     'module': module
                     }
             t = Task(task)
-            try:
-                n = nodecls(t)
-            except Exception:
-                import debugpy
-                debugpy.listen(("0.0.0.0", 3456))
-                debugpy.wait_for_client()  # blocks execution until client is attached
-                debugpy.breakpoint() 
-                nodecls(t)
-                print(task)
-                print(t)
+            n = nodecls(t)
             nodeObj = get_node_obj(n, False)
             if module_file_or_path.is_dir():
                 # submod = nodecls.__module__.split('.')[1:]

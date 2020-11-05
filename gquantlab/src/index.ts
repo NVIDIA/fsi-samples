@@ -66,6 +66,7 @@ import {
   COMMAND_CLEAN,
   COMMAND_ADD_OUTPUT_COLLECTOR
 } from './commands';
+import { registerValidator } from './validator';
 
 // import { LabIcon } from '@jupyterlab/ui-components';
 // import { LabIcon } from '@jupyterlab/ui-components/lib/icon/labicon';
@@ -210,6 +211,16 @@ export function setupContextMenu(
     type: 'separator',
     selector: '.jp-GQuant'
   });
+  const plugins = requestAPI<any>('register_plugins');
+
+  plugins.then( (d: any) =>{
+    console.log(d['validation']);
+    for (const k in d['validation']){
+      let fun = new Function("required", "outputs", d['validation'][k]);
+      registerValidator(k, fun);
+    }
+  });
+
 
   const addNodeMenu = new Menu({ commands });
   addNodeMenu.title.label = 'Add Nodes';
