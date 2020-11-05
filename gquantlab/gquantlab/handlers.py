@@ -47,11 +47,20 @@ class RouteHandlerPlugins(APIHandler):
         for key in modules.keys():
             if os.path.isdir(modules[key]):
                 mod = load_modules(modules[key])
-                if hasattr(mod.mod, 'client'):
-                    client_mod = getattr(mod.mod, 'client')
-                    if hasattr(client_mod, 'validation'):
-                        val_dict = getattr(client_mod, 'validation')
-                        client_info['validation'].update(val_dict)
+#                if hasattr(mod.mod, 'client'):
+                client_mod = mod.mod
+                if hasattr(client_mod, 'validation'):
+                    val_dict = getattr(client_mod, 'validation')
+                    client_info['validation'].update(val_dict)
+                else:
+                    print(client_mod, 'no validation')
+                if hasattr(client_mod, 'display'):
+                    val_dict = getattr(client_mod, 'display')
+                    client_info['display'].update(val_dict)
+                else:
+                    print(client_mod, 'no display')
+#                else:
+#                    print(key, mod.mod, 'no client')
         self.finish(json.dumps(client_info))
 
 

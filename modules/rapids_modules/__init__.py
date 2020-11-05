@@ -5,3 +5,4 @@ from .backtest import *    # noqa: F403,F401
 from .strategy import *    # noqa: F403,F401
 from .portofolio import *  # noqa: F403,F401
 from .ml import *  # noqa: F403,F401
+from .client import validation, display  # noqa: F401
