@@ -4,6 +4,7 @@
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -210,6 +211,7 @@
     column: SHIFT_-1
   inputs:
     in: stock_feature.technical_indicator@stock_out
+  module: rapids_modules
 - id: drop_col
   type: DropNode
   conf:
@@ -224,3 +226,4 @@
       - close
   inputs:
     in: pos_neg_return.out
+  module: rapids_modules

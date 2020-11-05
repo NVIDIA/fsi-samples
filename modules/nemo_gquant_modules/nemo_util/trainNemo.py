@@ -138,16 +138,18 @@ class NemoTrainNode(Node, _PortTypesMixin):
                             "default": None
                         },
                         "step_freq": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "description": """How often in terms of steps to
                              save checkpoints. One of step_freq or epoch_freq
-                              is required"""
+                              is required""",
+                            "default": None
                         },
                         "epoch_freq": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "description": """How often in terms of epochs to
                              save checkpoints. One of step_freq or epoch_freq
-                              is required."""
+                              is required.""",
+                            "default": None
                         },
                         "checkpoints_to_keep": {
                             "type": "integer",
@@ -1038,6 +1040,12 @@ class NemoTrainNode(Node, _PortTypesMixin):
                 **self.conf["warmup_policy"]['parameters'])
             all_args['lr_policy'] = lr_policy
         nf.train(**all_args)
+        log_directory = ''
+        if (('step_freq' in self.conf['check_point']
+             and self.conf['check_point']['step_freq'] is not None)
+            or ('epoch_freq' in self.conf['check_point'] and
+                self.conf['check_point']['epoch_freq'] is not None)):
+            log_directory = self.conf['check_point']['folder']
         return {
-            self.OUTPUT_PORT_NAME: self.conf['check_point']['folder'],
+            self.OUTPUT_PORT_NAME: log_directory,
         }

@@ -1,4 +1,4 @@
-from ..util.contextCompositeNode import ContextCompositeNode
+from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                    PortsSpecSchema, NodePorts)
 from gquant.dataframe_flow.cache import cache_schema

@@ -4,6 +4,7 @@
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
   inputs: {}
+  module: rapids_modules
 - id: preprocess
   type: CompositeNode
   conf:
@@ -40,21 +41,25 @@
       - datetime
   inputs:
     in: preprocess.drop_columns@out
+  module: rapids_modules
 - id: backtest
   type: SimpleBackTestNode
   conf: {}
   inputs:
     bardata_in: xgboost.stock_out
+  module: rapids_modules
 - id: portfolio_opt_train
   type: SimpleAveragePortOpt
   conf: {}
   inputs:
     stock_in: train_df.stock_out
+  module: rapids_modules
 - id: sharpe_ratio_trn
   type: SharpeRatioNode
   conf: {}
   inputs:
     stock_in: portfolio_opt_train.stock_out
+  module: rapids_modules
 - id: cumulative_return_trn
   type: CumReturnNode
   conf:
@@ -62,6 +67,7 @@
     label: training cumulative return
   inputs:
     in: portfolio_opt_train.stock_out
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -96,6 +102,7 @@
     remove_na: true
   inputs:
     stock_in: sort_after.out
+  module: rapids_modules
 - id: xgboost
   type: XGBoostStrategyNode
   conf:
@@ -119,6 +126,7 @@
     target: SHIFT_-1
   inputs:
     stock_in: technical_indicator.stock_out
+  module: rapids_modules
 - id: train_df
   type: DatetimeFilterNode
   conf:
@@ -126,6 +134,7 @@
     beg: 1985-01-01
   inputs:
     stock_in: backtest.backtest_out
+  module: rapids_modules
 - id: validation_df
   type: DatetimeFilterNode
   conf:
@@ -133,16 +142,19 @@
     end: 2025-01-01
   inputs:
     stock_in: backtest.backtest_out
+  module: rapids_modules
 - id: portfolio_opt_validation
   type: SimpleAveragePortOpt
   conf: {}
   inputs:
     stock_in: validation_df.stock_out
+  module: rapids_modules
 - id: sharpe_ratio_val
   type: SharpeRatioNode
   conf: {}
   inputs:
     stock_in: portfolio_opt_validation.stock_out
+  module: rapids_modules
 - id: cumulative_return_val
   type: CumReturnNode
   conf:
@@ -150,3 +162,4 @@
     label: validation cumulative return
   inputs:
     in: portfolio_opt_validation.stock_out
+  module: rapids_modules

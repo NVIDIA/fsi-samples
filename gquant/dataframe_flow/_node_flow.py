@@ -100,59 +100,6 @@ class NodeTaskGraphMixin(object):
         #     typically a data container.
         self.clear_input = True
 
-    def __translate_column(self, columns):
-        output = {}
-        for col_name, col_type in columns.items():
-            if col_type is not None and col_type.startswith("@"):
-                col_type = self.conf[col_type[1:]]
-            if col_name.startswith("@"):
-                field_name = col_name[1:]
-                v = self.conf[field_name]
-                if isinstance(v, str):
-                    output[v] = col_type
-                elif isinstance(v, list):
-                    for item in v:
-                        output[item] = None
-            else:
-                output[col_name] = col_type
-
-        return output
-
-    def __delayed_call_noports(self, inputs):
-
-        def get_pout(df_out):
-            '''Used for delayed unpacking.'''
-            if isinstance(df_out, cudf.DataFrame):
-                # Needed for the same reason as __make_copy. To prevent columns
-                # addition in the input data frames. In python everything is
-                # by reference value and dataframes are mutable.
-                # Handle the case when dask_cudf.DataFrames are source frames
-                # which appear as cudf.DataFrame in a dask-delayed function.
-                return df_out.copy(deep=False)
-
-            return df_out
-
-        # handle the dask dataframe automatically
-        # use the to_delayed interface
-        # TODO, currently only handles first input is dask_cudf df
-        i_df = inputs[0]
-        rest = inputs[1:]
-        if isinstance(i_df, dask_cudf.DataFrame):
-            output_df_dly_list = []
-            for input_dly in i_df.to_delayed():
-                inputs_ = [input_dly] + rest
-                output_df_dly = dask.delayed(self.decorate_process())(inputs_)
-                output_df_dly_per = output_df_dly.persist()
-                df_out = dask.delayed(get_pout)(output_df_dly_per)
-                output_df_dly_list.append(df_out.persist())
-
-            output_df = dask_cudf.from_delayed(output_df_dly_list)
-
-        else:
-            output_df = self.decorate_process()(inputs)
-
-        return output_df
-
     def validate_connected_ports(self):
         self_nodetype = _get_nodetype(self)
         nodetype_names = [inodet.__name__ for inodet in self_nodetype]

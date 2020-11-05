@@ -4,6 +4,7 @@
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
   inputs: {}
+  module: rapids_modules
 - id: preprocess
   type: CompositeNode
   conf:
@@ -33,6 +34,7 @@
       - datetime
   inputs:
     in: preprocess.drop_columns@out
+  module: rapids_modules
 - id: exp_mean_reversion
   type: PortExpMovingAverageStrategyNode
   conf:
@@ -40,21 +42,25 @@
     slow: 20
   inputs:
     stock_in: sort_after.out
+  module: rapids_modules
 - id: backtest
   type: SimpleBackTestNode
   conf: {}
   inputs:
     bardata_in: exp_mean_reversion.stock_out
+  module: rapids_modules
 - id: portfolio_opt
   type: SimpleAveragePortOpt
   conf: {}
   inputs:
     stock_in: backtest.backtest_out
+  module: rapids_modules
 - id: sharpe_ratio
   type: SharpeRatioNode
   conf: {}
   inputs:
     stock_in: portfolio_opt.stock_out
+  module: rapids_modules
 - id: cumulative_return
   type: CumReturnNode
   conf:
@@ -62,9 +68,11 @@
     label: cumulative return
   inputs:
     in: portfolio_opt.stock_out
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
   inputs:
     in1: cumulative_return.cum_return
     in2: sharpe_ratio.sharpe_out
+  module: rapids_modules

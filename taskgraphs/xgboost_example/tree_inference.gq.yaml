@@ -18,6 +18,7 @@
     dtype: float64
     n_parts: 4
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -83,12 +84,14 @@
     target: y
   inputs:
     in: data_generator.drop_x2_x3@out
+  module: rapids_modules
 - id: model_export
   type: XGBoostExportNode
   conf:
     path: xgboost_model_file
   inputs:
     model_in: xgboost_model.train_xgboost@model_out
+  module: rapids_modules
 - id: tree_inference
   type: ForestInferenceNode
   conf:
@@ -100,18 +103,22 @@
   inputs:
     model_file: model_export.filename
     data_in: xgboost_model.test_norm@df_out
+  module: rapids_modules
 - id: test_data
   type: DaskComputeNode
   conf: {}
   inputs:
     in: xgboost_model.test_norm@df_out
+  module: rapids_modules
 - id: test_infer
   type: DaskComputeNode
   conf: {}
   inputs:
     in: tree_inference.out
+  module: rapids_modules
 - id: xgboost_infer
   type: DaskComputeNode
   conf: {}
   inputs:
     in: xgboost_model.test_infer@out
+  module: rapids_modules

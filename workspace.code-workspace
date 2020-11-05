@@ -1,9 +1,6 @@
 {
 	"folders": [
 		{
-			"path": "gquantlab"
-		},
-		{
 			"path": "."
 		}
 	],
@@ -16,6 +13,26 @@
         "python.linting.flake8Path": "${env:HOME}/miniconda3/bin/flake8",
         "python.linting.pylintPath": "${env:HOME}/miniconda3/bin/pylint",
         "python.testing.pytestPath": "${env:HOME}/miniconda3/bin/pytest"
+    },
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python: Remote Attach",
+                "type": "python",
+                "request": "attach",
+                "connect": {
+                    "host": "z8",
+                    "port": 3456
+                },
+                "pathMappings": [
+                    {
+                        "localRoot": "${workspaceFolder}",
+                        "remoteRoot": "."
+                    }
+                ]
+            }
+        ]
     }
 
 }
