@@ -4,7 +4,7 @@ import cupy as cp
 import cudf
 import dask_cudf
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin
 
 
 class BarPlotNode(Node):

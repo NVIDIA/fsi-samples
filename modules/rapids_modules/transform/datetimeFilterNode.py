@@ -1,6 +1,6 @@
 import datetime
 from gquant.dataframe_flow import Node
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 

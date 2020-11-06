@@ -2,7 +2,7 @@ import numba
 import cmath
 import numpy as np
 from numba import cuda
-from gquant.cuindicator.util import port_mask_nan
+from .util import port_mask_nan
 
 __all__ = ["fractional_diff", "get_weights_floored", "port_fractional_diff"]
 

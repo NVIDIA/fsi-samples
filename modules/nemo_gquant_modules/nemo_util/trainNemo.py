@@ -1,7 +1,6 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 from nemo.core.neural_types import NmTensor
 import nemo
@@ -30,9 +29,8 @@ class CallBack(object):
             self.counter += 1
 
 
-class NemoTrainNode(Node, _PortTypesMixin):
+class NemoTrainNode(Node):
     def init(self):
-        _PortTypesMixin.init(self)
         self.OUTPUT_PORT_NAME = 'checkpoint_dir'
 
     def ports_setup(self):

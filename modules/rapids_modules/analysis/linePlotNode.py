@@ -3,7 +3,7 @@ from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 import cudf
 import dask_cudf
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin
 
 
 class LinePlotNode(Node, _PortTypesMixin):

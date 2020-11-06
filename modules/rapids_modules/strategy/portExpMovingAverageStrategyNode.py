@@ -1,7 +1,7 @@
 from gquant.dataframe_flow import Node
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
-import gquant.cuindicator as ci
+from .. import cuindicator as ci
 import dask_cudf
 from numba import cuda
 from functools import partial

@@ -1,4 +1,4 @@
-from gquant.cuindicator.rolling import Rolling
+from .rolling import Rolling
 from numba import cuda
 import math
 import numba

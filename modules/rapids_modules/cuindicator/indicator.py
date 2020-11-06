@@ -1,19 +1,19 @@
-from gquant.cuindicator.util import shift, diff
-from gquant.cuindicator.rolling import Rolling
-from gquant.cuindicator.ewm import Ewm
-from gquant.cuindicator.pewm import PEwm
+from .util import shift, diff
+from .rolling import Rolling
+from .ewm import Ewm
+from .pewm import PEwm
 import cudf
 import collections
 import math
 import numba
-from gquant.cuindicator.util import (substract, summation, multiply,
-                                     division, upDownMove, abs_arr,
-                                     true_range, lowhigh_diff, money_flow,
-                                     average_price, onbalance_volume,
-                                     ultimate_osc, scale, port_true_range,
-                                     port_mask_nan, port_lowhigh_diff,
-                                     port_money_flow, port_onbalance_volume,
-                                     port_ultimate_osc, port_mask_zero)
+from .util import (substract, summation, multiply,
+                   division, upDownMove, abs_arr,
+                   true_range, lowhigh_diff, money_flow,
+                   average_price, onbalance_volume,
+                   ultimate_osc, scale, port_true_range,
+                   port_mask_nan, port_lowhigh_diff,
+                   port_money_flow, port_onbalance_volume,
+                   port_ultimate_osc, port_mask_zero)
 
 
 def moving_average(close_arr, n):

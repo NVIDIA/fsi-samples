@@ -1,11 +1,11 @@
-import gquant.cuindicator as ci
+from .. import cuindicator as ci
 from gquant.dataframe_flow import Node
 from numba import cuda
 import math
 import numpy as np
 import cudf
 import dask_cudf
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 

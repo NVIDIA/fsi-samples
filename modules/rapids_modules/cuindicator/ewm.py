@@ -1,6 +1,7 @@
 from numba import cuda
 import numba
-from gquant.cuindicator.windows import (portfolio_ewma_mean_window)
+from .windows import (ewma_mean_window)
+
 
 kernel_cache = {}
 
@@ -11,8 +12,8 @@ def get_ewm_kernel(method):
         return kernel_cache[method]
 
     @cuda.jit
-    def kernel(asset_indicator, in_arr, out_arr, average_length, span, arr_len,
-               thread_tile, min_size):
+    def kernel(in_arr, out_arr, average_length, span, arr_len, thread_tile,
+               min_size):
         """
         This kernel is to copy input array elements into shared array.
         The total window size. To compute
@@ -61,18 +62,18 @@ def get_ewm_kernel(method):
         end = min(starting_id + (tx + 1) * thread_tile, arr_len)
         sub_outarr = out_arr[start:end]
         sub_len = end - start
-        method(asset_indicator, shared, his_len, sub_outarr,
+        method(shared, his_len, sub_outarr,
                average_length, span, sub_len,
                average_length - 1 + start_shared,
-               min_size, start)
+               min_size)
     kernel_cache[method] = kernel
     return kernel
 
 
-class PEwm(object):
+class Ewm(object):
 
-    def __init__(self, span, input_arr, asset_indicator, min_periods=None,
-                 thread_tile=48, number_of_threads=64, expand_multiplier=10):
+    def __init__(self, span, input_arr, min_periods=None, thread_tile=48,
+                 number_of_threads=64, expand_multiplier=10):
         """
         The Ewm class that is used to do rolling exponential weighted moving
         average. It uses expand_multiplier * span elements to do the weighted
@@ -104,17 +105,12 @@ class PEwm(object):
         self.number_of_threads = number_of_threads
         self.array_len = len(self.gpu_in)
         self.thread_tile = thread_tile
-        self.number_of_blocks = (self.array_len +
-                                 (number_of_threads * thread_tile - 1)) // (
-                                     number_of_threads * thread_tile)
+        self.number_of_blocks = \
+            (self.array_len + (number_of_threads * thread_tile - 1)) // \
+            (number_of_threads * thread_tile)
 
         self.shared_buffer_size = \
             (self.number_of_threads * self.thread_tile + self.window - 1)
-        if isinstance(asset_indicator,
-                      numba.cuda.cudadrv.devicearray.DeviceNDArray):
-            self.asset_indicator = asset_indicator
-        else:
-            self.asset_indicator = asset_indicator.to_gpu_array()
 
     def apply(self, method):
         gpu_out = numba.cuda.device_array_like(self.gpu_in)
@@ -122,8 +118,7 @@ class PEwm(object):
         kernel[(self.number_of_blocks,),
                (self.number_of_threads,),
                0,
-               self.shared_buffer_size * 8](self.asset_indicator,
-                                            self.gpu_in,
+               self.shared_buffer_size * 8](self.gpu_in,
                                             gpu_out,
                                             self.window,
                                             self.span,
@@ -133,4 +128,4 @@ class PEwm(object):
         return gpu_out
 
     def mean(self):
-        return self.apply(portfolio_ewma_mean_window)
+        return self.apply(ewma_mean_window)

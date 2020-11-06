@@ -1,11 +1,11 @@
 from numba import cuda
 import numba
-from gquant.cuindicator.windows import (mean_window, std_window, var_window,
-                                        min_window, max_window, sum_window,
-                                        backward_diff_window,
-                                        backward_shift_window,
-                                        forward_diff_window,
-                                        forward_shift_window)
+from .windows import (mean_window, std_window, var_window,
+                      min_window, max_window, sum_window,
+                      backward_diff_window,
+                      backward_shift_window,
+                      forward_diff_window,
+                      forward_shift_window)
 
 
 kernel_cache = {}

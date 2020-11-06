@@ -3,7 +3,7 @@ from bqplot import Axis, LinearScale,  Figure, Lines, PanZoom
 import dask_cudf
 import cudf
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin
 from sklearn import metrics
 
 

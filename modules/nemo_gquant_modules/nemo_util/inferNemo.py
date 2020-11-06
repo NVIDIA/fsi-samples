@@ -3,7 +3,6 @@ from pathlib import Path
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
 
 from nemo.core.neural_types import NmTensor
 from .trainNemo import NemoTrainNode
@@ -28,9 +27,8 @@ def _isempty(pp):
     return False
 
 
-class NemoInferNode(Node, _PortTypesMixin):
+class NemoInferNode(Node):
     def init(self):
-        _PortTypesMixin.init(self)
         self.OUTPUT_PORT_NAME = 'torch_tensor'
         self.INPUT_PORT_NAME = 'log_dir'
 
