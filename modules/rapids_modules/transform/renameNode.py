@@ -38,9 +38,9 @@ class RenameNode(Node, _PortTypesMixin):
         }
         ui = {
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['old']['enum'] = enums
             return ConfSchema(json=json, ui=ui)
@@ -66,17 +66,17 @@ class RenameNode(Node, _PortTypesMixin):
         return {self.OUTPUT_PORT_NAME: input_df.rename(columns={
             old_column: new_column})}
 
-    def columns_setup(self):
+    def meta_setup(self):
         if 'new' in self.conf and 'old' in self.conf:
-            input_columns = self.get_input_columns()
-            if self.INPUT_PORT_NAME not in input_columns:
+            input_meta = self.get_input_meta()
+            if self.INPUT_PORT_NAME not in input_meta:
                 return {self.OUTPUT_PORT_NAME: {}}
             else:
-                col_from_inport = input_columns[self.INPUT_PORT_NAME]
+                col_from_inport = input_meta[self.INPUT_PORT_NAME]
                 oldType = col_from_inport[self.conf['old']]
                 del col_from_inport[self.conf['old']]
                 col_from_inport[self.conf['new']] = oldType
-                return _PortTypesMixin.retention_columns_setup(self,
+                return _PortTypesMixin.retention_meta_setup(self,
                                                                col_from_inport)
         else:
             return {self.OUTPUT_PORT_NAME: {}}

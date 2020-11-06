@@ -30,9 +30,9 @@ class MinNode(Node, _PortTypesMixin):
             },
             "required": ["column"],
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['column']['enum'] = enums
             ui = {
@@ -64,13 +64,13 @@ class MinNode(Node, _PortTypesMixin):
         volume_df.columns = ['asset', min_column]
         return {self.OUTPUT_PORT_NAME: volume_df}
 
-    def columns_setup(self):
+    def meta_setup(self):
         if 'column' in self.conf:
             retention = {self.conf['column']: "float64",
                          "asset": "int64"}
-            return _PortTypesMixin.retention_columns_setup(self,
+            return _PortTypesMixin.retention_meta_setup(self,
                                                            retention)
         else:
             retention = {"asset": "int64"}
-            return _PortTypesMixin.retention_columns_setup(self,
+            return _PortTypesMixin.retention_meta_setup(self,
                                                            retention)

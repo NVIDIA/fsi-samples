@@ -63,7 +63,7 @@ class LinearEmbeddingNode(Node, _PortTypesMixin):
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
 
-    def columns_setup(self):
+    def meta_setup(self):
         self.required = {
             self.INPUT_PORT_NAME: {},
             self.INPUT_PROJ_NAME: {}
@@ -81,15 +81,15 @@ class LinearEmbeddingNode(Node, _PortTypesMixin):
             self.OUTPUT_PROJ_NAME: self.required[
                 self.INPUT_PROJ_NAME]
         }
-        input_columns = self.get_input_columns()
-        if (self.INPUT_PROJ_NAME in input_columns and
-                self.INPUT_PORT_NAME in input_columns):
-            cols_required = copy.copy(input_columns[self.INPUT_PROJ_NAME])
+        input_meta = self.get_input_meta()
+        if (self.INPUT_PROJ_NAME in input_meta and
+                self.INPUT_PORT_NAME in input_meta):
+            cols_required = copy.copy(input_meta[self.INPUT_PROJ_NAME])
             self.required = {
                 self.INPUT_PORT_NAME: cols_required,
                 self.INPUT_PROJ_NAME: cols_required
             }
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             if SPECIAL_OUTPUT_DIM_COL in cols_required:
                 out_dim = cols_required[SPECIAL_OUTPUT_DIM_COL]
                 del cols_required[SPECIAL_OUTPUT_DIM_COL]
@@ -101,9 +101,9 @@ class LinearEmbeddingNode(Node, _PortTypesMixin):
                 self.OUTPUT_PROJ_NAME: cols_required
             }
             return output_cols
-        elif (self.INPUT_PROJ_NAME in input_columns and
-              self.INPUT_PORT_NAME not in input_columns):
-            cols_required = copy.copy(input_columns[self.INPUT_PROJ_NAME])
+        elif (self.INPUT_PROJ_NAME in input_meta and
+              self.INPUT_PORT_NAME not in input_meta):
+            cols_required = copy.copy(input_meta[self.INPUT_PROJ_NAME])
             self.required = {
                 self.INPUT_PORT_NAME: cols_required,
                 self.INPUT_PROJ_NAME: cols_required
@@ -120,9 +120,9 @@ class LinearEmbeddingNode(Node, _PortTypesMixin):
                 self.OUTPUT_PROJ_NAME: cols_required
             }
             return output_cols
-        elif (self.INPUT_PROJ_NAME not in input_columns and
-              self.INPUT_PORT_NAME in input_columns):
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        elif (self.INPUT_PROJ_NAME not in input_meta and
+              self.INPUT_PORT_NAME in input_meta):
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             if 'columns' in self.conf:
                 if self.conf.get('include', True):
@@ -194,9 +194,9 @@ class LinearEmbeddingNode(Node, _PortTypesMixin):
             "required": [],
         }
         ui = {}
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['columns']['items']['enum'] = enums
         return ConfSchema(json=json, ui=ui)
@@ -217,8 +217,8 @@ class LinearEmbeddingNode(Node, _PortTypesMixin):
 
         if self.INPUT_PROJ_NAME in inputs:
             data_in = inputs[self.INPUT_PROJ_NAME].data
-            input_columns = self.get_input_columns()
-            col_from_inport = input_columns[self.INPUT_PROJ_NAME]
+            input_meta = self.get_input_meta()
+            col_from_inport = input_meta[self.INPUT_PROJ_NAME]
             proj_data = data_in
             cols = []
             # it has  required colmns that used to do mapping

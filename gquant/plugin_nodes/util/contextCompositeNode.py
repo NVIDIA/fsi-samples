@@ -37,8 +37,8 @@ class ContextCompositeNode(CompositeNode):
         output_port = NodePorts(inports=inports, outports=outports)
         return output_port
 
-    def columns_setup(self):
-        out_columns = super().columns_setup()
+    def meta_setup(self):
+        out_columns = super().meta_setup()
         out_columns[self.OUTPUT_CONFIG] = self.conf
         return out_columns
 
@@ -204,10 +204,10 @@ class ContextCompositeNode(CompositeNode):
         return out_schema
 
     def conf_update(self):
-        input_columns = self.get_input_columns()
-        if self.INPUT_CONFIG in input_columns:
-            if input_columns[self.INPUT_CONFIG]:
-                self.conf.update(input_columns[self.INPUT_CONFIG])
+        input_meta = self.get_input_meta()
+        if self.INPUT_CONFIG in input_meta:
+            if input_meta[self.INPUT_CONFIG]:
+                self.conf.update(input_meta[self.INPUT_CONFIG])
 
     def update_replace(self, replaceObj, task_graph):
         # find the other replacment conf

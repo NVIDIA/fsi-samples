@@ -60,25 +60,25 @@ class LeftMergeNode(Node):
                  pd.DataFrame]
         return self.ports_setup_from_types(types)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
-        if (self.INPUT_PORT_LEFT_NAME in input_columns
-                and self.INPUT_PORT_RIGHT_NAME in input_columns):
-            col_from_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
-            col_from_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
+        if (self.INPUT_PORT_LEFT_NAME in input_meta
+                and self.INPUT_PORT_RIGHT_NAME in input_meta):
+            col_from_left_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
+            col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             col_from_left_inport.update(col_from_right_inport)
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_left_inport
             }
             return output_cols
-        elif self.INPUT_PORT_LEFT_NAME in input_columns:
-            col_from_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
+        elif self.INPUT_PORT_LEFT_NAME in input_meta:
+            col_from_left_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_left_inport
             }
             return output_cols
-        elif self.INPUT_PORT_RIGHT_NAME in input_columns:
-            col_from_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
+        elif self.INPUT_PORT_RIGHT_NAME in input_meta:
+            col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_right_inport
             }
@@ -99,11 +99,11 @@ class LeftMergeNode(Node):
             },
             "required": ["column"],
         }
-        input_columns = self.get_input_columns()
-        if (self.INPUT_PORT_LEFT_NAME in input_columns
-                and self.INPUT_PORT_RIGHT_NAME in input_columns):
-            col_left_inport = input_columns[self.INPUT_PORT_LEFT_NAME]
-            col_right_inport = input_columns[self.INPUT_PORT_RIGHT_NAME]
+        input_meta = self.get_input_meta()
+        if (self.INPUT_PORT_LEFT_NAME in input_meta
+                and self.INPUT_PORT_RIGHT_NAME in input_meta):
+            col_left_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
+            col_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             enums1 = set([col for col in col_left_inport.keys()])
             enums2 = set([col for col in col_right_inport.keys()])
             json['properties']['column']['enum'] = list(

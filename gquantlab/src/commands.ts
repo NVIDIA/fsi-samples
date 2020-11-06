@@ -585,7 +585,7 @@ taskGraph.draw()`;
         conf: {},
         required: {},
         // eslint-disable-next-line @typescript-eslint/camelcase
-        output_columns: [],
+        output_meta: [],
         outputs: [],
         schema: {},
         ui: {},

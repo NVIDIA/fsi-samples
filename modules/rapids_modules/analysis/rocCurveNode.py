@@ -14,9 +14,9 @@ class RocCurveNode(Node, _PortTypesMixin):
         self.OUTPUT_PORT_NAME = 'roc_curve'
         self.OUTPUT_VALUE_NAME = 'value'
 
-    def columns_setup(self):
+    def meta_setup(self):
         cols_required = {}
-        icols = self.get_input_columns()
+        icols = self.get_input_meta()
         if 'label' in self.conf:
             label = self.conf['label']
             labeltype = icols.get(self.INPUT_PORT_NAME, {}).get(label)
@@ -55,9 +55,9 @@ class RocCurveNode(Node, _PortTypesMixin):
         }
         ui = {
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['label']['enum'] = enums
             json['properties']['prediction']['enum'] = enums

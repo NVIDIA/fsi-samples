@@ -87,7 +87,7 @@ class TestIndicatorNode(unittest.TestCase):
                     "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
-        out_cols = inN.columns_setup()
+        out_cols = inN.meta_setup()
 
         col = "indicator"
         msg = "bad error: %s is missing" % (col)

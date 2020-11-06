@@ -12,8 +12,8 @@ class ValueFilterNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
-        return _PortTypesMixin.columns_setup(self)
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -43,9 +43,9 @@ class ValueFilterNode(Node, _PortTypesMixin):
             }
         }
         ui = {}
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['items']['properties']['column']['enum'] = enums
             return ConfSchema(json=json, ui=ui)

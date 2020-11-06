@@ -87,7 +87,7 @@ class TestNodeAPI(unittest.TestCase):
         '''
         points_task = self.points_task
 
-        # assert cannot instantiate Node without overriding columns_setup
+        # assert cannot instantiate Node without overriding meta_setup
         # and process
         with self.assertRaises(TypeError) as cm:
             _ = Node(points_task)
@@ -95,7 +95,7 @@ class TestNodeAPI(unittest.TestCase):
         self.assertEqual(
             err_msg,
             "Can't instantiate abstract class Node with abstract methods "
-            "columns_setup, process")
+            "meta_setup, process")
 
         points_node = points_task.get_node_obj()
 

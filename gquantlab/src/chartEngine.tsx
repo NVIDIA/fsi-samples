@@ -358,7 +358,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       conf: {},
       required: {},
       // eslint-disable-next-line @typescript-eslint/camelcase
-      output_columns: [],
+      output_meta: [],
       outputs: [],
       schema: {},
       ui: {},

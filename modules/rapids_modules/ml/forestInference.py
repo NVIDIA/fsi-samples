@@ -52,19 +52,19 @@ class ForestInferenceNode(Node, _PortTypesMixin):
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
         self.required = {self.INPUT_PORT_NAME: {},
                          self.INPUT_PORT_MODEL_NAME: {}}
         predict = self.conf.get('prediction', 'predict')
         output_cols = {
             self.OUTPUT_PORT_NAME: {predict: None}
         }
-        if (self.INPUT_PORT_NAME in input_columns
-                and self.INPUT_PORT_MODEL_NAME in input_columns):
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
-            if 'train' in input_columns[self.INPUT_PORT_MODEL_NAME]:
-                required_cols = input_columns[self.INPUT_PORT_MODEL_NAME]['train']
+        if (self.INPUT_PORT_NAME in input_meta
+                and self.INPUT_PORT_MODEL_NAME in input_meta):
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
+            if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
+                required_cols = input_meta[self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
             predict = self.conf.get('prediction', 'predict')
@@ -75,10 +75,10 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                 self.OUTPUT_PORT_NAME: col_from_inport,
             }
             return output_cols
-        elif (self.INPUT_PORT_NAME not in input_columns and
-              self.INPUT_PORT_MODEL_NAME in input_columns):
-            if 'train' in input_columns[self.INPUT_PORT_MODEL_NAME]:
-                required_cols = input_columns[self.INPUT_PORT_MODEL_NAME]['train']
+        elif (self.INPUT_PORT_NAME not in input_meta and
+              self.INPUT_PORT_MODEL_NAME in input_meta):
+            if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
+                required_cols = input_meta[self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
             predict = self.conf.get('prediction', 'predict')
@@ -90,10 +90,10 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
             return output_cols
-        elif (self.INPUT_PORT_NAME in input_columns and
-              self.INPUT_PORT_MODEL_NAME not in input_columns):
+        elif (self.INPUT_PORT_NAME in input_meta and
+              self.INPUT_PORT_MODEL_NAME not in input_meta):
             cols_required = {}
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             if 'columns' in self.conf:
                 if self.conf.get('include', True):
@@ -116,8 +116,8 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
             return output_cols
-        elif (self.INPUT_PORT_NAME not in input_columns and
-              self.INPUT_PORT_MODEL_NAME not in input_columns):
+        elif (self.INPUT_PORT_NAME not in input_meta and
+              self.INPUT_PORT_MODEL_NAME not in input_meta):
             if 'columns' in self.conf:
                 if self.conf.get('include', True):
                     included_colums = self.conf['columns']
@@ -183,22 +183,22 @@ class ForestInferenceNode(Node, _PortTypesMixin):
         ui = {
             "file": {"ui:widget": "FileSelector"},
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['columns']['items']['enum'] = enums
         return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         predict_col = self.conf.get('prediction', 'predict')
         data_df = inputs[self.INPUT_PORT_NAME]
 
-        if self.INPUT_PORT_MODEL_NAME in input_columns:
+        if self.INPUT_PORT_MODEL_NAME in input_meta:
             # use external information instead of conf
             filename = get_file_path(inputs[self.INPUT_PORT_MODEL_NAME])
-            train_cols = input_columns[self.INPUT_PORT_MODEL_NAME]['train']
+            train_cols = input_meta[self.INPUT_PORT_MODEL_NAME]['train']
             train_cols = list(train_cols.keys())
         else:
             # use the conf information

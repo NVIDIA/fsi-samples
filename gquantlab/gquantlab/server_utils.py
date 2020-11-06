@@ -62,7 +62,7 @@ def get_nodes(task_graph):
         nodes:
             - list of node objects for the UI client. It contains all the
             necessary information about the node including the size of the node
-            input ports, output ports, output column names/types,
+            input ports, output ports, output meta names/types,
             conf schema and conf data.
         edges:
             - list of edge objects for the UI client. It enumerate all the
@@ -90,7 +90,7 @@ def get_nodes(task_graph):
         out_node = get_node_obj(node)
         connection_inputs = task.get('inputs')
         nodes.append(out_node)
-        # out_node['output_columns'] = task_graph[node.uid].output_columns
+        # out_node['output_meta'] = task_graph[node.uid].output_meta
         for port, v in connection_inputs.items():
             edge = {"from": v, "to": node.uid+"."+port}
             edges.append(edge)
@@ -142,7 +142,7 @@ def get_node_obj(node, count_id=True):
                 'conf': conf,
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
-    out_node['output_columns'] = node.columns_setup()
+    out_node['output_meta'] = node.meta_setup()
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
     if node._task_obj.get('module'):
@@ -157,7 +157,7 @@ def get_nodes_from_file(file):
         nodes:
             - list of node objects for the UI client. It contains all the
             necessary information about the node including the size of the node
-            input ports, output ports, output column names/types,
+            input ports, output ports, output meta names/types,
             conf schema and conf data.
         edges:
             - list of edge objects for the UI client. It enumerate all the

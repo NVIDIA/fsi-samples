@@ -68,10 +68,10 @@ class _PortTypesMixin(object):
                  pd.DataFrame]
         return self.ports_setup_from_types(types)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
@@ -83,12 +83,12 @@ class _PortTypesMixin(object):
             }
             return output_cols
 
-    def addition_columns_setup(self, addition):
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME not in input_columns:
+    def addition_meta_setup(self, addition):
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME not in input_meta:
             col_from_inport = self.required[self.INPUT_PORT_NAME]
         else:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
         # additional ports
         output_cols = {
             self.OUTPUT_PORT_NAME: addition
@@ -96,17 +96,17 @@ class _PortTypesMixin(object):
         output_cols[self.OUTPUT_PORT_NAME].update(col_from_inport)
         return output_cols
 
-    def deletion_columns_setup(self, deletion):
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME not in input_columns:
+    def deletion_meta_setup(self, deletion):
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME not in input_meta:
             col_from_inport = self.required[self.INPUT_PORT_NAME]
         else:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
         # delete the columns from the inputs
         for key in deletion:
             if key in col_from_inport:
                 del col_from_inport[key]
         return {self.OUTPUT_PORT_NAME: col_from_inport}
 
-    def retention_columns_setup(self, retention):
+    def retention_meta_setup(self, retention):
         return {self.OUTPUT_PORT_NAME: retention}

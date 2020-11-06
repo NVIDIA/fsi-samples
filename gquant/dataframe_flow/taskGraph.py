@@ -33,8 +33,8 @@ def add_module_from_base64(module_name, class_str):
 
 
 class OutputCollector(Node):
-    def columns_setup(self):
-        return super().columns_setup()
+    def meta_setup(self):
+        return super().meta_setup()
 
     def ports_setup(self):
         return NodePorts(inports={}, outports={})
@@ -556,8 +556,8 @@ class TaskGraph(object):
             node.validate_connected_ports()
 
             # Run columns setup in case the required columns are calculated
-            # within the columns_setup and are NodeTaskGraphMixin dependent.
-            node.columns_setup()
+            # within the meta_setup and are NodeTaskGraphMixin dependent.
+            node.meta_setup()
             node.validate_required_columns()
 
         if self.__widget is not None:

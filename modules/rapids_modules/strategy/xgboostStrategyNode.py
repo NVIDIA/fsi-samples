@@ -40,19 +40,19 @@ class XGBoostStrategyNode(Node):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
+    def meta_setup(self):
         # if 'no_feature' in self.conf:
         #     retention = self.conf['no_feature']
         # else:
         retention = {}
         retention['signal'] = 'float64'
-        _PortTypesMixin.retention_columns_setup(self, retention)
+        _PortTypesMixin.retention_meta_setup(self, retention)
 
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME not in input_columns:
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME not in input_meta:
             col_from_inport = self.required[self.INPUT_PORT_NAME]
         else:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
         # delete the columns from the inputs
         if 'no_feature' in self.conf:
             for key in self.conf['no_feature']:
@@ -140,9 +140,9 @@ class XGBoostStrategyNode(Node):
                 },
             },
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['no_feature']['items']['enum'] = enums
             json['properties']['target']['enum'] = enums

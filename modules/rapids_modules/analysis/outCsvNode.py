@@ -13,14 +13,14 @@ class OutCsvNode(Node, _PortTypesMixin):
         required = {}
         self.required = {self.INPUT_PORT_NAME: required}
 
-    def columns_setup(self):
-        return _PortTypesMixin.columns_setup(self)
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         json = {
             "title": "Cvs output Configure",
             "type": "object",
@@ -46,8 +46,8 @@ class OutCsvNode(Node, _PortTypesMixin):
             "required": ["path"],
         }
         ui = {}
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['columns']['items']['enum'] = enums
             return ConfSchema(json=json, ui=ui)

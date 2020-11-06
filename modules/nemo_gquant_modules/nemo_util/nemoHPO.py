@@ -206,8 +206,8 @@ class NemoHyperTuneNode(GridRandomSearchNode):
     def ports_setup(self):
         return GridRandomSearchNode.ports_setup(self)
 
-    def columns_setup(self):
-        return GridRandomSearchNode.columns_setup(self)
+    def meta_setup(self):
+        return GridRandomSearchNode.meta_setup(self)
 
     def conf_schema(self):
         cache_key, task_graph, _ = self._compute_hash_key()
@@ -287,11 +287,11 @@ class NemoHyperTuneNode(GridRandomSearchNode):
 
                     class InputFeed(Node):
 
-                        def columns_setup(self):
+                        def meta_setup(self):
                             output = {}
                             for inp in inputNode.inputs:
                                 output[inp['to_port']] = inp[
-                                    'from_node'].columns_setup()[
+                                    'from_node'].meta_setup()[
                                         inp['from_port']]
                             # it will be something like { input_port: columns }
                             return output

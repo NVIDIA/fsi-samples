@@ -21,7 +21,7 @@ class ScatterPlotNode(Node, _PortTypesMixin):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'scatter_plot'
 
-    def columns_setup(self):
+    def meta_setup(self):
         cols_required = {}
         if 'col_x' in self.conf:
             cols_required[self.conf['col_x']] = None
@@ -82,9 +82,9 @@ class ScatterPlotNode(Node, _PortTypesMixin):
         }
         ui = {
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['col_x']['enum'] = enums
             json['properties']['col_y']['enum'] = enums

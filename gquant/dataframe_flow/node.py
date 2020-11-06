@@ -51,17 +51,17 @@ class Node(_PortsMixin, _Node):
             Defines ports for the node. Refer to ports_setup docstring for
             further details.
 
-        :meth: columns_setup
+        :meth: meta_setup
             Define expected columns in dataframe processing.
             When processing dataframes define expected columns. Ex.:
-                def columns_setup(self):
+                def meta_setup(self):
                     self.required = {
                         'iport0_name': {'x': 'float64',
                                         'y': 'float64'}
                         'iport1_name': some_dict,
                         etc.
                     }
-            Refer to columns_setup docstring for further details.
+            Refer to meta_setup docstring for further details.
 
         :meth: conf_schema
             Define the json schema for the Node configuration. The client
@@ -174,10 +174,10 @@ class Node(_PortsMixin, _Node):
         """
         pass
 
-    def get_input_columns(self):
+    def get_input_meta(self):
         """
-        Get the input column information. It is usually used by individual
-         node to compute the output column information
+        Get the input meta information. It is usually used by individual
+         node to compute the output meta information
         returns
             dict, key is the node input port name, value is the dict with keys
             column names, and values column types
@@ -205,10 +205,10 @@ class Node(_PortsMixin, _Node):
         return ConfSchema(json={}, ui={})
 
     @abc.abstractmethod
-    def columns_setup(self):
+    def meta_setup(self):
         """
         All children class should implement this.
-        It is used to compute the required and output column names and types.
+        It is used to compute the required and output meta names and types.
 
         `self.required` defines the required columns in the input dataframes
         `self.required` is python dictionaries, where keys are column names
@@ -221,8 +221,8 @@ class Node(_PortsMixin, _Node):
             * float32
             * datetime64[ms]
 
-        The output columns are calcuated based on the input columns. The input
-        column name and types can be obtained by `self.get_input_columns` method.
+        The output meta are calcuated based on the input metas. The input
+        column name and types can be obtained by `self.get_input_meta` method.
 
         returns:
             dict, key is the node output port name, value is the dict with keys

@@ -15,7 +15,7 @@ class SharpeRatioNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
+    def meta_setup(self):
         return {self.OUTPUT_PORT_NAME: {}}
 
     def ports_setup(self):

@@ -316,10 +316,10 @@ class GridRandomSearchNode(ContextCompositeNode):
         if cache_key in cache_schema:
             return cache_schema[cache_key]
         # get's the input when it gets the conf
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         json = {}
-        if self.INPUT_CONFIG in input_columns:
-            conf = input_columns[self.INPUT_CONFIG]
+        if self.INPUT_CONFIG in input_meta:
+            conf = input_meta[self.INPUT_CONFIG]
             if 'context' in conf:
                 json = deepcopy(_CONF_JSON)
                 metrics = []
@@ -369,9 +369,9 @@ class GridRandomSearchNode(ContextCompositeNode):
         cache_schema[cache_key] = out_schema
         return out_schema
 
-    def columns_setup(self):
+    def meta_setup(self):
         from ray.tune import Analysis
-        out_columns = ContextCompositeNode.columns_setup(self)
+        out_columns = ContextCompositeNode.meta_setup(self)
         if 'tune' in self.conf:
             if 'local_dir' in self.conf['tune']:
                 path = self.conf['tune']['local_dir']
@@ -429,11 +429,11 @@ class GridRandomSearchNode(ContextCompositeNode):
 
                     class InputFeed(Node):
 
-                        def columns_setup(self):
+                        def meta_setup(self):
                             output = {}
                             for inp in inputNode.inputs:
                                 output[inp['to_port']] = inp[
-                                    'from_node'].columns_setup()[
+                                    'from_node'].meta_setup()[
                                         inp['from_port']]
                             # it will be something like { input_port: columns }
                             return output

@@ -12,14 +12,14 @@ class XGBoostExportNode(Node):
         required = {}
         self.required = {self.INPUT_PORT_NAME: required}
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
         output = {
             self.OUTPUT_PORT_NAME: {}
         }
-        if (self.INPUT_PORT_NAME in input_columns):
+        if (self.INPUT_PORT_NAME in input_meta):
             output_cols = {
-                self.OUTPUT_PORT_NAME: input_columns[self.INPUT_PORT_NAME]
+                self.OUTPUT_PORT_NAME: input_meta[self.INPUT_PORT_NAME]
             }
             return output_cols
         return output

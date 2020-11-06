@@ -15,8 +15,8 @@ class AssetIndicatorNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
-        return _PortTypesMixin.addition_columns_setup(self,
+    def meta_setup(self):
+        return _PortTypesMixin.addition_meta_setup(self,
                                                       {"indicator": "int32"})
 
     def ports_setup(self):

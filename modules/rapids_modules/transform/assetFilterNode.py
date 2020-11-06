@@ -53,10 +53,10 @@ class AssetFilterNode(Node, _PortTypesMixin):
 
     def _find_asset_name(self):
         name = ""
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         if self.outport_connected(self.OUTPUT_ASSET_NAME):
-            if self.INPUT_MAP_NAME in input_columns and 'asset' in self.conf:
-                col_from_inport = input_columns[self.INPUT_MAP_NAME]
+            if self.INPUT_MAP_NAME in input_meta and 'asset' in self.conf:
+                col_from_inport = input_meta[self.INPUT_MAP_NAME]
                 enums = col_from_inport['asset']
                 enumNames = col_from_inport['asset_name']
                 found = False
@@ -68,11 +68,11 @@ class AssetFilterNode(Node, _PortTypesMixin):
                     name = ""
         return name
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
         name = self._find_asset_name()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport,
                 self.OUTPUT_ASSET_NAME: {"asset_name": name}
@@ -105,9 +105,9 @@ class AssetFilterNode(Node, _PortTypesMixin):
         }
         ui = {
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_MAP_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_MAP_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_MAP_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_MAP_NAME]
             enums = col_from_inport['asset']
             enumNames = col_from_inport['asset_name']
             json['properties']['asset']['enum'] = enums

@@ -29,7 +29,7 @@ class ClassificationData(Node):
     def init(self):
         self.required = {}
 
-    def columns_setup(self):
+    def meta_setup(self):
         column_types = {}
         total_features = self.conf.get("n_features", 20)
         dtype = self.conf.get("dtype", "float32")

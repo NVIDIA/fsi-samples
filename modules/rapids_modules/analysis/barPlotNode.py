@@ -50,7 +50,7 @@ class BarPlotNode(Node):
         return _PortTypesMixin.ports_setup_different_output_type(self,
                                                                  Figure)
 
-    def columns_setup(self):
+    def meta_setup(self):
         return {self.OUTPUT_PORT_NAME: {}}
 
     def process(self, inputs):

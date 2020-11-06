@@ -31,7 +31,7 @@ class StockNameLoader(Node):
     def init(self):
         self.required = {}
 
-    def columns_setup(self):
+    def meta_setup(self):
         self.required = {}
         column_types = {"asset": "int64",
                         "asset_name": "object"}

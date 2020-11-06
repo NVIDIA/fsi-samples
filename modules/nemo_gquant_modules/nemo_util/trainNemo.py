@@ -47,7 +47,7 @@ class NemoTrainNode(Node):
         o_outports[self.OUTPUT_PORT_NAME] = {port_type: str}
         return NodePorts(inports=o_inports, outports=o_outports)
 
-    def columns_setup(self):
+    def meta_setup(self):
         self.required = {}
         output = {}
         output['axes'] = []
@@ -59,7 +59,7 @@ class NemoTrainNode(Node):
         inports = ports.inports
 
         iports_connected = self.get_connected_inports()
-        iports_cols = self.get_input_columns()
+        iports_cols = self.get_input_meta()
         for iport in inports.keys():
             if iport in iports_connected and iport in iports_cols:
                 self.required[iport] = copy.deepcopy(iports_cols[iport])

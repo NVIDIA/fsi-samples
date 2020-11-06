@@ -60,7 +60,7 @@ class CompositeNode(Node):
 
     def _compute_hash_key(self):
         """
-        if hash changed, the port_setup, columns_setup
+        if hash changed, the port_setup, meta_setup
         and conf_json should be different
         In very rara case, might have the problem of hash collision,
         It affects the column, port and conf calculation. It won't
@@ -181,7 +181,7 @@ class CompositeNode(Node):
         cache_ports[cache_key] = output_port
         return output_port
 
-    def columns_setup(self):
+    def meta_setup(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
         if cache_key in cache_columns:
             # print('cache hit')
@@ -193,8 +193,8 @@ class CompositeNode(Node):
 
             def inputNode_fun(inputNode, in_ports):
                 req = {}
-                # do columns_setup so required columns are ready
-                inputNode.columns_setup()
+                # do meta_setup so required columns are ready
+                inputNode.meta_setup()
                 for key in inputNode.required.keys():
                     if key in in_ports:
                         req[key] = inputNode.required[key]
@@ -202,7 +202,7 @@ class CompositeNode(Node):
 
             def outNode_fun(outNode, out_ports):
                 oucols = {}
-                before_fix = outNode.columns_setup()
+                before_fix = outNode.meta_setup()
                 for key in before_fix.keys():
                     if key in out_ports:
                         oucols[key] = before_fix[key]
@@ -353,11 +353,11 @@ class CompositeNode(Node):
 
                 class InputFeed(Node):
 
-                    def columns_setup(self):
+                    def meta_setup(self):
                         output = {}
                         for inp in inputNode.inputs:
                             output[inp['to_port']] = inp[
-                                'from_node'].columns_setup()[
+                                'from_node'].meta_setup()[
                                     inp['from_port']]
                         # it will be something like { input_port: columns }
                         return output

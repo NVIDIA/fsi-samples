@@ -16,9 +16,9 @@ class ReturnFeatureNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
+    def meta_setup(self):
         addition = {"returns": "float64"}
-        return _PortTypesMixin.addition_columns_setup(self,
+        return _PortTypesMixin.addition_meta_setup(self,
                                                       addition)
 
     def conf_schema(self):

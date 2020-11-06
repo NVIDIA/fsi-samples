@@ -42,9 +42,9 @@ class AddSignIndicatorNode(Node, _PortTypesMixin):
         }
         ui = {
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['column']['enum'] = enums
             return ConfSchema(json=json, ui=ui)
@@ -69,7 +69,7 @@ class AddSignIndicatorNode(Node, _PortTypesMixin):
         input_df[name] = (input_df[self.conf['column']] > 0).astype('int64')
         return {self.OUTPUT_PORT_NAME: input_df}
 
-    def columns_setup(self):
+    def meta_setup(self):
         name = self.conf.get('sign', 'sign')
         addition = {name: "int64"}
-        return _PortTypesMixin.addition_columns_setup(self, addition)
+        return _PortTypesMixin.addition_meta_setup(self, addition)

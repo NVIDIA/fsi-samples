@@ -114,11 +114,11 @@ class NeMoBase:
         if not issubclass(class_obj, DataLayerNM):
             try:
                 if issubclass(self.instanceClass, TrainableNM):
-                    input_columns = self.get_input_columns()
-                    if self.INPUT_NM in input_columns:
+                    input_meta = self.get_input_meta()
+                    if self.INPUT_NM in input_meta:
                         if (share_weight in self.conf and
                                 self.conf[share_weight] == 'Reuse'):
-                            self.conf = input_columns[self.INPUT_NM]
+                            self.conf = input_meta[self.INPUT_NM]
                 app = nemo.utils.app_state.AppState()
                 ins = None
                 for mod in app._module_registry:
@@ -148,13 +148,13 @@ class NeMoBase:
             app._module_registry.remove(mod)
 
     def ports_setup(self):
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         if issubclass(self.instanceClass, TrainableNM):
-            input_columns = self.get_input_columns()
-            if self.INPUT_NM in input_columns:
+            input_meta = self.get_input_meta()
+            if self.INPUT_NM in input_meta:
                 if (share_weight in self.conf and
                         self.conf[share_weight] == 'Reuse'):
-                    self.conf = input_columns[self.INPUT_NM]
+                    self.conf = input_meta[self.INPUT_NM]
         port_type = PortsSpecSchema.port_type
         if self.instance is not None:
             inports = self.instance.input_ports
@@ -187,14 +187,14 @@ class NeMoBase:
             o_outports[self.OUTPUT_NM] = {port_type: DataLayerNM}
         return NodePorts(inports=o_inports, outports=o_outports)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
         if issubclass(self.instanceClass, TrainableNM):
-            input_columns = self.get_input_columns()
-            if self.INPUT_NM in input_columns:
+            input_meta = self.get_input_meta()
+            if self.INPUT_NM in input_meta:
                 if (share_weight in self.conf and
                         self.conf[share_weight] == 'Reuse'):
-                    self.conf = input_columns[self.INPUT_NM]
+                    self.conf = input_meta[self.INPUT_NM]
         if self.instance is not None:
             inports = self.instance.input_ports
             outports = self.instance.output_ports

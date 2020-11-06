@@ -41,7 +41,7 @@ class NodeNumGen(Node):
         output_ports = {'numlist': {PortsSpecSchema.port_type: ptype}}
         return NodePorts(outports=output_ports)
 
-    def columns_setup(self):
+    def meta_setup(self):
         colsopt = self.conf['columns_option']
 
         cols = {
@@ -76,7 +76,7 @@ class NodeNumProc(Node):
         outports = {'sum': {PortsSpecSchema.port_type: float}}
         return NodePorts(inports=inports, outports=outports)
 
-    def columns_setup(self):
+    def meta_setup(self):
         self.required = {'inlist': {'list': 'numbers'}}
         columns_out = {'sum': {'element': 'number'}}
         return columns_out

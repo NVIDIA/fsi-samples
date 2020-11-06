@@ -11,7 +11,7 @@ class ImportanceCurveNode(Node):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'importance_curve'
 
-    def columns_setup(self):
+    def meta_setup(self):
         cols_required = {}
         self.required = {
             self.INPUT_PORT_NAME: cols_required

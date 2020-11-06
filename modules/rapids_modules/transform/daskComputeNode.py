@@ -49,9 +49,9 @@ class DaskComputeNode(Node):
 
         return NodePorts(inports=inports, outports=outports)
 
-    def columns_setup(self):
+    def meta_setup(self):
         '''Pass through columns from inputs to outputs'''
-        return _PortTypesMixin.columns_setup(self)
+        return _PortTypesMixin.meta_setup(self)
 
     def process(self, inputs):
         din = inputs[self.INPUT_PORT_NAME]

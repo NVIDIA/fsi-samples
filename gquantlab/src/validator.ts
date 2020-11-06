@@ -65,21 +65,21 @@ export function validConnection(that: Chart) {
       }
 
       // make sure the requirement is met
-      if (from in that.outputColumns && to in that.inputRequriements) {
+      if (from in that.outputMeta && to in that.inputRequriements) {
         let found = false;
         for (let i = 0; i < toTypes.length; i++){
           if (toTypes[i] in validators) {
             found = true;
-            validators[toTypes[i]](that.inputRequriements[to], that.outputColumns[from]);
+            validators[toTypes[i]](that.inputRequriements[to], that.outputMeta[from]);
             break;
           }
         } 
         if (!found) {
-          return valid(that.inputRequriements[to], that.outputColumns[from]);
+          return valid(that.inputRequriements[to], that.outputMeta[from]);
         }
 
       } else if (
-        !(from in that.outputColumns) &&
+        !(from in that.outputMeta) &&
         to in that.inputRequriements
       ) {
         return valid(that.inputRequriements[to], {});
@@ -109,20 +109,20 @@ export function validConnection(that: Chart) {
       }
 
       // make sure the requirement is met
-      if (to in that.outputColumns && from in that.inputRequriements) {
+      if (to in that.outputMeta && from in that.inputRequriements) {
         let found = false;
         for (let i = 0; i < toTypes.length; i++){
           if (toTypes[i] in validators) {
             found = true;
-            validators[toTypes[i]](that.inputRequriements[from], that.outputColumns[to]);
+            validators[toTypes[i]](that.inputRequriements[from], that.outputMeta[to]);
             break;
           }
         } 
         if (!found) {
-          return valid(that.inputRequriements[from], that.outputColumns[to]);
+          return valid(that.inputRequriements[from], that.outputMeta[to]);
         }
       } else if (
-        !(to in that.outputColumns) &&
+        !(to in that.outputMeta) &&
         from in that.inputRequriements
       ) {
         return valid(that.inputRequriements[from], {});

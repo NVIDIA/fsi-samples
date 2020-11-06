@@ -211,7 +211,7 @@ class NodeTaskGraphMixin(object):
                     out_err = '{}\n{}'.format(info_msg, err_msg)
                     raise LookupError(out_err)
 
-        inputs_cols = self.get_input_columns()
+        inputs_cols = self.get_input_meta()
 
         if not self.required:
             return
@@ -250,8 +250,8 @@ class NodeTaskGraphMixin(object):
                 validate_required(iport, kcol, kval,
                                   ientnode, incoming_cols)
 
-    def get_output_columns(self):
-        return self.columns_setup()
+    def get_output_meta(self):
+        return self.meta_setup()
 
     def _validate_df(self, df_to_val, ref_cols):
         '''Validate a cudf or dask_cudf DataFrame.
@@ -388,9 +388,9 @@ class NodeTaskGraphMixin(object):
     def __get_input_df(self):
         return self.input_df
 
-    def get_input_columns(self):
+    def get_input_meta(self):
         """
-        get all the connected input columns information
+        get all the connected input metas information
         returns
             dict, key is the current node input port name, value is the column
             name and types
@@ -400,7 +400,7 @@ class NodeTaskGraphMixin(object):
             return output
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            columns = copy.deepcopy(from_node.columns_setup())
+            columns = copy.deepcopy(from_node.meta_setup())
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name not in columns:
@@ -742,7 +742,7 @@ class NodeTaskGraphMixin(object):
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df, self.columns_setup())
+            self.__valide(output_df, self.meta_setup())
 
         if self.save:
             self.save_cache(output_df)

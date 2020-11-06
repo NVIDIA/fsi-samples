@@ -55,11 +55,11 @@ class LinePlotNode(Node, _PortTypesMixin):
             },
             "required": ["points", "title", "lines"],
         }
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         ui = {
         }
-        if self.INPUT_PORT_NAME in input_columns:
-            col_inport = input_columns[self.INPUT_PORT_NAME]
+        if self.INPUT_PORT_NAME in input_meta:
+            col_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_inport.keys()]
             first_item = json['properties']['lines']['items']
             first_item['properties']['column']['enum'] = enums
@@ -71,7 +71,7 @@ class LinePlotNode(Node, _PortTypesMixin):
         return _PortTypesMixin.ports_setup_different_output_type(self,
                                                                  Figure)
 
-    def columns_setup(self):
+    def meta_setup(self):
         return {self.OUTPUT_PORT_NAME: {}}
 
     def process(self, inputs):

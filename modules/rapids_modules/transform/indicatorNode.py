@@ -156,7 +156,7 @@ class IndicatorNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
+    def meta_setup(self):
         addition = {}
         cols_required = {'indicator': 'int32'}
         if 'indicators' in self.conf:
@@ -181,7 +181,7 @@ class IndicatorNode(Node, _PortTypesMixin):
         self.required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        return _PortTypesMixin.addition_columns_setup(self, addition)
+        return _PortTypesMixin.addition_meta_setup(self, addition)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -229,10 +229,10 @@ class IndicatorNode(Node, _PortTypesMixin):
             },
             "required": ["remove_na"],
         }
-        input_columns = self.get_input_columns()
+        input_meta = self.get_input_meta()
         enums = []
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
         for key in IN_DATA.keys():
             fun_name = " ".join(key.split('_')[1:])

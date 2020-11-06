@@ -32,7 +32,7 @@ class CsvStockLoader(Node):
     def init(self):
         self.required = {}
 
-    def columns_setup(self):
+    def meta_setup(self):
         column_types = {"datetime": "date",
                         "asset": "int64",
                         "volume": "float64",

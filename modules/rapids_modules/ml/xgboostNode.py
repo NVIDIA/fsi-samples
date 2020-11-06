@@ -45,7 +45,7 @@ class TrainXGBoostNode(Node):
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
 
-    def columns_setup(self):
+    def meta_setup(self):
         if 'columns' in self.conf and self.conf.get('include', True):
             cols_required = {}
             for col in self.conf['columns']:
@@ -53,9 +53,9 @@ class TrainXGBoostNode(Node):
             self.required = {
                 self.INPUT_PORT_NAME: cols_required
             }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             cols_output = {}
             cols_output['train'] = OrderedDict()
@@ -244,9 +244,9 @@ class TrainXGBoostNode(Node):
             "required": [],
         }
         ui = {}
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['columns']['items']['enum'] = enums
             json['properties']['target']['enum'] = enums
@@ -328,19 +328,19 @@ class InferXGBoostNode(Node):
         else:
             return NodePorts(inports=input_ports, outports=output_ports)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
         self.required = {self.INPUT_PORT_NAME: {},
                          self.INPUT_PORT_MODEL_NAME: {}}
         predict = self.conf.get('prediction', 'predict')
         output_cols = {
             self.OUTPUT_PORT_NAME: {predict: None}
         }
-        if (self.INPUT_PORT_NAME in input_columns
-                and self.INPUT_PORT_MODEL_NAME in input_columns):
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
-            if 'train' in input_columns[self.INPUT_PORT_MODEL_NAME]:
-                required_cols = input_columns[
+        if (self.INPUT_PORT_NAME in input_meta
+                and self.INPUT_PORT_MODEL_NAME in input_meta):
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
+            if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
+                required_cols = input_meta[
                     self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
@@ -352,10 +352,10 @@ class InferXGBoostNode(Node):
                 self.OUTPUT_PORT_NAME: col_from_inport,
             }
             return output_cols
-        elif (self.INPUT_PORT_NAME not in input_columns and
-              self.INPUT_PORT_MODEL_NAME in input_columns):
-            if 'train' in input_columns[self.INPUT_PORT_MODEL_NAME]:
-                required_cols = input_columns[
+        elif (self.INPUT_PORT_NAME not in input_meta and
+              self.INPUT_PORT_MODEL_NAME in input_meta):
+            if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
+                required_cols = input_meta[
                     self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
@@ -368,9 +368,9 @@ class InferXGBoostNode(Node):
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
             return output_cols
-        elif (self.INPUT_PORT_NAME in input_columns and
-              self.INPUT_PORT_MODEL_NAME not in input_columns):
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        elif (self.INPUT_PORT_NAME in input_meta and
+              self.INPUT_PORT_MODEL_NAME not in input_meta):
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             predict = self.conf.get('prediction', 'predict')
             col_from_inport[predict] = None  # the type is not determined
             output_cols = {
@@ -406,8 +406,8 @@ class InferXGBoostNode(Node):
     def process(self, inputs):
         input_df = inputs[self.INPUT_PORT_NAME]
         bst_model = inputs[self.INPUT_PORT_MODEL_NAME]
-        input_columns = self.get_input_columns()
-        required_cols = input_columns[
+        input_meta = self.get_input_meta()
+        required_cols = input_meta[
             self.INPUT_PORT_MODEL_NAME]['train']
         required_cols = list(required_cols.keys())
         required_cols.sort()

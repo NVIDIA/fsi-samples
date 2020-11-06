@@ -65,11 +65,11 @@ class PortExpMovingAverageStrategyNode(Node, _PortTypesMixin):
                  pd.DataFrame]
         return _PortTypesMixin.ports_setup_from_types(self, types)
 
-    def columns_setup(self):
+    def meta_setup(self):
         addition = {"signal": "float64",
                     "exp_ma_slow": "float64",
                     "exp_ma_fast": "float64"}
-        return _PortTypesMixin.addition_columns_setup(self,
+        return _PortTypesMixin.addition_meta_setup(self,
                                                       addition)
 
     def conf_schema(self):

@@ -57,10 +57,10 @@ class DataSplittingNode(Node):
                  dask_cudf.DataFrame]
         return self.ports_setup_from_types(types)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             if 'target' in self.conf:
                 target_col = self.conf['target']
                 if target_col in col_from_inport:
@@ -94,9 +94,9 @@ class DataSplittingNode(Node):
         }
         ui = {
         }
-        input_columns = self.get_input_columns()
-        if self.INPUT_PORT_NAME in input_columns:
-            col_from_inport = input_columns[self.INPUT_PORT_NAME]
+        input_meta = self.get_input_meta()
+        if self.INPUT_PORT_NAME in input_meta:
+            col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             json['properties']['target']['enum'] = enums
             return ConfSchema(json=json, ui=ui)

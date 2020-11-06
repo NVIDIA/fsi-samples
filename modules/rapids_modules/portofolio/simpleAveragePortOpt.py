@@ -16,10 +16,10 @@ class SimpleAveragePortOpt(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
+    def meta_setup(self):
         retention = {"datetime": "date",
                      "strategy_returns": "float64"}
-        return _PortTypesMixin.retention_columns_setup(self,
+        return _PortTypesMixin.retention_meta_setup(self,
                                                        retention)
 
     def ports_setup(self):

@@ -54,11 +54,11 @@ class MovingAverageStrategyNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
+    def meta_setup(self):
         addition = {"signal": "float64",
                     "ma_slow": "float64",
                     "ma_fast": "float64"}
-        return _PortTypesMixin.addition_columns_setup(self,
+        return _PortTypesMixin.addition_meta_setup(self,
                                                       addition)
 
     def ports_setup(self):

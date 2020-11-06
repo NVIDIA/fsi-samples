@@ -25,8 +25,8 @@ class DatetimeFilterNode(Node, _PortTypesMixin):
             self.INPUT_PORT_NAME: cols_required
         }
 
-    def columns_setup(self):
-        return _PortTypesMixin.columns_setup(self)
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
