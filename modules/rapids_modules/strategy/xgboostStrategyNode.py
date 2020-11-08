@@ -5,7 +5,7 @@ import dask_cudf
 import xgboost as xgb
 import dask
 from .._port_type_node import _PortTypesMixin
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 
 
 __all__ = ['XGBoostStrategyNode']
@@ -33,24 +33,24 @@ class XGBoostStrategyNode(Node):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-        cols_required = {'datetime': 'date',
-                         "asset": "int64"}
-        # self.delayed_process = True
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
         # if 'no_feature' in self.conf:
         #     retention = self.conf['no_feature']
         # else:
+        cols_required = {'datetime': 'date',
+                         "asset": "int64"}
+        # self.delayed_process = True
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
         retention = {}
         retention['signal'] = 'float64'
-        _PortTypesMixin.retention_meta_setup(self, retention)
+        # _PortTypesMixin.retention_meta_setup(self, retention)
 
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME not in input_meta:
-            col_from_inport = self.required[self.INPUT_PORT_NAME]
+            col_from_inport = required[self.INPUT_PORT_NAME]
         else:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
         # delete the columns from the inputs
@@ -58,7 +58,9 @@ class XGBoostStrategyNode(Node):
             for key in self.conf['no_feature']:
                 if key in col_from_inport:
                     retention[key] = col_from_inport[key]
-        return {self.OUTPUT_PORT_NAME: retention}
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: retention})
+        return metadata
 
     def ports_setup(self):
         types = [cudf.DataFrame,

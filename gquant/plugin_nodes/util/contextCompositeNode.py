@@ -16,6 +16,7 @@ default_map = {
     "array": []
 }
 
+
 class ContextCompositeNode(CompositeNode):
 
     def init(self):
@@ -38,9 +39,9 @@ class ContextCompositeNode(CompositeNode):
         return output_port
 
     def meta_setup(self):
-        out_columns = super().meta_setup()
-        out_columns[self.OUTPUT_CONFIG] = self.conf
-        return out_columns
+        out_meta = super().meta_setup()
+        out_meta.outports[self.OUTPUT_CONFIG] = self.conf
+        return out_meta
 
     def conf_schema(self):
         # import pdb

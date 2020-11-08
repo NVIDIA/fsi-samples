@@ -9,10 +9,6 @@ class RenameNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -67,16 +63,22 @@ class RenameNode(Node, _PortTypesMixin):
             old_column: new_column})}
 
     def meta_setup(self):
+        empty = {}
         if 'new' in self.conf and 'old' in self.conf:
             input_meta = self.get_input_meta()
             if self.INPUT_PORT_NAME not in input_meta:
-                return {self.OUTPUT_PORT_NAME: {}}
+                return _PortTypesMixin.retention_meta_setup(self,
+                                                            {},
+                                                            required=empty)
             else:
                 col_from_inport = input_meta[self.INPUT_PORT_NAME]
                 oldType = col_from_inport[self.conf['old']]
                 del col_from_inport[self.conf['old']]
                 col_from_inport[self.conf['new']] = oldType
                 return _PortTypesMixin.retention_meta_setup(self,
-                                                               col_from_inport)
+                                                            col_from_inport,
+                                                            required=empty)
         else:
-            return {self.OUTPUT_PORT_NAME: {}}
+            return _PortTypesMixin.retention_meta_setup(self,
+                                                        {},
+                                                        required=empty)

@@ -2,7 +2,7 @@ from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
 import dask_cudf
 import cudf
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 from .._port_type_node import _PortTypesMixin
 
 
@@ -11,14 +11,16 @@ class CumReturnNode(Node, _PortTypesMixin):
     def init(self):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'cum_return'
-        cols_required = {"datetime": "date",
-                         "strategy_returns": "float64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
-        return {self.OUTPUT_PORT_NAME: {}}
+        cols_required = {"datetime": "date",
+                         "strategy_returns": "float64"}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup_different_output_type(self,

@@ -547,7 +547,7 @@ class TaskGraph(object):
         inputs = []
         self.__find_roots(outputs_collector_node, inputs, consider_load=True)
 
-        # Validate columns prior to running heavy compute
+        # Validate metadata prior to running heavy compute
         for node in self.__node_dict.values():
             if not node.visited:
                 continue
@@ -555,10 +555,10 @@ class TaskGraph(object):
             # Run ports validation.
             node.validate_connected_ports()
 
-            # Run columns setup in case the required columns are calculated
+            # Run meta setup in case the required meta are calculated
             # within the meta_setup and are NodeTaskGraphMixin dependent.
-            node.meta_setup()
-            node.validate_required_columns()
+            # node.meta_setup()
+            node._validate_input_metadata()
 
         if self.__widget is not None:
             def progress_fun(uid):

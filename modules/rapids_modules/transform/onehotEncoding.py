@@ -11,10 +11,6 @@ class OneHotEncodingNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
         self.delayed_process = True
 
     def ports_setup(self):
@@ -88,9 +84,12 @@ class OneHotEncodingNode(Node, _PortTypesMixin):
         return {self.OUTPUT_PORT_NAME: input_df}
 
     def meta_setup(self):
+        cols_required = {}
         addition = {}
         for col in self.conf:
             for cat in col['cats']:
                 name = col.get('prefix')+col.get('prefix_sep', '_')+str(cat)
                 addition.update({name: col.get('dtype', 'float64')})
-        return _PortTypesMixin.addition_meta_setup(self, addition)
+        return _PortTypesMixin.addition_meta_setup(self,
+                                                   addition,
+                                                   required=cols_required)

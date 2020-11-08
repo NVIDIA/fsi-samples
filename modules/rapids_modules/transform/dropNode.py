@@ -7,20 +7,18 @@ class DropNode(Node, _PortTypesMixin):
 
     def init(self):
         _PortTypesMixin.init(self)
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
+        cols_required = {}
         if 'columns' in self.conf:
             dropped = {}
             for k in self.conf['columns']:
                 dropped[k] = None
             return _PortTypesMixin.deletion_meta_setup(self,
-                                                          dropped)
+                                                       dropped,
+                                                       required=cols_required)
         else:
-            return _PortTypesMixin.meta_setup(self)
+            return _PortTypesMixin.meta_setup(self, required=cols_required)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

@@ -6,7 +6,7 @@ import cudf
 
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import PortsSpecSchema, ConfSchema
+from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData
 
 from ._node import _Node
 
@@ -52,15 +52,26 @@ class Node(_PortsMixin, _Node):
             further details.
 
         :meth: meta_setup
-            Define expected columns in dataframe processing.
-            When processing dataframes define expected columns. Ex.:
+            Define expected metadata and resulting metadata.
+            Ex. When processing dataframes define expected columns:
                 def meta_setup(self):
-                    self.required = {
+                    metadata = MetaData()
+                    required = {
                         'iport0_name': {'x': 'float64',
                                         'y': 'float64'}
                         'iport1_name': some_dict,
                         etc.
                     }
+                    out_cols = {
+                        'oport0_name': {'x': 'float64',
+                                        'y': 'float64',
+                                        'z': 'int64'}
+                        'oport1_name': some_dict,
+                        etc.
+                    }
+                    metadata.inports = required
+                    metadata.outports = out_cols
+                    return metadata
             Refer to meta_setup docstring for further details.
 
         :meth: conf_schema
@@ -85,7 +96,6 @@ class Node(_PortsMixin, _Node):
         self.load = task.get(TaskSpecSchema.load, False)
         self.save = task.get(TaskSpecSchema.save, False)
 
-        self.required = {}
         self.delayed_process = False
         # customized the column setup
         self.init()
@@ -179,8 +189,7 @@ class Node(_PortsMixin, _Node):
         Get the input meta information. It is usually used by individual
          node to compute the output meta information
         returns
-            dict, key is the node input port name, value is the dict with keys
-            column names, and values column types
+            dict, key is the node input port name, value is the metadata dict
         """
         # this method will be implemented by NodeTaskGraphMixin
         return {}
@@ -208,35 +217,18 @@ class Node(_PortsMixin, _Node):
     def meta_setup(self):
         """
         All children class should implement this.
-        It is used to compute the required and output meta names and types.
+        It is used to compute the required input and output meta data.
 
-        `self.required` defines the required columns in the input dataframes
-        `self.required` is python dictionaries, where keys are column names
-         and values are column types.
-       
-        Example column types:
-            * int64
-            * int32
-            * float64
-            * float32
-            * datetime64[ms]
-
-        The output meta are calcuated based on the input metas. The input
-        column name and types can be obtained by `self.get_input_meta` method.
+        `inputs` defines the required metadata 
+        metadata is python dictionaries, which can be serialized into JSON
+      
+        The output metadata are calcuated based on the input meta data. It is 
+        passed to the downstream nodes to do metadata validation
 
         returns:
-            dict, key is the node output port name, value is the dict with keys
-            column names, and values column types
+        :return: MetaData
         """
-        self.required = {}
-        self.addition = {}
-        self.deletion = {}
-        # Retention must be None instead of empty dict. This replaces anything
-        # set by required/addition/retention. An empty dict is a valid setting
-        # for retention therefore use None instead of empty dict.
-        self.retention = None
-        self.rename = {}
-        return {}
+        return MetaData()
 
     @abc.abstractmethod
     def process(self, inputs):

@@ -19,8 +19,6 @@ class DaskComputeNode(Node):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-        # no required columns
-        self.required[self.INPUT_PORT_NAME] = {}
 
     def conf_schema(self):
         json = {
@@ -50,8 +48,10 @@ class DaskComputeNode(Node):
         return NodePorts(inports=inports, outports=outports)
 
     def meta_setup(self):
+        # no required columns
+        required = {}
         '''Pass through columns from inputs to outputs'''
-        return _PortTypesMixin.meta_setup(self)
+        return _PortTypesMixin.meta_setup(self, required=required)
 
     def process(self, inputs):
         din = inputs[self.INPUT_PORT_NAME]

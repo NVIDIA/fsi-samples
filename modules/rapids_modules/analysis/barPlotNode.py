@@ -3,7 +3,7 @@ from bqplot import Axis, LinearScale, DateScale, Figure, OHLC, Bars, Tooltip
 import cupy as cp
 import cudf
 import dask_cudf
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 from .._port_type_node import _PortTypesMixin
 
 
@@ -12,15 +12,6 @@ class BarPlotNode(Node):
     def init(self):
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'barplot'
-        cols_required = {"datetime": "date",
-                         "open": "float64",
-                         "close": "float64",
-                         "high": "float64",
-                         "low": "float64",
-                         "volume": "float64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def conf_schema(self):
         json = {
@@ -51,7 +42,18 @@ class BarPlotNode(Node):
                                                                  Figure)
 
     def meta_setup(self):
-        return {self.OUTPUT_PORT_NAME: {}}
+        cols_required = {"datetime": "date",
+                         "open": "float64",
+                         "close": "float64",
+                         "high": "float64",
+                         "low": "float64",
+                         "volume": "float64"}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def process(self, inputs):
         """

@@ -2,7 +2,8 @@ from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale,  Figure, Lines, PanZoom
 import dask_cudf
 import cudf
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, PortsSpecSchema,
+                                                   MetaData)
 from .._port_type_node import _PortTypesMixin
 from sklearn import metrics
 
@@ -23,10 +24,13 @@ class RocCurveNode(Node, _PortTypesMixin):
             cols_required[label] = labeltype
         if 'prediction' in self.conf:
             cols_required[self.conf['prediction']] = None
-        self.required = {
+        required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        return {self.OUTPUT_PORT_NAME: {}, self.OUTPUT_VALUE_NAME: {}}
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {},
+                                      self.OUTPUT_VALUE_NAME: {}})
+        return metadata
 
     def ports_setup(self):
         ports = _PortTypesMixin.ports_setup_different_output_type(self, Figure)

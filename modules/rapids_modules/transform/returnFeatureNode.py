@@ -10,16 +10,14 @@ class ReturnFeatureNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-        cols_required = {"close": "float64",
-                         "asset": "int64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
+        cols_required = {"close": "float64",
+                         "asset": "int64"}
         addition = {"returns": "float64"}
         return _PortTypesMixin.addition_meta_setup(self,
-                                                      addition)
+                                                   addition,
+                                                   required=cols_required)
 
     def conf_schema(self):
         json = {

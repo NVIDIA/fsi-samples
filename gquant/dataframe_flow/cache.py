@@ -1,3 +1,3 @@
 cache_ports = {}
 cache_schema = {}
-cache_columns = {}
+cache_meta = {}

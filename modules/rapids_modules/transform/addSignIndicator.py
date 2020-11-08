@@ -11,10 +11,6 @@ class AddSignIndicatorNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -72,4 +68,7 @@ class AddSignIndicatorNode(Node, _PortTypesMixin):
     def meta_setup(self):
         name = self.conf.get('sign', 'sign')
         addition = {name: "int64"}
-        return _PortTypesMixin.addition_meta_setup(self, addition)
+        cols_required = {}
+        return _PortTypesMixin.addition_meta_setup(self,
+                                                   addition,
+                                                   required=cols_required)

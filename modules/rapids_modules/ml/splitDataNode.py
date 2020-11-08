@@ -1,5 +1,5 @@
 from .._port_type_node import _PortTypesMixin
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                    NodePorts, PortsSpecSchema)
 from gquant.dataframe_flow import Node
 import cudf
@@ -17,10 +17,6 @@ class DataSplittingNode(Node):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME_TRAIN = 'train'
         self.OUTPUT_PORT_NAME_TEST = 'test'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
@@ -58,21 +54,26 @@ class DataSplittingNode(Node):
         return self.ports_setup_from_types(types)
 
     def meta_setup(self):
+        cols_required = {}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
             if 'target' in self.conf:
                 target_col = self.conf['target']
                 if target_col in col_from_inport:
-                    self.required[self.INPUT_PORT_NAME][target_col] = \
+                    required[self.INPUT_PORT_NAME][target_col] = \
                         col_from_inport[target_col]
         else:
-            col_from_inport = self.required[self.INPUT_PORT_NAME]
+            col_from_inport = required[self.INPUT_PORT_NAME]
         output_cols = {
             self.OUTPUT_PORT_NAME_TRAIN: col_from_inport,
             self.OUTPUT_PORT_NAME_TEST: col_from_inport
         }
-        return output_cols
+        metadata = MetaData(inports=required, outports=output_cols)
+        return metadata
 
     def conf_schema(self):
         json = {

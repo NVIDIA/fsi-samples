@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale,  Figure, OrdinalScale, Bars
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, NodePorts,
+                                                   MetaData,
                                                    PortsSpecSchema)
 from xgboost import Booster
 
@@ -13,10 +14,11 @@ class ImportanceCurveNode(Node):
 
     def meta_setup(self):
         cols_required = {}
-        self.required = {
+        required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        return {self.OUTPUT_PORT_NAME: {}}
+        metadata = MetaData(inports=required, outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def ports_setup(self):
         port_type = PortsSpecSchema.port_type

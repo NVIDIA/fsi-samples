@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
                                                    NodePorts,
+                                                   MetaData,
                                                    ConfSchema)
 import cudf
 import dask_cudf
@@ -27,7 +28,7 @@ class ClassificationData(Node):
         return NodePorts(inports=input_ports, outports=output_ports)
 
     def init(self):
-        self.required = {}
+        pass
 
     def meta_setup(self):
         column_types = {}
@@ -36,11 +37,14 @@ class ClassificationData(Node):
         for i in range(total_features):
             column_types["x"+str(i)] = dtype
         column_types['y'] = 'int64'
+        inputs = {
+        }
         out_cols = {
             CUDF_PORT_NAME: column_types,
             DASK_CUDF_PORT_NAME: column_types,
         }
-        return out_cols
+        metadata = MetaData(inports=inputs, outports=out_cols)
+        return metadata
 
     def conf_schema(self):
         json = {

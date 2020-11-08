@@ -1,6 +1,6 @@
 from gquant.dataframe_flow import Node
 from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 import cudf
 import dask_cudf
 from .._port_type_node import _PortTypesMixin
@@ -11,10 +11,6 @@ class LinePlotNode(Node, _PortTypesMixin):
     def init(self):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'lineplot'
-        cols_required = {"datetime": "date"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def conf_schema(self):
         color_strings = ['black', 'yellow', 'blue',
@@ -72,7 +68,12 @@ class LinePlotNode(Node, _PortTypesMixin):
                                                                  Figure)
 
     def meta_setup(self):
-        return {self.OUTPUT_PORT_NAME: {}}
+        cols_required = {"datetime": "date"}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        metadata = MetaData(inports=required, outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def process(self, inputs):
         """

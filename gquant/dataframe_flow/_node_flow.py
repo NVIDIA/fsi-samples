@@ -63,8 +63,6 @@ class NodeTaskGraphMixin(object):
             save
             delayed_process
 
-            required
-
         METHODS
         -------
             process
@@ -164,7 +162,11 @@ class NodeTaskGraphMixin(object):
 
                 raise TypeError(errmsg)
 
-    def validate_required_columns(self):
+    def _validate_input_metadata(self):
+        return self.validate_input_metadata()
+
+    def validate_input_metadata(self):
+        metadata = self.meta_setup()
 
         def validate_required(iport, kcol, kval, ientnode, icols):
             node = ientnode['from_node']
@@ -173,7 +175,7 @@ class NodeTaskGraphMixin(object):
             src_type = _get_nodetype(node)
             # incoming "task.port":"Node-type":{{column:column-type}}
             msgi = \
-                '"{task}":"{nodetype}" produces columns {colinfo}'.format(
+                '"{task}":"{nodetype}" produces metadata {colinfo}'.format(
                     task=src_task,
                     nodetype=src_type,
                     colinfo=icols)
@@ -182,7 +184,7 @@ class NodeTaskGraphMixin(object):
             dst_type = _get_nodetype(self)
             # expecting "task.port":"Node-type":{{column:column-type}}
             msge = \
-                '"{task}":"{nodetype}" requires columns {colinfo}'.format(
+                '"{task}":"{nodetype}" requires metadata {colinfo}'.format(
                     task=dst_task,
                     nodetype=dst_type,
                     colinfo={kcol: kval})
@@ -212,11 +214,11 @@ class NodeTaskGraphMixin(object):
                     raise LookupError(out_err)
 
         inputs_cols = self.get_input_meta()
+        required = metadata.inports
 
-        if not self.required:
+        if not required:
             return
-
-        required = self.required
+        
         for iport in self._get_input_ports():
             if iport not in required:
                 continue
@@ -249,9 +251,6 @@ class NodeTaskGraphMixin(object):
             for kcol, kval in required_iport.items():
                 validate_required(iport, kcol, kval,
                                   ientnode, incoming_cols)
-
-    def get_output_meta(self):
-        return self.meta_setup()
 
     def _validate_df(self, df_to_val, ref_cols):
         '''Validate a cudf or dask_cudf DataFrame.
@@ -319,7 +318,7 @@ class NodeTaskGraphMixin(object):
 
         return True
 
-    def __valide(self, node_output, ref_cols):
+    def __valide(self, node_output, ref_meta):
         # Validate each port
         out_ports = self._get_output_ports(full_port_spec=True)
         for pname, pspec in out_ports.items():
@@ -368,8 +367,8 @@ class NodeTaskGraphMixin(object):
                     continue
 
             if out_type in cudf_types_tuple:
-                cols_to_val = ref_cols.get(pname)
-                val_flag = self._validate_df(out_val, cols_to_val)
+                meta_to_val = ref_meta.get(pname)
+                val_flag = self._validate_df(out_val, meta_to_val)
                 if not val_flag:
                     raise Exception("not valid output")
 
@@ -400,24 +399,24 @@ class NodeTaskGraphMixin(object):
             return output
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            columns = copy.deepcopy(from_node.meta_setup())
+            meta_data = copy.deepcopy(from_node.meta_setup())
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
-            if from_port_name not in columns:
+            if from_port_name not in meta_data.outports:
                 nodetype_list = _get_nodetype(self)
                 nodetype_names = [inodet.__name__ for inodet in nodetype_list]
                 if 'OutputCollector' in nodetype_names:
                     continue
                 warnings.warn(
                     'node "{}" node-type "{}" to port "{}", from node "{}" '
-                    'node-type "{}" oport "{}" missing oport in columns for '
-                    'node "{}" output cols: {}'.format(
+                    'node-type "{}" oport "{}" missing oport in metadata for '
+                    'node "{}" output meta: {}'.format(
                         self.uid, nodetype_list, to_port_name,
                         from_node.uid, _get_nodetype(from_node),
-                        from_port_name, from_node.uid, columns)
+                        from_port_name, from_node.uid, meta_data.outports)
                 )
             else:
-                output[to_port_name] = columns[from_port_name]
+                output[to_port_name] = meta_data.outports[from_port_name]
         return output
 
     def __set_input_df(self, to_port, df):
@@ -742,7 +741,7 @@ class NodeTaskGraphMixin(object):
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df, self.meta_setup())
+            self.__valide(output_df, self.meta_setup().outports)
 
         if self.save:
             self.save_cache(output_df)

@@ -142,12 +142,13 @@ def get_node_obj(node, count_id=True):
                 'conf': conf,
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
-    out_node['output_meta'] = node.meta_setup()
+    metadata = node.meta_setup()
+    out_node['output_meta'] = metadata.outports
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
     if node._task_obj.get('module'):
         out_node['module'] = node._task_obj.get('module')
-    out_node['required'] = node.required
+    out_node['required'] = metadata.inports
     return out_node
 
 

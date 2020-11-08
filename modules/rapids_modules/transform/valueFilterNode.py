@@ -7,13 +7,10 @@ class ValueFilterNode(Node, _PortTypesMixin):
 
     def init(self):
         _PortTypesMixin.init(self)
-        cols_required = {"asset": "int64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
+        cols_required = {"asset": "int64"}
+        return _PortTypesMixin.meta_setup(self, required=cols_required)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

@@ -1,7 +1,7 @@
 from gquant.dataframe_flow import Node
 import math
 import dask_cudf
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 from .._port_type_node import _PortTypesMixin
 
 
@@ -10,13 +10,15 @@ class SharpeRatioNode(Node, _PortTypesMixin):
     def init(self):
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'sharpe_out'
-        cols_required = {"strategy_returns": "float64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
-        return {self.OUTPUT_PORT_NAME: {}}
+        cols_required = {"strategy_returns": "float64"}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup_different_output_type(self,

@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import Node
 from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                   MetaData,
                                                    PortsSpecSchema, NodePorts)
 from ..dataloader.stockMap import StockMap
 
@@ -13,10 +14,6 @@ class AssetFilterNode(Node, _PortTypesMixin):
         self.OUTPUT_PORT_NAME = 'stock_out'
         self.INPUT_MAP_NAME = 'name_map'
         self.OUTPUT_ASSET_NAME = 'stock_name'
-        cols_required = {"asset": "int64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
@@ -69,6 +66,10 @@ class AssetFilterNode(Node, _PortTypesMixin):
         return name
 
     def meta_setup(self):
+        cols_required = {"asset": "int64"}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
         input_meta = self.get_input_meta()
         name = self._find_asset_name()
         if self.INPUT_PORT_NAME in input_meta:
@@ -77,15 +78,16 @@ class AssetFilterNode(Node, _PortTypesMixin):
                 self.OUTPUT_PORT_NAME: col_from_inport,
                 self.OUTPUT_ASSET_NAME: {"asset_name": name}
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         else:
-            col_from_inport = self.required[self.INPUT_PORT_NAME]
+            col_from_inport = required[self.INPUT_PORT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport,
                 self.OUTPUT_ASSET_NAME: {"asset_name": name}
             }
-            return output_cols
-
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

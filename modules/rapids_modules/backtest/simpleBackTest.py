@@ -9,15 +9,16 @@ class SimpleBackTestNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'bardata_in'
         self.OUTPUT_PORT_NAME = 'backtest_out'
-        cols_required = {"signal": "float64",
-                         "returns": "float64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
+        cols_required = {"signal": "float64",
+                         "returns": "float64"}
+        required = {
+            self.INPUT_PORT_NAME: cols_required
+        }
         addition = {"strategy_returns": "float64"}
-        return _PortTypesMixin.addition_meta_setup(self, addition)
+        return _PortTypesMixin.addition_meta_setup(self, addition,
+                                                   required=required)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

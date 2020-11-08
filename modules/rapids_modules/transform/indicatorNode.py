@@ -151,14 +151,10 @@ class IndicatorNode(Node, _PortTypesMixin):
         self.delayed_process = True
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-        cols_required = {'indicator': 'int32'}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
-        addition = {}
         cols_required = {'indicator': 'int32'}
+        addition = {}
         if 'indicators' in self.conf:
             indicators = self.conf['indicators']
             for indicator in indicators:
@@ -178,10 +174,8 @@ class IndicatorNode(Node, _PortTypesMixin):
                 else:
                     out_col = self._compose_name(conf, [])
                     addition[out_col] = 'float64'
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        return _PortTypesMixin.addition_meta_setup(self, addition)
+        return _PortTypesMixin.addition_meta_setup(self, addition,
+                                                   required=cols_required)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

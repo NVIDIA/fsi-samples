@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
                                                    NodePorts,
+                                                   MetaData,
                                                    ConfSchema)
 import cudf
 import dask_cudf
@@ -30,7 +31,7 @@ class CsvStockLoader(Node):
         return NodePorts(inports=input_ports, outports=output_ports)
 
     def init(self):
-        self.required = {}
+        pass
 
     def meta_setup(self):
         column_types = {"datetime": "date",
@@ -45,7 +46,9 @@ class CsvStockLoader(Node):
             DASK_CUDF_PORT_NAME: column_types,
             PANDAS_PORT_NAME: column_types
         }
-        return out_cols
+        required = {}
+        metadata = MetaData(inports=required, outports=out_cols)
+        return metadata
 
     def conf_schema(self):
         json = {

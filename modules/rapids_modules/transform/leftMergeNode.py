@@ -1,6 +1,7 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
+                                                   MetaData,
                                                    NodePorts)
 import cudf
 import dask_cudf
@@ -13,11 +14,6 @@ class LeftMergeNode(Node):
         self.INPUT_PORT_LEFT_NAME = 'left'
         self.INPUT_PORT_RIGHT_NAME = 'right'
         self.OUTPUT_PORT_NAME = 'merged'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_LEFT_NAME: cols_required,
-            self.INPUT_PORT_RIGHT_NAME: cols_required
-        }
 
     def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
@@ -61,6 +57,11 @@ class LeftMergeNode(Node):
         return self.ports_setup_from_types(types)
 
     def meta_setup(self):
+        cols_required = {}
+        required = {
+            self.INPUT_PORT_LEFT_NAME: cols_required,
+            self.INPUT_PORT_RIGHT_NAME: cols_required
+        }
         input_meta = self.get_input_meta()
         if (self.INPUT_PORT_LEFT_NAME in input_meta
                 and self.INPUT_PORT_RIGHT_NAME in input_meta):
@@ -70,21 +71,26 @@ class LeftMergeNode(Node):
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_left_inport
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         elif self.INPUT_PORT_LEFT_NAME in input_meta:
             col_from_left_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_left_inport
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         elif self.INPUT_PORT_RIGHT_NAME in input_meta:
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_right_inport
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         else:
-            return {self.OUTPUT_PORT_NAME: {}}
+            metadata = MetaData(inports=required,
+                                outports={self.OUTPUT_PORT_NAME: {}})
+            return metadata
 
     def conf_schema(self):
         json = {

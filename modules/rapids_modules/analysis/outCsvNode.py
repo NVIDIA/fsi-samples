@@ -10,11 +10,10 @@ class OutCsvNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
-        required = {}
-        self.required = {self.INPUT_PORT_NAME: required}
 
     def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
+        required = {}
+        return _PortTypesMixin.meta_setup(self, required=required)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

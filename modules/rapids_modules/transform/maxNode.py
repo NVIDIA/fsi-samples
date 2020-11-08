@@ -9,10 +9,6 @@ class MaxNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-        cols_required = {"asset": "int64"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -64,12 +60,15 @@ class MaxNode(Node, _PortTypesMixin):
         return {self.OUTPUT_PORT_NAME: volume_df}
 
     def meta_setup(self):
+        cols_required = {"asset": "int64"}
         if 'column' in self.conf:
             retention = {self.conf['column']: "float64",
                          "asset": "int64"}
             return _PortTypesMixin.retention_meta_setup(self,
-                                                           retention)
+                                                        retention,
+                                                        required=cols_required)
         else:
             retention = {"asset": "int64"}
             return _PortTypesMixin.retention_meta_setup(self,
-                                                           retention)
+                                                        retention,
+                                                        required=cols_required)

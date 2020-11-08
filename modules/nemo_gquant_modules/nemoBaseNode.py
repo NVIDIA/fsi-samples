@@ -1,5 +1,5 @@
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts
+from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
 
 from nemo.core.neural_types import NmTensor
 import inspect
@@ -208,17 +208,18 @@ class NeMoBase:
             except Exception:
                 inports = None
                 outports = None
-        self.required = {}
-        out_cols = {}
+        required = {}
+        out_meta = {}
         if inports is not None:
             for k in inports.keys():
-                self.required[k] = serialize_type(inports[k])
+                required[k] = serialize_type(inports[k])
         if outports is not None:
             for k in outports.keys():
-                out_cols[k] = serialize_type(outports[k])
+                out_meta[k] = serialize_type(outports[k])
         if self.instance is not None:
-            out_cols[self.OUTPUT_NM] = self.conf
-        return out_cols
+            out_meta[self.OUTPUT_NM] = self.conf
+        metadata = MetaData(inports=required, outports=out_meta)
+        return metadata
 
     def conf_schema(self):
         conf_para = get_conf_parameters(self.instanceClass)

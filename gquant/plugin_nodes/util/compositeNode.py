@@ -2,8 +2,8 @@ from gquant.dataframe_flow import Node
 from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts
-from gquant.dataframe_flow.cache import (cache_columns,
+from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
+from gquant.dataframe_flow.cache import (cache_meta,
                                          cache_ports, cache_schema)
 import json
 import os
@@ -183,38 +183,37 @@ class CompositeNode(Node):
 
     def meta_setup(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_columns:
+        if cache_key in cache_meta:
             # print('cache hit')
-            return cache_columns[cache_key]
+            return cache_meta[cache_key]
         required = {}
-        out_columns = {}
+        out_meta = {}
         if 'taskgraph' in self.conf:
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 req = {}
                 # do meta_setup so required columns are ready
-                inputNode.meta_setup()
-                for key in inputNode.required.keys():
+                input_meta = inputNode.meta_setup().inports
+                for key in input_meta.keys():
                     if key in in_ports:
-                        req[key] = inputNode.required[key]
+                        req[key] = input_meta[key]
                 required.update(fix_port_name(req, inputNode.uid))
 
             def outNode_fun(outNode, out_ports):
                 oucols = {}
-                before_fix = outNode.meta_setup()
+                before_fix = outNode.meta_setup().outports
                 for key in before_fix.keys():
                     if key in out_ports:
                         oucols[key] = before_fix[key]
-                out_columns.update(fix_port_name(oucols,
-                                                 outNode.uid))
+                out_meta.update(fix_port_name(oucols,
+                                              outNode.uid))
 
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
-
-        self.required = required
-        cache_columns[cache_key] = out_columns
-        return out_columns
+        metadata = MetaData(inports=required, outports=out_meta)
+        cache_meta[cache_key] = metadata
+        return metadata
 
     def conf_schema(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
@@ -357,10 +356,10 @@ class CompositeNode(Node):
                         output = {}
                         for inp in inputNode.inputs:
                             output[inp['to_port']] = inp[
-                                'from_node'].meta_setup()[
+                                'from_node'].meta_setup().outports[
                                     inp['from_port']]
                         # it will be something like { input_port: columns }
-                        return output
+                        return MetaData(inports={}, outports=output)
 
                     def ports_setup(self):
                         # it will be something like { input_port: types }

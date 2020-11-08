@@ -3,7 +3,7 @@ from bqplot import (Axis, LinearScale,  Figure,
                     DateScale, ColorScale, ColorAxis, Scatter)
 import dask_cudf
 import cudf
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 from .._port_type_node import _PortTypesMixin
 
 __all__ = ["ScatterPlotNode"]
@@ -29,10 +29,11 @@ class ScatterPlotNode(Node, _PortTypesMixin):
             cols_required[self.conf['col_y']] = None
         if 'col_color' in self.conf:
             cols_required[self.conf['col_color']] = None
-        self.required = {
+        required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        return {self.OUTPUT_PORT_NAME: {}}
+        metadata = MetaData(inports=required, outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup_different_output_type(self,

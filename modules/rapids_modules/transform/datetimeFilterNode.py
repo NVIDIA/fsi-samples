@@ -20,13 +20,11 @@ class DatetimeFilterNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-        cols_required = {"datetime": "date"}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
+        cols_required = {"datetime": "date"}
+        return _PortTypesMixin.meta_setup(self,
+                                          required=cols_required)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

@@ -3,6 +3,7 @@ import cudf
 import dask_cudf
 from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                   MetaData,
                                                    PortsSpecSchema, NodePorts)
 import copy
 from cuml import ForestInference
@@ -20,10 +21,6 @@ class ForestInferenceNode(Node, _PortTypesMixin):
         self.INPUT_PORT_NAME = 'data_in'
         self.INPUT_PORT_MODEL_NAME = 'model_file'
         self.OUTPUT_PORT_NAME = 'out'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
@@ -54,8 +51,8 @@ class ForestInferenceNode(Node, _PortTypesMixin):
 
     def meta_setup(self):
         input_meta = self.get_input_meta()
-        self.required = {self.INPUT_PORT_NAME: {},
-                         self.INPUT_PORT_MODEL_NAME: {}}
+        required = {self.INPUT_PORT_NAME: {},
+                    self.INPUT_PORT_MODEL_NAME: {}}
         predict = self.conf.get('prediction', 'predict')
         output_cols = {
             self.OUTPUT_PORT_NAME: {predict: None}
@@ -69,12 +66,13 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                 required_cols = {}
             predict = self.conf.get('prediction', 'predict')
             col_from_inport[predict] = None  # the type is not determined
-            self.required = {self.INPUT_PORT_NAME: required_cols,
-                             self.INPUT_PORT_MODEL_NAME: {}}
+            required = {self.INPUT_PORT_NAME: required_cols,
+                        self.INPUT_PORT_MODEL_NAME: {}}
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport,
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         elif (self.INPUT_PORT_NAME not in input_meta and
               self.INPUT_PORT_MODEL_NAME in input_meta):
             if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
@@ -83,13 +81,15 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                 required_cols = {}
             predict = self.conf.get('prediction', 'predict')
             col_from_inport = copy.copy(required_cols)
-            col_from_inport[predict] = None  # the type is not determined
-            self.required = {self.INPUT_PORT_NAME: required_cols,
-                             self.INPUT_PORT_MODEL_NAME: {}}
+            col_from_inport[predict] = None
+            # the type is not determined
+            required = {self.INPUT_PORT_NAME: required_cols,
+                        self.INPUT_PORT_MODEL_NAME: {}}
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         elif (self.INPUT_PORT_NAME in input_meta and
               self.INPUT_PORT_MODEL_NAME not in input_meta):
             cols_required = {}
@@ -108,14 +108,14 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                         cols_required[col] = None
             predict = self.conf.get('prediction', 'predict')
             col_from_inport[predict] = None  # the type is not determined
-
-            self.required = {
+            required = {
                  self.INPUT_PORT_NAME: cols_required,
             }
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
-            return output_cols
+            metadata = MetaData(inports=required, outports=output_cols)
+            return metadata
         elif (self.INPUT_PORT_NAME not in input_meta and
               self.INPUT_PORT_MODEL_NAME not in input_meta):
             if 'columns' in self.conf:
@@ -124,10 +124,11 @@ class ForestInferenceNode(Node, _PortTypesMixin):
                     cols_required = {}
                     for col in included_colums:
                         cols_required[col] = None
-                    self.required = {
+                    required = {
                         self.INPUT_PORT_NAME: cols_required,
                     }
-        return output_cols
+        metadata = MetaData(inports=required, outports=output_cols)
+        return metadata
 
     def ports_setup(self):
         types = [cudf.DataFrame,

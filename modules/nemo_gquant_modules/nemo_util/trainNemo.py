@@ -1,6 +1,6 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts
+from gquant.dataframe_flow.portsSpecSchema import NodePorts,  MetaData
 
 from nemo.core.neural_types import NmTensor
 import nemo
@@ -48,7 +48,7 @@ class NemoTrainNode(Node):
         return NodePorts(inports=o_inports, outports=o_outports)
 
     def meta_setup(self):
-        self.required = {}
+        required = {}
         output = {}
         output['axes'] = []
         output['element'] = {}
@@ -62,16 +62,15 @@ class NemoTrainNode(Node):
         iports_cols = self.get_input_meta()
         for iport in inports.keys():
             if iport in iports_connected and iport in iports_cols:
-                self.required[iport] = copy.deepcopy(iports_cols[iport])
+                required[iport] = copy.deepcopy(iports_cols[iport])
             else:
-                self.required[iport] = copy.deepcopy(output)
+                required[iport] = copy.deepcopy(output)
 
         if 'input_tensor' not in iports_connected:
-            self.required.pop('input_tensor', None)
-
-        return {
-            self.OUTPUT_PORT_NAME: {},
-        }
+            required.pop('input_tensor', None)
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def conf_schema(self):
         json = {

@@ -9,8 +9,6 @@ class AverageNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-        required = {"asset": "int64"}
-        self.required = {self.INPUT_PORT_NAME: required}
 
     def conf_schema(self):
         input_meta = self.get_input_meta()
@@ -62,15 +60,18 @@ class AverageNode(Node, _PortTypesMixin):
         return {self.OUTPUT_PORT_NAME: volume_df}
 
     def meta_setup(self):
+        required_col = {"asset": "int64"}
         if 'column' in self.conf:
             retention = {self.conf['column']: "float64",
                          "asset": "int64"}
             return _PortTypesMixin.retention_meta_setup(self,
-                                                           retention)
+                                                        retention,
+                                                        required=required_col)
         else:
             retention = {"asset": "int64"}
             return _PortTypesMixin.retention_meta_setup(self,
-                                                           retention)
+                                                        retention,
+                                                        required=required_col)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

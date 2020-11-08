@@ -48,18 +48,16 @@ class MovingAverageStrategyNode(Node, _PortTypesMixin):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-        cols_required = {"close": "float64"}
         self.delayed_process = True
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def meta_setup(self):
+        cols_required = {"close": "float64"}
         addition = {"signal": "float64",
                     "ma_slow": "float64",
                     "ma_fast": "float64"}
         return _PortTypesMixin.addition_meta_setup(self,
-                                                      addition)
+                                                   addition,
+                                                   required=cols_required)
 
     def ports_setup(self):
         types = [cudf.DataFrame,

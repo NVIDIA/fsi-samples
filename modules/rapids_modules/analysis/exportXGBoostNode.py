@@ -1,5 +1,5 @@
 from gquant.dataframe_flow import Node
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                    NodePorts, PortsSpecSchema)
 from xgboost import Booster
 
@@ -9,20 +9,19 @@ class XGBoostExportNode(Node):
     def init(self):
         self.INPUT_PORT_NAME = 'model_in'
         self.OUTPUT_PORT_NAME = 'filename'
-        required = {}
-        self.required = {self.INPUT_PORT_NAME: required}
 
     def meta_setup(self):
+        required = {self.INPUT_PORT_NAME: {}}
         input_meta = self.get_input_meta()
-        output = {
+        output_cols = {
             self.OUTPUT_PORT_NAME: {}
         }
         if (self.INPUT_PORT_NAME in input_meta):
             output_cols = {
                 self.OUTPUT_PORT_NAME: input_meta[self.INPUT_PORT_NAME]
             }
-            return output_cols
-        return output
+        metadata = MetaData(inports=required, outports=output_cols)
+        return metadata
 
     def ports_setup(self):
         port_type = PortsSpecSchema.port_type

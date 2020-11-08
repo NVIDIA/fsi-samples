@@ -1,6 +1,6 @@
 from gquant.dataframe_flow import Node
 from .._port_type_node import _PortTypesMixin
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                    PortsSpecSchema, NodePorts)
 from .data_obj import NormalizationData
 from collections import OrderedDict
@@ -14,11 +14,6 @@ class NormalizationNode(Node, _PortTypesMixin):
         self.OUTPUT_PORT_NAME = 'df_out'
         self.INPUT_NORM_MODEL_NAME = 'norm_data_in'
         self.OUTPUT_NORM_MODEL_NAME = 'norm_data_out'
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required,
-            self.INPUT_NORM_MODEL_NAME: cols_required
-        }
 
     def ports_setup_from_types(self, types):
         """
@@ -58,28 +53,29 @@ class NormalizationNode(Node, _PortTypesMixin):
             return NodePorts(inports=input_ports, outports=output_ports)
 
     def meta_setup(self):
-        self.required = {
-            self.INPUT_PORT_NAME: {},
-            self.INPUT_NORM_MODEL_NAME: {}
+        cols_required = {}
+        required = {
+            self.INPUT_PORT_NAME: cols_required,
+            self.INPUT_NORM_MODEL_NAME: cols_required
         }
         if 'columns' in self.conf and self.conf.get('include', True):
             cols_required = {}
             for col in self.conf['columns']:
                 cols_required[col] = None
-            self.required = {
+            required = {
                 self.INPUT_PORT_NAME: cols_required,
                 self.INPUT_NORM_MODEL_NAME: cols_required
             }
         output_cols = {
-            self.OUTPUT_PORT_NAME: self.required[self.INPUT_PORT_NAME],
-            self.OUTPUT_NORM_MODEL_NAME: self.required[
+            self.OUTPUT_PORT_NAME: required[self.INPUT_PORT_NAME],
+            self.OUTPUT_NORM_MODEL_NAME: required[
                 self.INPUT_NORM_MODEL_NAME]
         }
         input_meta = self.get_input_meta()
         if (self.INPUT_NORM_MODEL_NAME in input_meta and
                 self.INPUT_PORT_NAME in input_meta):
             cols_required = input_meta[self.INPUT_NORM_MODEL_NAME]
-            self.required = {
+            required = {
                 self.INPUT_PORT_NAME: cols_required,
                 self.INPUT_NORM_MODEL_NAME: cols_required
             }
@@ -91,7 +87,7 @@ class NormalizationNode(Node, _PortTypesMixin):
         elif (self.INPUT_NORM_MODEL_NAME in input_meta and
               self.INPUT_PORT_NAME not in input_meta):
             cols_required = input_meta[self.INPUT_NORM_MODEL_NAME]
-            self.required = {
+            required = {
                 self.INPUT_PORT_NAME: cols_required,
                 self.INPUT_NORM_MODEL_NAME: cols_required
             }
@@ -115,7 +111,7 @@ class NormalizationNode(Node, _PortTypesMixin):
                         cols_required[col] = col_from_inport[col]
                     else:
                         cols_required[col] = None
-                self.required = {
+                required = {
                     self.INPUT_PORT_NAME: cols_required,
                     self.INPUT_NORM_MODEL_NAME: cols_required
                 }
@@ -123,15 +119,14 @@ class NormalizationNode(Node, _PortTypesMixin):
                     self.OUTPUT_PORT_NAME: col_from_inport,
                     self.OUTPUT_NORM_MODEL_NAME: cols_required
                 }
-
+        metadata = MetaData(inports=required, outports=output_cols)
         # The port INPUT_NORM_MODEL_NAME connection is optional. If not
-        # connected do not set in self.required
+        # connected do not set in required
         isconnected = \
             self.INPUT_NORM_MODEL_NAME in self.get_connected_inports()
         if not isconnected:
-            self.required.pop(self.INPUT_NORM_MODEL_NAME, None)
-
-        return output_cols
+            metadata.inports.pop(self.INPUT_NORM_MODEL_NAME, None)
+        return metadata
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

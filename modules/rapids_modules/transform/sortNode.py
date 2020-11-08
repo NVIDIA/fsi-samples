@@ -8,16 +8,14 @@ class SortNode(Node, _PortTypesMixin):
     def init(self):
         self.delayed_process = True
         _PortTypesMixin.init(self)
-        cols_required = {}
-        self.required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
 
     def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
+        cols_required = {}
+        return _PortTypesMixin.meta_setup(self,
+                                          required=cols_required)
 
     def conf_schema(self):
         json = {

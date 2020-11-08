@@ -371,7 +371,7 @@ class GridRandomSearchNode(ContextCompositeNode):
 
     def meta_setup(self):
         from ray.tune import Analysis
-        out_columns = ContextCompositeNode.meta_setup(self)
+        out_meta = ContextCompositeNode.meta_setup(self)
         if 'tune' in self.conf:
             if 'local_dir' in self.conf['tune']:
                 path = self.conf['tune']['local_dir']
@@ -385,10 +385,10 @@ class GridRandomSearchNode(ContextCompositeNode):
                             for key in best.keys():
                                 self.conf['context'][key]['value'] = best[key]
                             print('get best', best)
-                            out_columns[self.OUTPUT_CONFIG] = self.conf
+                            out_meta.outports[self.OUTPUT_CONFIG] = self.conf
                     except Exception:
                         pass
-        return out_columns
+        return out_meta
 
     def process(self, inputs):
         import ray
