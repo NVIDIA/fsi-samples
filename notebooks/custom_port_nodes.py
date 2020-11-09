@@ -6,7 +6,7 @@ import cudf
 import dask_cudf
 import dask
 import rmm
-from gquant.dataframe_flow import Node
+from gquant.dataframe_flow import Node, MetaData
 from gquant.dataframe_flow import NodePorts, PortsSpecSchema
 from gquant.dataframe_flow import ConfSchema
 import copy
@@ -53,7 +53,7 @@ class PointNode(Node):
         return ConfSchema(json=json, ui=ui)
 
     def init(self):
-        self.required = {}
+        pass
 
     def meta_setup(self):
         columns_out = {
@@ -66,7 +66,7 @@ class PointNode(Node):
                 'y': 'float64'
             }
         }
-        return columns_out
+        return MetaData(inports={}, outports=columns_out)
 
     def process(self, inputs):
         npts = self.conf['npts']
@@ -117,15 +117,15 @@ class DistanceNode(Node):
 
     def init(self):
         self.delayed_process = True
+
+    def meta_setup(self):
         req_cols = {
             'x': 'float64',
             'y': 'float64'
         }
-        self.required = {
+        required = {
             'points_df_in': req_cols,
         }
-
-    def meta_setup(self):
         input_meta = self.get_input_meta()
         output_cols = ({
                 'distance_df': {
@@ -144,7 +144,7 @@ class DistanceNode(Node):
             # additional ports
             output_cols['distance_df'].update(col_from_inport)
             output_cols['distance_abs_df'].update(col_from_inport)
-        return output_cols
+        return MetaData(inports=required, outports=output_cols)
 
     def process(self, inputs):
         df = inputs['points_df_in']
@@ -197,14 +197,13 @@ class NumbaDistanceNode(Node):
   
     def init(self):
         self.delayed_process = True
-        required = {'x': 'float64',
-                    'y': 'float64'}
-        self.required = {
-            'points_df_in': required,
-            'distance_df': required
-        }
 
     def meta_setup(self,):
+        required_cols = {'x': 'float64', 'y': 'float64'}
+        required = {
+            'points_df_in': required_cols,
+            'distance_df': required_cols
+        }
         input_meta = self.get_input_meta()
         output_cols = ({
                 'distance_df': {
@@ -217,7 +216,7 @@ class NumbaDistanceNode(Node):
             col_from_inport = input_meta['points_df_in']
             # additional ports
             output_cols['distance_df'].update(col_from_inport)
-        return output_cols
+        return MetaData(inports=required, outports=output_cols)
 
     def conf_schema(self):
         return ConfSchema()
@@ -289,14 +288,14 @@ class CupyDistanceNode(Node):
 
     def init(self):
         self.delayed_process = True
+
+    def meta_setup(self,):
         cols_required = {'x': 'float64',
                          'y': 'float64'}
-        self.required = {
+        required = {
             'points_df_in': cols_required,
             'distance_df': cols_required
         }
-
-    def meta_setup(self,):
         input_meta = self.get_input_meta()
         output_cols = ({
                 'distance_df': {
@@ -309,7 +308,7 @@ class CupyDistanceNode(Node):
             col_from_inport = input_meta['points_df_in']
             # additional ports
             output_cols['distance_df'].update(col_from_inport)
-        return output_cols
+        return MetaData(inports=required, outports=output_cols)
 
     def conf_schema(self):
         return ConfSchema()
@@ -350,17 +349,17 @@ class DistributedNode(Node):
         return NodePorts(inports=input_ports, outports=output_ports)
 
     def init(self):
-        required = {
+        pass
+
+    def meta_setup(self,):
+        cols_required = {
             'x': 'float64',
             'y': 'float64'
         }
-
-        self.required = {
-            'points_df_in': required,
-            'points_ddf_out': required
+        required = {
+            'points_df_in': cols_required,
+            'points_ddf_out': cols_required
         }
-
-    def meta_setup(self,):
         input_meta = self.get_input_meta()
         output_cols = ({
                 'points_ddf_out': {
@@ -372,7 +371,7 @@ class DistributedNode(Node):
             col_from_inport = input_meta['points_df_in']
             # additional ports
             output_cols['points_ddf_out'].update(col_from_inport)
-        return output_cols
+        return MetaData(inports=required, outports=output_cols)
 
     def conf_schema(self):
         json = {
@@ -428,7 +427,11 @@ class VerifyNode(Node):
         return NodePorts(inports=input_ports, outports=output_ports)
 
     def meta_setup(self):
-        return {'max_diff': {}}
+        required ={
+            "df1": {},
+            "df2": {}
+        }
+        return MetaData(inports=required, outports={'max_diff': {}})
 
     def conf_schema(self):
         json = {

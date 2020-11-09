@@ -1,5 +1,5 @@
 from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                    PortsSpecSchema, NodePorts)
 from gquant.dataframe_flow.cache import cache_schema
 from gquant.dataframe_flow import TaskGraph
@@ -433,10 +433,10 @@ class GridRandomSearchNode(ContextCompositeNode):
                             output = {}
                             for inp in inputNode.inputs:
                                 output[inp['to_port']] = inp[
-                                    'from_node'].meta_setup()[
+                                    'from_node'].meta_setup().outports[
                                         inp['from_port']]
                             # it will be something like { input_port: columns }
-                            return output
+                            return MetaData(inports={}, outports=output)
 
                         def ports_setup(self):
                             # it will be something like { input_port: types }
