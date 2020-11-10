@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
-# Copyright (c) 2019, NVIDIA CORPORATION.
+# Copyright (c) 2020, NVIDIA CORPORATION.
 ################################################################################
 # gQuant cpu build
 ################################################################################
 set -e
 
 # Logger function for build status output
-function logger() {
+function gpuci_logger() {
   echo -e "\n>>>> $@\n"
 }
 
 # Set path and build parallel level
-export PATH=/conda/bin:/usr/local/cuda/bin:$PATH
+export PATH=/opt/conda/bin:/usr/local/cuda/bin:$PATH
 
 # Set home to the job's workspace
 export HOME=$WORKSPACE
@@ -23,21 +23,28 @@ cd $WORKSPACE
 export GIT_DESCRIBE_TAG=`git describe --abbrev=0 --tags`
 export GIT_DESCRIBE_NUMBER=`git rev-list ${GIT_DESCRIBE_TAG}..HEAD --count`
 
+# Setup 'gpuci_conda_retry' for build retries (results in 2 total attempts)
+export GPUCI_CONDA_RETRY_MAX=1
+export GPUCI_CONDA_RETRY_SLEEP=30
+
 ################################################################################
 # SETUP - Check environment
 ################################################################################
 
-logger "Get env..."
+gpuci_logger "Get env"
 env
 
-logger "Activate conda env..."
-source activate gdf
+gpuci_logger "Activate conda env"
+. /opt/conda/etc/profile.d/conda.sh
+conda activate rapids
 
-logger "Check versions..."
+gpuci_logger "Check versions"
 python --version
-gcc --version
-g++ --version
-conda list
+$CC --version
+$CXX --version
+conda info
+conda config --show-sources
+conda list --show-channel-urls
 
 # FIX Added to deal with Anancoda SSL verification issues during conda builds
 conda config --set ssl_verify False
@@ -51,11 +58,11 @@ fi
 # BUILD - Conda package build
 ################################################################################
 
-conda build conda/recipes/gquant --python=${PYTHON}
+gpuci_conda_retry build conda/recipes/gquant --python=${PYTHON}
 
 ################################################################################
 # UPLOAD - Conda package
 ################################################################################
 
-logger "Upload conda pkg..."
+gpuci_logger "Upload conda pkg"
 source ci/cpu/upload-anaconda.sh

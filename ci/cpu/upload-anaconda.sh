@@ -4,7 +4,7 @@
 
 set -e
 
-export UPLOADFILE=`conda build conda/recipes/gquant --python=$PYTHON --output`
+export UPLOADFILE=`gpuci_conda_retry build conda/recipes/gquant --python=$PYTHON --output`
 CUDA_REL=${CUDA_VERSION%.*}
 
 SOURCE_BRANCH=master

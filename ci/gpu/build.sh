@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, NVIDIA CORPORATION.
+# Copyright (c) 2020, NVIDIA CORPORATION.
 ###########################################
 # gQuant GPU build and test script for CI #
 ###########################################
@@ -8,7 +8,7 @@ NUMARGS=$#
 ARGS=$*
 
 # Logger function for build status output
-function logger() {
+function gpuci_logger() {
   echo -e "\n>>>> $@\n"
 }
 
@@ -18,8 +18,8 @@ function hasArg {
 }
 
 # Set path and build parallel level
-export PATH=/conda/bin:/usr/local/cuda/bin:$PATH
-export PARALLEL_LEVEL=4
+export PATH=/opt/conda/bin:/usr/local/cuda/bin:$PATH
+export PARALLEL_LEVEL=-4
 export CUDA_REL=${CUDA_VERSION%.*}
 export CUDA_REL2=${CUDA//./}
 
@@ -39,30 +39,35 @@ export NUMPY_EXPERIMENTAL_ARRAY_FUNCTION=1
 # SETUP - Check environment
 ################################################################################
 
-logger "Check environment..."
+gpuci_logger "Check environment"
 env
 
-logger "Check GPU usage..."
+gpuci_logger "Check GPU usage"
 nvidia-smi
 
-logger "Activate conda env..."
-source activate gdf
-conda list
+gpuci_logger "Activate conda env"
+. /opt/conda/etc/profile.d/conda.sh
+conda activate rapids
+conda info
+conda config --show-sources
+conda list --show-channel-urls
 
-logger "Install dependencies"
+gpuci_logger "Install dependencies"
 conda install -y "cudf=${RAPIDS_VERSION:-0.10}" "dask-cudf=${RAPIDS_VERSION:-0.10}" networkx "bqplot=0.11.5" xgboost
 
-logger "Check versions..."
+gpuci_logger "Check versions"
 python --version
 $CC --version
 $CXX --version
-conda list
+conda info
+conda config --show-sources
+conda list --show-channel-urls
 
 ################################################################################
 # BUILD - Build gQuant
 ################################################################################
 
-logger "Build gQuant..."
+gpuci_logger "Build gQuant"
 cd $WORKSPACE
 python -m pip install -e .
 
@@ -72,9 +77,9 @@ python -m pip install -e .
 ################################################################################
 
 if hasArg --skip-tests; then
-    logger "Skipping Tests..."
+    gpuci_logger "Skipping Tests"
 else
-    logger "Python py.test for gQuant..."
+    gpuci_logger "Python py.test for gQuant"
     cd $WORKSPACE
     py.test -vs --cache-clear --junitxml=${WORKSPACE}/junit-gquant.xml --cov-config=.coveragerc --cov=gquant --cov-report=xml:${WORKSPACE}/gquant-coverage.xml --cov-report term tests/
 fi
