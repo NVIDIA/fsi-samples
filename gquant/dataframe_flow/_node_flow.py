@@ -1,15 +1,12 @@
 from collections.abc import Iterable
 import warnings
-import pandas as pd
 import dask
 from dask.dataframe import DataFrame as DaskDataFrame
-import cudf
-import dask_cudf
+from dask.dataframe import from_delayed
 import copy
 from dask.base import is_dask_collection
 from dask.distributed import Future
 
-from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
 from ._node import _Node
 
@@ -19,7 +16,7 @@ OUTPUT_TYPE = 'Output_Collector'
 
 
 __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
-           'register_validator']
+           'register_validator', 'register_copy_function']
 
 # class NodeIncomingEdge(object):
 #     from_node = 'from_node'
@@ -33,6 +30,8 @@ __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
 #     from_port = 'from_port'
 
 _validators = {}  # dictionary of validators of funciton signiture (val, meta) -> bool
+
+_copys = {}  # dictionary of object copy functions
 
 
 def _get_nodetype(node):
@@ -57,6 +56,12 @@ def register_validator(typename: type,
                        fun) -> None:
     # print('register validator for', typename)
     _validators[typename] = fun
+
+
+def register_copy_function(typename: type,
+                           fun) -> None:
+    # print('register validator for', typename)
+    _copys[typename] = fun
 
 
 class NodeTaskGraphMixin(object):
@@ -257,17 +262,13 @@ class NodeTaskGraphMixin(object):
                 onode.flow(progress_fun)
 
     def __make_copy(self, df_obj):
-        if isinstance(df_obj, cudf.DataFrame):
-            return df_obj.copy(deep=False)
-        elif isinstance(df_obj, dask_cudf.DataFrame):
-            # TODO: This just makes a df_obj with a shallow copy of the
-            #     underlying computational graph. It does not affect the
-            #     underlying data. Why is a copy of dask graph needed?
-            return df_obj.copy()
+        typeObj = df_obj.__class__
+        if typeObj in _copys:
+            return _copys[typeObj](df_obj)
         else:
             return df_obj
 
-    def __check_dly_processing_prereq(self, inputs):
+    def __check_dly_processing_prereq(self, inputs: dict):
         '''At least one input must be a dask DataFrame type. Output types must
         be specified as cudf.DataFrame or dask_cudf.DataFrame. (Functionality
         could also be extended to support dask dataframe of pandas, but
@@ -300,13 +301,15 @@ class NodeTaskGraphMixin(object):
 
         return use_delayed
 
-    def __delayed_call(self, inputs):
+    def __delayed_call(self, inputs: dict):
         '''Delayed processing called when self.delayed_process is set. To
         handle delayed processing automatically, prerequisites are checked via
         call to:
             :meth:`__check_dly_processing_prereq`
         Additionally all input dask_cudf dataframes have to be partitioned
         the same i.e. equal number of partitions.
+        @param inputs: dict
+            key: iport name string, value: input data
         '''
 
         def df_copy(df_in):
@@ -316,7 +319,7 @@ class NodeTaskGraphMixin(object):
             # by reference value and dataframes are mutable.
             # Handle the case when dask_cudf.DataFrames are source frames
             # which appear as cudf.DataFrame in a dask-delayed function.
-            return df_in.copy(deep=False)
+            return self.__make_copy(df_in)
 
         def get_pout(out_dict, port):
             '''Get the output in out_dict at key port. Used for delayed
@@ -330,21 +333,9 @@ class NodeTaskGraphMixin(object):
             # except Exception as err:
             #     print(err)
 
-            df_out = out_dict.get(port, cudf.DataFrame())
+            df_out = out_dict.get(port)
 
-            if isinstance(df_out, cudf.DataFrame) or \
-                    isinstance(df_out, pd.DataFrame):
-                # Needed for the same reason as __make_copy. To prevent columns
-                # addition in the input data frames. In python everything is
-                # by reference value and dataframes are mutable.
-                # Handle the case when dask_cudf.DataFrames are source frames
-                # which appear as cudf.DataFrame in a dask-delayed function.
-
-                # TODO: This copy might not be needed given df_copy fix.
-                return df_out.copy(deep=False)
-
-            return df_out
-
+            return self.__make_copy(df_out)
         inputs_not_dly = {}
         for iport, inarg in inputs.items():
             # dcudf not necessarily a dask cudf frame
@@ -436,8 +427,8 @@ class NodeTaskGraphMixin(object):
             # DEBUGGING
             # print('__DELAYED_CALL node "{}" port "{}" port type "{}"'.format(
             #     self.uid, oport, port_type))
-            if dask_cudf.DataFrame in port_type or DaskDataFrame in port_type:
-                output_df[oport] = dask_cudf.from_delayed(outputs_dly[oport])
+            if any([issubclass(p_type, DaskDataFrame) for p_type in port_type]):
+                output_df[oport] = from_delayed(outputs_dly[oport])
             else:
                 # outputs_dly[oport] is currently a list. Run compute on each
                 # partition, and keep the first one.
