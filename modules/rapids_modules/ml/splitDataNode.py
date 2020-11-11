@@ -6,11 +6,13 @@ import cudf
 import dask_cudf
 import cuml
 import copy
+from .._port_type_node import _PortTypesMixin
+
 
 __all__ = ['DataSplittingNode']
 
 
-class DataSplittingNode(Node):
+class DataSplittingNode(_PortTypesMixin, Node):
 
     def init(self):
         self.delayed_process = True

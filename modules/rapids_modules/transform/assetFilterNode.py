@@ -6,7 +6,7 @@ from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
 from ..dataloader.stockMap import StockMap
 
 
-class AssetFilterNode(Node, _PortTypesMixin):
+class AssetFilterNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

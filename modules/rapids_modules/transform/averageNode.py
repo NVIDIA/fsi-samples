@@ -3,7 +3,7 @@ from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class AverageNode(Node, _PortTypesMixin):
+class AverageNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

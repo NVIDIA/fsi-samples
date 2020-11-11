@@ -6,12 +6,13 @@ import xgboost as xgb
 import dask
 from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from .._port_type_node import _PortTypesMixin
 
 
 __all__ = ['XGBoostStrategyNode']
 
 
-class XGBoostStrategyNode(Node):
+class XGBoostStrategyNode(_PortTypesMixin, Node):
     """
     This is the Node used to compute trading signal from XGBoost Strategy.
     It requires the following conf fields:

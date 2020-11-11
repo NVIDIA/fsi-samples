@@ -8,11 +8,12 @@ from gquant.dataframe_flow.cache import (cache_meta)
 from gquant.dataframe_flow.util import get_file_path
 
 from .stockMap import StockMap
+from .._port_type_node import _PortTypesMixin
 STOCK_NAME_PORT_NAME = 'stock_name'
 STOCK_MAP_PORT_NAME = 'map_data'
 
 
-class StockNameLoader(Node):
+class StockNameLoader(_PortTypesMixin, Node):
 
     def _compute_hash_key(self):
         return hash((self.uid, self.conf['file']))

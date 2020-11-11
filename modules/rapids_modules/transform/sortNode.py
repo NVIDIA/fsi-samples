@@ -3,7 +3,7 @@ from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 from gquant.dataframe_flow import Node
 
 
-class SortNode(Node, _PortTypesMixin):
+class SortNode(_PortTypesMixin, Node):
 
     def init(self):
         self.delayed_process = True

@@ -5,7 +5,7 @@ from .._port_type_node import _PortTypesMixin
 __all__ = ["OneHotEncodingNode"]
 
 
-class OneHotEncodingNode(Node, _PortTypesMixin):
+class OneHotEncodingNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

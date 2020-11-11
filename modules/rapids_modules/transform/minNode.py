@@ -3,7 +3,7 @@ from gquant.dataframe_flow import Node
 from .._port_type_node import _PortTypesMixin
 
 
-class MinNode(Node, _PortTypesMixin):
+class MinNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

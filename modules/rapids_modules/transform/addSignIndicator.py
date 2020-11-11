@@ -5,7 +5,7 @@ from .._port_type_node import _PortTypesMixin
 __all__ = ["AddSignIndicatorNode"]
 
 
-class AddSignIndicatorNode(Node, _PortTypesMixin):
+class AddSignIndicatorNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

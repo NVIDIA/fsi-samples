@@ -13,7 +13,7 @@ from gquant.dataframe_flow.util import get_file_path
 __all__ = ['ForestInferenceNode']
 
 
-class ForestInferenceNode(Node, _PortTypesMixin):
+class ForestInferenceNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

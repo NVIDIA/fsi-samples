@@ -6,9 +6,10 @@ from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
 import cudf
 import dask_cudf
 import pandas as pd
+from .._port_type_node import _PortTypesMixin
 
 
-class LeftMergeNode(Node):
+class LeftMergeNode(_PortTypesMixin, Node):
 
     def init(self):
         self.INPUT_PORT_LEFT_NAME = 'left'

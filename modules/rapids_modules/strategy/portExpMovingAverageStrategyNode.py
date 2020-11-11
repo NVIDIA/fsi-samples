@@ -46,7 +46,7 @@ def port_exponential_moving_average(stock_df, n_fast, n_slow):
     return out_arr, ma_slow, ma_fast
 
 
-class PortExpMovingAverageStrategyNode(Node, _PortTypesMixin):
+class PortExpMovingAverageStrategyNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

@@ -1,6 +1,5 @@
 from collections.abc import Iterable
 import warnings
-import numpy as np
 import pandas as pd
 import dask
 from dask.dataframe import DataFrame as DaskDataFrame

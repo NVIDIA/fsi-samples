@@ -8,12 +8,13 @@ from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
 from xgboost import Booster
 import copy
 from collections import OrderedDict
+from .._port_type_node import _PortTypesMixin
 
 
 __all__ = ['TrainXGBoostNode', 'InferXGBoostNode']
 
 
-class TrainXGBoostNode(Node):
+class TrainXGBoostNode(_PortTypesMixin, Node):
 
     def init(self):
         self.INPUT_PORT_NAME = 'in'

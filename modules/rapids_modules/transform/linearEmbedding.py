@@ -14,7 +14,7 @@ __all__ = ['LinearEmbeddingNode']
 SPECIAL_OUTPUT_DIM_COL = 'OUTPUT_DIM_23b1c5ce-e0bf-11ea-afcf-80e82cc76d44'
 
 
-class LinearEmbeddingNode(Node, _PortTypesMixin):
+class LinearEmbeddingNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

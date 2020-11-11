@@ -7,13 +7,14 @@ import cudf
 import dask_cudf
 import pandas as pd
 from gquant.dataframe_flow.util import get_file_path
+from .._port_type_node import _PortTypesMixin
 
 CUDF_PORT_NAME = 'cudf_out'
 DASK_CUDF_PORT_NAME = 'dask_cudf_out'
 PANDAS_PORT_NAME = 'pandas_out'
 
 
-class CsvStockLoader(Node):
+class CsvStockLoader(_PortTypesMixin, Node):
 
     def ports_setup(self):
         input_ports = {}

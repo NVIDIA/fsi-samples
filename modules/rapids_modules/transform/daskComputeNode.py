@@ -13,7 +13,7 @@ from gquant.dataframe_flow.portsSpecSchema import (
 __all__ = ["DaskComputeNode"]
 
 
-class DaskComputeNode(Node):
+class DaskComputeNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

@@ -144,7 +144,7 @@ IN_DATA = {
 }
 
 
-class IndicatorNode(Node, _PortTypesMixin):
+class IndicatorNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

@@ -3,7 +3,7 @@ from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
 
-class RenameNode(Node, _PortTypesMixin):
+class RenameNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

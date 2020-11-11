@@ -3,7 +3,7 @@ from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class ReturnFeatureNode(Node, _PortTypesMixin):
+class ReturnFeatureNode(_PortTypesMixin, Node):
 
     def init(self):
         self.delayed_process = True

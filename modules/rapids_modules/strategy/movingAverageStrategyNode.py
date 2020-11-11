@@ -42,7 +42,7 @@ def moving_average_signal(stock_df, n_fast, n_slow):
     return out_arr, ma_slow, ma_fast
 
 
-class MovingAverageStrategyNode(Node, _PortTypesMixin):
+class MovingAverageStrategyNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

@@ -6,7 +6,7 @@ from .data_obj import NormalizationData
 from collections import OrderedDict
 
 
-class NormalizationNode(Node, _PortTypesMixin):
+class NormalizationNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)

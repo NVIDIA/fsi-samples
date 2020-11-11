@@ -8,12 +8,13 @@ import dask_cudf
 import cuml
 import copy
 import cuml.dask.datasets.classification
+from .._port_type_node import _PortTypesMixin
 
 CUDF_PORT_NAME = 'cudf_out'
 DASK_CUDF_PORT_NAME = 'dask_cudf_out'
 
 
-class ClassificationData(Node):
+class ClassificationData(_PortTypesMixin, Node):
 
     def ports_setup(self):
         input_ports = {}

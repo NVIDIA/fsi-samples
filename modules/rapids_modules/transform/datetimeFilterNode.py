@@ -7,7 +7,7 @@ from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 __all__ = ['DatetimeFilterNode']
 
 
-class DatetimeFilterNode(Node, _PortTypesMixin):
+class DatetimeFilterNode(_PortTypesMixin, Node):
     """
     A node that is used to select datapoints based on range of time.
     conf["beg"] defines the beginning of the date inclusively and
