@@ -19,7 +19,8 @@ OUTPUT_ID = 'collector_id_fd9567b6'
 OUTPUT_TYPE = 'Output_Collector'
 
 
-__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
+__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
+           'register_validator']
 
 # class NodeIncomingEdge(object):
 #     from_node = 'from_node'
@@ -31,6 +32,8 @@ __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
 #     to_node = 'to_node'
 #     to_port = 'to_port'
 #     from_port = 'from_port'
+
+_validators = {}  # dictionary of validators of funciton signiture (val, meta) -> bool
 
 
 def _get_nodetype(node):
@@ -49,6 +52,12 @@ def _get_nodetype(node):
             keeptypes.append(nodet)
 
     return keeptypes
+
+
+def register_validator(typename: type,
+                       fun) -> None:
+    # print('register validator for', typename)
+    _validators[typename] = fun
 
 
 class NodeTaskGraphMixin(object):
@@ -98,227 +107,8 @@ class NodeTaskGraphMixin(object):
         #     typically a data container.
         self.clear_input = True
 
-    def validate_connected_ports(self):
-        self_nodetype = _get_nodetype(self)
-        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
-        if 'OutputCollector' in nodetype_names:
-            # Don't validate for OutputCollector
-            return
-
-        msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
-            'type(s) "{ioport_types}"'
-
-        iports_connected = self.get_connected_inports()
-        iports_spec = self._get_input_ports(full_port_spec=True)
-        for iport in iports_connected.keys():
-            iport_spec = iports_spec[iport]
-            iport_type = iport_spec[PortsSpecSchema.port_type]
-            iport_types = [iport_type] \
-                if not isinstance(iport_type, Iterable) else iport_type
-
-            for ient in self.inputs:
-                # find input node edge entry with to_port, from_port, from_node
-                if not iport == ient['to_port']:
-                    continue
-                ientnode = ient
-                break
-            else:
-                intask = self._task_obj[TaskSpecSchema.inputs][iport]
-                # this should never happen
-                raise LookupError(
-                    'Task "{}" not connected to "{}.{}". Add task spec to '
-                    'TaskGraph.'.format(intask, self.uid, iport))
-
-            from_node = ientnode['from_node']
-            oport = ientnode['from_port']
-            oports_spec = from_node._get_output_ports(full_port_spec=True)
-            oport_spec = oports_spec[oport]
-            oport_type = oport_spec[PortsSpecSchema.port_type]
-            oport_types = [oport_type] \
-                if not isinstance(oport_type, Iterable) else oport_type
-
-            for optype in oport_types:
-                if issubclass(optype, tuple(iport_types)):
-                    break
-            else:
-                # Port types do not match
-                msgi = msgfmt.format(
-                    task=self.uid,
-                    nodetype=self_nodetype,
-                    inout='input',
-                    ioport=iport,
-                    ioport_types=iport_types)
-
-                msgo = msgfmt.format(
-                    task=from_node.uid,
-                    nodetype=_get_nodetype(from_node),
-                    inout='output',
-                    ioport=oport,
-                    ioport_types=oport_types)
-
-                errmsg = 'Port Types Validation\n{}\n{}\n'\
-                    'Connected nodes do not have matching port types. Fix '\
-                    'port types.'.format(msgo, msgi)
-
-                raise TypeError(errmsg)
-
-    def _validate_input_metadata(self):
-        return self.validate_input_metadata()
-
-    def validate_input_metadata(self):
-        metadata = self.meta_setup()
-
-        def validate_required(iport, kcol, kval, ientnode, icols):
-            node = ientnode['from_node']
-            oport = ientnode['from_port']
-            src_task = '{}.{}'.format(node.uid, oport)
-            src_type = _get_nodetype(node)
-            # incoming "task.port":"Node-type":{{column:column-type}}
-            msgi = \
-                '"{task}":"{nodetype}" produces metadata {colinfo}'.format(
-                    task=src_task,
-                    nodetype=src_type,
-                    colinfo=icols)
-
-            dst_task = '{}.{}'.format(self.uid, iport)
-            dst_type = _get_nodetype(self)
-            # expecting "task.port":"Node-type":{{column:column-type}}
-            msge = \
-                '"{task}":"{nodetype}" requires metadata {colinfo}'.format(
-                    task=dst_task,
-                    nodetype=dst_type,
-                    colinfo={kcol: kval})
-
-            header = \
-                'Columns Validation\n'\
-                'Format "task.port":"Node-type":{{column:column-type}}'
-            info_msg = '{}\n{}\n{}'.format(header, msgi, msge)
-
-            if kcol not in icols:
-                err_msg = \
-                    'Task "{}" missing required column "{}" '\
-                    'from "{}".'.format(self.uid, kcol, src_task)
-                out_err = '{}\n{}'.format(info_msg, err_msg)
-                raise LookupError(out_err)
-
-            ival = icols[kcol]
-            if kval != ival:
-                # special case for 'date'
-                if (kval == 'date' and ival
-                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
-                    return
-                else:
-                    err_msg = 'Task "{}" column "{}" expected type "{}" got '\
-                        'type "{}" instead.'.format(self.uid, kcol, kval, ival)
-                    out_err = '{}\n{}'.format(info_msg, err_msg)
-                    raise LookupError(out_err)
-
-        inputs_cols = self.get_input_meta()
-        required = metadata.inports
-
-        if not required:
-            return
-        
-        for iport in self._get_input_ports():
-            if iport not in required:
-                continue
-            required_iport = required[iport]
-
-            if iport not in inputs_cols:
-                # Is it possible that iport not connected? If so iport should
-                # not be in required. Should raise an exception here.
-                warn_msg = \
-                    'Task "{}" Node Type "{}" missing required port "{}" in '\
-                    'incoming columns. Should the port be connected?'.format(
-                        self.uid, _get_nodetype(self), iport)
-                warnings.warn(warn_msg)
-                continue
-            incoming_cols = inputs_cols[iport]
-
-            for ient in self.inputs:
-                # find input node edge entry with to_port, from_port, from_node
-                if not iport == ient['to_port']:
-                    continue
-                ientnode = ient
-                break
-            else:
-                intask = self._task_obj[TaskSpecSchema.inputs][iport]
-                # this should never happen
-                raise LookupError(
-                    'Task "{}" not connected to "{}.{}". Add task spec to '
-                    'TaskGraph.'.format(intask, self.uid, iport))
-
-            for kcol, kval in required_iport.items():
-                validate_required(iport, kcol, kval,
-                                  ientnode, incoming_cols)
-
-    def _validate_df(self, df_to_val, ref_cols):
-        '''Validate a cudf or dask_cudf DataFrame.
-
-        :param df_to_val: A dataframe typically of type cudf.DataFrame or
-            dask_cudf.DataFrame.
-        :param ref_cols: Dictionary of column names and their expected types.
-        :returns: True or False based on matching all columns in the df_to_val
-            and columns spec in ref_cols.
-        :raises: Exception - Raised when invalid dataframe length or unexpected
-            number of columns. TODO: Create a ValidationError subclass.
-
-        '''
-        if (isinstance(df_to_val, cudf.DataFrame) or
-            isinstance(df_to_val, dask_cudf.DataFrame)) and \
-                len(df_to_val) == 0:
-            err_msg = 'Node "{}" produced empty output'.format(self.uid)
-            raise Exception(err_msg)
-
-        if not isinstance(df_to_val, cudf.DataFrame) and \
-           not isinstance(df_to_val, dask_cudf.DataFrame):
-            return True
-
-        i_cols = df_to_val.columns
-        if len(i_cols) != len(ref_cols):
-            print("expect %d columns, only see %d columns"
-                  % (len(ref_cols), len(i_cols)))
-            print("ref:", ref_cols)
-            print("columns", i_cols)
-            raise Exception("not valid for node %s" % (self.uid))
-
-        for col in ref_cols.keys():
-            if col not in i_cols:
-                print("error for node %s, column %s is not in the required "
-                      "output df" % (self.uid, col))
-                return False
-
-            if ref_cols[col] is None:
-                continue
-
-            err_msg = "for node {} type {}, column {} type {} "\
-                "does not match expected type {}".format(
-                    self.uid, type(self), col, df_to_val[col].dtype,
-                    ref_cols[col])
-
-            if ref_cols[col] == 'category':
-                # comparing pandas.core.dtypes.dtypes.CategoricalDtype to
-                # numpy.dtype causes TypeError. Instead, let's compare
-                # after converting all types to their string representation
-                # d_type_tuple = (pd.core.dtypes.dtypes.CategoricalDtype(),)
-                d_type_tuple = (str(pd.CategoricalDtype()),)
-            elif ref_cols[col] == 'date':
-                # Cudf read_csv doesn't understand 'datetime64[ms]' even
-                # though it reads the data in as 'datetime64[ms]', but
-                # expects 'date' as dtype specified passed to read_csv.
-                d_type_tuple = ('datetime64[ms]', 'date', 'datetime64[ns]')
-            else:
-                d_type_tuple = (str(np.dtype(ref_cols[col])),)
-
-            if (str(df_to_val[col].dtype) not in d_type_tuple):
-                print("ERROR: {}".format(err_msg))
-                # Maybe raise an exception here and have the caller
-                # try/except the validation routine.
-                return False
-
-        return True
-
-    def __valide(self, node_output, ref_meta):
+    def __valide(self, node_output: dict):
+        output_meta = self.meta_setup().outports
         # Validate each port
         out_ports = self._get_output_ports(full_port_spec=True)
         for pname, pspec in out_ports.items():
@@ -343,10 +133,10 @@ class NodeTaskGraphMixin(object):
                 if not isinstance(expected_type, list):
                     expected_type = [expected_type]
 
-                if self.delayed_process and \
-                        cudf.DataFrame in expected_type and \
-                        dask_cudf.DataFrame not in expected_type:
-                    expected_type.append(dask_cudf.DataFrame)
+                # if self.delayed_process and \
+                #         cudf.DataFrame in expected_type and \
+                #         dask_cudf.DataFrame not in expected_type:
+                #     expected_type.append(dask_cudf.DataFrame)
 
                 match = False
                 for expected in expected_type:
@@ -360,15 +150,15 @@ class NodeTaskGraphMixin(object):
                         '"{}". Expected type "{}"'
                         .format(self.uid, pname, out_type, expected_type))
 
-            cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
+            # cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
+            # if out_type in cudf_types_tuple:
+            #     if len(out_val.columns) == 0 and out_optional:
+            #         continue
 
-            if out_type in cudf_types_tuple:
-                if len(out_val.columns) == 0 and out_optional:
-                    continue
-
-            if out_type in cudf_types_tuple:
-                meta_to_val = ref_meta.get(pname)
-                val_flag = self._validate_df(out_val, meta_to_val)
+            if out_type in _validators:
+                validator = _validators[out_type]
+                meta_to_val = output_meta.get(pname)
+                val_flag = validator(out_val, meta_to_val, self)
                 if not val_flag:
                     raise Exception("not valid output")
 
@@ -741,7 +531,7 @@ class NodeTaskGraphMixin(object):
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df, self.meta_setup().outports)
+            self.__valide(output_df)
 
         if self.save:
             self.save_cache(output_df)

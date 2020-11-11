@@ -19,6 +19,7 @@ __all__ = ['TaskGraph', 'OutputCollector']
 
 server_task_graph = None
 
+
 def add_module_from_base64(module_name, class_str):
     class_obj = cloudpickle.loads(base64.b64decode(class_str))
     class_name = class_obj.__name__
@@ -558,7 +559,7 @@ class TaskGraph(object):
             # Run meta setup in case the required meta are calculated
             # within the meta_setup and are NodeTaskGraphMixin dependent.
             # node.meta_setup()
-            node._validate_input_metadata()
+            node.validate_connected_metadata()
 
         if self.__widget is not None:
             def progress_fun(uid):

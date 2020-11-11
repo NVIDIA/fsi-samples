@@ -3,10 +3,11 @@ import warnings
 import abc
 import pandas as pd
 import cudf
-
+from collections.abc import Iterable
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData
+from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData, NodePorts
+from ._node_flow import _get_nodetype
 
 from ._node import _Node
 
@@ -103,7 +104,7 @@ class Node(_PortsMixin, _Node):
 
         PortsSpecSchema.validate_ports(self.ports_setup())
 
-    def ports_setup(self):
+    def ports_setup(self) -> NodePorts:
         """Virtual method for specifying inputs/outputs ports.
 
         Must return an instance of NodePorts that adheres to PortsSpecSchema.
@@ -144,7 +145,7 @@ class Node(_PortsMixin, _Node):
         """
         raise NotImplementedError
 
-    def outport_connected(self, portname):
+    def outport_connected(self, portname) -> bool:
         """
         Test whether this node's output port is connected. It is used
         to generate result for the output port based on the connection
@@ -157,7 +158,7 @@ class Node(_PortsMixin, _Node):
         # this method will be implemented by NodeTaskGraphMixin
         pass
 
-    def get_connected_inports(self):
+    def get_connected_inports(self) -> dict:
         """
         Get all the connected input port information. It is used by individual
         node to determine the output port types
@@ -184,7 +185,7 @@ class Node(_PortsMixin, _Node):
         """
         pass
 
-    def get_input_meta(self):
+    def get_input_meta(self) -> dict:
         """
         Get the input meta information. It is usually used by individual
          node to compute the output meta information
@@ -194,7 +195,7 @@ class Node(_PortsMixin, _Node):
         # this method will be implemented by NodeTaskGraphMixin
         return {}
 
-    def conf_schema(self):
+    def conf_schema(self) -> ConfSchema:
         """Virtual method for specifying configuration schema. Implement if
         desire to use the UI client to help fill the conf forms.
 
@@ -214,7 +215,7 @@ class Node(_PortsMixin, _Node):
         return ConfSchema(json={}, ui={})
 
     @abc.abstractmethod
-    def meta_setup(self):
+    def meta_setup(self) -> MetaData:
         """
         All children class should implement this.
         It is used to compute the required input and output meta data.
@@ -228,10 +229,10 @@ class Node(_PortsMixin, _Node):
         returns:
         :return: MetaData
         """
-        return MetaData()
+        return MetaData(inports={}, outports={})
 
     @abc.abstractmethod
-    def process(self, inputs):
+    def process(self, inputs) -> dict:
         """
         process the input dataframe. Children class is required to override
         this
@@ -280,7 +281,167 @@ class Node(_PortsMixin, _Node):
         output = None
         return output
 
-    def load_cache(self, filename=None):
+# Validation methods ######################################
+    def validate_connected_ports(self):
+        """
+        Validate the connected port types match
+        """
+        self_nodetype = _get_nodetype(self)
+        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
+        if 'OutputCollector' in nodetype_names:
+            # Don't validate for OutputCollector
+            return
+
+        msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
+            'type(s) "{ioport_types}"'
+
+        iports_connected = self.get_connected_inports()
+        iports_spec = self._get_input_ports(full_port_spec=True)
+        for iport in iports_connected.keys():
+            iport_spec = iports_spec[iport]
+            iport_type = iport_spec[PortsSpecSchema.port_type]
+            iport_types = [iport_type] \
+                if not isinstance(iport_type, Iterable) else iport_type
+
+            for ient in self.inputs:
+                # find input node edge entry with to_port, from_port, from_node
+                if not iport == ient['to_port']:
+                    continue
+                ientnode = ient
+                break
+            else:
+                intask = self._task_obj[TaskSpecSchema.inputs][iport]
+                # this should never happen
+                raise LookupError(
+                    'Task "{}" not connected to "{}.{}". Add task spec to '
+                    'TaskGraph.'.format(intask, self.uid, iport))
+
+            from_node = ientnode['from_node']
+            oport = ientnode['from_port']
+            oports_spec = from_node._get_output_ports(full_port_spec=True)
+            oport_spec = oports_spec[oport]
+            oport_type = oport_spec[PortsSpecSchema.port_type]
+            oport_types = [oport_type] \
+                if not isinstance(oport_type, Iterable) else oport_type
+
+            for optype in oport_types:
+                if issubclass(optype, tuple(iport_types)):
+                    break
+            else:
+                # Port types do not match
+                msgi = msgfmt.format(
+                    task=self.uid,
+                    nodetype=self_nodetype,
+                    inout='input',
+                    ioport=iport,
+                    ioport_types=iport_types)
+
+                msgo = msgfmt.format(
+                    task=from_node.uid,
+                    nodetype=_get_nodetype(from_node),
+                    inout='output',
+                    ioport=oport,
+                    ioport_types=oport_types)
+
+                errmsg = 'Port Types Validation\n{}\n{}\n'\
+                    'Connected nodes do not have matching port types. Fix '\
+                    'port types.'.format(msgo, msgi)
+
+                raise TypeError(errmsg)
+
+    def validate_connected_metadata(self):
+        """
+        Validate the connected metadata match the requirements.
+        metadata.inports specify the required metadata.
+        """
+        metadata = self.meta_setup()
+
+        # as current behavior of matching in the validate_required
+        def validate_required(iport, kcol, kval, ientnode, icols):
+            node = ientnode['from_node']
+            oport = ientnode['from_port']
+            src_task = '{}.{}'.format(node.uid, oport)
+            src_type = _get_nodetype(node)
+            # incoming "task.port":"Node-type":{{column:column-type}}
+            msgi = \
+                '"{task}":"{nodetype}" produces metadata {colinfo}'.format(
+                    task=src_task,
+                    nodetype=src_type,
+                    colinfo=icols)
+
+            dst_task = '{}.{}'.format(self.uid, iport)
+            dst_type = _get_nodetype(self)
+            # expecting "task.port":"Node-type":{{column:column-type}}
+            msge = \
+                '"{task}":"{nodetype}" requires metadata {colinfo}'.format(
+                    task=dst_task,
+                    nodetype=dst_type,
+                    colinfo={kcol: kval})
+
+            header = \
+                'Meta Validation\n'\
+                'Format "task.port":"Node-type":{{column:column-type}}'
+            info_msg = '{}\n{}\n{}'.format(header, msgi, msge)
+
+            if kcol not in icols:
+                err_msg = \
+                    'Task "{}" missing required column "{}" '\
+                    'from "{}".'.format(self.uid, kcol, src_task)
+                out_err = '{}\n{}'.format(info_msg, err_msg)
+                raise LookupError(out_err)
+
+            ival = icols[kcol]
+            if kval != ival:
+                # special case for 'date'
+                if (kval == 'date' and ival
+                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
+                    return
+                else:
+                    err_msg = 'Task "{}" column "{}" expected type "{}" got '\
+                        'type "{}" instead.'.format(self.uid, kcol, kval, ival)
+                    out_err = '{}\n{}'.format(info_msg, err_msg)
+                    raise LookupError(out_err)
+
+        inputs_meta = self.get_input_meta()
+        required = metadata.inports
+
+        if not required:
+            return
+        
+        for iport in self._get_input_ports():
+            if iport not in required:
+                continue
+            required_iport = required[iport]
+
+            if iport not in inputs_meta:
+                # Is it possible that iport not connected? If so iport should
+                # not be in required. Should raise an exception here.
+                warn_msg = \
+                    'Task "{}" Node Type "{}" missing required port "{}" in '\
+                    'incoming meta data. Should the port be connected?'.format(
+                        self.uid, _get_nodetype(self), iport)
+                warnings.warn(warn_msg)
+                continue
+            incoming_meta = inputs_meta[iport]
+
+            for ient in self.inputs:
+                # find input node edge entry with to_port, from_port, from_node
+                if not iport == ient['to_port']:
+                    continue
+                ientnode = ient
+                break
+            else:
+                intask = self._task_obj[TaskSpecSchema.inputs][iport]
+                # this should never happen
+                raise LookupError(
+                    'Task "{}" not connected to "{}.{}". Add task spec to '
+                    'TaskGraph.'.format(intask, self.uid, iport))
+
+            for key, val in required_iport.items():
+                validate_required(iport, key, val,
+                                  ientnode, incoming_meta)
+
+    def load_cache(self, filename=None) -> dict:
         """
         Defines the behavior of how to load the cache file from the `filename`.
         Node can override this method. Default implementation assumes cudf
@@ -290,7 +451,8 @@ class Node(_PortsMixin, _Node):
         -------
         filename: str
             filename of the cache file. Leave as none to use default.
-
+        returns: dict
+            dictionary of the output from this node
         """
         cache_dir = os.getenv('GQUANT_CACHE_DIR', self.cache_dir)
         if filename is None:
@@ -321,18 +483,18 @@ class Node(_PortsMixin, _Node):
                     output_df[oport] = cudf.read_hdf(hf, key)
         return output_df
 
-    def save_cache(self, output_df):
+    def save_cache(self, output_data: dict):
         '''Defines the behavior for how to save the output of a node to
         filesystem cache. Default implementation assumes cudf dataframes.
 
-        :param output_df: The output from :meth:`process`. For saving to hdf
+        :param output_data: The output from :meth:`process`. For saving to hdf
             requires that the dataframe(s) have `to_hdf` method.
         '''
         cache_dir = os.getenv('GQUANT_CACHE_DIR', self.cache_dir)
         os.makedirs(cache_dir, exist_ok=True)
         filename = cache_dir + '/' + self.uid + '.hdf5'
         with pd.HDFStore(filename, mode='w') as hf:
-            for oport, odf in output_df.items():
+            for oport, odf in output_data.items():
                 # check for to_hdf attribute
                 if not hasattr(odf, 'to_hdf'):
                     raise Exception(
