@@ -33,6 +33,8 @@ _validators = {}  # dictionary of validators of funciton signiture (val, meta) -
 
 _copys = {}  # dictionary of object copy functions
 
+_cleanup = {}  # dictionary of clean up functions
+
 
 def _get_nodetype(node):
     '''Identify the implementation node class. A node might be mixed in with
@@ -62,6 +64,12 @@ def register_copy_function(typename: type,
                            fun) -> None:
     # print('register validator for', typename)
     _copys[typename] = fun
+
+
+def register_cleanup(name: str,
+                     fun) -> None:
+    # print('register validator for', typename)
+    _cleanup[name] = fun
 
 
 class NodeTaskGraphMixin(object):

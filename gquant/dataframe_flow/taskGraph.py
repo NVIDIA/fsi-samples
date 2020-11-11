@@ -2,7 +2,7 @@ from collections import OrderedDict
 import networkx as nx
 import ruamel.yaml
 from .node import Node
-from ._node_flow import OUTPUT_ID, OUTPUT_TYPE
+from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _cleanup
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import NodePorts, ConfSchema
@@ -610,25 +610,9 @@ class TaskGraph(object):
         else:
             return result
 
-    def run_cleanup(self, clean_module=False):
-        try:
-            import nemo
-            nf = nemo.core.NeuralModuleFactory.get_default_factory()
-        except ModuleNotFoundError:
-            nf = None
-        if nf is not None:
-            nf.reset_trainer()
-            if clean_module:
-                state = nemo.utils.app_state.AppState()
-                state._module_registry.clear()
-                state.active_graph.modules.clear()
-        if clean_module:
-            import dask.distributed
-            try:
-                client = dask.distributed.client.default_client()
-                client.restart()
-            except Exception:
-                err = traceback.format_exc()
+    def run_cleanup(self, ui_clean=False):
+        for v in _cleanup.values():
+            v(ui_clean)
 
     def run(self, outputs=None, replace=None, profile=False, formated=False):
         """

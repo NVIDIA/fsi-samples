@@ -8,8 +8,10 @@ from .ml import *  # noqa: F403,F401
 from .client import validation, display  # noqa: F401
 from gquant.dataframe_flow._node_flow import register_validator
 from gquant.dataframe_flow._node_flow import register_copy_function
-
+from gquant.dataframe_flow._node_flow import register_cleanup
+import traceback
 import cudf
+import dask
 import dask_cudf
 import pandas
 import numpy as np
@@ -92,6 +94,20 @@ def copy_dask_cudf(df_obj):
     return df_obj.copy()
 
 
+def clean_dask(ui_clean):
+    """
+    ui_clean is True if the client send
+    'clean' command to the gQuant backend
+    """
+    if ui_clean:
+        import dask.distributed
+        try:
+            client = dask.distributed.client.default_client()
+            client.restart()
+        except Exception:
+            traceback.format_exc()
+
+
 register_validator(cudf.DataFrame, _validate_df)
 register_validator(dask_cudf.DataFrame, _validate_df)
 register_validator(pandas.DataFrame, _validate_df)
@@ -99,3 +115,5 @@ register_validator(pandas.DataFrame, _validate_df)
 register_copy_function(cudf.DataFrame, copy_df)
 register_copy_function(dask_cudf.DataFrame, copy_dask_cudf)
 register_copy_function(pandas.DataFrame, copy_df)
+
+register_cleanup('cleandask', clean_dask)

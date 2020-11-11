@@ -36,7 +36,7 @@ class GQuantWidget(DOMWidget):
         if content.get('event', '') == 'run':
             self.run()
         elif content.get('event', '') == 'clean':
-            self.task_graph.run_cleanup(clean_module=True)
+            self.task_graph.run_cleanup(ui_clean=True)
             self.sub = ipywidgets.HBox()
 
     def set_taskgraph(self, task_graph):
