@@ -206,6 +206,7 @@ export class ContentHandler {
 export interface IPort {
   name: string;
   type: string[][];
+  dynamic?: boolean;
 }
 
 export interface INode {

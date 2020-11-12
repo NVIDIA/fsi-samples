@@ -120,11 +120,6 @@ class Node(_PortsMixin, _Node):
                                                                     False)):
                     # skip connected non dynamic ports
                     continue
-                elif to_port in inports and (inports[to_port].get(dy,
-                                                                  False)):
-                    types = inports[to_port][port_type]
-                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                        port_type: types, dy: True}
                 else:
                     inports[inp['from_node'].uid+'@'+inp['from_port']] = {
                         port_type: types, dy: True}

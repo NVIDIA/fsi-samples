@@ -58,16 +58,23 @@ class NemoTrainNode(Node):
         output['element']['parameters'] = '{}'
         ports = self.calculated_ports_setup()
         inports = ports.inports
-
         iports_connected = self.get_connected_inports()
         iports_cols = self.get_input_meta()
-        for iport in inports.keys():
-            if iport in iports_connected and iport in iports_cols:
-                required[iport] = copy.deepcopy(iports_cols[iport])
-            else:
-                required[iport] = copy.deepcopy(output)
-        # if 'input_tensor' not in iports_connected:
-        #     required.pop('input_tensor', None)
+        dy = PortsSpecSchema.dynamic
+        if hasattr(self, 'inputs'):
+            for inp in self.inputs:
+                oport = inp['to_port']
+                iport = inp['from_port']
+                out_port_name = inp['from_node'].uid+'@'+iport
+                if out_port_name in inports and inports[
+                        out_port_name].get(dy, False):
+                    if oport in iports_connected and oport in iports_cols:
+                        required[out_port_name] = copy.deepcopy(
+                            iports_cols[oport])
+                else:
+                    if oport in iports_connected and oport in iports_cols:
+                        required[oport] = copy.deepcopy(iports_cols[oport])
+        required['input_tensor'] = copy.deepcopy(output)
         metadata = MetaData(inports=required,
                             outports={self.OUTPUT_PORT_NAME: {}})
         return metadata

@@ -429,32 +429,29 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
-  private _fixNeMoPorts(state: IState): void {
-    // fix the nemo train node
-    const NeMoTrainNode = 'NemoTrainNode';
-    const NeMoInferNode = 'NemoInferNode';
-    const inputTensorPort = 'input_tensor';
+  private _fixDynamicPorts(state: IState): void {
+    const portNames: string[] = [];
 
-    const nemoNodes = state.nodes.filter(
-      (d: INode) => d.type === NeMoTrainNode || d.type === NeMoInferNode
-    );
+    state.nodes.forEach(d => {
+      d.inputs.forEach(e => {
+        if ('dynamic' in e) {
+          portNames.push(d.id + '.' + e.name);
+        }
+      })
+    });
 
-    const nodeIds = nemoNodes.map(d => d.id);
-
-    if (nemoNodes.length === 0) {
+    if (portNames.length === 0) {
       return;
     }
     // fixed the port and connections
     state.edges.forEach((d: IEdge) => {
-      if (nodeIds.includes(d.to.split('.')[0])) {
-        if (d.to.split('.')[1] === inputTensorPort) {
-          d.to =
-            d.to.split('.')[0] +
-            '.' +
-            d.from.split('.')[0] +
-            '@' +
-            d.from.split('.')[1];
-        }
+      if (portNames.includes(d.to)) {
+        d.to =
+          d.to.split('.')[0] +
+          '.' +
+          d.from.split('.')[0] +
+          '@' +
+          d.from.split('.')[1];
       }
     });
   }
@@ -493,7 +490,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       //TODO need Need to think about how the logic to handle dynamic ports can be refactored in a generic manner in the future. 
       // Maybe a node could have a self state flag to indicate that it creates ports dynamically.
       this._fixOutputCollectorPorts(state);
-      this._fixNeMoPorts(state);
+      this._fixDynamicPorts(state);
       const output = exportWorkFlowNodes(state.nodes, state.edges);
       if (this.props.contentHandler.privateCopy) {
         this.props.contentHandler.privateCopy.set('value', output);
