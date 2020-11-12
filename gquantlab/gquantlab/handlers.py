@@ -20,6 +20,8 @@ class RouteHandlerLoadGraph(APIHandler):
         # input_data is a dictionnary with a key "name"
         input_data = self.get_json_body()
         task_graph = TaskGraph(input_data)
+        # import pudb
+        # pudb.set_trace()
         nodes_and_edges = get_nodes(task_graph)
         self.finish(json.dumps(nodes_and_edges))
 

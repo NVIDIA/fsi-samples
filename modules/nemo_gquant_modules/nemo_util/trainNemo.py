@@ -34,16 +34,17 @@ class NemoTrainNode(Node):
         self.OUTPUT_PORT_NAME = 'checkpoint_dir'
 
     def ports_setup(self):
+        dy = PortsSpecSchema.dynamic
         port_type = PortsSpecSchema.port_type
         o_inports = {}
         o_outports = {}
-        o_inports['input_tensor'] = {port_type: NmTensor}
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                # TODO: Move TaskGrah rewire logic here instead of in
-                #     chartEngine.tsx ChartEngine._fixNeMoPorts
-                o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                    port_type: NmTensor}
+        o_inports['input_tensor'] = {port_type: NmTensor, dy: True}
+        # if hasattr(self, 'inputs'):
+        #     for inp in self.inputs:
+        #         # TODO: Move TaskGrah rewire logic here instead of in
+        #         #     chartEngine.tsx ChartEngine._fixNeMoPorts
+        #         o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+        #             port_type: NmTensor}
         o_outports[self.OUTPUT_PORT_NAME] = {port_type: str}
         return NodePorts(inports=o_inports, outports=o_outports)
 
@@ -55,7 +56,7 @@ class NemoTrainNode(Node):
         output['element']['types'] = ['VoidType']
         output['element']['fields'] = 'None'
         output['element']['parameters'] = '{}'
-        ports = self.ports_setup()
+        ports = self.calculated_ports_setup()
         inports = ports.inports
 
         iports_connected = self.get_connected_inports()
@@ -65,9 +66,8 @@ class NemoTrainNode(Node):
                 required[iport] = copy.deepcopy(iports_cols[iport])
             else:
                 required[iport] = copy.deepcopy(output)
-
-        if 'input_tensor' not in iports_connected:
-            required.pop('input_tensor', None)
+        # if 'input_tensor' not in iports_connected:
+        #     required.pop('input_tensor', None)
         metadata = MetaData(inports=required,
                             outports={self.OUTPUT_PORT_NAME: {}})
         return metadata

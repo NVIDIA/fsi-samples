@@ -18,7 +18,7 @@ class _PortsMixin(object):
     '''
 
     def __get_io_port(self, io=None, full_port_spec=False):
-        input_ports, output_ports = self.ports_setup()
+        input_ports, output_ports = self.calculated_ports_setup()
         if io in ('in',):
             io_ports = input_ports
         else:
@@ -100,6 +100,35 @@ class Node(_PortsMixin, _Node):
         self.profile = False  # by default, do not profile
 
         PortsSpecSchema.validate_ports(self.ports_setup())
+
+    def calculated_ports_setup(self):
+        # note, currently can only handle one dynamic port per node
+        port_type = PortsSpecSchema.port_type
+        ports = self.ports_setup()
+        inports = ports.inports
+        dy = PortsSpecSchema.dynamic
+        for key in inports:
+            if dy in inports[key] and inports[key][dy]:
+                types = inports[key][port_type]
+                break
+        else:
+            return ports
+        if hasattr(self, 'inputs'):
+            for inp in self.inputs:
+                to_port = inp['to_port']
+                if to_port in inports and (not inports[to_port].get(dy,
+                                                                    False)):
+                    # skip connected non dynamic ports
+                    continue
+                elif to_port in inports and (inports[to_port].get(dy,
+                                                                  False)):
+                    types = inports[to_port][port_type]
+                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+                        port_type: types, dy: True}
+                else:
+                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+                        port_type: types, dy: True}
+        return ports
 
     def ports_setup(self) -> NodePorts:
         """Virtual method for specifying inputs/outputs ports.
@@ -404,12 +433,17 @@ class Node(_PortsMixin, _Node):
 
         if not required:
             return
-        for iport in self._get_input_ports():
+        inports = self._get_input_ports()
+        for iport in inports:
             if iport not in required:
                 continue
             required_iport = required[iport]
 
             if iport not in inputs_meta:
+                # if iport is dynamic, skip warning
+                dy = PortsSpecSchema.dynamic
+                if inports[iport].get(dy, False):
+                    continue
                 # Is it possible that iport not connected? If so iport should
                 # not be in required. Should raise an exception here.
                 warn_msg = \

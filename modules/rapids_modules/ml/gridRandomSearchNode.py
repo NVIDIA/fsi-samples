@@ -328,7 +328,7 @@ class GridRandomSearchNode(ContextCompositeNode):
                     node_id = t.get('id')
                     if node_id != '':
                         node = task_graph[node_id]
-                        all_ports = node.ports_setup()
+                        all_ports = node.calculated_ports_setup()
                         for port in all_ports.outports.keys():
                             if all_ports.outports[port][
                                     PortsSpecSchema.port_type] == float:
@@ -425,7 +425,7 @@ class GridRandomSearchNode(ContextCompositeNode):
                 input_feeders = []
 
                 def inputNode_fun(inputNode, in_ports):
-                    inports = inputNode.ports_setup().inports
+                    inports = inputNode.calculated_ports_setup().inports
 
                     class InputFeed(Node):
 

@@ -464,6 +464,7 @@ class NodeTaskGraphMixin(object):
                 break
         return found
 
+
     def get_connected_inports(self):
         """
         get all the connected input port information
@@ -482,7 +483,7 @@ class NodeTaskGraphMixin(object):
             return output
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            ports = from_node.ports_setup()
+            ports = from_node.calculated_ports_setup()
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name in ports.outports:

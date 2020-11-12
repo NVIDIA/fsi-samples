@@ -34,17 +34,18 @@ class NemoInferNode(Node):
 
     def ports_setup(self):
         port_type = PortsSpecSchema.port_type
+        dy = PortsSpecSchema.dynamic
         o_inports = {}
         o_inports[self.INPUT_PORT_NAME] = {port_type: str}
-        o_inports['input_tensor'] = {port_type: NmTensor}
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                if inp['to_port'] in (self.INPUT_PORT_NAME,):
-                    continue
-                # TODO: Move TaskGrah rewire logic here instead of in
-                #     chartEngine.tsx ChartEngine._fixNeMoPorts
-                o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                    port_type: NmTensor}
+        o_inports['input_tensor'] = {port_type: NmTensor, dy: True}
+        # if hasattr(self, 'inputs'):
+        #     for inp in self.inputs:
+        #         if inp['to_port'] in (self.INPUT_PORT_NAME,):
+        #             continue
+        #         # TODO: Move TaskGrah rewire logic here instead of in
+        #         #     chartEngine.tsx ChartEngine._fixNeMoPorts
+        #         o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+        #             port_type: NmTensor}
         o_outports = {}
         o_outports[self.OUTPUT_PORT_NAME] = {port_type: list}
         return NodePorts(inports=o_inports, outports=o_outports)
@@ -57,7 +58,7 @@ class NemoInferNode(Node):
         output['element']['types'] = ['VoidType']
         output['element']['fields'] = 'None'
         output['element']['parameters'] = '{}'
-        ports = self.ports_setup()
+        ports = self.calculated_ports_setup()
         inports = ports.inports
 
         iports_connected = self.get_connected_inports()
@@ -69,9 +70,8 @@ class NemoInferNode(Node):
                 required[iport] = copy.deepcopy(iports_cols[iport])
             else:
                 required[iport] = copy.deepcopy(output)
-
-        if 'input_tensor' not in iports_connected:
-            required.pop('input_tensor', None)
+        # if 'input_tensor' not in iports_connected:
+        #     required.pop('input_tensor', None)
         metadata = MetaData(inports=required,
                             outports={self.OUTPUT_PORT_NAME: {}})
         return metadata

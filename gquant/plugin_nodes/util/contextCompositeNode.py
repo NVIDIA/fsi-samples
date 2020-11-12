@@ -192,7 +192,7 @@ class ContextCompositeNode(CompositeNode):
                 node_id = t.get('id')
                 if node_id != '':
                     node = task_graph[node_id]
-                    all_ports = node.ports_setup()
+                    all_ports = node.calculated_ports_setup()
                     for port in all_ports.inports.keys():
                         in_ports.append(node_id+'.'+port)
                     for port in all_ports.outports.keys():
