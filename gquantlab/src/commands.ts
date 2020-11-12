@@ -589,7 +589,7 @@ taskGraph.draw()`;
         outputs: [],
         schema: {},
         ui: {},
-        inputs: [{ name: 'in1', type: ['any'] }]
+        inputs: [{ name: 'in1', type: [['any']] }] // TODO, come back to use dynamic approach
       };
       if (isCellVisible()) {
         if (isEnabled(notebookTracker.activeCell)) {

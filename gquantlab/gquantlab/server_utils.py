@@ -39,15 +39,19 @@ def _format_port(port):
     for key in port:
         one_port = {}
         one_port['name'] = key
+        if 'dynamic' in port[key]:
+            one_port['dynamic'] = port[key]['dynamic']
         port_type = port[key]['type']
         if isinstance(port_type, list):
             types = []
             for t in port_type:
-                type_name = t.__module__+'.'+t.__name__
-                types.append(type_name)
+                type_names = [e.__module__+'.'+e.__name__ for
+                              e in t.mro()]
+                types.append(type_names)
             one_port['type'] = types
         else:
-            type_name = port_type.__module__+'.'+port_type.__name__
+            type_name = [e.__module__+'.'+e.__name__ for
+                         e in port_type.mro()]
             one_port['type'] = [type_name]
         all_ports.append(one_port)
     return all_ports

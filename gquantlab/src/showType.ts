@@ -10,10 +10,10 @@ export function htmlForType(d: any, key: string): string {
   const metaObj = d[key].content;
   // only show column if it is dataframe
   let header = '';
-  const types = d[key].portType as string[];
-  types.forEach((d: any)=> {
-    if (d in displays){
-      header = displays[d](metaObj);
+  const types = d[key].portType as string[][];
+  types.forEach((typeNames: string[])=> {
+    if (typeNames[0] in displays){
+      header = displays[typeNames[0]](metaObj);
     }
   });
   return header;

@@ -480,7 +480,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
     // reset the input ports
     outputCollector.inputs = [];
     for (let i = 0; i < totalNeed; i++) {
-      outputCollector.inputs.push({ name: `in${i + 1}`, type: ['any'] });
+      outputCollector.inputs.push({ name: `in${i + 1}`, type: [['any']] });
     }
     connectedEdges.forEach((d: IEdge, i: number) => {
       d.to = `${OUTPUT_COLLECTOR}.in${i + 1}`;

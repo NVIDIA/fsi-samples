@@ -53,13 +53,16 @@ export function validConnection(that: Chart) {
       const fromTypes = that.portTypes[from];
       // if 'any shows up in types, it is valid
       if (
-        toTypes.findIndex(d => d === 'any') < 0 &&
-        fromTypes.findIndex(d => d === 'any') < 0
+        toTypes.findIndex(d => d[0] === 'any') < 0 &&
+        fromTypes.findIndex(d => d[0] === 'any') < 0
       ) {
-        const intersection = toTypes.filter((x: string) =>
-          fromTypes.includes(x)
+        const intersection = toTypes.some((x: string[]) => {
+          return fromTypes.some((typeNames: string[]) =>
+              typeNames.includes(x[0])
+           )
+          }
         );
-        if (intersection.length === 0) {
+        if (! intersection) {
           return false;
         }
       }
@@ -68,9 +71,9 @@ export function validConnection(that: Chart) {
       if (from in that.outputMeta && to in that.inputRequriements) {
         let found = false;
         for (let i = 0; i < toTypes.length; i++){
-          if (toTypes[i] in validators) {
+          if (toTypes[i][0] in validators) {
             found = true;
-            validators[toTypes[i]](that.inputRequriements[to], that.outputMeta[from]);
+            return validators[toTypes[i][0]](that.inputRequriements[to], that.outputMeta[from]);
             break;
           }
         } 
@@ -97,13 +100,16 @@ export function validConnection(that: Chart) {
       const toTypes = that.portTypes[to];
       const fromTypes = that.portTypes[from];
       if (
-        toTypes.findIndex(d => d === 'any') < 0 &&
-        fromTypes.findIndex(d => d === 'any') < 0
+        toTypes.findIndex(d => d[0] === 'any') < 0 &&
+        fromTypes.findIndex(d => d[0] === 'any') < 0
       ) {
-        const intersection = toTypes.filter((x: string) =>
-          fromTypes.includes(x)
+        const intersection = fromTypes.some((x: string[]) => {
+          return toTypes.some((typeNames: string[]) =>
+              typeNames.includes(x[0])
+           )
+          }
         );
-        if (intersection.length === 0) {
+        if (! intersection) {
           return false;
         }
       }
@@ -111,10 +117,10 @@ export function validConnection(that: Chart) {
       // make sure the requirement is met
       if (to in that.outputMeta && from in that.inputRequriements) {
         let found = false;
-        for (let i = 0; i < toTypes.length; i++){
-          if (toTypes[i] in validators) {
+        for (let i = 0; i < fromTypes.length; i++){
+          if (fromTypes[i][0] in validators) {
             found = true;
-            validators[toTypes[i]](that.inputRequriements[from], that.outputMeta[to]);
+            return validators[fromTypes[i][0]](that.inputRequriements[from], that.outputMeta[to]);
             break;
           }
         } 

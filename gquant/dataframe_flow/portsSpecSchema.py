@@ -105,6 +105,7 @@ class PortsSpecSchema(object):
 
     port_type = 'type'
     optional = 'optional'
+    dynamic = 'dynamic'
 
     @classmethod
     def _typecheck(cls, schema_field, value):
@@ -120,6 +121,9 @@ class PortsSpecSchema(object):
                 check_ptype(value)
         elif schema_field == cls.optional:
             assert isinstance(value, bool), 'Optional field must be a '\
+                'boolean. Instead got: {}'.format(value)
+        elif schema_field == cls.dynamic:
+            assert isinstance(value, bool), 'Dynamic field must be a '\
                 'boolean. Instead got: {}'.format(value)
         else:
             raise KeyError('Uknown schema field "{}" in the port spec.'.format(

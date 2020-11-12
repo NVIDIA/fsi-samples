@@ -74,7 +74,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   outputPorts: Set<string>;
   inputRequriements: { [key: string]: any };
   outputMeta: { [key: string]: any };
-  portTypes: { [key: string]: string[] };
+  portTypes: { [key: string]: string[][] };
   isDirty: boolean;
 
   constructor(props: IChartProp) {
