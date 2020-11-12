@@ -21,7 +21,7 @@ import unittest
 import copy
 import warnings
 
-from gquant.dataframe_flow import (Node, PortsSpecSchema, NodePorts)
+from gquant.dataframe_flow import (Node, PortsSpecSchema, NodePorts, MetaData)
 from gquant.dataframe_flow import (TaskSpecSchema, TaskGraph)
 
 from .utils import make_orderer
@@ -50,8 +50,7 @@ class NodeNumGen(Node):
             'rangenums': {'range': 'numbers'},
             'listnotnums': {'list': 'notnumbers'},
         }.get(colsopt)
-
-        return {'numlist': cols}
+        return MetaData(inports={}, outports={'numlist': cols})
 
     def process(self, inputs):
         colsopt = self.conf['columns_option']
@@ -77,9 +76,9 @@ class NodeNumProc(Node):
         return NodePorts(inports=inports, outports=outports)
 
     def meta_setup(self):
-        self.required = {'inlist': {'list': 'numbers'}}
+        required = {'inlist': {'list': 'numbers'}}
         columns_out = {'sum': {'element': 'number'}}
-        return columns_out
+        return MetaData(inports=required, outports=columns_out)
 
     def process(self, inputs):
         inlist = inputs['inlist']

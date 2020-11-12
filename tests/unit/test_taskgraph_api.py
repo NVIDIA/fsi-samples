@@ -130,7 +130,7 @@ class TestTaskGraphAPI(unittest.TestCase):
 
         onode_cols = {'points_df_out': {'x': 'float64', 'y': 'float64'},
                       'points_ddf_out': {'x': 'float64', 'y': 'float64'}}
-        self.assertEqual(onode_cols, points_node.meta_setup())
+        self.assertEqual(onode_cols, points_node.meta_setup().outports)
 
         inode_info = {
             'from_node': points_node,
@@ -152,7 +152,7 @@ class TestTaskGraphAPI(unittest.TestCase):
                                           'y': 'float64'},
                           'distance_abs_df': {'distance_abs_cudf': 'float64',
                                               'x': 'float64', 'y': 'float64'}}
-        self.assertEqual(inode_out_cols, distance_node.meta_setup())
+        self.assertEqual(inode_out_cols, distance_node.meta_setup().outports)
 
     @ordered
     def test_run(self):

@@ -22,7 +22,10 @@ pytest -v tests/unit/test_rolling.py
 import pandas as pd
 import unittest
 import cudf
-from gquant.cuindicator import Rolling, Ewm
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+from rapids_modules.cuindicator import Rolling, Ewm
 from .utils import make_orderer, error_function
 import numpy as np
 

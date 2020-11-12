@@ -22,8 +22,11 @@ pytest -v tests/unit/test_indicator_node.py
 import warnings
 import unittest
 import cudf
-import gquant.cuindicator as gi
-from gquant.plugin_nodes.transform.indicatorNode import IndicatorNode
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+import rapids_modules.cuindicator as gi
+from rapids_modules.transform.indicatorNode import IndicatorNode
 from gquant.dataframe_flow.task import Task
 from .utils import make_orderer
 import numpy as np
@@ -87,23 +90,23 @@ class TestIndicatorNode(unittest.TestCase):
                     "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
-        out_cols = inN.meta_setup()
+        out_cols = inN.meta_setup().outports
 
         col = "indicator"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required['stock_in'], msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "high"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required['stock_in'], msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "low"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required['stock_in'], msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "close"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required['stock_in'], msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "volume"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required['stock_in'], msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
 
         col = "CH_OS_10_20"
         msg = "bad error: %s is missing" % (col)

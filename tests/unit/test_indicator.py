@@ -24,7 +24,10 @@ import pandas as pd
 import unittest
 import pathlib
 import cudf
-import gquant.cuindicator as gi
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+import rapids_modules.cuindicator as gi
 from . import technical_indicators as ti
 from .utils import make_orderer, error_function
 import numpy as np

@@ -22,9 +22,12 @@ pytest -v tests/unit/test_nodes.py
 import warnings
 import unittest
 import cudf
-from gquant.plugin_nodes.transform.returnFeatureNode import ReturnFeatureNode
-from gquant.plugin_nodes.transform.indicatorNode import IndicatorNode
-from gquant.plugin_nodes.transform.assetIndicatorNode import AssetIndicatorNode
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+from rapids_modules.transform.returnFeatureNode import ReturnFeatureNode
+from rapids_modules.transform.indicatorNode import IndicatorNode
+from rapids_modules.transform.assetIndicatorNode import AssetIndicatorNode
 from gquant.dataframe_flow.task import Task
 from .utils import make_orderer, error_function_index
 import numpy as np
