@@ -1,7 +1,10 @@
 import ipywidgets as widgets
 from bqplot.colorschemes import CATEGORY20
 from bqplot import Axis, Figure, LinearScale, Lines
-from gquant.cuindicator import average_directional_movement_index as indicator_fun  # noqa #F401
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+from rapids_modules.cuindicator import average_directional_movement_index as indicator_fun  # noqa #F401
 
 
 def get_para_widgets():

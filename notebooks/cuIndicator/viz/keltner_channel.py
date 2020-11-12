@@ -1,6 +1,9 @@
 import ipywidgets as widgets
 from bqplot import Axis, Figure, LinearScale, Lines
-from gquant.cuindicator import keltner_channel as indicator_fun  # noqa #F401
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+from rapids_modules.cuindicator import keltner_channel as indicator_fun  # noqa #F401
 
 
 def get_para_widgets():
