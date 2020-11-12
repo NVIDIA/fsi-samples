@@ -427,8 +427,11 @@ class NodeTaskGraphMixin(object):
         output_df = {}
         # A dask_cudf object is synthesized from a list of delayed objects.
         # Per outputs_dly above use dask_cudf.from_delayed API.
+        connected_outs = set([out['from_port'] for out in self.outputs])
         for oport, port_spec in \
                 self._get_output_ports(full_port_spec=True).items():
+            if (oport not in connected_outs):
+                continue
             port_type = port_spec.get(PortsSpecSchema.port_type, type(None))
             if not isinstance(port_type, Iterable):
                 port_type = [port_type]

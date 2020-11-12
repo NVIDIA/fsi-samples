@@ -428,7 +428,7 @@ class Node(_PortsMixin, _Node):
 
         if not required:
             return
-        inports = self._get_input_ports()
+        inports = self._get_input_ports(full_port_spec=True)
         for iport in inports:
             if iport not in required:
                 continue
