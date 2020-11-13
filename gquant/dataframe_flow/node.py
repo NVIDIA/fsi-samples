@@ -4,7 +4,7 @@ from collections.abc import Iterable
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData, NodePorts
-from ._node_flow import _get_nodetype
+from ._node_flow import _get_nodetype, dynamic_ports 
 
 from ._node import _Node
 
@@ -101,29 +101,28 @@ class Node(_PortsMixin, _Node):
 
         PortsSpecSchema.validate_ports(self.ports_setup())
 
+    @dynamic_ports
     def calculated_ports_setup(self):
-        # note, currently can only handle one dynamic port per node
-        port_type = PortsSpecSchema.port_type
-        ports = self.ports_setup()
-        inports = ports.inports
-        dy = PortsSpecSchema.dynamic
-        for key in inports:
-            if dy in inports[key] and inports[key][dy]:
-                types = inports[key][port_type]
-                break
+        """
+        decorate on self.ports_setup so it can calculate the dynamic ports.
+        If ports information is needed, calculated_ports_setup should be used
+        :return: Node ports
+        :rtype: NodePorts
+        """
+        return self.ports_setup()
+
+    def calculate_dynamic_input_meta(self):
+        """
+        get all the connected input metas information. It will resolve the dynamic
+        port name changes.
+        returns
+            dict, key is the current node input port name, value is the column
+            name and types
+        """
+        if hasattr(self, "_calculate_dynamic_input_meta"):
+            return self._calculate_dynamic_input_meta()
         else:
-            return ports
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                to_port = inp['to_port']
-                if to_port in inports and (not inports[to_port].get(dy,
-                                                                    False)):
-                    # skip connected non dynamic ports
-                    continue
-                else:
-                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                        port_type: types, dy: True}
-        return ports
+            return self.get_input_meta()
 
     def ports_setup(self) -> NodePorts:
         """Virtual method for specifying inputs/outputs ports.
@@ -140,6 +139,7 @@ class Node(_PortsMixin, _Node):
                 'iport1_name': {
                     PortsSpecSchema.port_type: cudf.DataFrame,
                     PortsSpecSchema.optional: True
+                    PortsSpecSchema.dynamic: True
                 }
             }
 
@@ -197,12 +197,12 @@ class Node(_PortsMixin, _Node):
 
         The self.delayed_process flag is by default set to False. It can be
         overwritten here to True. For native dataframe API calls, dask cudf
-        support the distribution computation. But the dask_cudf dataframe does
+        support the distribution computation. But the dask dataframe does
         not support GPU customized kernels directly. We can use to_delayed and
-        from_delayed low level interfaces of dask_cudf to add this support.
+        from_delayed low level interfaces of dask dataframe to add this support.
         In order to use Dask (for distributed computation i.e. multi-gpu in
         examples later on) we set the flag and the framework
-        handles dask_cudf dataframes automatically under the hood.
+        handles dask dataframes automatically under the hood.
         """
         pass
 
@@ -241,10 +241,10 @@ class Node(_PortsMixin, _Node):
         All children class should implement this.
         It is used to compute the required input and output meta data.
 
-        `inputs` defines the required metadata 
+        `inports` defines the required metadata for the node.
         metadata is python dictionaries, which can be serialized into JSON
       
-        The output metadata are calcuated based on the input meta data. It is 
+        The output metadata are calcuated based on the input meta data. It is
         passed to the downstream nodes to do metadata validation
 
         returns:
@@ -303,168 +303,24 @@ class Node(_PortsMixin, _Node):
         return output
 
 # Validation methods ######################################
-    def validate_connected_ports(self):
+    def validate_connected_ports(self) -> None:
         """
-        Validate the connected port types match
+        Validate the connected port types match. If not overwritte, it uses
+        the default implementation
         """
-        self_nodetype = _get_nodetype(self)
-        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
-        if 'OutputCollector' in nodetype_names:
-            # Don't validate for OutputCollector
-            return
+        if hasattr(self, '_validate_connected_ports'):
+            self._validate_connected_ports()
 
-        msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
-            'type(s) "{ioport_types}"'
-
-        iports_connected = self.get_connected_inports()
-        iports_spec = self._get_input_ports(full_port_spec=True)
-        for iport in iports_connected.keys():
-            iport_spec = iports_spec[iport]
-            iport_type = iport_spec[PortsSpecSchema.port_type]
-            iport_types = [iport_type] \
-                if not isinstance(iport_type, Iterable) else iport_type
-
-            for ient in self.inputs:
-                # find input node edge entry with to_port, from_port, from_node
-                if not iport == ient['to_port']:
-                    continue
-                ientnode = ient
-                break
-            else:
-                intask = self._task_obj[TaskSpecSchema.inputs][iport]
-                # this should never happen
-                raise LookupError(
-                    'Task "{}" not connected to "{}.{}". Add task spec to '
-                    'TaskGraph.'.format(intask, self.uid, iport))
-
-            from_node = ientnode['from_node']
-            oport = ientnode['from_port']
-            oports_spec = from_node._get_output_ports(full_port_spec=True)
-            oport_spec = oports_spec[oport]
-            oport_type = oport_spec[PortsSpecSchema.port_type]
-            oport_types = [oport_type] \
-                if not isinstance(oport_type, Iterable) else oport_type
-
-            for optype in oport_types:
-                if issubclass(optype, tuple(iport_types)):
-                    break
-            else:
-                # Port types do not match
-                msgi = msgfmt.format(
-                    task=self.uid,
-                    nodetype=self_nodetype,
-                    inout='input',
-                    ioport=iport,
-                    ioport_types=iport_types)
-
-                msgo = msgfmt.format(
-                    task=from_node.uid,
-                    nodetype=_get_nodetype(from_node),
-                    inout='output',
-                    ioport=oport,
-                    ioport_types=oport_types)
-
-                errmsg = 'Port Types Validation\n{}\n{}\n'\
-                    'Connected nodes do not have matching port types. Fix '\
-                    'port types.'.format(msgo, msgi)
-
-                raise TypeError(errmsg)
-
-    def validate_connected_metadata(self):
+    def validate_connected_metadata(self) -> None:
         """
         Validate the connected metadata match the requirements.
         metadata.inports specify the required metadata.
+
+        If not overwritte, it uses the default implementation
+
         """
-        metadata = self.meta_setup()
-
-        # as current behavior of matching in the validate_required
-        def validate_required(iport, kcol, kval, ientnode, icols):
-            node = ientnode['from_node']
-            oport = ientnode['from_port']
-            src_task = '{}.{}'.format(node.uid, oport)
-            src_type = _get_nodetype(node)
-            # incoming "task.port":"Node-type":{{column:column-type}}
-            msgi = \
-                '"{task}":"{nodetype}" produces metadata {colinfo}'.format(
-                    task=src_task,
-                    nodetype=src_type,
-                    colinfo=icols)
-
-            dst_task = '{}.{}'.format(self.uid, iport)
-            dst_type = _get_nodetype(self)
-            # expecting "task.port":"Node-type":{{column:column-type}}
-            msge = \
-                '"{task}":"{nodetype}" requires metadata {colinfo}'.format(
-                    task=dst_task,
-                    nodetype=dst_type,
-                    colinfo={kcol: kval})
-
-            header = \
-                'Meta Validation\n'\
-                'Format "task.port":"Node-type":{{column:column-type}}'
-            info_msg = '{}\n{}\n{}'.format(header, msgi, msge)
-
-            if kcol not in icols:
-                err_msg = \
-                    'Task "{}" missing required column "{}" '\
-                    'from "{}".'.format(self.uid, kcol, src_task)
-                out_err = '{}\n{}'.format(info_msg, err_msg)
-                raise LookupError(out_err)
-
-            ival = icols[kcol]
-            if kval != ival:
-                # special case for 'date'
-                if (kval == 'date' and ival
-                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
-                    return
-                else:
-                    err_msg = 'Task "{}" column "{}" expected type "{}" got '\
-                        'type "{}" instead.'.format(self.uid, kcol, kval, ival)
-                    out_err = '{}\n{}'.format(info_msg, err_msg)
-                    raise LookupError(out_err)
-
-        inputs_meta = self.get_input_meta()
-        required = metadata.inports
-
-        if not required:
-            return
-        inports = self._get_input_ports(full_port_spec=True)
-        for iport in inports:
-            if iport not in required:
-                continue
-            required_iport = required[iport]
-
-            if iport not in inputs_meta:
-                # if iport is dynamic, skip warning
-                dy = PortsSpecSchema.dynamic
-                if inports[iport].get(dy, False):
-                    continue
-                # Is it possible that iport not connected? If so iport should
-                # not be in required. Should raise an exception here.
-                warn_msg = \
-                    'Task "{}" Node Type "{}" missing required port "{}" in '\
-                    'incoming meta data. Should the port be connected?'.format(
-                        self.uid, _get_nodetype(self), iport)
-                warnings.warn(warn_msg)
-                continue
-            incoming_meta = inputs_meta[iport]
-
-            for ient in self.inputs:
-                # find input node edge entry with to_port, from_port, from_node
-                if not iport == ient['to_port']:
-                    continue
-                ientnode = ient
-                break
-            else:
-                intask = self._task_obj[TaskSpecSchema.inputs][iport]
-                # this should never happen
-                raise LookupError(
-                    'Task "{}" not connected to "{}.{}". Add task spec to '
-                    'TaskGraph.'.format(intask, self.uid, iport))
-
-            for key, val in required_iport.items():
-                validate_required(iport, key, val,
-                                  ientnode, incoming_meta)
+        if hasattr(self, '_validate_connected_metadata'):
+            self._validate_connected_metadata()
 
     def load_cache(self, filename=None) -> dict:
         """
@@ -478,7 +334,7 @@ class Node(_PortsMixin, _Node):
         """
         raise NotImplementedError
 
-    def save_cache(self, output_data: dict):
+    def save_cache(self, output_data: dict) -> None:
         '''Defines how to save the output of a node to
         filesystem cache.
 
