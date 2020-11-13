@@ -53,7 +53,7 @@ conda config --show-sources
 conda list --show-channel-urls
 
 gpuci_logger "Install dependencies"
-conda install -y "cudf=${RAPIDS_VERSION:-0.10}" "dask-cudf=${RAPIDS_VERSION:-0.10}" networkx "bqplot=0.11.5" xgboost
+gpuci_conda_retry install -y "cudf=${RAPIDS_VERSION:-0.10}" "dask-cudf=${RAPIDS_VERSION:-0.10}" networkx "bqplot=0.11.5" xgboost
 
 gpuci_logger "Check versions"
 python --version
