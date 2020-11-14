@@ -283,7 +283,7 @@ class NemoHyperTuneNode(GridRandomSearchNode):
                 input_feeders = []
 
                 def inputNode_fun(inputNode, in_ports):
-                    inports = inputNode.calculated_ports_setup().inports
+                    inports = inputNode.ports_setup().inports
 
                     class InputFeed(Node):
 

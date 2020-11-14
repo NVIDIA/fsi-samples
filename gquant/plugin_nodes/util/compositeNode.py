@@ -161,7 +161,7 @@ class CompositeNode(Node):
 
             def inputNode_fun(inputNode, in_ports):
                 inport = {}
-                before_fix = inputNode.calculated_ports_setup().inports
+                before_fix = inputNode.ports_setup().inports
                 for key in before_fix.keys():
                     if key in in_ports:
                         inport[key] = before_fix[key]
@@ -169,7 +169,7 @@ class CompositeNode(Node):
 
             def outNode_fun(outNode, out_ports):
                 ouport = {}
-                before_fix = outNode.calculated_ports_setup().outports
+                before_fix = outNode.ports_setup().outports
                 for key in before_fix.keys():
                     if key in out_ports:
                         ouport[key] = before_fix[key]
@@ -283,7 +283,7 @@ class CompositeNode(Node):
                 node_id = t.get('id')
                 if node_id != '':
                     node = task_graph[node_id]
-                    all_ports = node.calculated_ports_setup()
+                    all_ports = node.ports_setup()
                     for port in all_ports.inports.keys():
                         in_ports.append(node_id+'.'+port)
                     for port in all_ports.outports.keys():
@@ -348,7 +348,7 @@ class CompositeNode(Node):
             input_feeders = []
 
             def inputNode_fun(inputNode, in_ports):
-                inports = inputNode.calculated_ports_setup().inports
+                inports = inputNode.ports_setup().inports
 
                 class InputFeed(Node):
 
@@ -397,7 +397,7 @@ class CompositeNode(Node):
                 })
 
             def outNode_fun(outNode, out_ports):
-                out_ports = outNode.calculated_ports_setup().outports
+                out_ports = outNode.ports_setup().outports
                 # fixed_outports = fix_port_name(out_ports, outNode.uid)
                 for key in out_ports.keys():
                     if self.outport_connected(outNode.uid+'@'+key):

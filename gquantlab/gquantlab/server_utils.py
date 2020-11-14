@@ -126,7 +126,7 @@ def get_node_obj(node, count_id=True):
     dict
         node data for client
     """
-    ports = node.calculated_ports_setup()
+    ports = node.ports_setup()
     schema = node.conf_schema()
     typeName = node._task_obj.get('type')
     if node.uid == OUTPUT_ID:

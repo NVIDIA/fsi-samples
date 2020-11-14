@@ -1,10 +1,7 @@
-import warnings
 import abc
-from collections.abc import Iterable
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData, NodePorts
-from ._node_flow import _get_nodetype, dynamic_ports 
 
 from ._node import _Node
 
@@ -18,7 +15,7 @@ class _PortsMixin(object):
     '''
 
     def __get_io_port(self, io=None, full_port_spec=False):
-        input_ports, output_ports = self.calculated_ports_setup()
+        input_ports, output_ports = self.ports_setup()
         if io in ('in',):
             io_ports = input_ports
         else:
@@ -100,16 +97,6 @@ class Node(_PortsMixin, _Node):
         self.profile = False  # by default, do not profile
 
         PortsSpecSchema.validate_ports(self.ports_setup())
-
-    @dynamic_ports
-    def calculated_ports_setup(self):
-        """
-        decorate on self.ports_setup so it can calculate the dynamic ports.
-        If ports information is needed, calculated_ports_setup should be used
-        :return: Node ports
-        :rtype: NodePorts
-        """
-        return self.ports_setup()
 
     def calculate_dynamic_input_meta(self):
         """

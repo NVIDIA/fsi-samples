@@ -36,34 +36,6 @@ _copys = {}  # dictionary of object copy functions
 _cleanup = {}  # dictionary of clean up functions
 
 
-def dynamic_ports(ports_setup):
-
-    def calculated_ports_setup(self):
-        # note, currently can only handle one dynamic port per node
-        port_type = PortsSpecSchema.port_type
-        ports = ports_setup(self)
-        inports = ports.inports
-        dy = PortsSpecSchema.dynamic
-        for key in inports:
-            if dy in inports[key] and inports[key][dy]:
-                types = inports[key][port_type]
-                break
-        else:
-            return ports
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                to_port = inp['to_port']
-                if to_port in inports and (not inports[to_port].get(dy,
-                                                                    False)):
-                    # skip connected non dynamic ports
-                    continue
-                else:
-                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                        port_type: types, dy: True}
-        return ports
-    return calculated_ports_setup
-
-
 def _get_nodetype(node):
     '''Identify the implementation node class. A node might be mixed in with
     other classes. Ideally get the primary implementation class.
@@ -153,7 +125,7 @@ class NodeTaskGraphMixin(object):
         It will fixed the port names that is changed dynamically
         """
         output = {}
-        ports = self.calculated_ports_setup()
+        ports = self.ports_setup()
         inports = ports.inports
         iports_connected = self.get_connected_inports()
         iports_cols = self.get_input_meta()
@@ -172,6 +144,45 @@ class NodeTaskGraphMixin(object):
                     if oport in iports_connected and oport in iports_cols:
                         output[oport] = copy.deepcopy(iports_cols[oport])
         return output
+
+    def ports_setup(self):
+        """
+        overwrite the super class ports_setup so it can calculate the dynamic
+        ports.
+        If ports information is needed, ports_setup should be used
+        :return: Node ports
+        :rtype: NodePorts
+        """
+        # this will filter out the primary class with ports_setup
+        nodecls_list = _get_nodetype(self)
+        for icls in nodecls_list:
+            if not hasattr(icls, 'ports_setup'):
+                continue
+            ports = icls.ports_setup(self)
+            break
+        else:
+            raise Exception('ports_setup method missing')
+        # note, currently can only handle one dynamic port per node
+        port_type = PortsSpecSchema.port_type
+        inports = ports.inports
+        dy = PortsSpecSchema.dynamic
+        for key in inports:
+            if dy in inports[key] and inports[key][dy]:
+                types = inports[key][port_type]
+                break
+        else:
+            return ports
+        if hasattr(self, 'inputs'):
+            for inp in self.inputs:
+                to_port = inp['to_port']
+                if to_port in inports and (not inports[to_port].get(dy,
+                                                                    False)):
+                    # skip connected non dynamic ports
+                    continue
+                else:
+                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+                        port_type: types, dy: True}
+        return ports
 
     def __valide(self, node_output: dict):
         output_meta = self.meta_setup().outports
@@ -540,7 +551,7 @@ class NodeTaskGraphMixin(object):
             return output
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            ports = from_node.calculated_ports_setup()
+            ports = from_node.ports_setup()
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name in ports.outports:
