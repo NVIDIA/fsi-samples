@@ -437,18 +437,10 @@ class TaskGraph(object):
         # Columns type checking is done in the :meth:`TaskGraph._run` after the
         # outputs are specified and participating tasks are determined.
 
-        # # this part is to do static type checks
-        # raw_inputs = []
-        # for k in self.__node_dict.keys():
-        #     self.__find_roots(self.__node_dict[k], raw_inputs,
-        #                       consider_load=False)
-        #
-        # for i in raw_inputs:
-        #     i.validate_required_columns()
-        #
-        # # clean up the visited status for run computations
-        # for task_id in self.__node_dict:
-        #     self.__node_dict[task_id].visited = False
+        # this part is to update each of the node so dynamic inputs can be
+        # processed
+        for k in self.__node_dict.keys():
+            self.__node_dict[k].update()
 
     def __getitem__(self, key):
         return self.__node_dict[key]

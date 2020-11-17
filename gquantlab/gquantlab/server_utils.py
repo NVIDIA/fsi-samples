@@ -127,6 +127,7 @@ def get_node_obj(node, count_id=True):
         node data for client
     """
     ports = node.ports_setup()
+    metadata = node.meta_setup()
     schema = node.conf_schema()
     typeName = node._task_obj.get('type')
     if node.uid == OUTPUT_ID:
@@ -146,7 +147,6 @@ def get_node_obj(node, count_id=True):
                 'conf': conf,
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
-    metadata = node.meta_setup()
     out_node['output_meta'] = metadata.outports
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')

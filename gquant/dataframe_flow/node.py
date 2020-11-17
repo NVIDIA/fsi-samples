@@ -98,19 +98,6 @@ class Node(_PortsMixin, _Node):
 
         PortsSpecSchema.validate_ports(self.ports_setup())
 
-    def calculate_dynamic_input_meta(self):
-        """
-        get all the connected input metas information. It will resolve the dynamic
-        port name changes.
-        returns
-            dict, key is the current node input port name, value is the column
-            name and types
-        """
-        if hasattr(self, "_calculate_dynamic_input_meta"):
-            return self._calculate_dynamic_input_meta()
-        else:
-            return self.get_input_meta()
-
     def ports_setup(self) -> NodePorts:
         """Virtual method for specifying inputs/outputs ports.
 
@@ -164,6 +151,13 @@ class Node(_PortsMixin, _Node):
             boolean, whehther this port is connected or not
         """
         # this method will be implemented by NodeTaskGraphMixin
+        pass
+
+    def update(self):
+        """
+        a function is called after init, it used to update dynamic information
+        from parent nodes
+        """
         pass
 
     def get_connected_inports(self) -> dict:

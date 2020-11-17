@@ -148,13 +148,6 @@ class NeMoBase:
             app._module_registry.remove(mod)
 
     def ports_setup(self):
-        input_meta = self.get_input_meta()
-        if issubclass(self.instanceClass, TrainableNM):
-            input_meta = self.get_input_meta()
-            if self.INPUT_NM in input_meta:
-                if (share_weight in self.conf and
-                        self.conf[share_weight] == 'Reuse'):
-                    self.conf = input_meta[self.INPUT_NM]
         port_type = PortsSpecSchema.port_type
         if self.instance is not None:
             inports = self.instance.input_ports

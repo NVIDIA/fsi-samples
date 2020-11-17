@@ -51,6 +51,9 @@ def group_ports(input_list):
 
 class CompositeNode(Node):
 
+    def update(self):
+        self.conf_update()  # update the conf 
+
     def conf_update(self):
         """
         This method is used to overwrite the conf from
@@ -67,7 +70,6 @@ class CompositeNode(Node):
         change the computation result though.
         It returns the hash code, the loaded task_graph, the replacement conf obj
         """
-        self.conf_update()
         task_graph = ""
         inputs = ()
         replacementObj = {}

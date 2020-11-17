@@ -58,7 +58,7 @@ class NemoInferNode(Node):
         output['element']['types'] = ['VoidType']
         output['element']['fields'] = 'None'
         output['element']['parameters'] = '{}'
-        required = self.calculate_dynamic_input_meta()
+        required = self.get_input_meta()
         required['input_tensor'] = copy.deepcopy(output)
         metadata = MetaData(inports=required,
                             outports={self.OUTPUT_PORT_NAME: {}})

@@ -119,32 +119,6 @@ class NodeTaskGraphMixin(object):
         #     typically a data container.
         self.clear_input = True
 
-    def _calculate_dynamic_input_meta(self):
-        """
-        This method will return the dynamic input metadata.
-        It will fixed the port names that is changed dynamically
-        """
-        output = {}
-        ports = self.ports_setup()
-        inports = ports.inports
-        iports_connected = self.get_connected_inports()
-        iports_cols = self.get_input_meta()
-        dy = PortsSpecSchema.dynamic
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                oport = inp['to_port']
-                iport = inp['from_port']
-                out_port_name = inp['from_node'].uid+'@'+iport
-                if out_port_name in inports and inports[
-                        out_port_name].get(dy, False):
-                    if oport in iports_connected and oport in iports_cols:
-                        output[out_port_name] = copy.deepcopy(
-                            iports_cols[oport])
-                else:
-                    if oport in iports_connected and oport in iports_cols:
-                        output[oport] = copy.deepcopy(iports_cols[oport])
-        return output
-
     def ports_setup(self):
         """
         overwrite the super class ports_setup so it can calculate the dynamic
@@ -264,6 +238,9 @@ class NodeTaskGraphMixin(object):
         output = {}
         if not hasattr(self, 'inputs'):
             return output
+        ports = self.ports_setup()
+        inports = ports.inports
+        dy = PortsSpecSchema.dynamic
         for node_input in self.inputs:
             from_node = node_input['from_node']
             meta_data = copy.deepcopy(from_node.meta_setup())
@@ -283,7 +260,12 @@ class NodeTaskGraphMixin(object):
                         from_port_name, from_node.uid, meta_data.outports)
                 )
             else:
-                output[to_port_name] = meta_data.outports[from_port_name]
+                out_port_name = from_node.uid+'@'+from_port_name
+                if out_port_name in inports and inports[
+                        out_port_name].get(dy, False):
+                    output[out_port_name] = meta_data.outports[from_port_name]
+                else:
+                    output[to_port_name] = meta_data.outports[from_port_name]
         return output
 
     def __set_input_df(self, to_port, df):
