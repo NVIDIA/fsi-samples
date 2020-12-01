@@ -43,9 +43,6 @@ nvidia-smi
 gpuci_logger "Activate conda env"
 . /opt/conda/etc/profile.d/conda.sh
 conda activate rapids
-conda info
-conda config --show-sources
-conda list --show-channel-urls
 
 gpuci_logger "Install dependencies"
 gpuci_conda_retry install -y "cudf=${RAPIDS_VERSION:-0.10}" "dask-cudf=${RAPIDS_VERSION:-0.10}" networkx "bqplot=0.11.5" xgboost
