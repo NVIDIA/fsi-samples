@@ -26,6 +26,7 @@
 **Implemented enhancements:**
 
 - \[FEA\] csvStockLoader.py and stockNameLoader.py - Use cudf.read\_csv\(\) insteand of pandas.read\_csv\(\) [\#24](https://github.com/rapidsai/gQuant/issues/24)
+- \[FEA\] build.sh - cleanup of gpuCI script functions [\#111](https://github.com/rapidsai/gQuant/pull/111)
 
 **Fixed bugs:**
 
