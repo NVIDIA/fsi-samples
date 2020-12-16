@@ -52,7 +52,7 @@ def group_ports(input_list):
 class CompositeNode(Node):
 
     def update(self):
-        self.conf_update()  # update the conf 
+        self.conf_update()  # update the conf
 
     def conf_update(self):
         """
@@ -68,7 +68,8 @@ class CompositeNode(Node):
         In very rara case, might have the problem of hash collision,
         It affects the column, port and conf calculation. It won't
         change the computation result though.
-        It returns the hash code, the loaded task_graph, the replacement conf obj
+        It returns the hash code, the loaded task_graph,
+        the replacement conf obj
         """
         task_graph = ""
         inputs = ()

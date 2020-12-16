@@ -51,8 +51,9 @@ class TaskSpecSchema(object):
             elif schema_field == cls.save:
                 assert isinstance(value, bool)
             else:
-                raise KeyError('Uknown schema field "{}" in the task spec.'.format(
-                    schema_field))
+                raise KeyError(
+                    'Uknown schema field "{}" in the task spec.'.format(
+                        schema_field))
         except AssertionError as e:
             print(schema_field, value)
             raise e

@@ -62,48 +62,93 @@ class ClassificationData(_PortTypesMixin, Node):
                               "description": "The number of samples.",
                               "default": 100},
                 "n_features": {"type": "number",
-                               "description": "The total number of features. These comprise n_informative informative features, n_redundant redundant features, n_repeated duplicated features and n_features-n_informative-n_redundant-n_repeated useless features drawn at random.",
+                               "description": """The total number of features.
+                                These comprise n_informative informative
+                                features, n_redundant redundant features,
+                                n_repeated duplicated features and
+                                n_features-n_informative-n_redundant-n_repeated
+                                useless features drawn at random.""",
                                "default": 20},
                 "n_informative": {"type": "number",
-                                  "description": "The number of informative features. Each class is composed of a number of gaussian clusters each located around the vertices of a hypercube in a subspace of dimension n_informative. For each cluster, informative features are drawn independently from N(0, 1) and then randomly linearly combined within each cluster in order to add covariance. The clusters are then placed on the vertices of the hypercube.",
+                                  "description": """The number of informative
+                                  features. Each class is composed of a number
+                                  of gaussian clusters each located around the
+                                  vertices of a hypercube in a subspace of
+                                  dimension n_informative. For each cluster,
+                                  informative features are drawn independently
+                                  from N(0, 1) and then randomly linearly
+                                  combined within each cluster in order to add
+                                  covariance. The clusters are then placed on
+                                  the vertices of the hypercube.""",
                                   "default": 2},
                 "n_redundant": {"type": "number",
-                                "description": "The number of redundant features. These features are generated as random linear combinations of the informative features.",
+                                "description": """The number of redundant
+                                features. These features are generated as
+                                random linear combinations of the informative
+                                features.""",
                                 "default": 2},
                 "n_repeated": {"type": "number",
-                               "description": "The number of duplicated features, drawn randomly from the informative and the redundant features.",
+                               "description": """The number of duplicated
+                               features, drawn randomly from the informative
+                               and the redundant features.""",
                                "default": 0},
                 "n_classes": {"type": "number",
-                              "description": "The number of classes (or labels) of the classification problem.",
+                              "description": """The number of classes (or
+                              labels) of the classification problem.""",
                               "default": 2},
                 "n_clusters_per_class": {"type": "number",
-                                         "description": "The number of clusters per class.",
+                                         "description": """The number of
+                                         clusters per class.""",
                                          "default": 2},
                 "weights": {"type": "array",
                             "items": {
                                 "type": "number"
                             },
-                            "description": "The proportions of samples assigned to each class. If None, then classes are balanced. Note that if len(weights) == n_classes - 1, then the last class weight is automatically inferred. More than n_samples samples may be returned if the sum of weights exceeds 1."},
+                            "description": """The proportions of samples
+                            assigned to each class. If None, then classes are
+                            balanced. Note that if len(weights) ==
+                            n_classes - 1, then the last class weight is
+                            automatically inferred. More than n_samples
+                            samples may be returned if the sum of weights
+                            exceeds 1."""},
                 "flip_y": {"type": "number",
-                           "description": "The fraction of samples whose class is assigned randomly. Larger values introduce noise in the labels and make the classification task harder.",
+                           "description": """The fraction of samples whose
+                           class is assigned randomly. Larger values introduce
+                           noise in the labels and make the classification
+                           task harder.""",
                            "default": 0.01},
                 "class_sep": {"type": "number",
-                              "description": "The factor multiplying the hypercube size. Larger values spread out the clusters/classes and make the classification task easier.",
+                              "description": """The factor multiplying the
+                              hypercube size. Larger values spread out the
+                              clusters/classes and make the classification
+                              task easier.""",
                               "default": 1.0},
                 "hypercube": {"type": "boolean",
-                              "description": "If True, the clusters are put on the vertices of a hypercube. If False, the clusters are put on the vertices of a random polytope.",
+                              "description": """If True, the clusters are put
+                              on the vertices of a hypercube. If False, the
+                              clusters are put on the vertices of a random
+                              polytope.""",
                               "default": True},
                 "shift": {"type": "number",
-                          "description": "Shift features by the specified value. If None, then features are shifted by a random value drawn in [-class_sep, class_sep].",
+                          "description": """Shift features by the specified
+                          value. If None, then features are shifted by a
+                          random value drawn in [-class_sep, class_sep].""",
                           "default": 0.0},
                 "scale": {"type": "number",
-                          "description": "Multiply features by the specified value. If None, then features are scaled by a random value drawn in [1, 100]. Note that scaling happens after shifting.",
+                          "description": """Multiply features by the specified
+                          value. If None, then features are scaled by a random
+                          value drawn in [1, 100]. Note that scaling happens
+                          after shifting.""",
                           "default": 1.0},
                 "shuffle": {"type": "boolean",
-                            "description": "Shuffle the samples and the features.",
+                            "description": """Shuffle the samples and the
+                            features.""",
                             "default": True},
                 "random_state":  {"type": "number",
-                                  "description": "Determines random number generation for dataset creation. Pass an int for reproducible output across multiple function calls. See Glossary."},
+                                  "description": """Determines random number
+                                  generation for dataset creation. Pass an int
+                                  for reproducible output across multiple
+                                  function calls. See Glossary."""},
                 "order": {"type": "string",
                           "description": "The order of the generated samples",
                           "enum": ["F", "C"],
@@ -113,7 +158,9 @@ class ClassificationData(_PortTypesMixin, Node):
                           "enum": ["float64", "float32"],
                           "default": "float64"},
                 "n_parts": {"type": "number",
-                            "description": "used for Dask dataframe, number of partitions to generate (this can be greater than the number of workers",
+                            "description": """used for Dask dataframe, number
+                            of partitions to generate (this can be greater
+                            than the number of workers""",
                             "default": 4}
             }
         }

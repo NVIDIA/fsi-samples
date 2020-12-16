@@ -6,7 +6,6 @@ import cudf
 import dask_cudf
 import cuml
 import copy
-from .._port_type_node import _PortTypesMixin
 
 
 __all__ = ['DataSplittingNode']
@@ -86,12 +85,18 @@ class DataSplittingNode(_PortTypesMixin, Node):
                 "target": {"type": "string",
                            "description": "Target column name"},
                 "train_size": {"type": "number",
-                               "description": "If float, represents the proportion [0, 1] of the data to be assigned to the training set. If an int, represents the number of instances to be assigned to the training set.",
+                               "description": """If float, represents the
+                               proportion [0, 1] of the data to be assigned to
+                               the training set. If an int, represents the
+                               number of instances to be assigned to the
+                               training set.""",
                                "default": 0.8},
                 "shuffle": {"type": "boolean",
-                            "description": "Whether or not to shuffle inputs before splitting random_stateint"},
+                            "description": """Whether or not to shuffle inputs
+                            before splitting random_stateint"""},
                 "random_state": {"type": "number",
-                                 "description": "If shuffle is true, seeds the generator. Unseeded by default"}
+                                 "description": """If shuffle is true, seeds
+                                 the generator. Unseeded by default"""}
             },
             "required": ["target"],
         }

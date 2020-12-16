@@ -86,8 +86,8 @@ class ContextCompositeNode(CompositeNode):
                     "description": "context parameters",
                     "additionalProperties": {
                                 "type": "object",
-                                "description": """The context parameters for this 
-                                composite node""",
+                                "description": """The context
+                                parameters for this composite node""",
                                 "properties": {
                                     "type": {
                                         "type": "string",
@@ -123,7 +123,7 @@ class ContextCompositeNode(CompositeNode):
                     },
                     "map": {
                         "type": "array",
-                        "description": """The fields of subnode's config this 
+                        "description": """The fields of subnode's config this
                         parameter maps to""",
                         "items": {
                             "type": "object",

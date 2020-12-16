@@ -148,8 +148,8 @@ class NormalizationNode(_PortTypesMixin, Node):
                 },
                 "include":  {
                     "type": "boolean",
-                    "description": """if set true, the `columns` need to be 
-                    normalized. if false, all dataframe columns except the 
+                    "description": """if set true, the `columns` need to be
+                    normalized. if false, all dataframe columns except the
                     `columns` need to be normalized""",
                     "default": True
                 },

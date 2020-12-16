@@ -6,7 +6,6 @@ import xgboost as xgb
 import dask
 from .._port_type_node import _PortTypesMixin
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
-from .._port_type_node import _PortTypesMixin
 
 
 __all__ = ['XGBoostStrategyNode']
@@ -73,7 +72,7 @@ class XGBoostStrategyNode(_PortTypesMixin, Node):
             "title": "XGBoost Node configure",
             "type": "object",
             "description": """Split the data into training and testing based on
-             'train_data', train a XGBoost model based on the training data, 
+             'train_data', train a XGBoost model based on the training data,
              make predictions for all the data points, compute the trading.
             """,
             "properties": {
@@ -107,7 +106,7 @@ class XGBoostStrategyNode(_PortTypesMixin, Node):
                             "type": "number",
                             "description": "Maximum depth of a tree.",
                             "default": 8
-                        },      
+                        },
                         "max_leaves": {
                             "type": "number",
                             "description": "maximum number of tree leaves",

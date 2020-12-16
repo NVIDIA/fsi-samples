@@ -8,6 +8,7 @@ from dask.base import is_dask_collection
 from dask.distributed import Future
 
 from .portsSpecSchema import PortsSpecSchema
+from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
 
 # OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
@@ -29,11 +30,12 @@ __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
 #     to_port = 'to_port'
 #     from_port = 'from_port'
 
-_validators = {}  # dictionary of validators of funciton signiture (val, meta) -> bool
-
-_copys = {}  # dictionary of object copy functions
-
-_cleanup = {}  # dictionary of clean up functions
+# dictionary of validators of funciton signiture (val, meta) -> bool
+_validators = {}
+# dictionary of object copy functions
+_copys = {}
+# dictionary of clean up functions
+_cleanup = {}
 
 
 def _get_nodetype(node):
@@ -485,7 +487,8 @@ class NodeTaskGraphMixin(object):
             # DEBUGGING
             # print('__DELAYED_CALL node "{}" port "{}" port type "{}"'.format(
             #     self.uid, oport, port_type))
-            if any([issubclass(p_type, DaskDataFrame) for p_type in port_type]):
+            if any([issubclass(p_type,
+                               DaskDataFrame) for p_type in port_type]):
                 output_df[oport] = from_delayed(outputs_dly[oport])
             else:
                 # outputs_dly[oport] is currently a list. Run compute on each
@@ -513,7 +516,6 @@ class NodeTaskGraphMixin(object):
                 found = True
                 break
         return found
-
 
     def get_connected_inports(self):
         """
@@ -749,4 +751,3 @@ class NodeTaskGraphMixin(object):
             for key, val in required_iport.items():
                 validate_required(iport, key, val,
                                   ientnode, incoming_meta)
-

@@ -32,7 +32,8 @@ class ScatterPlotNode(Node, _PortTypesMixin):
         required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required, outports={self.OUTPUT_PORT_NAME: {}})
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
         return metadata
 
     def ports_setup(self):
@@ -79,7 +80,7 @@ class ScatterPlotNode(Node, _PortTypesMixin):
                     "description": "column used for color"
                 }
             },
-            "required": ["points","title","col_x", "col_y"],
+            "required": ["points", "title", "col_x", "col_y"],
         }
         ui = {
         }
@@ -106,7 +107,7 @@ class ScatterPlotNode(Node, _PortTypesMixin):
 
         """
         input_df = inputs[self.INPUT_PORT_NAME]
-        if isinstance(input_df,  dask_cudf.DataFrame):
+        if isinstance(input_df, dask_cudf.DataFrame):
             input_df = input_df.compute()  # get the computed value
         num_points = self.conf['points']
         stride = max(len(input_df) // num_points, 1)
@@ -116,38 +117,38 @@ class ScatterPlotNode(Node, _PortTypesMixin):
 
         x_col = self.conf['col_x']
         y_col = self.conf['col_y']
-        ax_y = Axis(label=y_col, scale=sc_y, 
+        ax_y = Axis(label=y_col, scale=sc_y,
                     orientation='vertical', side='left')
 
-        ax_x = Axis(label=x_col, scale=sc_x, num_ticks=10, label_location='end')
+        ax_x = Axis(label=x_col, scale=sc_x,
+                    num_ticks=10, label_location='end')
         m_chart = dict(top=50, bottom=70, left=50, right=100)
         if 'col_color' in self.conf:
             color_col = self.conf['col_color']
             sc_c1 = ColorScale()
             ax_c = ColorAxis(scale=sc_c1, tick_format='0.2%', label=color_col,
                              orientation='vertical', side='right')
-            if (isinstance(input_df,
-                           cudf.DataFrame) or isinstance(input_df,
-                                                         dask_cudf.DataFrame)):
+            if isinstance(input_df, (cudf.DataFrame, dask_cudf.DataFrame)):
                 scatter = Scatter(x=input_df[x_col][::stride].to_array(),
                                   y=input_df[y_col][::stride].to_array(),
-                                  color=input_df[color_col][::stride].to_array(),
-                                  scales={'x': sc_x, 'y': sc_y, 'color': sc_c1},
+                                  color=input_df[
+                                      color_col][::stride].to_array(),
+                                  scales={'x': sc_x,
+                                          'y': sc_y, 'color': sc_c1},
                                   stroke='black')
             else:
                 scatter = Scatter(x=input_df[x_col][::stride],
                                   y=input_df[y_col][::stride],
                                   color=input_df[color_col][::stride],
-                                  scales={'x': sc_x, 'y': sc_y, 'color': sc_c1},
+                                  scales={'x': sc_x,
+                                          'y': sc_y, 'color': sc_c1},
                                   stroke='black')
             fig = Figure(axes=[ax_x, ax_c, ax_y], marks=[scatter],
                          fig_margin=m_chart,
                          title=self.conf['title'])
 
         else:
-            if (isinstance(input_df,
-                           cudf.DataFrame) or isinstance(input_df,
-                                                         dask_cudf.DataFrame)):
+            if isinstance(input_df, (cudf.DataFrame, dask_cudf.DataFrame)):
                 scatter = Scatter(x=input_df[x_col][::stride].to_array(),
                                   y=input_df[y_col][::stride].to_array(),
                                   scales={'x': sc_x, 'y': sc_y},

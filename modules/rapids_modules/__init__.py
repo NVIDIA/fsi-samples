@@ -11,7 +11,6 @@ from gquant.dataframe_flow._node_flow import register_copy_function
 from gquant.dataframe_flow._node_flow import register_cleanup
 import traceback
 import cudf
-import dask
 import dask_cudf
 import pandas
 import numpy as np

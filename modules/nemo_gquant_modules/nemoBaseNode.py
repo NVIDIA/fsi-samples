@@ -8,7 +8,6 @@ from collections import OrderedDict
 from gquant.dataframe_flow.util import get_file_path
 from nemo.backends.pytorch.nm import (DataLayerNM,
                                       TrainableNM, LossNM)
-from collections import OrderedDict
 import nemo
 
 __all__ = ["NeMoBase"]
@@ -130,7 +129,7 @@ class NeMoBase:
                 if self.instance is None:
                     self.instance = ins
             except Exception as e:
-                # print(e)
+                print(e)
                 pass
 
     def _clean_dup(self):

@@ -9,7 +9,6 @@ from .portsSpecSchema import NodePorts, ConfSchema
 import warnings
 import copy
 import traceback
-import dask
 import cloudpickle
 import base64
 from types import ModuleType
@@ -269,7 +268,8 @@ class TaskGraph(object):
 
         with open(filename) as f:
             yaml = ruamel.yaml.YAML(typ='safe')
-            yaml.constructor.yaml_constructors[u'tag:yaml.org,2002:timestamp'] = \
+            yaml.constructor.yaml_constructors[
+                u'tag:yaml.org,2002:timestamp'] = \
                 yaml.constructor.yaml_constructors[u'tag:yaml.org,2002:str']
             obj = yaml.load(f)
         t = TaskGraph(obj)

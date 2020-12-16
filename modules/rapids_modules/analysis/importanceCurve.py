@@ -17,7 +17,8 @@ class ImportanceCurveNode(Node):
         required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required, outports={self.OUTPUT_PORT_NAME: {}})
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
         return metadata
 
     def ports_setup(self):
@@ -44,13 +45,19 @@ class ImportanceCurveNode(Node):
                 "type":  {
                     "type": "string",
                     "description": """
-                        * 'weight': the number of times a feature is used to split the data across all trees.
-                        * 'gain': the average gain across all splits the feature is used in.
-                        * 'cover': the average coverage across all splits the feature is used in.
-                        * 'total_gain': the total gain across all splits the feature is used in.
-                        * 'total_cover': the total coverage across all splits the feature is used in.
+                        * 'weight': the number of times a feature is used to
+                                    split the data across all trees.
+                        * 'gain': the average gain across all splits the
+                                    feature is used in.
+                        * 'cover': the average coverage across all
+                                   splits the feature is used in.
+                        * 'total_gain': the total gain across all splits the
+                                        feature is used in.
+                        * 'total_cover': the total coverage across all splits
+                                         the feature is used in.
                     """,
-                    "enum": ["weight", "gain", "cover", "total_gain", "total_cover"],
+                    "enum": ["weight", "gain", "cover",
+                             "total_gain", "total_cover"],
                     "default": "gain"
                 },
             },
@@ -62,7 +69,7 @@ class ImportanceCurveNode(Node):
 
     def process(self, inputs):
         """
-        Plot the ROC curve 
+        Plot the ROC curve
 
         Arguments
         -------
@@ -74,7 +81,7 @@ class ImportanceCurveNode(Node):
 
         """
         model = inputs[self.INPUT_PORT_NAME]
-        if isinstance(model,  dict):
+        if isinstance(model, dict):
             model = model['booster']
         x_ord = OrdinalScale()
         y_sc = LinearScale()

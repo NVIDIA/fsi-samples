@@ -180,9 +180,9 @@ class Node(_PortsMixin, _Node):
         overwritten here to True. For native dataframe API calls, dask cudf
         support the distribution computation. But the dask dataframe does
         not support GPU customized kernels directly. We can use to_delayed and
-        from_delayed low level interfaces of dask dataframe to add this support.
-        In order to use Dask (for distributed computation i.e. multi-gpu in
-        examples later on) we set the flag and the framework
+        from_delayed low level interfaces of dask dataframe to add this
+        support.  In order to use Dask (for distributed computation i.e.
+        multi-gpu in examples later on) we set the flag and the framework
         handles dask dataframes automatically under the hood.
         """
         pass
@@ -223,8 +223,7 @@ class Node(_PortsMixin, _Node):
         It is used to compute the required input and output meta data.
 
         `inports` defines the required metadata for the node.
-        metadata is python dictionaries, which can be serialized into JSON
-      
+        metadata is python dictionaries, which can be serialized into JSON.
         The output metadata are calcuated based on the input meta data. It is
         passed to the downstream nodes to do metadata validation
 
@@ -242,7 +241,7 @@ class Node(_PortsMixin, _Node):
         Arguments
         -------
         inputs: dictionary
-            the inputs is a dictionary keyed by port name as defined in 
+            the inputs is a dictionary keyed by port name as defined in
             ports_setup.
                 Ex.:
                     inputs = {
@@ -251,7 +250,7 @@ class Node(_PortsMixin, _Node):
                         etc.
                     }
                 The task-spec for inputs is a dictionary keyed by port names
-                 with values being task-ids of input tasks "." port output of 
+                 with values being task-ids of input tasks "." port output of
                  the input tasks. Ex.:
                     TaskSpecSchema.inputs: {
                         iport0: some_task_id.some_oport,
@@ -269,7 +268,7 @@ class Node(_PortsMixin, _Node):
             The output can be anything representable in python. Typically it's
             a processed dataframe.
 
-            It return a dictionary keyed by output ports (as defined in 
+            It return a dictionary keyed by output ports (as defined in
             ports_setup). Ex.:
                 df = cudf.DataFrame()  # or maybe it can from an input
                 # do some calculations and populate df.

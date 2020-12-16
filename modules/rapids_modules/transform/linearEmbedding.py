@@ -4,7 +4,7 @@ from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                    PortsSpecSchema,
                                                    NodePorts,
                                                    MetaData)
-from .data_obj import ProjectionData 
+from .data_obj import ProjectionData
 import cupy as cp
 import copy
 from collections import OrderedDict
@@ -106,7 +106,7 @@ class LinearEmbeddingNode(_PortTypesMixin, Node):
                 self.INPUT_PORT_NAME: cols_required,
                 self.INPUT_PROJ_NAME: cols_required
             }
-            output = copy.copy(cols_required) 
+            output = copy.copy(cols_required)
             if SPECIAL_OUTPUT_DIM_COL in cols_required:
                 out_dim = cols_required[SPECIAL_OUTPUT_DIM_COL]
                 del cols_required[SPECIAL_OUTPUT_DIM_COL]
@@ -177,7 +177,7 @@ class LinearEmbeddingNode(_PortTypesMixin, Node):
                 },
                 "include":  {
                     "type": "boolean",
-                    "description": """if set true, the `columns` need to be 
+                    "description": """if set true, the `columns` need to be
                     normalized. if false, all dataframe columns except the
                     `columns` need to be normalized""",
                     "default": True

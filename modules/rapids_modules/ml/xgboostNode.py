@@ -111,7 +111,7 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         json = {
             "title": "XGBoost Node configure",
             "type": "object",
-            "description": """train a XGBoost model for the input data, 
+            "description": """train a XGBoost model for the input data,
             """,
             "properties": {
                 "num_of_rounds": {
@@ -128,13 +128,15 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                     "items": {
                         "type": "string",
                     },
-                    "description": """columns in the input dataframe that
-        are considered as training features or not depending on `include` flag."""
+                    "description": """columns in the input dataframe that are
+                    considered as training features or not depending on
+                    `include` flag."""
                 },
                 "include":  {
                     "type": "boolean",
-                    "description": """if set true, the `columns` are treated as independent variables.
-                     if false, all dataframe columns are independent variables except the `columns`""",
+                    "description": """if set true, the `columns` are treated
+                    as independent variables.  if false, all dataframe columns
+                    are independent variables except the `columns`""",
                     "default": True
                 },
                 "xgboost_parameters": {
@@ -143,38 +145,67 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                     "properties": {
                         'eta': {
                             "type": "number",
-                            "description": "Step size shrinkage used in update to prevents overfitting. After each boosting step, we can directly get the weights of new features, and eta shrinks the feature weights to make the boosting process more conservative.",
+                            "description": """Step size shrinkage used in
+                            update to prevents overfitting. After each boosting
+                            step, we can directly get the weights of new
+                            features, and eta shrinks the feature weights to
+                            make the boosting process more conservative.""",
                             "default": 0.3
                         },
                         'min_child_weight': {
                             "type": "number",
-                            "description": "Minimum sum of instance weight (hessian) needed in a child. If the tree partition step results in a leaf node with the sum of instance weight less than min_child_weight, then the building process will give up further partitioning. In linear regression task, this simply corresponds to minimum number of instances needed to be in each node. The larger min_child_weight is, the more conservative the algorithm will be.",
+                            "description": """Minimum sum of instance weight
+                            (hessian) needed in a child. If the tree partition
+                            step results in a leaf node with the sum of
+                            instance weight less than min_child_weight,
+                            then the building process will give up further
+                            partitioning. In linear regression task, this
+                            simply corresponds to minimum number of instances
+                            needed to be in each node. The larger
+                            min_child_weight is, the more conservative
+                            the algorithm will be.""",
                             "default": 1.0
                         },
                         'subsample': {
                             "type": "number",
-                            "description": "Subsample ratio of the training instances. Setting it to 0.5 means that XGBoost would randomly sample half of the training data prior to growing trees. and this will prevent overfitting. Subsampling will occur once in every boosting iteration.",
+                            "description": """Subsample ratio of the training
+                            instances. Setting it to 0.5 means that XGBoost
+                            would randomly sample half of the training data
+                            prior to growing trees. and this will prevent
+                            overfitting. Subsampling will occur once in every
+                            boosting iteration.""",
                             "default": 1.0
                         },
                         'sampling_method': {
                             "type": "string",
-                            "description": "The method to use to sample the training instances.",
+                            "description": """The method to use to sample the
+                            training instances.""",
                             "enum": ["uniform", "gradient_based"],
                             "default": "uniform",
                         },
                         'colsample_bytree': {
                             "type": "number",
-                            "description": "is the subsample ratio of columns when constructing each tree. Subsampling occurs once for every tree constructed.",
+                            "description": """is the subsample ratio of
+                            columns when constructing each tree. Subsampling
+                            occurs once for every tree constructed.""",
                             "default": 1.0
                         },
                         'colsample_bylevel': {
                             "type": "number",
-                            "description": "is the subsample ratio of columns for each level. Subsampling occurs once for every new depth level reached in a tree. Columns are subsampled from the set of columns chosen for the current tree",
+                            "description": """is the subsample ratio of columns
+                            for each level. Subsampling occurs once for every
+                            new depth level reached in a tree. Columns are
+                            subsampled from the set of columns chosen for the
+                            current tree""",
                             "default": 1.0
                         },
                         'colsample_bynode': {
                             "type": "number",
-                            "description": " is the subsample ratio of columns for each node (split). Subsampling occurs once every time a new split is evaluated. Columns are subsampled from the set of columns chosen for the current level.",
+                            "description": """is the subsample ratio of
+                            columns for each node (split). Subsampling occurs
+                            once every time a new split is evaluated. Columns
+                            are subsampled from the set of columns chosen for
+                            the current level.""",
                             "default": 1.0
                         },
                         'max_depth': {
@@ -190,7 +221,9 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                         "grow_policy": {
                             "type": "string",
                             "enum": ["depthwise", "lossguide"],
-                            "description": "Controls a way new nodes are added to the tree. Currently supported only if tree_method is set to hist.",
+                            "description": """Controls a way new nodes are
+                            added to the tree. Currently supported only if
+                            tree_method is set to hist.""",
                             "default": "depthwise"
                         },
                         "gamma": {
@@ -202,28 +235,42 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                         },
                         "lambda": {
                             "type": "number",
-                            "description": """L2 regularization term on weights. Increasing this value will make model more conservative.""",
+                            "description": """L2 regularization term on
+                            weights. Increasing this value will make model
+                            more conservative.""",
                             "default": 1.0
                         },
                         "alpha": {
                             "type": "number",
-                            "description": """L1 regularization term on weights. Increasing this value will make model more conservative.""",
+                            "description": """L1 regularization term on
+                            weights. Increasing this value will make model more
+                            conservative.""",
                             "default": 0.0
                         },
                         "tree_method": {
                             "type": "string",
-                            "description": """The tree construction algorithm used in XGBoost""",
-                            "enum": ["auto", "exact", "approx", 'hist', 'gpu_hist'],
+                            "description": """The tree construction algorithm
+                            used in XGBoost""",
+                            "enum": ["auto", "exact", "approx", 'hist',
+                                     'gpu_hist'],
                             "default": "auto"
                         },
                         "single_precision_histogram": {
                             "type": "boolean",
-                            "description": "for hist and `gpu_hist tree method, Use single precision to build histograms instead of double precision.",
+                            "description": """for hist and `gpu_hist tree
+                             method, Use single precision to build histograms
+                             instead of double precision.""",
                             "default": False
                         },
                         "deterministic_histogram": {
                             "type": "boolean",
-                            "description": "for gpu_hist tree method, Build histogram on GPU deterministically. Histogram building is not deterministic due to the non-associative aspect of floating point summation. We employ a pre-rounding routine to mitigate the issue, which may lead to slightly lower accuracy. Set to false to disable it.",
+                            "description": """for gpu_hist tree method, Build
+                            histogram on GPU deterministically. Histogram
+                            building is not deterministic due to the
+                            non-associative aspect of floating point summation.
+                            We employ a pre-rounding routine to mitigate the
+                            issue, which may lead to slightly lower accuracy.
+                            Set to false to disable it.""",
                             "default": False
                         },
                         "objective": {
@@ -231,11 +278,12 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                             "enum": ["reg:squarederror", "reg:squaredlogerror",
                                      "reg:logistic", "reg:pseudohubererror",
                                      "binary:logistic", "binary:logitraw",
-                                     "binary:hinge", "count:poisson", 
+                                     "binary:hinge", "count:poisson",
                                      "survival:cox", "survival:aft",
                                      "aft_loss_distribution", "multi:softmax",
-                                     "multi:softprob", "rank:pairwise", "rank:ndcg",
-                                     "rank:map", "reg:gamma", "reg:tweedie"
+                                     "multi:softprob", "rank:pairwise",
+                                     "rank:ndcg", "rank:map", "reg:gamma",
+                                     "reg:tweedie"
                                      ],
                             "description": """Specify the learning task and
                             the corresponding learning objective.""",
@@ -273,7 +321,8 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         else:
             included_colums = [col for col in input_df.columns
                                if col not in self.conf['columns']]
-        train_cols = [col for col in included_colums if col !=self.conf['target']]
+        train_cols = [col for col in included_colums
+                      if col != self.conf['target']]
         train_cols.sort()
 
         if isinstance(input_df, dask_cudf.DataFrame):

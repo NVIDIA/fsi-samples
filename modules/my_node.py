@@ -47,9 +47,8 @@ class CustXGBoostNode(gquant.plugin_nodes.util.CompositeNode):
             "properties": {
             }
         }
-        item_dict = full_schema_json['properties']["subnodes_conf"]['properties']
+        item_dict = full_schema_json['properties'][
+                'subnodes_conf']['properties']
         for key in item_dict.keys():
             json['properties'][key] = item_dict[key]
         return ConfSchema(json=json, ui=ui)
-
-      

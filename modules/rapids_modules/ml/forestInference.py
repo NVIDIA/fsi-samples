@@ -173,7 +173,7 @@ class ForestInferenceNode(_PortTypesMixin, Node):
                 },
                 "model_type":  {
                     "type": "string",
-                    "description": """Format of the saved treelite model to be 
+                    "description": """Format of the saved treelite model to be
                         load""",
                     "enum": ["xgboost", "lightgbm"],
                     "default": "xgboost"

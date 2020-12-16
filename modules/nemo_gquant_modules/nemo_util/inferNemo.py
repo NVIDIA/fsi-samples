@@ -5,7 +5,6 @@ from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
 
 from nemo.core.neural_types import NmTensor
-from .trainNemo import NemoTrainNode
 import nemo
 import copy
 

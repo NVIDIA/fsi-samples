@@ -72,7 +72,8 @@ class LinePlotNode(Node, _PortTypesMixin):
         required = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required, outports={self.OUTPUT_PORT_NAME: {}})
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
         return metadata
 
     def process(self, inputs):

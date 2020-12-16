@@ -169,7 +169,7 @@ class PortsSpecSchema(object):
 class MetaData(_MetaData):
     '''Node metadata must be setup for inputs and outputs. The validation
     logic will check whether the required inputs met the passed in output
-    metadata. and the produced calculation results matches the output 
+    metadata. and the produced calculation results matches the output
     metadata.
 
     :ivar inports: Dictionary defining input metadata, which specified the
@@ -211,6 +211,6 @@ class MetaData(_MetaData):
 
     The inports/outports are nested dictionaries. The outer dictionary is keyed
     by port name with metadata obj being the value of the outer dictionary. The
-    metadata obj is a dictionary with keys/fields which can be serialized into 
+    metadata obj is a dictionary with keys/fields which can be serialized into
     JSON.
     '''

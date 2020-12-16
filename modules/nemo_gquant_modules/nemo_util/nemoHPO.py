@@ -1,19 +1,19 @@
-from gquant.dataframe_flow.task import load_modules
 import os
+from gquant.dataframe_flow.task import load_modules
 load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
-from rapids_modules import GridRandomSearchNode
-from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+from rapids_modules import GridRandomSearchNode # noqa #E402
+from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode # noqa #E402
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
                                                    NodePorts)
-from gquant.dataframe_flow import TaskGraph
-from gquant.dataframe_flow import Node
-from gquant.dataframe_flow.util import get_file_path
-from gquant.dataframe_flow.cache import cache_schema
-from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema
-import cudf
-import uuid
-import pandas
-import copy
+from gquant.dataframe_flow import TaskGraph # noqa #E402
+from gquant.dataframe_flow import Node # noqa #E402
+from gquant.dataframe_flow.util import get_file_path # noqa #E402
+from gquant.dataframe_flow.cache import cache_schema # noqa #E402
+from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema # noqa #E402
+import cudf # noqa #E402
+import uuid # noqa #E402
+import pandas # noqa #E402
+import copy # noqa #E402
 
 __all__ = ["NemoHyperTuneNode"]
 
