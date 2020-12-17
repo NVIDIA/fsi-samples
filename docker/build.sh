@@ -179,11 +179,8 @@ RUN pip install jsonpath-ng ray[tune] Cython
 WORKDIR /home/quant/
 RUN git clone -b v0.11.1 https://github.com/NVIDIA/NeMo.git 
 WORKDIR /home/quant/NeMo
-RUN sed -i 's/numba<=0.48/numba==0.49.1/g' requirements/requirements_asr.txt
-COPY sacrebleu.patch /home/quant/NeMo/
-COPY nemo_paddpatch.patch /home/quant/NeMo/
-RUN patch -u nemo/collections/nlp/metrics/sacrebleu.py -i sacrebleu.patch && \
-    git apply nemo_paddpatch.patch && \
+COPY nemo.patch /home/quant/NeMo/
+RUN git apply nemo.patch && \
     bash reinstall.sh
 
 RUN conda install -y ruamel.yaml
@@ -201,22 +198,20 @@ $INSTALL_GQUANT
 EOF
 docker build --network=host -f $D_FILE -t $D_CONT .
 
-if [ -f "sacrebleu.patch" ] ; then
-    rm sacrebleu.patch
-fi
-
-if [ -f "nemo_paddpatch.patch" ] ; then
-    rm nemo_paddpatch.patch
+if [ -f "nemo.patch" ] ; then
+    rm nemo.patch
 fi
 
 } # end-of-main
 
 gen_nemo_patches() {
 
-cat << 'EOF' > sacrebleu.patch
---- nemo/collections/nlp/metrics/sacrebleu.py
-+++ sacrebleu_fix.py
-@@ -61,13 +61,16 @@
+cat << 'EOF' > nemo.patch
+diff --git a/nemo/collections/nlp/metrics/sacrebleu.py b/nemo/collections/nlp/metrics/sacrebleu.py
+index 5130dd96..3b223ac6 100755
+--- a/nemo/collections/nlp/metrics/sacrebleu.py
++++ b/nemo/collections/nlp/metrics/sacrebleu.py
+@@ -61,13 +61,16 @@ from nemo.collections.nlp.data.tokenizers.fairseq_tokenizer import tokenize_en
  VERSION = '1.3.5'
  
  try:
@@ -234,13 +229,8 @@ cat << 'EOF' > sacrebleu.patch
  
  except ImportError:
      logging.warning('Could not import signal.SIGPIPE (this is expected on Windows machines)')
-EOF
-
-
-cat << 'EOF' > nemo_paddpatch.patch
-
 diff --git a/nemo/backends/pytorch/common/rnn.py b/nemo/backends/pytorch/common/rnn.py
-index c1c62ac..b9936fe 100644
+index c1c62ac0..b9936fe3 100644
 --- a/nemo/backends/pytorch/common/rnn.py
 +++ b/nemo/backends/pytorch/common/rnn.py
 @@ -235,7 +235,7 @@ class EncoderRNN(TrainableNM):
@@ -253,7 +243,7 @@ index c1c62ac..b9936fe 100644
          outputs, hidden = self.rnn(embedded)
          # outputs of shape (seq_len, batch, num_directions * hidden_size)
 diff --git a/nemo/backends/pytorch/tutorials/chatbot/modules.py b/nemo/backends/pytorch/tutorials/chatbot/modules.py
-index 2459afa..59b88d2 100644
+index 2459afa1..59b88d28 100644
 --- a/nemo/backends/pytorch/tutorials/chatbot/modules.py
 +++ b/nemo/backends/pytorch/tutorials/chatbot/modules.py
 @@ -122,7 +122,7 @@ class EncoderRNN(TrainableNM):
@@ -266,7 +256,7 @@ index 2459afa..59b88d2 100644
          outputs, hidden = self.gru(packed, hidden)
          # Unpack padding
 diff --git a/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py b/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
-index 2fc2ff0..9ec7acc 100644
+index 2fc2ff0a..9ec7acc4 100644
 --- a/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
 +++ b/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
 @@ -64,7 +64,7 @@ class EncoderRNN(TrainableNM):
@@ -279,7 +269,7 @@ index 2fc2ff0..9ec7acc 100644
          outputs, hidden = self.rnn(embedded)
          # outputs of shape (seq_len, batch, num_directions * hidden_size)
 diff --git a/nemo/collections/tts/parts/tacotron2.py b/nemo/collections/tts/parts/tacotron2.py
-index 925251f..5f81647 100644
+index 925251f1..5f81647e 100644
 --- a/nemo/collections/tts/parts/tacotron2.py
 +++ b/nemo/collections/tts/parts/tacotron2.py
 @@ -221,7 +221,7 @@ class Encoder(nn.Module):
@@ -291,6 +281,30 @@ index 925251f..5f81647 100644
  
          self.lstm.flatten_parameters()
          outputs, _ = self.lstm(x)
+diff --git a/requirements/requirements_asr.txt b/requirements/requirements_asr.txt
+index 901a79af..4eb76f95 100644
+--- a/requirements/requirements_asr.txt
++++ b/requirements/requirements_asr.txt
+@@ -14,4 +14,4 @@ unidecode
+ webdataset
+ kaldi-python-io
+ librosa<=0.7.2
+-numba<=0.48
++numba==0.49.1
+diff --git a/requirements/requirements_nlp.txt b/requirements/requirements_nlp.txt
+index 885adf3e..0e4e44e2 100644
+--- a/requirements/requirements_nlp.txt
++++ b/requirements/requirements_nlp.txt
+@@ -3,7 +3,7 @@ h5py
+ matplotlib
+ sentencepiece
+ torchtext
+-transformers>=2.11.0
++transformers>=2.11.0,<=3.5.1
+ unidecode
+ youtokentome
+ numpy
+
 
 EOF
 
