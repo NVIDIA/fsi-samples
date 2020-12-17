@@ -2,7 +2,7 @@ from collections import OrderedDict
 import networkx as nx
 import ruamel.yaml
 from .node import Node
-from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _cleanup
+from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import NodePorts, ConfSchema
@@ -603,7 +603,7 @@ class TaskGraph(object):
             return result
 
     def run_cleanup(self, ui_clean=False):
-        for v in _cleanup.values():
+        for v in _CLEANUP.values():
             v(ui_clean)
 
     def run(self, outputs=None, replace=None, profile=False, formated=False):

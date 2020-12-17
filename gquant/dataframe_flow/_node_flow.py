@@ -68,7 +68,7 @@ def register_copy_function(typename: type,
     _COPYS[typename] = fun
 
 
-def register_CLEANUP(name: str,
+def register_cleanup(name: str,
                      fun) -> None:
     # print('register validator for', typename)
     _CLEANUP[name] = fun
