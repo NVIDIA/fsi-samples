@@ -18,6 +18,7 @@
     dtype: float64
     n_parts: 4
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -30,6 +31,7 @@
     column: x2
   inputs:
     in: data_gen.cudf_out
+  module: rapids_modules
 - id: x3_to_sign
   type: AddSignIndicatorNode
   conf:
@@ -37,6 +39,7 @@
     column: x3
   inputs:
     in: x2_to_sign.out
+  module: rapids_modules
 - id: drop_x2_x3
   type: DropNode
   conf:
@@ -47,6 +50,7 @@
       - x2_sign
   inputs:
     in: one_hot_encoding.out
+  module: rapids_modules
 - id: one_hot_encoding
   type: OneHotEncodingNode
   conf:
@@ -66,3 +70,4 @@
       prefix: x2
   inputs:
     in: x3_to_sign.out
+  module: rapids_modules

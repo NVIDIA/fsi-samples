@@ -1,5 +1,7 @@
 #!/bin/bash
 
+main() {
+
 USERID=$(id -u)
 USERGID=$(id -g)
 
@@ -105,28 +107,7 @@ CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
 D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
 
 
-cat << 'EOF' > sacrebleu.patch
---- nemo/collections/nlp/metrics/sacrebleu.py
-+++ sacrebleu_fix.py
-@@ -61,13 +61,16 @@
- VERSION = '1.3.5'
- 
- try:
-+    import threading
-     # SIGPIPE is not available on Windows machines, throwing an exception.
-     from signal import SIGPIPE
- 
-     # If SIGPIPE is available, change behaviour to default instead of ignore.
-     from signal import signal, SIG_DFL
- 
--    signal(SIGPIPE, SIG_DFL)
-+
-+    if threading.current_thread() == threading.main_thread():
-+        signal(SIGPIPE, SIG_DFL)
- 
- except ImportError:
-     logging.warning('Could not import signal.SIGPIPE (this is expected on Windows machines)')
-EOF
+gen_nemo_patches
 
 
 cat > $D_FILE <<EOF
@@ -134,9 +115,13 @@ FROM $CONTAINER
 EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
-RUN apt-get update
-RUN apt-get install -y curl git net-tools iproute2 vim wget locales-all build-essential libfontconfig1 libxrender1 rsync libsndfile1 ffmpeg \
-        && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends software-properties-common && \
+    add-apt-repository universe && apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl git net-tools iproute2 vim wget locales-all build-essential \
+        libfontconfig1 libxrender1 rsync libsndfile1 ffmpeg && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /.local /.jupyter /.config /.cupy \
     && chmod 777 /.local /.jupyter /.config /.cupy
@@ -194,9 +179,9 @@ RUN pip install jsonpath-ng ray[tune] Cython
 WORKDIR /home/quant/
 RUN git clone -b v0.11.1 https://github.com/NVIDIA/NeMo.git 
 WORKDIR /home/quant/NeMo
-RUN sed -i 's/numba<=0.48/numba==0.49.1/g' requirements/requirements_asr.txt
-COPY sacrebleu.patch /home/quant/NeMo/
-RUN patch -u nemo/collections/nlp/metrics/sacrebleu.py -i sacrebleu.patch && bash reinstall.sh
+COPY nemo.patch /home/quant/NeMo/
+RUN git apply nemo.patch && \
+    bash reinstall.sh
 
 RUN conda install -y ruamel.yaml
 RUN conda install -c conda-forge -y cloudpickle
@@ -204,12 +189,128 @@ RUN conda install -c conda-forge -y cloudpickle
 RUN mkdir -p /home/quant/gQuant
 WORKDIR /home/quant/gQuant
 
-RUN pip install streamz
+RUN pip install streamz && \
+    pip uninstall -y dataclasses
 
 $INSTALL_GQUANT
-EOF
-docker build -f $D_FILE -t $D_CONT .
 
-if [ -f "sacrebleu.patch" ] ; then
-    rm sacrebleu.patch
+
+EOF
+docker build --network=host -f $D_FILE -t $D_CONT .
+
+if [ -f "nemo.patch" ] ; then
+    rm nemo.patch
 fi
+
+} # end-of-main
+
+gen_nemo_patches() {
+
+cat << 'EOF' > nemo.patch
+diff --git a/nemo/collections/nlp/metrics/sacrebleu.py b/nemo/collections/nlp/metrics/sacrebleu.py
+index 5130dd96..3b223ac6 100755
+--- a/nemo/collections/nlp/metrics/sacrebleu.py
++++ b/nemo/collections/nlp/metrics/sacrebleu.py
+@@ -61,13 +61,16 @@ from nemo.collections.nlp.data.tokenizers.fairseq_tokenizer import tokenize_en
+ VERSION = '1.3.5'
+ 
+ try:
++    import threading
+     # SIGPIPE is not available on Windows machines, throwing an exception.
+     from signal import SIGPIPE
+ 
+     # If SIGPIPE is available, change behaviour to default instead of ignore.
+     from signal import signal, SIG_DFL
+ 
+-    signal(SIGPIPE, SIG_DFL)
++
++    if threading.current_thread() == threading.main_thread():
++        signal(SIGPIPE, SIG_DFL)
+ 
+ except ImportError:
+     logging.warning('Could not import signal.SIGPIPE (this is expected on Windows machines)')
+diff --git a/nemo/backends/pytorch/common/rnn.py b/nemo/backends/pytorch/common/rnn.py
+index c1c62ac0..b9936fe3 100644
+--- a/nemo/backends/pytorch/common/rnn.py
++++ b/nemo/backends/pytorch/common/rnn.py
+@@ -235,7 +235,7 @@ class EncoderRNN(TrainableNM):
+         embedded = self.embedding(inputs)
+         embedded = self.dropout(embedded)
+         if input_lens is not None:
+-            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens, batch_first=True)
++            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens.cpu(), batch_first=True)
+ 
+         outputs, hidden = self.rnn(embedded)
+         # outputs of shape (seq_len, batch, num_directions * hidden_size)
+diff --git a/nemo/backends/pytorch/tutorials/chatbot/modules.py b/nemo/backends/pytorch/tutorials/chatbot/modules.py
+index 2459afa1..59b88d28 100644
+--- a/nemo/backends/pytorch/tutorials/chatbot/modules.py
++++ b/nemo/backends/pytorch/tutorials/chatbot/modules.py
+@@ -122,7 +122,7 @@ class EncoderRNN(TrainableNM):
+         embedded = self.embedding(input_seq)
+         embedded = self.embedding_dropout(embedded)
+         # Pack padded batch of sequences for RNN module
+-        packed = t.nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
++        packed = t.nn.utils.rnn.pack_padded_sequence(embedded, input_lengths.cpu())
+         # Forward pass through GRU
+         outputs, hidden = self.gru(packed, hidden)
+         # Unpack padding
+diff --git a/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py b/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
+index 2fc2ff0a..9ec7acc4 100644
+--- a/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
++++ b/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
+@@ -64,7 +64,7 @@ class EncoderRNN(TrainableNM):
+         embedded = self.embedding(inputs)
+         embedded = self.dropout(embedded)
+         if input_lens is not None:
+-            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens, batch_first=True)
++            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens.cpu(), batch_first=True)
+ 
+         outputs, hidden = self.rnn(embedded)
+         # outputs of shape (seq_len, batch, num_directions * hidden_size)
+diff --git a/nemo/collections/tts/parts/tacotron2.py b/nemo/collections/tts/parts/tacotron2.py
+index 925251f1..5f81647e 100644
+--- a/nemo/collections/tts/parts/tacotron2.py
++++ b/nemo/collections/tts/parts/tacotron2.py
+@@ -221,7 +221,7 @@ class Encoder(nn.Module):
+ 
+         # pytorch tensor are not reversible, hence the conversion
+         input_lengths = input_lengths.cpu().numpy()
+-        x = nn.utils.rnn.pack_padded_sequence(x, input_lengths, batch_first=True, enforce_sorted=False)
++        x = nn.utils.rnn.pack_padded_sequence(x, input_lengths.cpu(), batch_first=True, enforce_sorted=False)
+ 
+         self.lstm.flatten_parameters()
+         outputs, _ = self.lstm(x)
+diff --git a/requirements/requirements_asr.txt b/requirements/requirements_asr.txt
+index 901a79af..4eb76f95 100644
+--- a/requirements/requirements_asr.txt
++++ b/requirements/requirements_asr.txt
+@@ -14,4 +14,4 @@ unidecode
+ webdataset
+ kaldi-python-io
+ librosa<=0.7.2
+-numba<=0.48
++numba==0.49.1
+diff --git a/requirements/requirements_nlp.txt b/requirements/requirements_nlp.txt
+index 885adf3e..0e4e44e2 100644
+--- a/requirements/requirements_nlp.txt
++++ b/requirements/requirements_nlp.txt
+@@ -3,7 +3,7 @@ h5py
+ matplotlib
+ sentencepiece
+ torchtext
+-transformers>=2.11.0
++transformers>=2.11.0,<=3.5.1
+ unidecode
+ youtokentome
+ numpy
+
+
+EOF
+
+}
+
+
+main "$@"
+
+exit

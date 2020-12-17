@@ -73,8 +73,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
   inputPorts: Set<string>;
   outputPorts: Set<string>;
   inputRequriements: { [key: string]: any };
-  outputColumns: { [key: string]: any };
-  portTypes: { [key: string]: string[] };
+  outputMeta: { [key: string]: any };
+  portTypes: { [key: string]: string[][] };
   isDirty: boolean;
 
   constructor(props: IChartProp) {
@@ -103,7 +103,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.inputPorts = new Set();
     this.outputPorts = new Set();
     this.inputRequriements = {};
-    this.outputColumns = {};
+    this.outputMeta = {};
     this.portTypes = {};
     this.props.contentHandler.reLayoutSignal.connect(this.nodeReLayout, this);
     this.props.contentHandler.nodeAddedSignal.connect(this.addNewNode, this);
@@ -113,7 +113,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.inputPorts = new Set();
     this.outputPorts = new Set();
     this.inputRequriements = {};
-    this.outputColumns = {};
+    this.outputMeta = {};
     this.props.nodes.forEach((d: INode) => {
       const nodeId = d.id;
       d.inputs.forEach(k => {
@@ -128,9 +128,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       keys.forEach(k => {
         this.inputRequriements[nodeId + '.' + k] = d.required[k];
       });
-      keys = Object.keys(d.output_columns);
+      keys = Object.keys(d.output_meta);
       keys.forEach(k => {
-        this.outputColumns[nodeId + '.' + k] = d.output_columns[k];
+        this.outputMeta[nodeId + '.' + k] = d.output_meta[k];
       });
     });
   }
@@ -333,9 +333,9 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       .data((d: INode) => {
         const data = [];
         for (let i = 0; i < d.outputs.length; i++) {
-          if (d.outputs[i].name in d.output_columns) {
+          if (d.outputs[i].name in d.output_meta) {
             const portInfo: IPortInfo = {};
-            portInfo['content'] = d.output_columns[d.outputs[i].name];
+            portInfo['content'] = d.output_meta[d.outputs[i].name];
             portInfo['portType'] = d.outputs[i].type;
             data.push({
               [d.id + '.' + d.outputs[i].name]: portInfo
@@ -509,7 +509,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       const newNode: {
         [key: string]: {
           required: any;
-          outputColumns: any;
+          outputMeta: any;
           inputs: any;
           outputs: any;
           ui: any;
@@ -520,7 +520,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
       data.nodes.forEach((d: INode) => {
         newNode[d.id] = {
           required: d.required,
-          outputColumns: d.output_columns,
+          outputMeta: d.output_meta,
           inputs: d.inputs,
           outputs: d.outputs,
           schema: d.schema,
@@ -535,7 +535,7 @@ export class Chart extends React.Component<IChartProp, IChartState> {
           }
           d.required = newNode[d.id].required;
           // eslint-disable-next-line @typescript-eslint/camelcase
-          d.output_columns = newNode[d.id].outputColumns;
+          d.output_meta = newNode[d.id].outputMeta;
           d.inputs = newNode[d.id].inputs;
           d.outputs = newNode[d.id].outputs;
           d.schema = newNode[d.id].schema;

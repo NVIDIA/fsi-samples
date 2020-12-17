@@ -39,15 +39,19 @@ def _format_port(port):
     for key in port:
         one_port = {}
         one_port['name'] = key
+        if 'dynamic' in port[key]:
+            one_port['dynamic'] = port[key]['dynamic']
         port_type = port[key]['type']
         if isinstance(port_type, list):
             types = []
             for t in port_type:
-                type_name = t.__module__+'.'+t.__name__
-                types.append(type_name)
+                type_names = [e.__module__+'.'+e.__name__ for
+                              e in t.mro()]
+                types.append(type_names)
             one_port['type'] = types
         else:
-            type_name = port_type.__module__+'.'+port_type.__name__
+            type_name = [e.__module__+'.'+e.__name__ for
+                         e in port_type.mro()]
             one_port['type'] = [type_name]
         all_ports.append(one_port)
     return all_ports
@@ -62,7 +66,7 @@ def get_nodes(task_graph):
         nodes:
             - list of node objects for the UI client. It contains all the
             necessary information about the node including the size of the node
-            input ports, output ports, output column names/types,
+            input ports, output ports, output meta names/types,
             conf schema and conf data.
         edges:
             - list of edge objects for the UI client. It enumerate all the
@@ -90,7 +94,7 @@ def get_nodes(task_graph):
         out_node = get_node_obj(node)
         connection_inputs = task.get('inputs')
         nodes.append(out_node)
-        # out_node['output_columns'] = task_graph[node.uid].output_columns
+        # out_node['output_meta'] = task_graph[node.uid].output_meta
         for port, v in connection_inputs.items():
             edge = {"from": v, "to": node.uid+"."+port}
             edges.append(edge)
@@ -123,6 +127,7 @@ def get_node_obj(node, count_id=True):
         node data for client
     """
     ports = node.ports_setup()
+    metadata = node.meta_setup()
     schema = node.conf_schema()
     typeName = node._task_obj.get('type')
     if node.uid == OUTPUT_ID:
@@ -142,12 +147,12 @@ def get_node_obj(node, count_id=True):
                 'conf': conf,
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
-    out_node['output_columns'] = node.columns_setup()
+    out_node['output_meta'] = metadata.outports
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
     if node._task_obj.get('module'):
         out_node['module'] = node._task_obj.get('module')
-    out_node['required'] = node.required
+    out_node['required'] = metadata.inports
     return out_node
 
 
@@ -157,7 +162,7 @@ def get_nodes_from_file(file):
         nodes:
             - list of node objects for the UI client. It contains all the
             necessary information about the node including the size of the node
-            input ports, output ports, output column names/types,
+            input ports, output ports, output meta names/types,
             conf schema and conf data.
         edges:
             - list of edge objects for the UI client. It enumerate all the

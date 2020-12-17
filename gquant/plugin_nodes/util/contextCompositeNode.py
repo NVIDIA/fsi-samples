@@ -1,5 +1,5 @@
 from .compositeNode import CompositeNode
-from gquant.dataframe_flow.cache import cache_schema
+from gquant.dataframe_flow.cache import CACHE_SCHEMA
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                    PortsSpecSchema, NodePorts)
 from .data_obj import ConfData
@@ -15,6 +15,7 @@ default_map = {
     "string": "a string",
     "array": []
 }
+
 
 class ContextCompositeNode(CompositeNode):
 
@@ -37,17 +38,17 @@ class ContextCompositeNode(CompositeNode):
         output_port = NodePorts(inports=inports, outports=outports)
         return output_port
 
-    def columns_setup(self):
-        out_columns = super().columns_setup()
-        out_columns[self.OUTPUT_CONFIG] = self.conf
-        return out_columns
+    def meta_setup(self):
+        out_meta = super().meta_setup()
+        out_meta.outports[self.OUTPUT_CONFIG] = self.conf
+        return out_meta
 
     def conf_schema(self):
         # import pdb
         # pdb.set_trace()
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_schema:
-            return cache_schema[cache_key]
+        if cache_key in CACHE_SCHEMA:
+            return CACHE_SCHEMA[cache_key]
         json = {
             "title": "Context Composite Node configure",
             "type": "object",
@@ -85,8 +86,8 @@ class ContextCompositeNode(CompositeNode):
                     "description": "context parameters",
                     "additionalProperties": {
                                 "type": "object",
-                                "description": """The context parameters for this 
-                                composite node""",
+                                "description": """The context
+                                parameters for this composite node""",
                                 "properties": {
                                     "type": {
                                         "type": "string",
@@ -122,7 +123,7 @@ class ContextCompositeNode(CompositeNode):
                     },
                     "map": {
                         "type": "array",
-                        "description": """The fields of subnode's config this 
+                        "description": """The fields of subnode's config this
                         parameter maps to""",
                         "items": {
                             "type": "object",
@@ -200,14 +201,14 @@ class ContextCompositeNode(CompositeNode):
             json['properties']['input']['items']['enum'] = in_ports
             json['properties']['output']['items']['enum'] = out_ports
         out_schema = ConfSchema(json=json, ui=ui)
-        cache_schema[cache_key] = out_schema
+        CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def conf_update(self):
-        input_columns = self.get_input_columns()
-        if self.INPUT_CONFIG in input_columns:
-            if input_columns[self.INPUT_CONFIG]:
-                self.conf.update(input_columns[self.INPUT_CONFIG])
+        input_meta = self.get_input_meta()
+        if self.INPUT_CONFIG in input_meta:
+            if input_meta[self.INPUT_CONFIG]:
+                self.conf.update(input_meta[self.INPUT_CONFIG])
 
     def update_replace(self, replaceObj, task_graph):
         # find the other replacment conf

@@ -2,11 +2,9 @@ from pathlib import Path
 
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
 
 from nemo.core.neural_types import NmTensor
-from .trainNemo import NemoTrainNode
 import nemo
 import copy
 
@@ -28,54 +26,42 @@ def _isempty(pp):
     return False
 
 
-class NemoInferNode(Node, _PortTypesMixin):
+class NemoInferNode(Node):
     def init(self):
-        _PortTypesMixin.init(self)
         self.OUTPUT_PORT_NAME = 'torch_tensor'
         self.INPUT_PORT_NAME = 'log_dir'
 
     def ports_setup(self):
         port_type = PortsSpecSchema.port_type
+        dy = PortsSpecSchema.dynamic
         o_inports = {}
         o_inports[self.INPUT_PORT_NAME] = {port_type: str}
-        o_inports['input_tensor'] = {port_type: NmTensor}
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                if inp['to_port'] in (self.INPUT_PORT_NAME,):
-                    continue
-                # TODO: Move TaskGrah rewire logic here instead of in
-                #     chartEngine.tsx ChartEngine._fixNeMoPorts
-                o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                    port_type: NmTensor}
+        o_inports['input_tensor'] = {port_type: NmTensor, dy: True}
+        # if hasattr(self, 'inputs'):
+        #     for inp in self.inputs:
+        #         if inp['to_port'] in (self.INPUT_PORT_NAME,):
+        #             continue
+        #         # TODO: Move TaskGrah rewire logic here instead of in
+        #         #     chartEngine.tsx ChartEngine._fixNeMoPorts
+        #         o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+        #             port_type: NmTensor}
         o_outports = {}
         o_outports[self.OUTPUT_PORT_NAME] = {port_type: list}
         return NodePorts(inports=o_inports, outports=o_outports)
 
-    def columns_setup(self):
-        self.required = {}
+    def meta_setup(self):
+        required = {}
         output = {}
         output['axes'] = []
         output['element'] = {}
         output['element']['types'] = ['VoidType']
         output['element']['fields'] = 'None'
         output['element']['parameters'] = '{}'
-        ports = self.ports_setup()
-        inports = ports.inports
-
-        iports_connected = self.get_connected_inports()
-        iports_cols = self.get_input_columns()
-        for iport in inports.keys():
-            if iport in (self.INPUT_PORT_NAME,):
-                continue
-            if iport in iports_connected and iport in iports_cols:
-                self.required[iport] = copy.deepcopy(iports_cols[iport])
-            else:
-                self.required[iport] = copy.deepcopy(output)
-
-        if 'input_tensor' not in iports_connected:
-            self.required.pop('input_tensor', None)
-
-        return {self.OUTPUT_PORT_NAME: {}}
+        required = self.get_input_meta()
+        required['input_tensor'] = copy.deepcopy(output)
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def conf_schema(self):
         json = {

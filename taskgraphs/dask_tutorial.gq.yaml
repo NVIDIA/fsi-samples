@@ -4,6 +4,7 @@
     file: /home/quant/gQuant/notebooks/data/stock_price_hist.csv.gz
     path: /home/quant/gQuant/notebooks/many-small
   inputs: {}
+  module: rapids_modules
 - id: sort_node
   type: SortNode
   conf:
@@ -12,6 +13,7 @@
       - datetime
   inputs:
     in: stock_data.dask_cudf_out
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -23,9 +25,11 @@
     column: volume
   inputs:
     stock_in: sort_node.out
+  module: rapids_modules
 - id: output_csv
   type: OutCsvNode
   conf:
     path: /home/quant/gQuant/notebooks/dask_average_volume.csv
   inputs:
     df_in: average_volume.stock_out
+  module: rapids_modules

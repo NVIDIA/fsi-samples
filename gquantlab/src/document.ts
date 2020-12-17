@@ -161,7 +161,7 @@ export class ContentHandler {
   }
 
   /**
-   * Use the raw object from the file as input,  add UI information (UI schema, required, output_columns etc) to it
+   * Use the raw object from the file as input,  add UI information (UI schema, required, output_meta etc) to it
    *
    * @param objContent
    * @param width
@@ -205,7 +205,8 @@ export class ContentHandler {
 
 export interface IPort {
   name: string;
-  type: string[];
+  type: string[][];
+  dynamic?: boolean;
 }
 
 export interface INode {
@@ -223,7 +224,7 @@ export interface INode {
   filepath?: string;
   module?: string;
   required: any;
-  output_columns: any;
+  output_meta: any;
   busy?: boolean;
 }
 

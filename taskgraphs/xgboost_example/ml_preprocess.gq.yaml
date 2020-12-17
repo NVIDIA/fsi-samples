@@ -40,6 +40,7 @@
     target: y
   inputs:
     in: data_generator.drop_x2_x3@out
+  module: rapids_modules
 - id: train_norm
   type: NormalizationNode
   conf:
@@ -52,6 +53,7 @@
     include: false
   inputs:
     df_in: data_splitter.train
+  module: rapids_modules
 - id: test_norm
   type: NormalizationNode
   conf:
@@ -59,3 +61,4 @@
   inputs:
     norm_data_in: train_norm.norm_data_out
     df_in: data_splitter.test
+  module: rapids_modules

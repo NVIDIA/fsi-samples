@@ -3,11 +3,13 @@
   conf:
     file: notebooks/data/stock_price_hist.csv.gz
   inputs: {}
+  module: rapids_modules
 - id: stock_name
   type: StockNameLoader
   conf:
     file: notebooks/data/security_master.csv.gz
   inputs: {}
+  module: rapids_modules
 - id: stock_selector
   type: AssetFilterNode
   conf:
@@ -15,6 +17,7 @@
   inputs:
     name_map: stock_name.map_data
     stock_in: stock_data.cudf_out
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -25,6 +28,7 @@
     in4: sharpe_ratio.sharpe_out
     in5: cumulative_return.cum_return
     in6: stock_data.cudf_out
+  module: rapids_modules
 - id: sort_node
   type: SortNode
   conf:
@@ -33,11 +37,13 @@
       - datetime
   inputs:
     in: stock_selector.stock_out
+  module: rapids_modules
 - id: add_return
   type: ReturnFeatureNode
   conf: {}
   inputs:
     stock_in: sort_node.out
+  module: rapids_modules
 - id: mean_reversion
   type: MovingAverageStrategyNode
   conf:
@@ -45,11 +51,13 @@
     slow: 10
   inputs:
     stock_in: add_return.stock_out
+  module: rapids_modules
 - id: backtest
   type: SimpleBackTestNode
   conf: {}
   inputs:
     bardata_in: mean_reversion.stock_out
+  module: rapids_modules
 - id: barplot
   type: BarPlotNode
   conf:
@@ -57,6 +65,7 @@
     label: barplot
   inputs:
     stock_in: backtest.backtest_out
+  module: rapids_modules
 - id: lineplot
   type: LinePlotNode
   conf:
@@ -71,11 +80,13 @@
     title: signals
   inputs:
     in: backtest.backtest_out
+  module: rapids_modules
 - id: sharpe_ratio
   type: SharpeRatioNode
   conf: {}
   inputs:
     stock_in: backtest.backtest_out
+  module: rapids_modules
 - id: cumulative_return
   type: CumReturnNode
   conf:
@@ -83,3 +94,4 @@
     label: cumulative_return
   inputs:
     in: backtest.backtest_out
+  module: rapids_modules

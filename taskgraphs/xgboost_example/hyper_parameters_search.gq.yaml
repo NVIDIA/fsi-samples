@@ -18,6 +18,7 @@
     dtype: float64
     n_parts: 4
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -66,6 +67,7 @@
     target: y
   inputs:
     in: data_generator.drop_x2_x3@out
+  module: rapids_modules
 - id: xgboost_model
   type: ContextCompositeNode
   conf:
@@ -206,3 +208,4 @@
     conf_in: xgboost_model.conf_out
     train_norm@df_in: data_splitter.train
     test_norm@df_in: data_splitter.test
+  module: rapids_modules

@@ -18,6 +18,7 @@
     dtype: float64
     n_parts: 4
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -79,6 +80,7 @@
     target: y
   inputs:
     in: data_generator.drop_x2_x3@out
+  module: rapids_modules
 - id: train_roc
   type: RocCurveNode
   conf:
@@ -86,6 +88,7 @@
     prediction: predict
   inputs:
     in: xgboost_model.train_infer@out
+  module: rapids_modules
 - id: test_roc
   type: RocCurveNode
   conf:
@@ -93,9 +96,11 @@
     prediction: predict
   inputs:
     in: xgboost_model.test_infer@out
+  module: rapids_modules
 - id: feature_importance
   type: ImportanceCurveNode
   conf:
     type: gain
   inputs:
     in: xgboost_model.train_xgboost@model_out
+  module: rapids_modules

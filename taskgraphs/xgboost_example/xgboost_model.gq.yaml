@@ -18,6 +18,7 @@
     dtype: float64
     n_parts: 4
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -63,6 +64,7 @@
     target: y
   inputs:
     in: data_generator.drop_x2_x3@out
+  module: rapids_modules
 - id: train_norm
   type: NormalizationNode
   conf:
@@ -75,6 +77,7 @@
     include: false
   inputs:
     df_in: data_splitter.train
+  module: rapids_modules
 - id: test_norm
   type: NormalizationNode
   conf:
@@ -82,6 +85,7 @@
   inputs:
     norm_data_in: train_norm.norm_data_out
     df_in: data_splitter.test
+  module: rapids_modules
 - id: train_xgboost
   type: TrainXGBoostNode
   conf:
@@ -110,6 +114,7 @@
     target: y
   inputs:
     in: train_norm.df_out
+  module: rapids_modules
 - id: train_infer
   type: InferXGBoostNode
   conf:
@@ -117,6 +122,7 @@
   inputs:
     data_in: train_norm.df_out
     model_in: train_xgboost.model_out
+  module: rapids_modules
 - id: test_infer
   type: InferXGBoostNode
   conf:
@@ -124,3 +130,4 @@
   inputs:
     data_in: test_norm.df_out
     model_in: train_xgboost.model_out
+  module: rapids_modules

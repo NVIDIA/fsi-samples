@@ -1,7 +1,6 @@
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts
-from gquant.dataframe_flow._port_type_node import _PortTypesMixin
+from gquant.dataframe_flow.portsSpecSchema import NodePorts,  MetaData
 
 from nemo.core.neural_types import NmTensor
 import nemo
@@ -30,50 +29,38 @@ class CallBack(object):
             self.counter += 1
 
 
-class NemoTrainNode(Node, _PortTypesMixin):
+class NemoTrainNode(Node):
     def init(self):
-        _PortTypesMixin.init(self)
         self.OUTPUT_PORT_NAME = 'checkpoint_dir'
 
     def ports_setup(self):
+        dy = PortsSpecSchema.dynamic
         port_type = PortsSpecSchema.port_type
         o_inports = {}
         o_outports = {}
-        o_inports['input_tensor'] = {port_type: NmTensor}
-        if hasattr(self, 'inputs'):
-            for inp in self.inputs:
-                # TODO: Move TaskGrah rewire logic here instead of in
-                #     chartEngine.tsx ChartEngine._fixNeMoPorts
-                o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                    port_type: NmTensor}
+        o_inports['input_tensor'] = {port_type: NmTensor, dy: True}
+        # if hasattr(self, 'inputs'):
+        #     for inp in self.inputs:
+        #         # TODO: Move TaskGrah rewire logic here instead of in
+        #         #     chartEngine.tsx ChartEngine._fixNeMoPorts
+        #         o_inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+        #             port_type: NmTensor}
         o_outports[self.OUTPUT_PORT_NAME] = {port_type: str}
         return NodePorts(inports=o_inports, outports=o_outports)
 
-    def columns_setup(self):
-        self.required = {}
+    def meta_setup(self):
+        required = {}
         output = {}
         output['axes'] = []
         output['element'] = {}
         output['element']['types'] = ['VoidType']
         output['element']['fields'] = 'None'
         output['element']['parameters'] = '{}'
-        ports = self.ports_setup()
-        inports = ports.inports
-
-        iports_connected = self.get_connected_inports()
-        iports_cols = self.get_input_columns()
-        for iport in inports.keys():
-            if iport in iports_connected and iport in iports_cols:
-                self.required[iport] = copy.deepcopy(iports_cols[iport])
-            else:
-                self.required[iport] = copy.deepcopy(output)
-
-        if 'input_tensor' not in iports_connected:
-            self.required.pop('input_tensor', None)
-
-        return {
-            self.OUTPUT_PORT_NAME: {},
-        }
+        required = self.get_input_meta()
+        required['input_tensor'] = copy.deepcopy(output)
+        metadata = MetaData(inports=required,
+                            outports={self.OUTPUT_PORT_NAME: {}})
+        return metadata
 
     def conf_schema(self):
         json = {
@@ -138,16 +125,18 @@ class NemoTrainNode(Node, _PortTypesMixin):
                             "default": None
                         },
                         "step_freq": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "description": """How often in terms of steps to
                              save checkpoints. One of step_freq or epoch_freq
-                              is required"""
+                              is required""",
+                            "default": None
                         },
                         "epoch_freq": {
-                            "type": "integer",
+                            "type": ["integer", "null"],
                             "description": """How often in terms of epochs to
                              save checkpoints. One of step_freq or epoch_freq
-                              is required."""
+                              is required.""",
+                            "default": None
                         },
                         "checkpoints_to_keep": {
                             "type": "integer",
@@ -1038,6 +1027,12 @@ class NemoTrainNode(Node, _PortTypesMixin):
                 **self.conf["warmup_policy"]['parameters'])
             all_args['lr_policy'] = lr_policy
         nf.train(**all_args)
+        log_directory = ''
+        if (('step_freq' in self.conf['check_point']
+             and self.conf['check_point']['step_freq'] is not None)
+            or ('epoch_freq' in self.conf['check_point'] and
+                self.conf['check_point']['epoch_freq'] is not None)):
+            log_directory = self.conf['check_point']['folder']
         return {
-            self.OUTPUT_PORT_NAME: self.conf['check_point']['folder'],
+            self.OUTPUT_PORT_NAME: log_directory,
         }

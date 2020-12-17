@@ -147,12 +147,14 @@
     conf_in: xgboost_model.conf_out
     train_norm@df_in: split_data.train
     test_norm@df_in: split_data.test
+  module: rapids_modules
 - id: stock_data
   type: CsvStockLoader
   conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
   inputs: {}
+  module: rapids_modules
 - id: stock_feature
   type: CompositeNode
   conf:
@@ -354,6 +356,7 @@
     column: SHIFT_-1
   inputs:
     in: stock_feature.technical_indicator@stock_out
+  module: rapids_modules
 - id: drop_col
   type: DropNode
   conf:
@@ -368,6 +371,7 @@
       - close
   inputs:
     in: pos_neg_return.out
+  module: rapids_modules
 - id: split_data
   type: DataSplittingNode
   conf:
@@ -375,3 +379,4 @@
     target: sign
   inputs:
     in: drop_col.out
+  module: rapids_modules

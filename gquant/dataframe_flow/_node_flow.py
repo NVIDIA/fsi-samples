@@ -1,17 +1,14 @@
 from collections.abc import Iterable
 import warnings
-import numpy as np
-import pandas as pd
 import dask
 from dask.dataframe import DataFrame as DaskDataFrame
-import cudf
-import dask_cudf
+from dask.dataframe import from_delayed
 import copy
 from dask.base import is_dask_collection
 from dask.distributed import Future
 
-from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import PortsSpecSchema
+from .taskSpecSchema import TaskSpecSchema
 from ._node import _Node
 
 # OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
@@ -19,7 +16,8 @@ OUTPUT_ID = 'collector_id_fd9567b6'
 OUTPUT_TYPE = 'Output_Collector'
 
 
-__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
+__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
+           'register_validator', 'register_copy_function']
 
 # class NodeIncomingEdge(object):
 #     from_node = 'from_node'
@@ -31,6 +29,13 @@ __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE']
 #     to_node = 'to_node'
 #     to_port = 'to_port'
 #     from_port = 'from_port'
+
+# dictionary of validators of funciton signiture (val, meta) -> bool
+_VALIDATORS = {}
+# dictionary of object copy functions
+_COPYS = {}
+# dictionary of clean up functions
+_CLEANUP = {}
 
 
 def _get_nodetype(node):
@@ -51,6 +56,24 @@ def _get_nodetype(node):
     return keeptypes
 
 
+def register_validator(typename: type,
+                       fun) -> None:
+    # print('register validator for', typename)
+    _VALIDATORS[typename] = fun
+
+
+def register_copy_function(typename: type,
+                           fun) -> None:
+    # print('register validator for', typename)
+    _COPYS[typename] = fun
+
+
+def register_cleanup(name: str,
+                     fun) -> None:
+    # print('register validator for', typename)
+    _CLEANUP[name] = fun
+
+
 class NodeTaskGraphMixin(object):
     '''Relies on mixing in with a Node class that has the following attributes
     and methods:
@@ -62,8 +85,6 @@ class NodeTaskGraphMixin(object):
             load
             save
             delayed_process
-
-            required
 
         METHODS
         -------
@@ -100,279 +121,47 @@ class NodeTaskGraphMixin(object):
         #     typically a data container.
         self.clear_input = True
 
-    def __translate_column(self, columns):
-        output = {}
-        for col_name, col_type in columns.items():
-            if col_type is not None and col_type.startswith("@"):
-                col_type = self.conf[col_type[1:]]
-            if col_name.startswith("@"):
-                field_name = col_name[1:]
-                v = self.conf[field_name]
-                if isinstance(v, str):
-                    output[v] = col_type
-                elif isinstance(v, list):
-                    for item in v:
-                        output[item] = None
-            else:
-                output[col_name] = col_type
-
-        return output
-
-    def __delayed_call_noports(self, inputs):
-
-        def get_pout(df_out):
-            '''Used for delayed unpacking.'''
-            if isinstance(df_out, cudf.DataFrame):
-                # Needed for the same reason as __make_copy. To prevent columns
-                # addition in the input data frames. In python everything is
-                # by reference value and dataframes are mutable.
-                # Handle the case when dask_cudf.DataFrames are source frames
-                # which appear as cudf.DataFrame in a dask-delayed function.
-                return df_out.copy(deep=False)
-
-            return df_out
-
-        # handle the dask dataframe automatically
-        # use the to_delayed interface
-        # TODO, currently only handles first input is dask_cudf df
-        i_df = inputs[0]
-        rest = inputs[1:]
-        if isinstance(i_df, dask_cudf.DataFrame):
-            output_df_dly_list = []
-            for input_dly in i_df.to_delayed():
-                inputs_ = [input_dly] + rest
-                output_df_dly = dask.delayed(self.decorate_process())(inputs_)
-                output_df_dly_per = output_df_dly.persist()
-                df_out = dask.delayed(get_pout)(output_df_dly_per)
-                output_df_dly_list.append(df_out.persist())
-
-            output_df = dask_cudf.from_delayed(output_df_dly_list)
-
+    def ports_setup(self):
+        """
+        overwrite the super class ports_setup so it can calculate the dynamic
+        ports.
+        If ports information is needed, ports_setup should be used
+        :return: Node ports
+        :rtype: NodePorts
+        """
+        # this will filter out the primary class with ports_setup
+        nodecls_list = _get_nodetype(self)
+        for icls in nodecls_list:
+            if not hasattr(icls, 'ports_setup'):
+                continue
+            ports = icls.ports_setup(self)
+            break
         else:
-            output_df = self.decorate_process()(inputs)
-
-        return output_df
-
-    def validate_connected_ports(self):
-        self_nodetype = _get_nodetype(self)
-        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
-        if 'OutputCollector' in nodetype_names:
-            # Don't validate for OutputCollector
-            return
-
-        msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
-            'type(s) "{ioport_types}"'
-
-        iports_connected = self.get_connected_inports()
-        iports_spec = self._get_input_ports(full_port_spec=True)
-        for iport in iports_connected.keys():
-            iport_spec = iports_spec[iport]
-            iport_type = iport_spec[PortsSpecSchema.port_type]
-            iport_types = [iport_type] \
-                if not isinstance(iport_type, Iterable) else iport_type
-
-            for ient in self.inputs:
-                # find input node edge entry with to_port, from_port, from_node
-                if not iport == ient['to_port']:
-                    continue
-                ientnode = ient
+            raise Exception('ports_setup method missing')
+        # note, currently can only handle one dynamic port per node
+        port_type = PortsSpecSchema.port_type
+        inports = ports.inports
+        dy = PortsSpecSchema.dynamic
+        for key in inports:
+            if dy in inports[key] and inports[key][dy]:
+                types = inports[key][port_type]
                 break
-            else:
-                intask = self._task_obj[TaskSpecSchema.inputs][iport]
-                # this should never happen
-                raise LookupError(
-                    'Task "{}" not connected to "{}.{}". Add task spec to '
-                    'TaskGraph.'.format(intask, self.uid, iport))
-
-            from_node = ientnode['from_node']
-            oport = ientnode['from_port']
-            oports_spec = from_node._get_output_ports(full_port_spec=True)
-            oport_spec = oports_spec[oport]
-            oport_type = oport_spec[PortsSpecSchema.port_type]
-            oport_types = [oport_type] \
-                if not isinstance(oport_type, Iterable) else oport_type
-
-            for optype in oport_types:
-                if issubclass(optype, tuple(iport_types)):
-                    break
-            else:
-                # Port types do not match
-                msgi = msgfmt.format(
-                    task=self.uid,
-                    nodetype=self_nodetype,
-                    inout='input',
-                    ioport=iport,
-                    ioport_types=iport_types)
-
-                msgo = msgfmt.format(
-                    task=from_node.uid,
-                    nodetype=_get_nodetype(from_node),
-                    inout='output',
-                    ioport=oport,
-                    ioport_types=oport_types)
-
-                errmsg = 'Port Types Validation\n{}\n{}\n'\
-                    'Connected nodes do not have matching port types. Fix '\
-                    'port types.'.format(msgo, msgi)
-
-                raise TypeError(errmsg)
-
-    def validate_required_columns(self):
-
-        def validate_required(iport, kcol, kval, ientnode, icols):
-            node = ientnode['from_node']
-            oport = ientnode['from_port']
-            src_task = '{}.{}'.format(node.uid, oport)
-            src_type = _get_nodetype(node)
-            # incoming "task.port":"Node-type":{{column:column-type}}
-            msgi = \
-                '"{task}":"{nodetype}" produces columns {colinfo}'.format(
-                    task=src_task,
-                    nodetype=src_type,
-                    colinfo=icols)
-
-            dst_task = '{}.{}'.format(self.uid, iport)
-            dst_type = _get_nodetype(self)
-            # expecting "task.port":"Node-type":{{column:column-type}}
-            msge = \
-                '"{task}":"{nodetype}" requires columns {colinfo}'.format(
-                    task=dst_task,
-                    nodetype=dst_type,
-                    colinfo={kcol: kval})
-
-            header = \
-                'Columns Validation\n'\
-                'Format "task.port":"Node-type":{{column:column-type}}'
-            info_msg = '{}\n{}\n{}'.format(header, msgi, msge)
-
-            if kcol not in icols:
-                err_msg = \
-                    'Task "{}" missing required column "{}" '\
-                    'from "{}".'.format(self.uid, kcol, src_task)
-                out_err = '{}\n{}'.format(info_msg, err_msg)
-                raise LookupError(out_err)
-
-            ival = icols[kcol]
-            if kval != ival:
-                # special case for 'date'
-                if (kval == 'date' and ival
-                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
-                    return
+        else:
+            return ports
+        if hasattr(self, 'inputs'):
+            for inp in self.inputs:
+                to_port = inp['to_port']
+                if to_port in inports and (not inports[to_port].get(dy,
+                                                                    False)):
+                    # skip connected non dynamic ports
+                    continue
                 else:
-                    err_msg = 'Task "{}" column "{}" expected type "{}" got '\
-                        'type "{}" instead.'.format(self.uid, kcol, kval, ival)
-                    out_err = '{}\n{}'.format(info_msg, err_msg)
-                    raise LookupError(out_err)
+                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+                        port_type: types, dy: True}
+        return ports
 
-        inputs_cols = self.get_input_columns()
-
-        if not self.required:
-            return
-
-        required = self.required
-        for iport in self._get_input_ports():
-            if iport not in required:
-                continue
-            required_iport = required[iport]
-
-            if iport not in inputs_cols:
-                # Is it possible that iport not connected? If so iport should
-                # not be in required. Should raise an exception here.
-                warn_msg = \
-                    'Task "{}" Node Type "{}" missing required port "{}" in '\
-                    'incoming columns. Should the port be connected?'.format(
-                        self.uid, _get_nodetype(self), iport)
-                warnings.warn(warn_msg)
-                continue
-            incoming_cols = inputs_cols[iport]
-
-            for ient in self.inputs:
-                # find input node edge entry with to_port, from_port, from_node
-                if not iport == ient['to_port']:
-                    continue
-                ientnode = ient
-                break
-            else:
-                intask = self._task_obj[TaskSpecSchema.inputs][iport]
-                # this should never happen
-                raise LookupError(
-                    'Task "{}" not connected to "{}.{}". Add task spec to '
-                    'TaskGraph.'.format(intask, self.uid, iport))
-
-            for kcol, kval in required_iport.items():
-                validate_required(iport, kcol, kval,
-                                  ientnode, incoming_cols)
-
-    def get_output_columns(self):
-        return self.columns_setup()
-
-    def _validate_df(self, df_to_val, ref_cols):
-        '''Validate a cudf or dask_cudf DataFrame.
-
-        :param df_to_val: A dataframe typically of type cudf.DataFrame or
-            dask_cudf.DataFrame.
-        :param ref_cols: Dictionary of column names and their expected types.
-        :returns: True or False based on matching all columns in the df_to_val
-            and columns spec in ref_cols.
-        :raises: Exception - Raised when invalid dataframe length or unexpected
-            number of columns. TODO: Create a ValidationError subclass.
-
-        '''
-        if (isinstance(df_to_val, cudf.DataFrame) or
-            isinstance(df_to_val, dask_cudf.DataFrame)) and \
-                len(df_to_val) == 0:
-            err_msg = 'Node "{}" produced empty output'.format(self.uid)
-            raise Exception(err_msg)
-
-        if not isinstance(df_to_val, cudf.DataFrame) and \
-           not isinstance(df_to_val, dask_cudf.DataFrame):
-            return True
-
-        i_cols = df_to_val.columns
-        if len(i_cols) != len(ref_cols):
-            print("expect %d columns, only see %d columns"
-                  % (len(ref_cols), len(i_cols)))
-            print("ref:", ref_cols)
-            print("columns", i_cols)
-            raise Exception("not valid for node %s" % (self.uid))
-
-        for col in ref_cols.keys():
-            if col not in i_cols:
-                print("error for node %s, column %s is not in the required "
-                      "output df" % (self.uid, col))
-                return False
-
-            if ref_cols[col] is None:
-                continue
-
-            err_msg = "for node {} type {}, column {} type {} "\
-                "does not match expected type {}".format(
-                    self.uid, type(self), col, df_to_val[col].dtype,
-                    ref_cols[col])
-
-            if ref_cols[col] == 'category':
-                # comparing pandas.core.dtypes.dtypes.CategoricalDtype to
-                # numpy.dtype causes TypeError. Instead, let's compare
-                # after converting all types to their string representation
-                # d_type_tuple = (pd.core.dtypes.dtypes.CategoricalDtype(),)
-                d_type_tuple = (str(pd.CategoricalDtype()),)
-            elif ref_cols[col] == 'date':
-                # Cudf read_csv doesn't understand 'datetime64[ms]' even
-                # though it reads the data in as 'datetime64[ms]', but
-                # expects 'date' as dtype specified passed to read_csv.
-                d_type_tuple = ('datetime64[ms]', 'date', 'datetime64[ns]')
-            else:
-                d_type_tuple = (str(np.dtype(ref_cols[col])),)
-
-            if (str(df_to_val[col].dtype) not in d_type_tuple):
-                print("ERROR: {}".format(err_msg))
-                # Maybe raise an exception here and have the caller
-                # try/except the validation routine.
-                return False
-
-        return True
-
-    def __valide(self, node_output, ref_cols):
+    def __valide(self, node_output: dict):
+        output_meta = self.meta_setup().outports
         # Validate each port
         out_ports = self._get_output_ports(full_port_spec=True)
         for pname, pspec in out_ports.items():
@@ -397,10 +186,10 @@ class NodeTaskGraphMixin(object):
                 if not isinstance(expected_type, list):
                     expected_type = [expected_type]
 
-                if self.delayed_process and \
-                        cudf.DataFrame in expected_type and \
-                        dask_cudf.DataFrame not in expected_type:
-                    expected_type.append(dask_cudf.DataFrame)
+                # if self.delayed_process and \
+                #         cudf.DataFrame in expected_type and \
+                #         dask_cudf.DataFrame not in expected_type:
+                #     expected_type.append(dask_cudf.DataFrame)
 
                 match = False
                 for expected in expected_type:
@@ -414,15 +203,15 @@ class NodeTaskGraphMixin(object):
                         '"{}". Expected type "{}"'
                         .format(self.uid, pname, out_type, expected_type))
 
-            cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
+            # cudf_types_tuple = (cudf.DataFrame, dask_cudf.DataFrame)
+            # if out_type in cudf_types_tuple:
+            #     if len(out_val.columns) == 0 and out_optional:
+            #         continue
 
-            if out_type in cudf_types_tuple:
-                if len(out_val.columns) == 0 and out_optional:
-                    continue
-
-            if out_type in cudf_types_tuple:
-                cols_to_val = ref_cols.get(pname)
-                val_flag = self._validate_df(out_val, cols_to_val)
+            if out_type in _VALIDATORS:
+                validator = _VALIDATORS[out_type]
+                meta_to_val = output_meta.get(pname)
+                val_flag = validator(out_val, meta_to_val, self)
                 if not val_flag:
                     raise Exception("not valid output")
 
@@ -441,9 +230,9 @@ class NodeTaskGraphMixin(object):
     def __get_input_df(self):
         return self.input_df
 
-    def get_input_columns(self):
+    def get_input_meta(self):
         """
-        get all the connected input columns information
+        get all the connected input metas information
         returns
             dict, key is the current node input port name, value is the column
             name and types
@@ -451,26 +240,34 @@ class NodeTaskGraphMixin(object):
         output = {}
         if not hasattr(self, 'inputs'):
             return output
+        ports = self.ports_setup()
+        inports = ports.inports
+        dy = PortsSpecSchema.dynamic
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            columns = copy.deepcopy(from_node.columns_setup())
+            meta_data = copy.deepcopy(from_node.meta_setup())
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
-            if from_port_name not in columns:
+            if from_port_name not in meta_data.outports:
                 nodetype_list = _get_nodetype(self)
                 nodetype_names = [inodet.__name__ for inodet in nodetype_list]
                 if 'OutputCollector' in nodetype_names:
                     continue
                 warnings.warn(
                     'node "{}" node-type "{}" to port "{}", from node "{}" '
-                    'node-type "{}" oport "{}" missing oport in columns for '
-                    'node "{}" output cols: {}'.format(
+                    'node-type "{}" oport "{}" missing oport in metadata for '
+                    'node "{}" output meta: {}'.format(
                         self.uid, nodetype_list, to_port_name,
                         from_node.uid, _get_nodetype(from_node),
-                        from_port_name, from_node.uid, columns)
+                        from_port_name, from_node.uid, meta_data.outports)
                 )
             else:
-                output[to_port_name] = columns[from_port_name]
+                out_port_name = from_node.uid+'@'+from_port_name
+                if out_port_name in inports and inports[
+                        out_port_name].get(dy, False):
+                    output[out_port_name] = meta_data.outports[from_port_name]
+                else:
+                    output[to_port_name] = meta_data.outports[from_port_name]
         return output
 
     def __set_input_df(self, to_port, df):
@@ -522,17 +319,13 @@ class NodeTaskGraphMixin(object):
                 onode.flow(progress_fun)
 
     def __make_copy(self, df_obj):
-        if isinstance(df_obj, cudf.DataFrame):
-            return df_obj.copy(deep=False)
-        elif isinstance(df_obj, dask_cudf.DataFrame):
-            # TODO: This just makes a df_obj with a shallow copy of the
-            #     underlying computational graph. It does not affect the
-            #     underlying data. Why is a copy of dask graph needed?
-            return df_obj.copy()
+        typeObj = df_obj.__class__
+        if typeObj in _COPYS:
+            return _COPYS[typeObj](df_obj)
         else:
             return df_obj
 
-    def __check_dly_processing_prereq(self, inputs):
+    def __check_dly_processing_prereq(self, inputs: dict):
         '''At least one input must be a dask DataFrame type. Output types must
         be specified as cudf.DataFrame or dask_cudf.DataFrame. (Functionality
         could also be extended to support dask dataframe of pandas, but
@@ -565,13 +358,15 @@ class NodeTaskGraphMixin(object):
 
         return use_delayed
 
-    def __delayed_call(self, inputs):
+    def __delayed_call(self, inputs: dict):
         '''Delayed processing called when self.delayed_process is set. To
         handle delayed processing automatically, prerequisites are checked via
         call to:
             :meth:`__check_dly_processing_prereq`
         Additionally all input dask_cudf dataframes have to be partitioned
         the same i.e. equal number of partitions.
+        @param inputs: dict
+            key: iport name string, value: input data
         '''
 
         def df_copy(df_in):
@@ -581,7 +376,7 @@ class NodeTaskGraphMixin(object):
             # by reference value and dataframes are mutable.
             # Handle the case when dask_cudf.DataFrames are source frames
             # which appear as cudf.DataFrame in a dask-delayed function.
-            return df_in.copy(deep=False)
+            return self.__make_copy(df_in)
 
         def get_pout(out_dict, port):
             '''Get the output in out_dict at key port. Used for delayed
@@ -595,21 +390,9 @@ class NodeTaskGraphMixin(object):
             # except Exception as err:
             #     print(err)
 
-            df_out = out_dict.get(port, cudf.DataFrame())
+            df_out = out_dict.get(port)
 
-            if isinstance(df_out, cudf.DataFrame) or \
-                    isinstance(df_out, pd.DataFrame):
-                # Needed for the same reason as __make_copy. To prevent columns
-                # addition in the input data frames. In python everything is
-                # by reference value and dataframes are mutable.
-                # Handle the case when dask_cudf.DataFrames are source frames
-                # which appear as cudf.DataFrame in a dask-delayed function.
-
-                # TODO: This copy might not be needed given df_copy fix.
-                return df_out.copy(deep=False)
-
-            return df_out
-
+            return self.__make_copy(df_out)
         inputs_not_dly = {}
         for iport, inarg in inputs.items():
             # dcudf not necessarily a dask cudf frame
@@ -693,16 +476,20 @@ class NodeTaskGraphMixin(object):
         output_df = {}
         # A dask_cudf object is synthesized from a list of delayed objects.
         # Per outputs_dly above use dask_cudf.from_delayed API.
+        connected_outs = set([out['from_port'] for out in self.outputs])
         for oport, port_spec in \
                 self._get_output_ports(full_port_spec=True).items():
+            if (oport not in connected_outs):
+                continue
             port_type = port_spec.get(PortsSpecSchema.port_type, type(None))
             if not isinstance(port_type, Iterable):
                 port_type = [port_type]
             # DEBUGGING
             # print('__DELAYED_CALL node "{}" port "{}" port type "{}"'.format(
             #     self.uid, oport, port_type))
-            if dask_cudf.DataFrame in port_type or DaskDataFrame in port_type:
-                output_df[oport] = dask_cudf.from_delayed(outputs_dly[oport])
+            if any([issubclass(p_type,
+                               DaskDataFrame) for p_type in port_type]):
+                output_df[oport] = from_delayed(outputs_dly[oport])
             else:
                 # outputs_dly[oport] is currently a list. Run compute on each
                 # partition, and keep the first one.
@@ -795,9 +582,172 @@ class NodeTaskGraphMixin(object):
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df, self.columns_setup())
+            self.__valide(output_df)
 
         if self.save:
             self.save_cache(output_df)
 
         return output_df
+
+    def _validate_connected_ports(self):
+        """
+        Validate the connected port types match
+        """
+        self_nodetype = _get_nodetype(self)
+        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
+        if 'OutputCollector' in nodetype_names:
+            # Don't validate for OutputCollector
+            return
+
+        msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
+            'type(s) "{ioport_types}"'
+
+        iports_connected = self.get_connected_inports()
+        iports_spec = self._get_input_ports(full_port_spec=True)
+        for iport in iports_connected.keys():
+            iport_spec = iports_spec[iport]
+            iport_type = iport_spec[PortsSpecSchema.port_type]
+            iport_types = [iport_type] \
+                if not isinstance(iport_type, Iterable) else iport_type
+
+            for ient in self.inputs:
+                # find input node edge entry with to_port, from_port, from_node
+                if not iport == ient['to_port']:
+                    continue
+                ientnode = ient
+                break
+            else:
+                intask = self._task_obj[TaskSpecSchema.inputs][iport]
+                # this should never happen
+                raise LookupError(
+                    'Task "{}" not connected to "{}.{}". Add task spec to '
+                    'TaskGraph.'.format(intask, self.uid, iport))
+
+            from_node = ientnode['from_node']
+            oport = ientnode['from_port']
+            oports_spec = from_node._get_output_ports(full_port_spec=True)
+            oport_spec = oports_spec[oport]
+            oport_type = oport_spec[PortsSpecSchema.port_type]
+            oport_types = [oport_type] \
+                if not isinstance(oport_type, Iterable) else oport_type
+
+            for optype in oport_types:
+                if issubclass(optype, tuple(iport_types)):
+                    break
+            else:
+                # Port types do not match
+                msgi = msgfmt.format(
+                    task=self.uid,
+                    nodetype=self_nodetype,
+                    inout='input',
+                    ioport=iport,
+                    ioport_types=iport_types)
+
+                msgo = msgfmt.format(
+                    task=from_node.uid,
+                    nodetype=_get_nodetype(from_node),
+                    inout='output',
+                    ioport=oport,
+                    ioport_types=oport_types)
+
+                errmsg = 'Port Types Validation\n{}\n{}\n'\
+                    'Connected nodes do not have matching port types. Fix '\
+                    'port types.'.format(msgo, msgi)
+
+                raise TypeError(errmsg)
+
+    def _validate_connected_metadata(self):
+        """
+        Validate the connected metadata match the requirements.
+        metadata.inports specify the required metadata.
+        """
+        metadata = self.meta_setup()
+
+        # as current behavior of matching in the validate_required
+        def validate_required(iport, kcol, kval, ientnode, icols):
+            node = ientnode['from_node']
+            oport = ientnode['from_port']
+            src_task = '{}.{}'.format(node.uid, oport)
+            src_type = _get_nodetype(node)
+            # incoming "task.port":"Node-type":{{column:column-type}}
+            msgi = \
+                '"{task}":"{nodetype}" produces metadata {colinfo}'.format(
+                    task=src_task,
+                    nodetype=src_type,
+                    colinfo=icols)
+
+            dst_task = '{}.{}'.format(self.uid, iport)
+            dst_type = _get_nodetype(self)
+            # expecting "task.port":"Node-type":{{column:column-type}}
+            msge = \
+                '"{task}":"{nodetype}" requires metadata {colinfo}'.format(
+                    task=dst_task,
+                    nodetype=dst_type,
+                    colinfo={kcol: kval})
+
+            header = \
+                'Meta Validation\n'\
+                'Format "task.port":"Node-type":{{column:column-type}}'
+            info_msg = '{}\n{}\n{}'.format(header, msgi, msge)
+
+            if kcol not in icols:
+                err_msg = \
+                    'Task "{}" missing required column "{}" '\
+                    'from "{}".'.format(self.uid, kcol, src_task)
+                out_err = '{}\n{}'.format(info_msg, err_msg)
+                raise LookupError(out_err)
+
+            ival = icols[kcol]
+            if kval != ival:
+                # special case for 'date'
+                if (kval == 'date' and ival
+                        in ('datetime64[ms]', 'date', 'datetime64[ns]')):
+                    return
+                else:
+                    err_msg = 'Task "{}" column "{}" expected type "{}" got '\
+                        'type "{}" instead.'.format(self.uid, kcol, kval, ival)
+                    out_err = '{}\n{}'.format(info_msg, err_msg)
+                    raise LookupError(out_err)
+
+        inputs_meta = self.get_input_meta()
+        required = metadata.inports
+
+        if not required:
+            return
+        inports = self._get_input_ports(full_port_spec=True)
+        for iport in inports:
+            if iport not in required:
+                continue
+            required_iport = required[iport]
+
+            if iport not in inputs_meta:
+                # if iport is dynamic, skip warning
+                dy = PortsSpecSchema.dynamic
+                if inports[iport].get(dy, False):
+                    continue
+                # Is it possible that iport not connected? If so iport should
+                # not be in required. Should raise an exception here.
+                warn_msg = \
+                    'Task "{}" Node Type "{}" missing required port "{}" in '\
+                    'incoming meta data. Should the port be connected?'.format(
+                        self.uid, _get_nodetype(self), iport)
+                warnings.warn(warn_msg)
+                continue
+            incoming_meta = inputs_meta[iport]
+
+            for ient in self.inputs:
+                # find input node edge entry with to_port, from_port, from_node
+                if not iport == ient['to_port']:
+                    continue
+                ientnode = ient
+                break
+            else:
+                intask = self._task_obj[TaskSpecSchema.inputs][iport]
+                # this should never happen
+                raise LookupError(
+                    'Task "{}" not connected to "{}.{}". Add task spec to '
+                    'TaskGraph.'.format(intask, self.uid, iport))
+
+            for key, val in required_iport.items():
+                validate_required(iport, key, val,
+                                  ientnode, incoming_meta)

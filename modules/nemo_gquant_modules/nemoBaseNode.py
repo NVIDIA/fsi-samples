@@ -1,5 +1,5 @@
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts
+from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
 
 from nemo.core.neural_types import NmTensor
 import inspect
@@ -8,7 +8,6 @@ from collections import OrderedDict
 from gquant.dataframe_flow.util import get_file_path
 from nemo.backends.pytorch.nm import (DataLayerNM,
                                       TrainableNM, LossNM)
-from collections import OrderedDict
 import nemo
 
 __all__ = ["NeMoBase"]
@@ -114,11 +113,11 @@ class NeMoBase:
         if not issubclass(class_obj, DataLayerNM):
             try:
                 if issubclass(self.instanceClass, TrainableNM):
-                    input_columns = self.get_input_columns()
-                    if self.INPUT_NM in input_columns:
+                    input_meta = self.get_input_meta()
+                    if self.INPUT_NM in input_meta:
                         if (share_weight in self.conf and
                                 self.conf[share_weight] == 'Reuse'):
-                            self.conf = input_columns[self.INPUT_NM]
+                            self.conf = input_meta[self.INPUT_NM]
                 app = nemo.utils.app_state.AppState()
                 ins = None
                 for mod in app._module_registry:
@@ -130,7 +129,7 @@ class NeMoBase:
                 if self.instance is None:
                     self.instance = ins
             except Exception as e:
-                # print(e)
+                print(e)
                 pass
 
     def _clean_dup(self):
@@ -148,13 +147,6 @@ class NeMoBase:
             app._module_registry.remove(mod)
 
     def ports_setup(self):
-        input_columns = self.get_input_columns()
-        if issubclass(self.instanceClass, TrainableNM):
-            input_columns = self.get_input_columns()
-            if self.INPUT_NM in input_columns:
-                if (share_weight in self.conf and
-                        self.conf[share_weight] == 'Reuse'):
-                    self.conf = input_columns[self.INPUT_NM]
         port_type = PortsSpecSchema.port_type
         if self.instance is not None:
             inports = self.instance.input_ports
@@ -187,14 +179,14 @@ class NeMoBase:
             o_outports[self.OUTPUT_NM] = {port_type: DataLayerNM}
         return NodePorts(inports=o_inports, outports=o_outports)
 
-    def columns_setup(self):
-        input_columns = self.get_input_columns()
+    def meta_setup(self):
+        input_meta = self.get_input_meta()
         if issubclass(self.instanceClass, TrainableNM):
-            input_columns = self.get_input_columns()
-            if self.INPUT_NM in input_columns:
+            input_meta = self.get_input_meta()
+            if self.INPUT_NM in input_meta:
                 if (share_weight in self.conf and
                         self.conf[share_weight] == 'Reuse'):
-                    self.conf = input_columns[self.INPUT_NM]
+                    self.conf = input_meta[self.INPUT_NM]
         if self.instance is not None:
             inports = self.instance.input_ports
             outports = self.instance.output_ports
@@ -208,17 +200,18 @@ class NeMoBase:
             except Exception:
                 inports = None
                 outports = None
-        self.required = {}
-        out_cols = {}
+        required = {}
+        out_meta = {}
         if inports is not None:
             for k in inports.keys():
-                self.required[k] = serialize_type(inports[k])
+                required[k] = serialize_type(inports[k])
         if outports is not None:
             for k in outports.keys():
-                out_cols[k] = serialize_type(outports[k])
+                out_meta[k] = serialize_type(outports[k])
         if self.instance is not None:
-            out_cols[self.OUTPUT_NM] = self.conf
-        return out_cols
+            out_meta[self.OUTPUT_NM] = self.conf
+        metadata = MetaData(inports=required, outports=out_meta)
+        return metadata
 
     def conf_schema(self):
         conf_para = get_conf_parameters(self.instanceClass)

@@ -2,14 +2,13 @@ from collections import OrderedDict
 import networkx as nx
 import ruamel.yaml
 from .node import Node
-from ._node_flow import OUTPUT_ID, OUTPUT_TYPE
+from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
 from .portsSpecSchema import NodePorts, ConfSchema
 import warnings
 import copy
 import traceback
-import dask
 import cloudpickle
 import base64
 from types import ModuleType
@@ -18,6 +17,7 @@ from .util import get_encoded_class
 __all__ = ['TaskGraph', 'OutputCollector']
 
 server_task_graph = None
+
 
 def add_module_from_base64(module_name, class_str):
     class_obj = cloudpickle.loads(base64.b64decode(class_str))
@@ -33,8 +33,8 @@ def add_module_from_base64(module_name, class_str):
 
 
 class OutputCollector(Node):
-    def columns_setup(self):
-        return super().columns_setup()
+    def meta_setup(self):
+        return super().meta_setup()
 
     def ports_setup(self):
         return NodePorts(inports={}, outports={})
@@ -268,7 +268,8 @@ class TaskGraph(object):
 
         with open(filename) as f:
             yaml = ruamel.yaml.YAML(typ='safe')
-            yaml.constructor.yaml_constructors[u'tag:yaml.org,2002:timestamp'] = \
+            yaml.constructor.yaml_constructors[
+                u'tag:yaml.org,2002:timestamp'] = \
                 yaml.constructor.yaml_constructors[u'tag:yaml.org,2002:str']
             obj = yaml.load(f)
         t = TaskGraph(obj)
@@ -436,18 +437,10 @@ class TaskGraph(object):
         # Columns type checking is done in the :meth:`TaskGraph._run` after the
         # outputs are specified and participating tasks are determined.
 
-        # # this part is to do static type checks
-        # raw_inputs = []
-        # for k in self.__node_dict.keys():
-        #     self.__find_roots(self.__node_dict[k], raw_inputs,
-        #                       consider_load=False)
-        #
-        # for i in raw_inputs:
-        #     i.validate_required_columns()
-        #
-        # # clean up the visited status for run computations
-        # for task_id in self.__node_dict:
-        #     self.__node_dict[task_id].visited = False
+        # this part is to update each of the node so dynamic inputs can be
+        # processed
+        for k in self.__node_dict.keys():
+            self.__node_dict[k].update()
 
     def __getitem__(self, key):
         return self.__node_dict[key]
@@ -547,7 +540,7 @@ class TaskGraph(object):
         inputs = []
         self.__find_roots(outputs_collector_node, inputs, consider_load=True)
 
-        # Validate columns prior to running heavy compute
+        # Validate metadata prior to running heavy compute
         for node in self.__node_dict.values():
             if not node.visited:
                 continue
@@ -555,10 +548,10 @@ class TaskGraph(object):
             # Run ports validation.
             node.validate_connected_ports()
 
-            # Run columns setup in case the required columns are calculated
-            # within the columns_setup and are NodeTaskGraphMixin dependent.
-            node.columns_setup()
-            node.validate_required_columns()
+            # Run meta setup in case the required meta are calculated
+            # within the meta_setup and are NodeTaskGraphMixin dependent.
+            # node.meta_setup()
+            node.validate_connected_metadata()
 
         if self.__widget is not None:
             def progress_fun(uid):
@@ -609,25 +602,9 @@ class TaskGraph(object):
         else:
             return result
 
-    def run_cleanup(self, clean_module=False):
-        try:
-            import nemo
-            nf = nemo.core.NeuralModuleFactory.get_default_factory()
-        except ModuleNotFoundError:
-            nf = None
-        if nf is not None:
-            nf.reset_trainer()
-            if clean_module:
-                state = nemo.utils.app_state.AppState()
-                state._module_registry.clear()
-                state.active_graph.modules.clear()
-        if clean_module:
-            import dask.distributed
-            try:
-                client = dask.distributed.client.default_client()
-                client.restart()
-            except Exception:
-                err = traceback.format_exc()
+    def run_cleanup(self, ui_clean=False):
+        for v in _CLEANUP.values():
+            v(ui_clean)
 
     def run(self, outputs=None, replace=None, profile=False, formated=False):
         """

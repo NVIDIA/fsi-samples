@@ -4,12 +4,14 @@
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
   inputs: {}
+  module: rapids_modules
 - id: asset_filter
   type: AssetFilterNode
   conf:
     asset: 22123
   inputs:
     stock_in: xgboost_graph.technical_indicator@stock_out
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
@@ -35,6 +37,7 @@
     title: signals
   inputs:
     in: asset_filter.stock_out
+  module: rapids_modules
 - id: xgboost_graph
   type: CompositeNode
   conf:

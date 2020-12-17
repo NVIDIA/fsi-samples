@@ -66,6 +66,8 @@ import {
   COMMAND_CLEAN,
   COMMAND_ADD_OUTPUT_COLLECTOR
 } from './commands';
+import { registerValidator } from './validator';
+import { registerDisplay } from './showType';
 
 // import { LabIcon } from '@jupyterlab/ui-components';
 // import { LabIcon } from '@jupyterlab/ui-components/lib/icon/labicon';
@@ -166,11 +168,11 @@ export function isEnabled(cell: any): boolean {
   return outputEnabled(outputArea);
 }
 
-export function setupContextMenu(
+export async function setupContextMenu(
   contextMenu: ContextMenuSvg,
   commands: CommandRegistry,
   palette: ICommandPalette
-): Menu {
+): Promise<Menu> {
   contextMenu.addItem({
     command: COMMAND_OPEN_EDITOR,
     selector: '.jp-GQuant'
@@ -215,8 +217,8 @@ export function setupContextMenu(
   addNodeMenu.title.label = 'Add Nodes';
   addNodeMenu.title.mnemonic = 4;
   const subMenuDict: { [key: string]: Menu } = {};
-  const allNodes = requestAPI<any>('all_nodes');
-  allNodes.then((allNodes: IAllNodes) => {
+  const allNodes: IAllNodes = await requestAPI<any>('all_nodes');
+  //allNodes.then((allNodes: IAllNodes) => {
     for (const k in allNodes) {
       const splits = k.split('.');
       let subMenu: Menu = null;
@@ -272,7 +274,7 @@ export function setupContextMenu(
       //   submenu: submenu
       // });
     }
-  });
+  //});
 
   contextMenu.addItem({
     type: 'submenu',
@@ -322,6 +324,20 @@ export function setupContextMenu(
     selector: '.jp-GQuant'
   });
 
+  const plugins = requestAPI<any>('register_plugins');
+  plugins.then( (d: any) =>{
+    console.log(d['validation']);
+    for (const k in d['validation']){
+      let fun = new Function("required", "outputs", d['validation'][k]);
+      registerValidator(k, fun);
+    }
+
+    for (const k in d['display']){
+      let fun = new Function("metaObj", d['display'][k]);
+      registerDisplay(k, fun);
+    }
+  });
+
   return addNodeMenu;
 }
 
@@ -350,7 +366,7 @@ const gquantWidget: JupyterFrontEndPlugin<void> = {
   activate: activateWidget
 };
 
-function activateFun(
+async function activateFun(
   app: JupyterFrontEnd,
   browserFactory: IFileBrowserFactory,
   restorer: ILayoutRestorer,
@@ -358,7 +374,7 @@ function activateFun(
   palette: ICommandPalette,
   notebookTracker: INotebookTracker,
   launcher: ILauncher | null
-): void {
+): Promise<void> {
   const namespace = 'gquant';
   const factory = new GquantFactory({
     name: FACTORY,
@@ -570,7 +586,7 @@ function activateFun(
     );
     //palette.addItem({ command: 'gquant:export-yaml', category: 'Notebook Operations', args: args });
     menu.fileMenu.addGroup([{ command: COMMAND_NEW_TASK_GRAPH }], 40);
-    menu.addMenu(addNodeMenu, { rank: 40 });
+    menu.addMenu(await addNodeMenu, { rank: 40 });
   }
 
   if (palette) {

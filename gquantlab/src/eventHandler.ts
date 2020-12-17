@@ -73,7 +73,7 @@ export function handleMouseOver(that: Chart): Function {
     const portTypes = d[key].portType;
     let typeHTML = '<ul>';
     for (let i = 0; i < portTypes.length; i++) {
-      typeHTML += `<li>${portTypes[i]}</li>`;
+      typeHTML += `<li>${portTypes[i][0]}</li>`;
     }
     typeHTML += '</ul>';
     header += `<div>Port Type:${typeHTML}</div>`;

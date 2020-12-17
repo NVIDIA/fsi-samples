@@ -3,12 +3,14 @@
   conf:
     file: notebooks/data/stock_price_hist.csv.gz
   inputs: {}
+  module: rapids_modules
 - id: ""
   type: Output_Collector
   conf: {}
   inputs:
     in1: csv_output2.df_out
     in2: csv_output1.df_out
+  module: rapids_modules
 - id: get_return
   type: CompositeNode
   conf:
@@ -32,17 +34,20 @@
     column: volume
   inputs:
     stock_in: get_return.add_return_feature@stock_out
+  module: rapids_modules
 - id: average_return
   type: AverageNode
   conf:
     column: returns
   inputs:
     stock_in: get_return.add_return_feature@stock_out
+  module: rapids_modules
 - id: stock_name
   type: StockNameLoader
   conf:
     file: notebooks/data/security_master.csv.gz
   inputs: {}
+  module: rapids_modules
 - id: left_merge1
   type: LeftMergeNode
   conf:
@@ -50,6 +55,7 @@
   inputs:
     left: average_volume.stock_out
     right: stock_name.stock_name
+  module: rapids_modules
 - id: left_merge2
   type: LeftMergeNode
   conf:
@@ -57,15 +63,18 @@
   inputs:
     left: average_return.stock_out
     right: stock_name.stock_name
+  module: rapids_modules
 - id: csv_output1
   type: OutCsvNode
   conf:
     path: /home/quant/gQuant/notebooks/average_return.csv
   inputs:
     df_in: left_merge2.merged
+  module: rapids_modules
 - id: csv_output2
   type: OutCsvNode
   conf:
     path: /home/quant/gQuant/notebooks/average_volume.csv
   inputs:
     df_in: left_merge1.merged
+  module: rapids_modules

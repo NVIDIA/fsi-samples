@@ -1,16 +1,19 @@
-from gquant.plugin_nodes.ml.gridRandomSearchNode import GridRandomSearchNode
-from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+from rapids_modules import GridRandomSearchNode # noqa #E402
+from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode # noqa #E402
+from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
                                                    NodePorts)
-from gquant.dataframe_flow import TaskGraph
-from gquant.dataframe_flow import Node
-from gquant.dataframe_flow.util import get_file_path
-from gquant.dataframe_flow.cache import cache_schema
-from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema
-import cudf
-import uuid
-import pandas
-import copy
+from gquant.dataframe_flow import TaskGraph # noqa #E402
+from gquant.dataframe_flow import Node # noqa #E402
+from gquant.dataframe_flow.util import get_file_path # noqa #E402
+from gquant.dataframe_flow.cache import CACHE_SCHEMA # noqa #E402
+from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema # noqa #E402
+import cudf # noqa #E402
+import uuid # noqa #E402
+import pandas # noqa #E402
+import copy # noqa #E402
 
 __all__ = ["NemoHyperTuneNode"]
 
@@ -203,13 +206,13 @@ class NemoHyperTuneNode(GridRandomSearchNode):
     def ports_setup(self):
         return GridRandomSearchNode.ports_setup(self)
 
-    def columns_setup(self):
-        return GridRandomSearchNode.columns_setup(self)
+    def meta_setup(self):
+        return GridRandomSearchNode.meta_setup(self)
 
     def conf_schema(self):
         cache_key, task_graph, _ = self._compute_hash_key()
-        if cache_key in cache_schema:
-            return cache_schema[cache_key]
+        if cache_key in CACHE_SCHEMA:
+            return CACHE_SCHEMA[cache_key]
         tensors = []
         if task_graph is not None:
             for task in task_graph:
@@ -284,11 +287,11 @@ class NemoHyperTuneNode(GridRandomSearchNode):
 
                     class InputFeed(Node):
 
-                        def columns_setup(self):
+                        def meta_setup(self):
                             output = {}
                             for inp in inputNode.inputs:
                                 output[inp['to_port']] = inp[
-                                    'from_node'].columns_setup()[
+                                    'from_node'].meta_setup()[
                                         inp['from_port']]
                             # it will be something like { input_port: columns }
                             return output

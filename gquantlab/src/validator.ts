@@ -1,6 +1,12 @@
 import { IEdge } from './document';
 import { Chart } from './chart';
 
+const validators: {[key: string]: Function} = {};
+
+export function registerValidator(name: string, fun: Function){
+  validators[name] = fun;
+}
+
 //TODO, need to refactor this to handle dynamcially added module type checks 
 function valid(required: any, outputs: any): boolean {
   const keys = Object.keys(required);
@@ -13,56 +19,6 @@ function valid(required: any, outputs: any): boolean {
           required[d] === null ||
           required[d] === outputs[d])
       )
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function validNmType(required: any, outputs: any): boolean {
-  //first check types
-
-  const reqElement = required['element'];
-  const outElement = outputs['element'];
-  if (
-    outElement['types'][0] !== 'VoidType' &&
-    reqElement['types'][0] !== 'VoidType'
-  ) {
-    if (
-      outElement['types'].findIndex(
-        (d: string) => d === reqElement['types'][0]
-      ) < 0
-    ) {
-      // req type should be generic,
-      // out type should be specific, i.e. subclass of req
-      // first required element type should be the parent type of the output element
-      return false;
-    }
-    if (outElement['fields'] !== reqElement['fields']) {
-      return false;
-    }
-    if (outElement['parameters'] !== reqElement['parameters']) {
-      return false;
-    }
-  }
-
-  const reqAxes = required['axes'];
-  const outAxes = outputs['axes'];
-  if (reqAxes.length === 0) {
-    return true;
-  }
-  if (reqAxes.length !== outAxes.length) {
-    return false;
-  }
-  for (let i = 0; i < reqAxes.length; i++) {
-    if (reqAxes[i]['kind'] !== outAxes[i]['kind']) {
-      return false;
-    }
-    if (
-      reqAxes[i]['size'] !== null &&
-      outAxes[i]['size'] !== null &&
-      reqAxes[i]['size'] !== outAxes['size']
     ) {
       return false;
     }
@@ -97,32 +53,36 @@ export function validConnection(that: Chart) {
       const fromTypes = that.portTypes[from];
       // if 'any shows up in types, it is valid
       if (
-        toTypes.findIndex(d => d === 'any') < 0 &&
-        fromTypes.findIndex(d => d === 'any') < 0
+        toTypes.findIndex(d => d[0] === 'any') < 0 &&
+        fromTypes.findIndex(d => d[0] === 'any') < 0
       ) {
-        const intersection = toTypes.filter((x: string) =>
-          fromTypes.includes(x)
+        const intersection = toTypes.some((x: string[]) => {
+          return fromTypes.some((typeNames: string[]) =>
+              typeNames.includes(x[0])
+           )
+          }
         );
-        if (intersection.length === 0) {
+        if (! intersection) {
           return false;
         }
       }
 
       // make sure the requirement is met
-      if (from in that.outputColumns && to in that.inputRequriements) {
-        const nmType = toTypes.findIndex(d => {
-          return d.indexOf('NmTensor') >= 0;
-        });
-        if (nmType >= 0) {
-          return validNmType(
-            that.inputRequriements[to],
-            that.outputColumns[from]
-          );
-        } else {
-          return valid(that.inputRequriements[to], that.outputColumns[from]);
+      if (from in that.outputMeta && to in that.inputRequriements) {
+        let found = false;
+        for (let i = 0; i < toTypes.length; i++){
+          if (toTypes[i][0] in validators) {
+            found = true;
+            return validators[toTypes[i][0]](that.inputRequriements[to], that.outputMeta[from]);
+            break;
+          }
+        } 
+        if (!found) {
+          return valid(that.inputRequriements[to], that.outputMeta[from]);
         }
+
       } else if (
-        !(from in that.outputColumns) &&
+        !(from in that.outputMeta) &&
         to in that.inputRequriements
       ) {
         return valid(that.inputRequriements[to], {});
@@ -140,32 +100,35 @@ export function validConnection(that: Chart) {
       const toTypes = that.portTypes[to];
       const fromTypes = that.portTypes[from];
       if (
-        toTypes.findIndex(d => d === 'any') < 0 &&
-        fromTypes.findIndex(d => d === 'any') < 0
+        toTypes.findIndex(d => d[0] === 'any') < 0 &&
+        fromTypes.findIndex(d => d[0] === 'any') < 0
       ) {
-        const intersection = toTypes.filter((x: string) =>
-          fromTypes.includes(x)
+        const intersection = fromTypes.some((x: string[]) => {
+          return toTypes.some((typeNames: string[]) =>
+              typeNames.includes(x[0])
+           )
+          }
         );
-        if (intersection.length === 0) {
+        if (! intersection) {
           return false;
         }
       }
 
       // make sure the requirement is met
-      if (to in that.outputColumns && from in that.inputRequriements) {
-        const nmType = toTypes.findIndex(d => {
-          return d.indexOf('NmTensor') >= 0;
-        });
-        if (nmType >= 0) {
-          return validNmType(
-            that.inputRequriements[from],
-            that.outputColumns[to]
-          );
-        } else {
-          return valid(that.inputRequriements[from], that.outputColumns[to]);
+      if (to in that.outputMeta && from in that.inputRequriements) {
+        let found = false;
+        for (let i = 0; i < fromTypes.length; i++){
+          if (fromTypes[i][0] in validators) {
+            found = true;
+            return validators[fromTypes[i][0]](that.inputRequriements[from], that.outputMeta[to]);
+            break;
+          }
+        } 
+        if (!found) {
+          return valid(that.inputRequriements[from], that.outputMeta[to]);
         }
       } else if (
-        !(to in that.outputColumns) &&
+        !(to in that.outputMeta) &&
         from in that.inputRequriements
       ) {
         return valid(that.inputRequriements[from], {});
