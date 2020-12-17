@@ -1,7 +1,7 @@
 from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                    PortsSpecSchema, NodePorts)
-from gquant.dataframe_flow.cache import cache_schema
+from gquant.dataframe_flow.cache import CACHE_SCHEMA
 from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.util import get_file_path
@@ -313,8 +313,8 @@ class GridRandomSearchNode(ContextCompositeNode):
 
     def conf_schema(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_schema:
-            return cache_schema[cache_key]
+        if cache_key in CACHE_SCHEMA:
+            return CACHE_SCHEMA[cache_key]
         # get's the input when it gets the conf
         input_meta = self.get_input_meta()
         json = {}
@@ -366,7 +366,7 @@ class GridRandomSearchNode(ContextCompositeNode):
             }
         }
         out_schema = ConfSchema(json=json, ui=ui)
-        cache_schema[cache_key] = out_schema
+        CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def meta_setup(self):

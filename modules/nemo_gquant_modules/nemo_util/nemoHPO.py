@@ -8,7 +8,7 @@ from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
 from gquant.dataframe_flow import TaskGraph # noqa #E402
 from gquant.dataframe_flow import Node # noqa #E402
 from gquant.dataframe_flow.util import get_file_path # noqa #E402
-from gquant.dataframe_flow.cache import cache_schema # noqa #E402
+from gquant.dataframe_flow.cache import CACHE_SCHEMA # noqa #E402
 from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema # noqa #E402
 import cudf # noqa #E402
 import uuid # noqa #E402
@@ -211,8 +211,8 @@ class NemoHyperTuneNode(GridRandomSearchNode):
 
     def conf_schema(self):
         cache_key, task_graph, _ = self._compute_hash_key()
-        if cache_key in cache_schema:
-            return cache_schema[cache_key]
+        if cache_key in CACHE_SCHEMA:
+            return CACHE_SCHEMA[cache_key]
         tensors = []
         if task_graph is not None:
             for task in task_graph:

@@ -31,11 +31,11 @@ __all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
 #     from_port = 'from_port'
 
 # dictionary of validators of funciton signiture (val, meta) -> bool
-_validators = {}
+_VALIDATORS = {}
 # dictionary of object copy functions
-_copys = {}
+_COPYS = {}
 # dictionary of clean up functions
-_cleanup = {}
+_CLEANUP = {}
 
 
 def _get_nodetype(node):
@@ -59,19 +59,19 @@ def _get_nodetype(node):
 def register_validator(typename: type,
                        fun) -> None:
     # print('register validator for', typename)
-    _validators[typename] = fun
+    _VALIDATORS[typename] = fun
 
 
 def register_copy_function(typename: type,
                            fun) -> None:
     # print('register validator for', typename)
-    _copys[typename] = fun
+    _COPYS[typename] = fun
 
 
-def register_cleanup(name: str,
+def register_CLEANUP(name: str,
                      fun) -> None:
     # print('register validator for', typename)
-    _cleanup[name] = fun
+    _CLEANUP[name] = fun
 
 
 class NodeTaskGraphMixin(object):
@@ -208,8 +208,8 @@ class NodeTaskGraphMixin(object):
             #     if len(out_val.columns) == 0 and out_optional:
             #         continue
 
-            if out_type in _validators:
-                validator = _validators[out_type]
+            if out_type in _VALIDATORS:
+                validator = _VALIDATORS[out_type]
                 meta_to_val = output_meta.get(pname)
                 val_flag = validator(out_val, meta_to_val, self)
                 if not val_flag:
@@ -320,8 +320,8 @@ class NodeTaskGraphMixin(object):
 
     def __make_copy(self, df_obj):
         typeObj = df_obj.__class__
-        if typeObj in _copys:
-            return _copys[typeObj](df_obj)
+        if typeObj in _COPYS:
+            return _COPYS[typeObj](df_obj)
         else:
             return df_obj
 

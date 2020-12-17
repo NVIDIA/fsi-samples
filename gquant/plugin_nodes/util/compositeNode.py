@@ -3,8 +3,8 @@ from gquant.dataframe_flow import TaskGraph
 from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
-from gquant.dataframe_flow.cache import (cache_meta,
-                                         cache_ports, cache_schema)
+from gquant.dataframe_flow.cache import (CACHE_META,
+                                         CACHE_PORTS, CACHE_SCHEMA)
 import json
 import os
 import hashlib
@@ -154,9 +154,9 @@ class CompositeNode(Node):
 
     def ports_setup(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_ports:
+        if cache_key in CACHE_PORTS:
             # print('cache hit')
-            return cache_ports[cache_key]
+            return CACHE_PORTS[cache_key]
         inports = {}
         outports = {}
         if 'taskgraph' in self.conf:
@@ -181,14 +181,14 @@ class CompositeNode(Node):
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
         output_port = NodePorts(inports=inports, outports=outports)
-        cache_ports[cache_key] = output_port
+        CACHE_PORTS[cache_key] = output_port
         return output_port
 
     def meta_setup(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_meta:
+        if cache_key in CACHE_META:
             # print('cache hit')
-            return cache_meta[cache_key]
+            return CACHE_META[cache_key]
         required = {}
         out_meta = {}
         if 'taskgraph' in self.conf:
@@ -215,14 +215,14 @@ class CompositeNode(Node):
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
         metadata = MetaData(inports=required, outports=out_meta)
-        cache_meta[cache_key] = metadata
+        CACHE_META[cache_key] = metadata
         return metadata
 
     def conf_schema(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_schema:
+        if cache_key in CACHE_SCHEMA:
             # print('cache hit')
-            return cache_schema[cache_key]
+            return CACHE_SCHEMA[cache_key]
         json = {
             "title": "Composite Node configure",
             "type": "object",
@@ -313,7 +313,7 @@ class CompositeNode(Node):
                         }
                     })
         out_schema = ConfSchema(json=json, ui=ui)
-        cache_schema[cache_key] = out_schema
+        CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def update_replace(self, replaceObj, task_graph=None):

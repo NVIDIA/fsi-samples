@@ -1,5 +1,5 @@
 from .compositeNode import CompositeNode
-from gquant.dataframe_flow.cache import cache_schema
+from gquant.dataframe_flow.cache import CACHE_SCHEMA
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                    PortsSpecSchema, NodePorts)
 from .data_obj import ConfData
@@ -47,8 +47,8 @@ class ContextCompositeNode(CompositeNode):
         # import pdb
         # pdb.set_trace()
         cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in cache_schema:
-            return cache_schema[cache_key]
+        if cache_key in CACHE_SCHEMA:
+            return CACHE_SCHEMA[cache_key]
         json = {
             "title": "Context Composite Node configure",
             "type": "object",
@@ -201,7 +201,7 @@ class ContextCompositeNode(CompositeNode):
             json['properties']['input']['items']['enum'] = in_ports
             json['properties']['output']['items']['enum'] = out_ports
         out_schema = ConfSchema(json=json, ui=ui)
-        cache_schema[cache_key] = out_schema
+        CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def conf_update(self):

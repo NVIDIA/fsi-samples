@@ -4,7 +4,7 @@ from gquant.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
                                                    NodePorts,
                                                    MetaData,
                                                    ConfSchema)
-from gquant.dataframe_flow.cache import (cache_meta)
+from ..cache import CACHE_NAME
 from gquant.dataframe_flow.util import get_file_path
 
 from .stockMap import StockMap
@@ -43,16 +43,16 @@ class StockNameLoader(_PortTypesMixin, Node):
         if self.outport_connected(STOCK_MAP_PORT_NAME):
             if 'file' in self.conf:
                 hash_key = self._compute_hash_key()
-                if hash_key in cache_meta:
+                if hash_key in CACHE_NAME:
                     out_cols.update({
-                        STOCK_MAP_PORT_NAME: cache_meta[hash_key]})
+                        STOCK_MAP_PORT_NAME: CACHE_NAME[hash_key]})
                 else:
                     path = get_file_path(self.conf['file'])
                     name_df = cudf.read_csv(path)[['SM_ID', 'SYMBOL']]
                     name_df.columns = ["asset", 'asset_name']
                     pdf = name_df.to_pandas()
                     column_data = pdf.to_dict('list')
-                    cache_meta[hash_key] = column_data
+                    CACHE_NAME[hash_key] = column_data
                     out_cols.update({STOCK_MAP_PORT_NAME: column_data})
         metadata = MetaData(inports=required, outports=out_cols)
         return metadata
