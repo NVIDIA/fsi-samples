@@ -13,6 +13,7 @@
     "noUnusedLocals": true,
     "preserveWatchOutput": true,
     "resolveJsonModule": true,
+    "skipLibCheck": true,
     "outDir": "lib",
     "rootDir": "src",
     "strict": true,
@@ -22,5 +23,5 @@
     "types": [],
     "noImplicitThis": false, 
   },
-  "include": ["src/*", "typings-custom/**/*.ts"] // , "src/gquant/components/*", "src/gquant/*"
+  "include": ["src/*"] // , "src/gquant/components/*", "src/gquant/*"
 }

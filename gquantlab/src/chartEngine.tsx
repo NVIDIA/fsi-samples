@@ -1,5 +1,5 @@
 import React from 'react';
-import * as d4 from 'd3-dag';
+import { dagStratify, sugiyama, layeringSimplex, decrossOpt, coordVert } from 'd3-dag';
 import YAML from 'yaml';
 
 import { IEdge, INode, ContentHandler, IChartInput } from './document';
@@ -385,13 +385,12 @@ export class ChartEngine extends React.Component<IProps, IState> {
       return d;
     });
 
-    const dagData = d4.dagStratify()(data);
-    d4
-      .sugiyama()
+    const dagData = dagStratify()(data);
+      sugiyama()
       .size([height ? height : DefaultHeight, width ? width : DefaultWidth])
-      .layering(d4.layeringSimplex())
-      .decross(d4.decrossOpt())
-      .coord(d4.coordVert())(dagData);
+      .layering(layeringSimplex())
+      .decross(decrossOpt())
+      .coord(coordVert())(dagData);
     // set the coordinates
     dagData.descendants().forEach((d: any) => {
       if (transform) {

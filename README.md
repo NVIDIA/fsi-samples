@@ -28,6 +28,34 @@ The gQuant Juyterlab extension provides the user interface to build the datafram
 9. Provides the standard API to extend your computation Nodes.
 10. The composite node can encapsulate the TaskGraph into a single node for easy reuse. The composite node can be exported as a regular gQuant node without any coding.
 
+### Binary pip installation
+
+To install the gQuant graph computation library, first install the dependence libraries:
+"""bash
+pip install dask[dataframe] distributed networkx
+conda install python-graphviz ruamel.yaml numpy pandas
+"""
+Then install gquant lib:
+"""bash
+pip install gquant
+"""
+
+To install JupyterLab plugin, install the following dependence libraries:
+"""bash
+conda install nodejs ipywidgets
+"""
+Then install the gquantlab lib:
+"""bash
+pip install gquantlab==0.1.1
+"""
+If you launch the JupyterLab, it will prompt to build the new plugin. You can
+explicitly build it by: 
+"""bash
+jupyter lab build
+"""
+
+Note, the gQuant node plugins are defined in the `gquantrc` file. Check the `System environment` for details
+
 
 ### Prerequisites
 - NVIDIA Pascal™ GPU architecture or better.
