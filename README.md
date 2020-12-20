@@ -31,28 +31,28 @@ The gQuant Juyterlab extension provides the user interface to build the datafram
 ### Binary pip installation
 
 To install the gQuant graph computation library, first install the dependence libraries:
-"""bash
+```bash
 pip install dask[dataframe] distributed networkx
 conda install python-graphviz ruamel.yaml numpy pandas
-"""
+```
 Then install gquant lib:
-"""bash
+```bash
 pip install gquant
-"""
+```
 
 To install JupyterLab plugin, install the following dependence libraries:
-"""bash
+```bash
 conda install nodejs ipywidgets
-"""
+```
 Then install the gquantlab lib:
-"""bash
+```bash
 pip install gquantlab==0.1.1
-"""
+```
 If you launch the JupyterLab, it will prompt to build the new plugin. You can
 explicitly build it by: 
-"""bash
+```bash
 jupyter lab build
-"""
+```
 
 Note, the gQuant node plugins are defined in the `gquantrc` file. Check the `System environment` for details
 
