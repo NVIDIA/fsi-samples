@@ -23,13 +23,13 @@ To install JupyterLab plugin, install the following dependence libraries:
 ```bash
 conda install nodejs ipywidgets
 ```
-Then install the gquantlab lib:
-```bash
-pip install gquantlab==0.1.2
-```
 Build the ipywidgets Jupyterlab plugin
 ```bash
 jupyter labextension install @jupyter-widgets/jupyterlab-manager@2.0
+```
+Then install the gquantlab lib:
+```bash
+pip install gquantlab
 ```
 If you launch the JupyterLab, it will prompt to build the new plugin. You can
 explicitly build it by:

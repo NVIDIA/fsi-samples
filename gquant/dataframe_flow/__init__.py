@@ -3,15 +3,10 @@ from .taskSpecSchema import *  # noqa: F401,F403
 from .taskGraph import *  # noqa: F401,F403
 from .portsSpecSchema import *  # noqa: F401,F403
 import sys
-try:
-    # For python 3.8 and later
-    import importlib.metadata as importlib_metadata
-except ImportError:
-    # prior to python 3.8 need to install importlib-metadata
-    import importlib_metadata
+import pkg_resources
 
 # load all the plugins from entry points
-for entry_point in importlib_metadata.entry_points().get('gquant.plugin', ()):
+for entry_point in pkg_resources.iter_entry_points('gquant.plugin'):
     mod = entry_point.load()
     name = entry_point.name
     sys.modules[name] = mod
