@@ -71,7 +71,8 @@ class RouteHandlerPlugins(APIHandler):
 #                    print(key, mod.mod, 'no client')
 
         # load all the plugins from entry points
-        for entry_point in importlib_metadata.entry_points()['gquant.plugin']:
+        for entry_point in importlib_metadata.entry_points().get(
+                'gquant.plugin', ()):
             client_mod = entry_point.load()
             if hasattr(client_mod, 'validation'):
                 val_dict = getattr(client_mod, 'validation')

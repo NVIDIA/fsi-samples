@@ -294,7 +294,8 @@ def add_nodes():
                 node_lists.append(nodeObj)
 
     # load all the plugins from entry points
-    for entry_point in importlib_metadata.entry_points()['gquant.plugin']:
+    for entry_point in importlib_metadata.entry_points().get('gquant.plugin',
+                                                             ()):
         mod = entry_point.load()
         modulename = entry_point.name
 

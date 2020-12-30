@@ -11,7 +11,7 @@ except ImportError:
     import importlib_metadata
 
 # load all the plugins from entry points
-for entry_point in importlib_metadata.entry_points()['gquant.plugin']:
+for entry_point in importlib_metadata.entry_points().get('gquant.plugin', ()):
     mod = entry_point.load()
     name = entry_point.name
     sys.modules[name] = mod
