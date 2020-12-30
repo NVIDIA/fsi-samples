@@ -19,7 +19,7 @@
     "strict": true,
     "strictNullChecks": false,
     "target": "es2017",
-    "allowJs": true,
+    "allowJs": false,
     "types": [],
     "noImplicitThis": false, 
   },

@@ -5,7 +5,7 @@ import {
 } from '@jupyterlab/docregistry';
 import { MainView } from './mainComponent';
 import { requestAPI } from './gquantlab';
-import YAML from 'yaml';
+import jsyaml from 'js-yaml';
 import { IEditorProp } from './nodeEditor';
 import { Signal } from '@lumino/signaling';
 import { MainAreaWidget } from '@jupyterlab/apputils';
@@ -196,7 +196,7 @@ export class ContentHandler {
       await this.context.ready;
       const yamlContent = this.context.model.toString();
       console.log('model path', this.context.path);
-      const objContent = YAML.parse(yamlContent);
+      const objContent = jsyaml.safeLoad(yamlContent);
       this.renderGraph(objContent, width, height);
     };
     refreshContent();

@@ -1,14 +1,32 @@
-from ._version import __version__ 
+
+import json
+import os.path as osp
+
+from ._version import __version__
+
+HERE = osp.abspath(osp.dirname(__file__))
+
+with open(osp.join(HERE, 'labextension', 'package.json')) as fid:
+    data = json.load(fid)
+
+def _jupyter_labextension_paths():
+    return [{
+        'src': 'labextension',
+        'dest': data['name']
+    }]
+
+
+
 from .handlers import setup_handlers
 
 
-def _jupyter_server_extension_paths():
+def _jupyter_server_extension_points():
     return [{
         "module": "gquantlab"
     }]
 
 
-def load_jupyter_server_extension(lab_app):
+def _load_jupyter_server_extension(server_app):
     """Registers the API handler to receive HTTP requests from the frontend extension.
 
     Parameters
@@ -16,5 +34,6 @@ def load_jupyter_server_extension(lab_app):
     lab_app: jupyterlab.labapp.LabApp
         JupyterLab application instance
     """
-    setup_handlers(lab_app.web_app)
-    lab_app.log.info("Registered gQuantLab extension at URL path /gquantlab")
+    setup_handlers(server_app.web_app)
+    server_app.log.info("Registered gQuantLab extension at URL path /gquantlab")
+

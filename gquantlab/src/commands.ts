@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import { JupyterFrontEnd } from '@jupyterlab/application';
-import YAML from 'yaml';
+//import YAML from 'yaml';
+import jsyaml from 'js-yaml';
 import { CommandRegistry } from '@lumino/commands';
 import {
   gqIcon,
@@ -137,7 +138,7 @@ export function setupCommands(
     });
     const mainView = getMainView();
     const obj = mainView.contentHandler.privateCopy.get('value');
-    model.content = YAML.stringify(obj);
+    model.content = jsyaml.safeDump(obj);
     model.format = 'text';
     app.serviceManager.contents.save(model.path, model);
   };
@@ -463,7 +464,7 @@ class ${args['nodeName']}(gquant.plugin_nodes.util.CompositeNode):
       if (isGquantVisible()) {
         mainView = app.shell.currentWidget as any;
         objStr = JSON.stringify(
-          YAML.parse(mainView.contentHandler.context.model.toString()),
+          jsyaml.safeLoad(mainView.contentHandler.context.model.toString()),
           null,
           2
         );
@@ -630,7 +631,7 @@ export function setupToolBarCommands(
       ext: '.gq.yaml'
     });
     const obj = contentHandler.privateCopy.get('value');
-    model.content = YAML.stringify(obj);
+    model.content = jsyaml.safeDump(obj);
     model.format = 'text';
     app.serviceManager.contents.save(model.path, model);
   };

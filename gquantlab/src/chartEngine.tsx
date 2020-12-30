@@ -1,6 +1,7 @@
 import React from 'react';
 import { dagStratify, sugiyama, layeringSimplex, decrossOpt, coordVert } from 'd3-dag';
-import YAML from 'yaml';
+//import YAML from 'yaml';
+import jsyaml from 'js-yaml';
 
 import { IEdge, INode, ContentHandler, IChartInput } from './document';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -498,7 +499,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
         this.props.contentHandler.privateCopy.save();
         console.log('edges:', state.edges.length, 'nodes:', state.nodes.length);
       }
-      const yamlText = YAML.stringify(output);
+      const yamlText = jsyaml.safeDump(output);
       this.props.contentHandler.update(yamlText);
     }
     if (update) {
