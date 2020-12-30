@@ -153,7 +153,7 @@ RUN wget \
 RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
     -c defaults rapids=$RAPIDS_VERSION cudatoolkit=$CUDA_STR python=3.7
 
-RUN conda install -y -c conda-forge jupyterlab'<3.0.0'
+RUN conda install -y -c conda-forge jupyterlab
 
 RUN conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets \
     pytables mkl numexpr pydot flask pylint flake8 autopep8
