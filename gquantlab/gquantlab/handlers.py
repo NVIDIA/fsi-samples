@@ -8,7 +8,12 @@ from .server_utils import (get_nodes, add_nodes)
 import os
 from gquant.dataframe_flow.taskGraph import add_module_from_base64
 from gquant.dataframe_flow.task import get_gquant_config_modules, load_modules
-import pkg_resources
+try:
+    # For python 3.8 and later
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    # prior to python 3.8 need to install importlib-metadata
+    import importlib_metadata
 
 
 class RouteHandlerLoadGraph(APIHandler):
@@ -64,7 +69,9 @@ class RouteHandlerPlugins(APIHandler):
                     print(client_mod, 'no display')
 #                else:
 #                    print(key, mod.mod, 'no client')
-        for entry_point in pkg_resources.iter_entry_points('gquant.plugin'):
+
+        # load all the plugins from entry points
+        for entry_point in importlib_metadata.entry_points()['gquant.plugin']:
             client_mod = entry_point.load()
             if hasattr(client_mod, 'validation'):
                 val_dict = getattr(client_mod, 'validation')
