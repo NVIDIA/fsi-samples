@@ -201,7 +201,7 @@ class CsvMortgageAcquisitionDataLoader(Node):
         ('relocation_mortgage_indicator', 'int32')
     ])
 
-    def columns_setup(self):
+    def meta_setup(self):
         self.addition = self.cols_dtypes
 
     def process(self, inputs):
@@ -303,7 +303,7 @@ class CsvMortgagePerformanceDataLoader(Node):
         ('servicing_activity_indicator', 'int32')
     ])
 
-    def columns_setup(self):
+    def meta_setup(self):
         self.addition = self.cols_dtypes
 
     def process(self, inputs):
@@ -343,9 +343,9 @@ class CsvMortgagePerformanceDataLoader(Node):
 
 class CreateEverFeatures(Node):
     '''gQuant task/node to calculate delinquecy status period features.
-    Refer to columns_setup method for the columns produced.
+    Refer to meta_setup method for the columns produced.
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         self.required = OrderedDict([
             ('loan_id', 'int64'),
             ('current_loan_delinquency_status', 'int32')
@@ -377,9 +377,9 @@ class CreateEverFeatures(Node):
 
 class CreateDelinqFeatures(Node):
     '''gQuant task/node to calculate delinquecy features.
-    Refer to columns_setup method for the columns produced.
+    Refer to meta_setup method for the columns produced.
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         self.required = OrderedDict([
             ('loan_id', 'int64'),
             ('monthly_reporting_period', 'date'),
@@ -441,7 +441,7 @@ class CreateDelinqFeatures(Node):
 class JoinPerfEverDelinqFeatures(Node):
     '''gQuant task/node to merge delinquecy features. Merges dataframes
     produced by CreateEverFeatures and CreateDelinqFeatures.
-    Refer to columns_setup method for the columns produced.
+    Refer to meta_setup method for the columns produced.
     '''
 
     cols_dtypes = {
@@ -458,7 +458,7 @@ class JoinPerfEverDelinqFeatures(Node):
         'delinquency_180': 'date'
     }
 
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         self.retention = {
@@ -533,9 +533,9 @@ class JoinPerfEverDelinqFeatures(Node):
 
 class Create12MonFeatures(Node):
     '''gQuant task/node to calculate delinquecy feature over 12 months.
-    Refer to columns_setup method for the columns produced.
+    Refer to meta_setup method for the columns produced.
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         self.retention = {
@@ -612,14 +612,14 @@ def _null_workaround(df):
 
 class FinalPerfDelinq(Node):
     '''Merge performance dataframe with calculated features dataframes.
-    Refer to columns_setup method for the columns produced.
+    Refer to meta_setup method for the columns produced.
     '''
 
     cols_dtypes = dict()
     cols_dtypes.update(CsvMortgagePerformanceDataLoader.cols_dtypes)
     cols_dtypes.update(JoinPerfEverDelinqFeatures.cols_dtypes)
 
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         self.retention = self.cols_dtypes
@@ -680,7 +680,7 @@ class FinalPerfDelinq(Node):
 
 class JoinFinalPerfAcqClean(Node):
     '''Merge acquisition dataframe with dataframe produced by FinalPerfDelinq.
-    Refer to columns_setup method for the columns produced.
+    Refer to meta_setup method for the columns produced.
     '''
     _drop_list = [
         'loan_id',
@@ -714,7 +714,7 @@ class JoinFinalPerfAcqClean(Node):
     for col in _drop_list:
         cols_dtypes.pop(col)
 
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         self.retention = self.cols_dtypes
@@ -952,7 +952,7 @@ class MortgageWorkflowRunner(Node):
             ((mortgage_feat_df_pandas, delinq_df_pandas),)
 
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         pass
@@ -1019,7 +1019,7 @@ class XgbMortgageTrainer(Node):
         bst - XGBoost trained booster model.
 
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         pass
@@ -1150,7 +1150,7 @@ class DaskMortgageWorkflowRunner(Node):
             ((mortgage_feat_df_pandas, delinq_df_pandas),)
 
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         pass
@@ -1283,7 +1283,7 @@ class DaskXgbMortgageTrainer(Node):
         bst - XGBoost trained booster model.
 
     '''
-    def columns_setup(self):
+    def meta_setup(self):
         '''
         '''
         pass

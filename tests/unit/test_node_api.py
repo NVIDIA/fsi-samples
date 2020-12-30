@@ -45,7 +45,7 @@ class TestNodeAPI(unittest.TestCase):
             TaskSpecSchema.node_type: 'PointNode',
             TaskSpecSchema.filepath: custom_module,
             TaskSpecSchema.conf: {'npts': 1000},
-            TaskSpecSchema.inputs: []
+            TaskSpecSchema.inputs: {}
         }
 
         self.points_task = Task(points_task_spec)
@@ -67,7 +67,7 @@ class TestNodeAPI(unittest.TestCase):
             TaskSpecSchema.node_type: 'PointNoPortsNode',
             TaskSpecSchema.filepath: custom_module,
             TaskSpecSchema.conf: {'npts': 1000},
-            TaskSpecSchema.inputs: []
+            TaskSpecSchema.inputs: {}
         }
 
         self.points_noports_task = Task(points_noports_task_spec)
@@ -87,7 +87,7 @@ class TestNodeAPI(unittest.TestCase):
         '''
         points_task = self.points_task
 
-        # assert cannot instantiate Node without overriding columns_setup
+        # assert cannot instantiate Node without overriding meta_setup
         # and process
         with self.assertRaises(TypeError) as cm:
             _ = Node(points_task)
@@ -95,7 +95,7 @@ class TestNodeAPI(unittest.TestCase):
         self.assertEqual(
             err_msg,
             "Can't instantiate abstract class Node with abstract methods "
-            "columns_setup, process")
+            "meta_setup, process")
 
         points_node = points_task.get_node_obj()
 
@@ -113,22 +113,12 @@ class TestNodeAPI(unittest.TestCase):
         and output ports.
         '''
 
-        points_node = self.points_task.get_node_obj()
-        self.assertTrue(points_node._using_ports())
-
-        points_noport_node = self.points_noports_task.get_node_obj()
-        self.assertFalse(points_noport_node._using_ports())
-        with self.assertRaises(NotImplementedError):
-            _ = points_noport_node._get_input_ports()
-        with self.assertRaises(NotImplementedError):
-            _ = points_noport_node._get_output_ports()
-
         distance_node = self.distance_task.get_node_obj()
         iports = distance_node._get_input_ports()
         oports = distance_node._get_output_ports()
 
         self.assertEqual(iports, ['points_df_in'])
-        self.assertEqual(oports, ['distance_df'])
+        self.assertEqual(oports, ['distance_df', 'distance_abs_df'])
 
 
 if __name__ == '__main__':

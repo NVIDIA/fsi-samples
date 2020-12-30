@@ -1,0 +1,64 @@
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: train_norm.df_out
+    in2: test_norm.df_out
+- id: data_generator
+  type: CompositeNode
+  conf:
+    output:
+      - drop_x2_x3.out
+    subnode_ids:
+      - data_gen
+    subnodes_conf:
+      data_gen:
+        conf:
+          n_samples: 10000
+          n_features: 10
+          n_informative: 4
+          n_redundant: 0
+          n_repeated: 0
+          n_classes: 2
+          n_clusters_per_class: 2
+          flip_y: 0.1
+          class_sep: 1
+          hypercube: true
+          shift: 0
+          scale: 1
+          shuffle: true
+          order: F
+          dtype: float64
+          n_parts: 4
+          random_state: 10
+    taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+  inputs: {}
+- id: data_splitter
+  type: DataSplittingNode
+  conf:
+    train_size: 0.8
+    target: y
+  inputs:
+    in: data_generator.drop_x2_x3@out
+  module: rapids_modules
+- id: train_norm
+  type: NormalizationNode
+  conf:
+    columns:
+      - x3_0
+      - x3_1
+      - x2_0
+      - x2_1
+      - y
+    include: false
+  inputs:
+    df_in: data_splitter.train
+  module: rapids_modules
+- id: test_norm
+  type: NormalizationNode
+  conf:
+    include: true
+  inputs:
+    norm_data_in: train_norm.norm_data_out
+    df_in: data_splitter.test
+  module: rapids_modules

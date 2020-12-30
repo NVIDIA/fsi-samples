@@ -1,14 +1,26 @@
-from collections import Mapping
+from collections.abc import Mapping
 from itertools import chain
 from typing import Iterable
 
 from gquant._common import _namedtuple_with_defaults
 
-__all__ = ['PortsSpecSchema', 'NodePorts']
+__all__ = ['PortsSpecSchema', 'NodePorts', 'ConfSchema', 'MetaData']
 
 
 _NodePorts = _namedtuple_with_defaults(
     '_NodePorts',
+    ['inports', 'outports'],
+    {'inports': dict(), 'outports': dict()}
+)
+
+_ConfSchema = _namedtuple_with_defaults(
+    '_ConfSchema',
+    ['json', 'ui'],
+    {'json': dict(), 'ui': dict()}
+)
+
+_MetaData = _namedtuple_with_defaults(
+    '_MetaData',
     ['inports', 'outports'],
     {'inports': dict(), 'outports': dict()}
 )
@@ -54,6 +66,28 @@ class NodePorts(_NodePorts):
     '''
 
 
+class ConfSchema(_ConfSchema):
+    ''' ConfSchema must be defined for Node conf JSON.
+
+    :ivar json: Dictionary defining port specs for input ports
+    :ivar ui: Dictionary defining port specs for output ports
+
+    Empty dicts default:
+        confSchema = ConfSchema()
+        confSchema.json and confSchema.ui are empty dicts
+    Examples:
+        const schema = {
+          type: "boolean",
+          enum: [true, false]
+        };
+
+        const uiSchema={
+          "ui:enumDisabled": [true],
+        };
+        confSchema = ConfSchema(json=schema, ui=uiSchema)
+     '''
+
+
 class PortsSpecSchema(object):
     '''Outline fields expected in a ports definition for a node implementation.
 
@@ -71,6 +105,7 @@ class PortsSpecSchema(object):
 
     port_type = 'type'
     optional = 'optional'
+    dynamic = 'dynamic'
 
     @classmethod
     def _typecheck(cls, schema_field, value):
@@ -86,6 +121,9 @@ class PortsSpecSchema(object):
                 check_ptype(value)
         elif schema_field == cls.optional:
             assert isinstance(value, bool), 'Optional field must be a '\
+                'boolean. Instead got: {}'.format(value)
+        elif schema_field == cls.dynamic:
+            assert isinstance(value, bool), 'Dynamic field must be a '\
                 'boolean. Instead got: {}'.format(value)
         else:
             raise KeyError('Uknown schema field "{}" in the port spec.'.format(
@@ -126,3 +164,53 @@ class PortsSpecSchema(object):
 
             for port_field, field_val in port_spec.items():
                 cls._typecheck(port_field, field_val)
+
+
+class MetaData(_MetaData):
+    '''Node metadata must be setup for inputs and outputs. The validation
+    logic will check whether the required inputs met the passed in output
+    metadata. and the produced calculation results matches the output
+    metadata.
+
+    :ivar inports: Dictionary defining input metadata, which specified the
+                   input requirement
+    :ivar outports: Dictionary defining output metadata
+
+    Empty dicts default:
+        metadata = MetaData()
+        metadata.inports and metadata.outports are empty dicts
+
+    Example with port specs:
+        inports = {
+            'iport0_name': {
+                "column0": "float64",
+                "column1": "float64",
+            },
+            'iport1_name': {
+                "column0": "float64",
+                "column1": "float64",
+                "column2": "float64",
+            }
+        }
+
+        outports = {
+            'oport0_name': {
+                "column0": "float64",
+                "column1": "float64",
+                "column2": "float64",
+            },
+            'oport1_name': {
+                "column0": "float64",
+                "column1": "float64",
+                "column2": "float64",
+                "column3": "float64",
+            }
+        }
+
+        metadata = MetaData(inports=inports, outports=outports)
+
+    The inports/outports are nested dictionaries. The outer dictionary is keyed
+    by port name with metadata obj being the value of the outer dictionary. The
+    metadata obj is a dictionary with keys/fields which can be serialized into
+    JSON.
+    '''

@@ -1,7 +1,7 @@
 import ipywidgets as widgets
 
 
-def getXGBoostWidget(replace_spec, task_graph,  outlist, plot_figures):
+def getXGBoostWidget(replace_spec, task_graph, plot_figures):
 
     def getRangeSlider(val0, val1, des=""):
         return widgets.IntRangeSlider(value=[val0, val1],
@@ -30,7 +30,7 @@ def getXGBoostWidget(replace_spec, task_graph,  outlist, plot_figures):
 
     with out:
         indicators = \
-            replace_spec['node_technical_indicator']['conf']['indicators']
+            replace_spec['technical_indicator']['conf']['indicators']
         chaikin_selector = getRangeSlider(indicators[0]['args'][0],
                                           indicators[0]['args'][1], "Chaikin")
 
@@ -172,8 +172,7 @@ def getXGBoostWidget(replace_spec, task_graph,  outlist, plot_figures):
             with out:
                 print("Button clicked.")
                 w.children = (w.children[0], widgets.Label("Busy...."),)
-                o_gpu = task_graph.run(outputs=outlist,
-                                       replace=replace_spec)
+                o_gpu = task_graph.run(replace=replace_spec)
                 figure_combo = plot_figures(o_gpu)
                 w.children = (w.children[0], figure_combo,)
         button.on_click(on_button_clicked)

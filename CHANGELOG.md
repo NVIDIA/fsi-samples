@@ -1,5 +1,29 @@
 # Changelog
 
+## [1.0](https://github.com/rapidsai/gQuant/tree/1.0) (2020-12-17)
+
+[Full Changelog](https://github.com/rapidsai/gQuant/compare/0.5...1.0)
+
+**Closed issues:**
+
+- \[FEA\]We need Plugin file support [\#106](https://github.com/rapidsai/gQuant/issues/106)
+- \[FEA\]Migrate to the new input/output port API [\#97](https://github.com/rapidsai/gQuant/issues/97)
+- \[FEA\]Add the gQuant Web UI [\#95](https://github.com/rapidsai/gQuant/issues/95)
+- \[DOC\] Add CHANGELOG.md [\#48](https://github.com/rapidsai/gQuant/issues/48)
+
+**Merged pull requests:**
+
+- \[REVIEW\]gQuant plugin implementation [\#112](https://github.com/rapidsai/gQuant/pull/112) ([yidong72](https://github.com/yidong72))
+- Gpuciscripts clean and update [\#111](https://github.com/rapidsai/gQuant/pull/111) ([msadang](https://github.com/msadang))
+- Streamz gQuant example 2 [\#109](https://github.com/rapidsai/gQuant/pull/109) ([yidong72](https://github.com/yidong72))
+- Revert "Streamz gQuant example" [\#108](https://github.com/rapidsai/gQuant/pull/108) ([yidong72](https://github.com/yidong72))
+- Streamz gQuant example [\#107](https://github.com/rapidsai/gQuant/pull/107) ([yidong72](https://github.com/yidong72))
+- Bump node-fetch from 2.6.0 to 2.6.1 in /gquantlab [\#104](https://github.com/rapidsai/gQuant/pull/104) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Nemo and xgboost integration  [\#103](https://github.com/rapidsai/gQuant/pull/103) ([yidong72](https://github.com/yidong72))
+- FIX Update change log check [\#102](https://github.com/rapidsai/gQuant/pull/102) ([mike-wendt](https://github.com/mike-wendt))
+- \[REVIEW\] Update CI scripts to remove references to master \[skip ci\] [\#99](https://github.com/rapidsai/gQuant/pull/99) ([dillon-cullinan](https://github.com/dillon-cullinan))
+- \[REVIEW\]gQuant UI, first version [\#89](https://github.com/rapidsai/gQuant/pull/89) ([yidong72](https://github.com/yidong72))
+
 ## [0.5](https://github.com/rapidsai/gQuant/tree/0.5) (2020-07-10)
 
 [Full Changelog](https://github.com/rapidsai/gQuant/compare/0.4.1...0.5)
@@ -21,6 +45,7 @@
 
 **Merged pull requests:**
 
+- \[REIVEW\]gQuant 0.5 release [\#94](https://github.com/rapidsai/gQuant/pull/94) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\] Fix mortgage e2e example for rapids 0.14. [\#93](https://github.com/rapidsai/gQuant/pull/93) ([avolkov1](https://github.com/avolkov1))
 - \[REVIEW\] Update RAPIDS to version 0.14 [\#92](https://github.com/rapidsai/gQuant/pull/92) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\]Multiple gpu xgboost - Dask performance fix [\#91](https://github.com/rapidsai/gQuant/pull/91) ([yidong72](https://github.com/yidong72))

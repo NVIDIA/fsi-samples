@@ -9,3 +9,4 @@ gquant.egg-info/
 *.swp
 docker/Dockerfile.Rapids
 docker/gQuant
+node_modules

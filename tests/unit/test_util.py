@@ -22,7 +22,10 @@ pytest -v tests/unit/test_util.py
 import pandas as pd
 import unittest
 import cudf
-from gquant.cuindicator import shift, diff
+from gquant.dataframe_flow.task import load_modules
+import os
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+from rapids_modules.cuindicator import shift, diff
 import numpy as np
 from .utils import make_orderer, error_function
 

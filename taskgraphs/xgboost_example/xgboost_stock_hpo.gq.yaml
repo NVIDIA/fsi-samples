@@ -1,0 +1,382 @@
+- id: ""
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: xgboost_model.train_roc@roc_curve
+    in2: xgboost_model.test_roc@roc_curve
+    in3: hpo.conf_out
+    in4: hpo.train_roc@roc_curve
+    in5: hpo.test_roc@roc_curve
+- id: xgboost_model
+  type: ContextCompositeNode
+  conf:
+    input:
+      - train_norm.df_in
+      - test_norm.df_in
+    output:
+      - train_infer.out
+      - test_infer.out
+      - train_roc.roc_curve
+      - test_roc.roc_curve
+    context:
+      target:
+        type: string
+        value: sign
+        map:
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.target
+          - node_id: train_roc
+            xpath: train_roc.conf.label
+          - node_id: test_roc
+            xpath: test_roc.conf.label
+      features:
+        type: array_string
+        value:
+          - sign
+        map:
+          - node_id: train_norm
+            xpath: train_norm.conf.columns
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.columns
+      inclusive:
+        type: boolean
+        map:
+          - node_id: train_norm
+            xpath: train_norm.conf.include
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.include
+        value: false
+      depth:
+        type: number
+        value: 1
+        map:
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.xgboost_parameters.max_depth
+      eta:
+        type: number
+        value: 0.1
+        map:
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.xgboost_parameters.eta
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model_with_metrics.gq.yaml
+  inputs:
+    train_norm@df_in: split_data.train
+    test_norm@df_in: split_data.test
+- id: hpo
+  type: GridRandomSearchNode
+  conf:
+    parameters:
+      - search:
+          function: grid_search
+          args:
+            - 1
+            - 3
+            - 5
+        name: depth
+      - search:
+          function: uniform
+          args:
+            - 0.1
+            - 0.8
+        name: eta
+    metrics:
+      - train_roc.value
+      - test_roc.value
+    best:
+      mode: max
+      metric: test_roc.value
+    tune:
+      local_dir: ./ray
+      name: stock
+      num_samples: 1
+      resources_per_trial:
+        cpu: 1
+        gpu: 1
+    input:
+      - train_norm.df_in
+      - test_norm.df_in
+    output:
+      - train_infer.out
+      - test_infer.out
+      - train_roc.roc_curve
+      - test_roc.roc_curve
+    context:
+      target:
+        type: string
+        value: sign
+        map:
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.target
+          - node_id: train_roc
+            xpath: train_roc.conf.label
+          - node_id: test_roc
+            xpath: test_roc.conf.label
+      features:
+        type: array_string
+        value:
+          - sign
+        map:
+          - node_id: train_norm
+            xpath: train_norm.conf.columns
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.columns
+      inclusive:
+        type: boolean
+        map:
+          - node_id: train_norm
+            xpath: train_norm.conf.include
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.include
+        value: false
+      depth:
+        type: number
+        value: 1
+        map:
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.xgboost_parameters.max_depth
+      eta:
+        type: number
+        value: 0.1
+        map:
+          - node_id: train_xgboost
+            xpath: train_xgboost.conf.xgboost_parameters.eta
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model_with_metrics.gq.yaml
+  inputs:
+    conf_in: xgboost_model.conf_out
+    train_norm@df_in: split_data.train
+    test_norm@df_in: split_data.test
+  module: rapids_modules
+- id: stock_data
+  type: CsvStockLoader
+  conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  inputs: {}
+  module: rapids_modules
+- id: stock_feature
+  type: CompositeNode
+  conf:
+    input:
+      - preprocess.sort_node@in
+    output:
+      - technical_indicator.stock_out
+    subnode_ids:
+      - technical_indicator
+    subnodes_conf:
+      technical_indicator:
+        conf:
+          indicators:
+            - function: port_bollinger_bands
+              args:
+                - 10
+              columns:
+                - close
+            - function: port_chaikin_oscillator
+              args:
+                - 2
+                - 3
+              columns:
+                - high
+                - low
+                - close
+                - volume
+            - function: port_macd
+              args:
+                - 2
+                - 3
+              columns:
+                - close
+            - function: port_relative_strength_index
+              args:
+                - 2
+              columns:
+                - high
+                - low
+            - function: port_average_true_range
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_stochastic_oscillator_k
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_stochastic_oscillator_d
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_money_flow_index
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+                - volume
+            - function: port_force_index
+              args:
+                - 2
+              columns:
+                - close
+                - volume
+            - function: port_ultimate_oscillator
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_accumulation_distribution
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+                - volume
+            - function: port_commodity_channel_index
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_on_balance_volume
+              args:
+                - 2
+              columns:
+                - close
+                - volume
+            - function: port_vortex_indicator
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_kst_oscillator
+              args:
+                - 3
+                - 4
+                - 5
+                - 6
+                - 7
+                - 8
+                - 9
+                - 10
+              columns:
+                - close
+            - function: port_mass_index
+              args:
+                - 2
+                - 3
+              columns:
+                - high
+                - low
+            - function: port_true_strength_index
+              args:
+                - 2
+                - 3
+              columns:
+                - close
+            - function: port_ease_of_movement
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - volume
+            - function: port_coppock_curve
+              args:
+                - 2
+              columns:
+                - close
+            - function: port_keltner_channel
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_ppsr
+              args:
+                - 2
+              columns:
+                - high
+                - low
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.9
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.7
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.5
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.3
+              columns:
+                - close
+            - function: port_fractional_diff
+              args:
+                - 0.1
+              columns:
+                - close
+            - function: port_shift
+              args:
+                - -1
+              columns:
+                - returns
+          remove_na: true
+    taskgraph: taskgraphs/xgboost_trade.gq.yaml
+  inputs:
+    preprocess@sort_node@in: stock_data.cudf_out
+- id: pos_neg_return
+  type: AddSignIndicatorNode
+  conf:
+    sign: sign
+    column: SHIFT_-1
+  inputs:
+    in: stock_feature.technical_indicator@stock_out
+  module: rapids_modules
+- id: drop_col
+  type: DropNode
+  conf:
+    columns:
+      - indicator
+      - datetime
+      - asset
+      - SHIFT_-1
+      - open
+      - high
+      - low
+      - close
+  inputs:
+    in: pos_neg_return.out
+  module: rapids_modules
+- id: split_data
+  type: DataSplittingNode
+  conf:
+    train_size: 0.8
+    target: sign
+  inputs:
+    in: drop_col.out
+  module: rapids_modules

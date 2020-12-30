@@ -1,46 +1,26 @@
 #!/usr/bin/env bash
-# Copyright (c) 2019, NVIDIA CORPORATION.
+# Copyright (c) 2020, NVIDIA CORPORATION.
 ################################################################################
 # gQuant cpu build
 ################################################################################
 set -e
 
-# Logger function for build status output
-function logger() {
-  echo -e "\n>>>> $@\n"
-}
-
 # Set path and build parallel level
-export PATH=/conda/bin:/usr/local/cuda/bin:$PATH
+export PATH=/opt/conda/bin:/usr/local/cuda/bin:$PATH
+export PARALLEL_LEVEL=${PARALLEL_LEVEL:-4}
 
 # Set home to the job's workspace
 export HOME=$WORKSPACE
 
+# Determine CUDA release version
+export CUDA_REL=${CUDA_VERSION%.*}
+
+# Setup 'gpuci_conda_retry' for build retries (results in 2 total attempts)
+export GPUCI_CONDA_RETRY_MAX=1
+export GPUCI_CONDA_RETRY_SLEEP=30
+
 # Switch to project root; also root of repo checkout
 cd $WORKSPACE
-
-# Get latest tag and number of commits since tag
-export GIT_DESCRIBE_TAG=`git describe --abbrev=0 --tags`
-export GIT_DESCRIBE_NUMBER=`git rev-list ${GIT_DESCRIBE_TAG}..HEAD --count`
-
-################################################################################
-# SETUP - Check environment
-################################################################################
-
-logger "Get env..."
-env
-
-logger "Activate conda env..."
-source activate gdf
-
-logger "Check versions..."
-python --version
-gcc --version
-g++ --version
-conda list
-
-# FIX Added to deal with Anancoda SSL verification issues during conda builds
-conda config --set ssl_verify False
 
 # If nightly build, append current YYMMDD to version
 if [[ "$BUILD_MODE" = "branch" && "$SOURCE_BRANCH" = branch-* ]] ; then
@@ -48,14 +28,38 @@ if [[ "$BUILD_MODE" = "branch" && "$SOURCE_BRANCH" = branch-* ]] ; then
 fi
 
 ################################################################################
+# SETUP - Check environment
+################################################################################
+
+gpuci_logger "Check environment variables"
+env
+
+gpuci_logger "Activate conda env"
+. /opt/conda/etc/profile.d/conda.sh
+conda activate rapids
+
+gpuci_logger "Check compiler versions"
+python --version
+$CC --version
+$CXX --version
+
+gpuci_logger "Check conda environment"
+conda info
+conda config --show-sources
+conda list --show-channel-urls
+
+# FIX Added to deal with Anancoda SSL verification issues during conda builds
+conda config --set ssl_verify False
+
+################################################################################
 # BUILD - Conda package build
 ################################################################################
 
-conda build conda/recipes/gquant --python=${PYTHON}
+gpuci_conda_retry build conda/recipes/gquant --python=${PYTHON}
 
 ################################################################################
 # UPLOAD - Conda package
 ################################################################################
 
-logger "Upload conda pkg..."
-source ci/cpu/upload-anaconda.sh
+gpuci_logger "Upload conda pkg"
+source ci/cpu/upload.sh

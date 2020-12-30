@@ -22,8 +22,11 @@ pytest -v tests/unit/test_indicator_node.py
 import warnings
 import unittest
 import cudf
-import gquant.cuindicator as gi
-from gquant.plugin_nodes.transform.indicatorNode import IndicatorNode
+import os
+from gquant.dataframe_flow.task import load_modules
+load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
+import rapids_modules.cuindicator as gi
+from rapids_modules.transform.indicatorNode import IndicatorNode
 from gquant.dataframe_flow.task import Task
 from .utils import make_orderer
 import numpy as np
@@ -84,35 +87,36 @@ class TestIndicatorNode(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "IndicatorNode",
                     "conf": self.conf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
+        out_cols = inN.meta_setup().outports
 
         col = "indicator"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required, msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "high"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required, msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "low"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required, msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "close"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required, msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
         col = "volume"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.required, msg)
+        self.assertTrue(col in inN.meta_setup().inports['stock_in'], msg)
 
         col = "CH_OS_10_20"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.addition, msg)
+        self.assertTrue(col in out_cols['stock_out'], msg)
         col = "BO_BA_b1_10"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.addition, msg)
+        self.assertTrue(col in out_cols['stock_out'], msg)
         col = "BO_BA_b2_10"
         msg = "bad error: %s is missing" % (col)
-        self.assertTrue(col in inN.addition, msg)
+        self.assertTrue(col in out_cols['stock_out'], msg)
 
     @ordered
     def test_drop(self):
@@ -120,10 +124,10 @@ class TestIndicatorNode(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "IndicatorNode",
                     "conf": self.conf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
-        o = inN.process([self._cudf_data])
+        o = inN.process({"stock_in": self._cudf_data})['stock_out']
         msg = "bad error: df len %d is not right" % (len(o))
         self.assertTrue(len(o) == 162, msg)
 
@@ -132,10 +136,10 @@ class TestIndicatorNode(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "IndicatorNode",
                     "conf": newConf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
-        o = inN.process([self._cudf_data])
+        o = inN.process({"stock_in": self._cudf_data})['stock_out']
         msg = "bad error: df len %d is not right" % (len(o))
         self.assertTrue(len(o) == 200, msg)
 
@@ -148,10 +152,10 @@ class TestIndicatorNode(unittest.TestCase):
         node_obj = {"id": "abc",
                     "type": "IndicatorNode",
                     "conf": newConf,
-                    "inputs": []}
+                    "inputs": {}}
         task = Task(node_obj)
         inN = IndicatorNode(task)
-        o = inN.process([self._cudf_data])
+        o = inN.process({'stock_in': self._cudf_data})['stock_out']
         # check chaikin oscillator computation
         r_cudf = gi.chaikin_oscillator(self._cudf_data[:self.half]['high'],
                                        self._cudf_data[:self.half]['low'],
