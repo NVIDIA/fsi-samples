@@ -7,43 +7,33 @@ This is a simple example to show how to write an external gQuant plugin. gQuant 
 conda create -n test python=3.8
 ```
 
-### Install the gQuant lib
+### Install the gQuant 
 To install the gQuant graph computation library, first install the dependence libraries:
 ```bash
-pip install dask[dataframe] distributed networkx
-conda install python-graphviz ruamel.yaml pandas
+conda install dask networkx python-graphviz ruamel.yaml pandas
 ```
 
-Then install gquant lib:
+Then install `gquant`:
 ```bash
 pip install gquant
 ```
-Or install gquant lib at the root directory:
+Or install `gquant` at the root directory:
 ```bash
 pip install .
 ```
 
-### Install the gQuantlab plugin
-To install JupyterLab plugin, install the following dependence libraries:
+### Install the gquantlab JupyterLab plugin
+To install `gquantlab` JupyterLab plugin, install the following dependence libraries:
 ```bash
 conda install -c conda-forge --repodata-fn=repodata.json nodejs ipywidgets
 ```
-Then install the gquantlab lib:
+Then install the `gquantlab`:
 ```bash
 pip install gquantlab
 ```
-Or install gquantlab lib at the gquantlab directory:
+Or install `gquantlab` at the gquantlab directory:
 ```bash
 pip install .
-```
-Build the ipywidgets Jupyterlab plugin
-```bash
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
-```
-If you launch the JupyterLab, it will prompt to build the new plugin. You can
-explicitly build it by:
-```bash
-jupyter lab build
 ```
 
 ### Install the external example plugin

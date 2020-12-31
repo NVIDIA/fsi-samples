@@ -32,38 +32,36 @@ The gQuant Juyterlab extension provides the user interface to build the datafram
 
 To install the gQuant graph computation library, first install the dependence libraries:
 ```bash
-pip install dask[dataframe] distributed networkx
-conda install python-graphviz ruamel.yaml numpy pandas
+conda install dask networkx python-graphviz ruamel.yaml pandas
 ```
-Then install gquant lib:
+
+Then install `gquant`:
 ```bash
 pip install gquant
 ```
-
-To install JupyterLab plugin, install the following dependence libraries:
+Or install `gquant` at the root directory:
 ```bash
-conda install nodejs ipywidgets
-```
-Build the ipywidgets Jupyterlab plugin 
-```bash
-jupyter labextension install @jupyter-widgets/jupyterlab-manager@2.0
-```
-Then install the gquantlab lib:
-```bash
-pip install gquantlab==0.1.2
-```
-Build the ipywidgets Jupyterlab plugin 
-```bash
-jupyter labextension install @jupyter-widgets/jupyterlab-manager@2.0
-```
-If you launch the JupyterLab, it will prompt to build the new plugin. You can
-explicitly build it by: 
-```bash
-jupyter lab build
+pip install .
 ```
 
-Note, the gQuant node plugins are defined in the `gquantrc` file. Check the `System environment` for details
+### Install the gquantlab JupyterLab plugin
+To install `gquantlab` JupyterLab plugin, install the following dependence libraries:
+```bash
+conda install -c conda-forge --repodata-fn=repodata.json nodejs ipywidgets
+```
+Then install the `gquantlab`:
+```bash
+pip install gquantlab
+```
+Or install `gquantlab` at the gquantlab directory:
+```bash
+pip install .
+```
 
+gQuant node plugins can be registered in two ways: 
+
+  1. Register the plugin in `gquantrc` file. Check the `System environment` for details
+  2. Write a external plugin using 'entry point' to register it. Check the `external` directory for details
 
 ### Prerequisites
 - NVIDIA Pascal™ GPU architecture or better.
