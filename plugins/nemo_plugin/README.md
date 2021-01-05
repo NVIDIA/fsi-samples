@@ -1,6 +1,6 @@
-## gQuant RAPIDS Plugin Example
+## NeMo Plugin Example
 
-This is a example to show how to write an external gQuant RAPIDS plugin. gQuant take advantage of the `entry point` inside the `setup.py` file to register the plugin. gQuant can discover all the plugins that has the entry point group name `gquant.plugin`. Check the `setup.py` file to see details.
+This is an example to show how to write an external gQuant plugin. gQuant take advantage of the `entry point` inside the `setup.py` file to register the plugin. gQuant can discover all the plugins that has the entry point group name `gquant.plugin`. Check the `setup.py` file to see details.
 
 ### Create an new Python enviroment
 ```bash
@@ -37,11 +37,13 @@ pip install .
 ```
 
 ### Install the external example plugin
+It depends on `gquant_rapids_plugin` plugin, install it first. Check the README file in `gquant_rapids_plugin` directory.
+Next install `nemo` library. Currently, it is only compatible with old version of nemo.
 ```
-conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.17
-conda install -c conda-forge bqplot pytables
-jupyter labextension install bqplot
-pip install ray[tune]
+git clone -b v0.11.1 https://github.com/NVIDIA/NeMo.git
+cd NeMo
+cp ../nemo.patch .
+git apply nemo.patch && bash reinstall.sh
 ```
 To install the external plugin, in the plugin diretory, run following command
 ```bash

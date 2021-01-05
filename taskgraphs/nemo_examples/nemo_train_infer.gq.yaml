@@ -8,7 +8,7 @@
     x_hi: 4
     name: data
   inputs: {}
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: net
   type: TaylorNetNode
   conf:
@@ -16,7 +16,7 @@
     name: net
   inputs:
     x: data.x
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: loss
   type: MSELossNode
   conf:
@@ -24,7 +24,7 @@
   inputs:
     predictions: net.y_pred
     target: data.y
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: train
   type: NemoTrainNode
   conf:
@@ -58,6 +58,7 @@
       name: sgd
   inputs:
     loss@loss: loss.loss
+  module: gquant_nemo_plugin.util
 - id: ""
   type: Output_Collector
   conf: {}
@@ -79,3 +80,4 @@
   inputs:
     net@y_pred: net.y_pred
     log_dir: train.checkpoint_dir
+  module: gquant_nemo_plugin.util

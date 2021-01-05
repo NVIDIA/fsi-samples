@@ -1,7 +1,6 @@
 import os
 from gquant.dataframe_flow.task import load_modules
-load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
-from rapids_modules import GridRandomSearchNode # noqa #E402
+from gquant_rapids_plugin.ml import GridRandomSearchNode
 from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode # noqa #E402
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
                                                    NodePorts)

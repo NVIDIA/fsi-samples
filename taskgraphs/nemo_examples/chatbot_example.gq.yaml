@@ -6,7 +6,7 @@
     datafile: notebooks/movie_data.txt
     min_count: 3
   inputs: {}
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: encoder
   type: EncoderRNNNode
   conf:
@@ -18,7 +18,7 @@
   inputs:
     input_lengths: data.src_lengths
     input_seq: data.src
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: greedy_decoder
   type: GreedyLuongAttnDecoderRNNNode
   conf:
@@ -31,7 +31,7 @@
   inputs:
     encoder_outputs: encoder_eval.outputs
     in_nm: decoder.out_nm
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: decoder
   type: LuongAttnDecoderRNNNode
   conf:
@@ -44,7 +44,7 @@
     targets: data.tgt
     encoder_outputs: encoder.outputs
     max_target_len: data.max_tgt_lengths
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: loss
   type: MaskedXEntropyLossNode
   conf: {}
@@ -52,7 +52,7 @@
     predictions: decoder.outputs
     target: data.tgt
     mask: data.mask
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: ""
   type: Output_Collector
   conf: {}
@@ -100,6 +100,7 @@
   inputs:
     loss@loss: loss.loss
     eval_loss@loss: eval_loss.loss
+  module: gquant_nemo_plugin.util
 - id: inference
   type: NemoInferNode
   conf:
@@ -120,6 +121,7 @@
     eval_data@src: eval_data.src
     greedy_decoder@outputs: greedy_decoder.outputs
     eval_loss@loss: eval_loss.loss
+  module: gquant_nemo_plugin.util
 - id: eval_data
   type: DialogDataLayerNode
   conf:
@@ -128,7 +130,7 @@
     datafile: notebooks/movie_data.txt
     min_count: 3
   inputs: {}
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: encoder_eval
   type: EncoderRNNNode
   conf:
@@ -142,7 +144,7 @@
     input_seq: eval_data.src
     input_lengths: eval_data.src_lengths
     in_nm: encoder.out_nm
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: decoder_eval
   type: LuongAttnDecoderRNNNode
   conf:
@@ -157,7 +159,7 @@
     encoder_outputs: encoder_eval.outputs
     max_target_len: eval_data.max_tgt_lengths
     in_nm: decoder.out_nm
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
 - id: eval_loss
   type: MaskedXEntropyLossNode
   conf: {}
@@ -165,4 +167,4 @@
     predictions: decoder_eval.outputs
     target: eval_data.tgt
     mask: eval_data.mask
-  module: nemo_modules
+  module: gquant_nemo_plugin.tutorials
