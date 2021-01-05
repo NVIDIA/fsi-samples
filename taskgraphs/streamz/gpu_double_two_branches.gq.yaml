@@ -1,74 +1,74 @@
-- id: source
-  type: StreamNode
-  conf: {}
+- conf: {}
+  id: source
   inputs: {}
   module: streamz
-- id: ""
-  type: Output_Collector
-  conf: {}
+  type: StreamNode
+- conf: {}
+  id: ''
   inputs:
     in1: source.stream_out
     in2: plot.fig_out
     in3: print.stream_out
-- id: slide_window
-  type: SlideWindowNode
-  conf:
+  type: Output_Collector
+- conf:
     window: 50
+  id: slide_window
   inputs:
     stream_in: source.stream_out
   module: streamz
-- id: plot
-  type: PlotSinkNode
-  conf: {}
+  type: SlideWindowNode
+- conf: {}
+  id: plot
   inputs:
     stream_in: zip_streams.stream_out
   module: streamz
-- id: convert
-  type: TupleToCudf
-  conf: {}
+  type: PlotSinkNode
+- conf: {}
+  id: convert
   inputs:
     stream_in: slide_window.stream_out
   module: streamz
-- id: to_dataframe
-  type: ToDataFrame
-  conf: {}
+  type: TupleToCudf
+- conf: {}
+  id: to_dataframe
   inputs:
     stream_in: convert.stream_out
   module: streamz
-- id: to_stream
-  type: ToStream
-  conf: {}
+  type: ToDataFrame
+- conf: {}
+  id: to_stream
   inputs:
     df_in: double_in_gpu.df_out
   module: streamz
-- id: double_in_gpu
-  type: GPUDouble
-  conf: {}
+  type: ToStream
+- conf: {}
+  id: double_in_gpu
   inputs:
     df_in: to_dataframe.df_out
   module: streamz
-- id: print
-  type: SinkNode
-  conf: {}
+  type: GPUDouble
+- conf: {}
+  id: print
   inputs:
     stream_in: zip_streams.stream_out
   module: streamz
-- id: double_again
-  type: GPUDouble
-  conf: {}
+  type: SinkNode
+- conf: {}
+  id: double_again
   inputs:
     df_in: double_in_gpu.df_out
   module: streamz
-- id: to_stream2
-  type: ToStream
-  conf: {}
+  type: GPUDouble
+- conf: {}
+  id: to_stream2
   inputs:
     df_in: double_again.df_out
   module: streamz
-- id: zip_streams
-  type: ZipNode
-  conf: {}
+  type: ToStream
+- conf: {}
+  id: zip_streams
   inputs:
     stream1_in: to_stream.stream_out
     stream2_in: to_stream2.stream_out
   module: streamz
+  type: ZipNode

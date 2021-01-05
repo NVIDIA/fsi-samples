@@ -1,24 +1,30 @@
 import os
 import cloudpickle
 import base64
+import pathlib
 
 
-def get_file_path(path):
+def get_file_path(path: str) -> str:
+    """
+    @path: the relative or absolute file path
+    returns: absolute file path
+    """
     if path.startswith('/'):
         return path
     if 'GQUANTROOT' in os.environ:
-        ROOT = os.environ['GQUANTROOT']
+        ROOT = pathlib.Path(os.environ['GQUANTROOT'])
     else:
-        ROOT = os.getcwd()
+        ROOT = pathlib.Path(os.getcwd())
     if os.path.exists(path):
         return path
-    elif os.path.exists(ROOT+'/'+path):
-        return ROOT+'/'+path
+    path = pathlib.Path(path)
+    if (ROOT/path).absolute().parent.exists():
+        return str(ROOT/path)
     else:
         print('current path', os.getcwd())
         print('input path', path)
         print('cannot find the file')
-        raise Exception("File cannnot be found")
+        raise Exception("File path cannnot be found")
 
 
 def get_encoded_class(classObj):

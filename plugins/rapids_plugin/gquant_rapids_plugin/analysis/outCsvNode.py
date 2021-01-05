@@ -1,5 +1,6 @@
 from gquant.dataframe_flow import Node
 import dask_cudf
+from gquant.dataframe_flow.util import get_file_path
 from gquant.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
@@ -76,5 +77,6 @@ class OutCsvNode(Node, _PortTypesMixin):
             input_df = raw_input_df.compute()  # get the computed value
         else:
             input_df = raw_input_df
-        input_df.to_pandas().to_csv(self.conf['path'], index=False)
+        input_df.to_pandas().to_csv(get_file_path(self.conf['path']),
+                                    index=False)
         return {self.OUTPUT_PORT_NAME: raw_input_df}

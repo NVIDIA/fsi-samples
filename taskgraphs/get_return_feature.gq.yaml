@@ -1,36 +1,36 @@
-- id: stock_data
-  type: CsvStockLoader
-  conf:
+- conf:
     file: notebooks/data/stock_price_hist.csv.gz
+  id: stock_data
   inputs: {}
-  module: rapids_modules
-- id: ""
-  type: Output_Collector
-  conf: {}
+  module: gquant_rapids_plugin.dataloader
+  type: CsvStockLoader
+- conf: {}
+  id: ''
   inputs:
     in1: stock_data.cudf_out
     in2: add_return_feature.stock_out
   module: rapids_modules
-- id: volume_filter
-  type: ValueFilterNode
-  conf:
-    - column: volume
-      min: 50
+  type: Output_Collector
+- conf:
+  - column: volume
+    min: 50
+  id: volume_filter
   inputs:
     in: stock_data.cudf_out
-  module: rapids_modules
-- id: sort_node
-  type: SortNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: ValueFilterNode
+- conf:
     keys:
-      - asset
-      - datetime
+    - asset
+    - datetime
+  id: sort_node
   inputs:
     in: volume_filter.out
-  module: rapids_modules
-- id: add_return_feature
-  type: ReturnFeatureNode
-  conf: {}
+  module: gquant_rapids_plugin.transform
+  type: SortNode
+- conf: {}
+  id: add_return_feature
   inputs:
     stock_in: sort_node.out
-  module: rapids_modules
+  module: gquant_rapids_plugin.transform
+  type: ReturnFeatureNode

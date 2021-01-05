@@ -5,7 +5,6 @@ import cupy
 import cudf
 import dask_cudf
 import dask
-import rmm
 from gquant.dataframe_flow import Node, MetaData
 from gquant.dataframe_flow import NodePorts, PortsSpecSchema
 from gquant.dataframe_flow import ConfSchema
@@ -237,7 +236,7 @@ class NumbaDistanceNode(Node):
         number_of_blocks = ((len(df) - 1) // number_of_threads) + 1
         # Inits device array by setting 0 for each index.
         # df['distance_numba'] = 0.0
-        darr = rmm.device_array(len(df))
+        darr = cupy.zeros(len(df))
         distance_kernel[(number_of_blocks,), (number_of_threads,)](
             df['x'],
             df['y'],

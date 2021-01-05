@@ -1,21 +1,21 @@
-- id: stock_data
-  type: CsvStockLoader
-  conf:
+- conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
+  id: stock_data
   inputs: {}
-  module: rapids_modules
-- id: sort_node
-  type: SortNode
-  conf:
+  module: gquant_rapids_plugin.dataloader
+  type: CsvStockLoader
+- conf:
     keys:
-      - asset
-      - datetime
+    - asset
+    - datetime
+  id: sort_node
   inputs:
     in: stock_data.cudf_out
-  module: rapids_modules
-- id: ""
-  type: Output_Collector
-  conf: {}
+  module: gquant_rapids_plugin.transform
+  type: SortNode
+- conf: {}
+  id: ''
   inputs:
     in1: sort_node.out
+  type: Output_Collector

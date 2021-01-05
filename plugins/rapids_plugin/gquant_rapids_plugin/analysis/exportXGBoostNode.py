@@ -2,6 +2,7 @@ from gquant.dataframe_flow import Node
 from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                    NodePorts, PortsSpecSchema)
 from xgboost import Booster
+from gquant.dataframe_flow.util import get_file_path
 
 
 class XGBoostExportNode(Node):
@@ -46,7 +47,7 @@ class XGBoostExportNode(Node):
             "properties": {
                 "path":  {
                     "type": "string",
-                    "description": """The output filepath for the csv"""
+                    "description": """The output filepath for the xgboost model"""
                 }
             },
             "required": ["path"],
@@ -69,5 +70,6 @@ class XGBoostExportNode(Node):
         model = inputs[self.INPUT_PORT_NAME]
         if isinstance(model,  dict):
             model = model['booster']
-        model.save_model(self.conf['path'])
-        return {self.OUTPUT_PORT_NAME: self.conf['path']}
+        pathname = get_file_path(self.conf['path'])
+        model.save_model(pathname)
+        return {self.OUTPUT_PORT_NAME: pathname}

@@ -10,7 +10,7 @@ conda create -n test python=3.8
 ### Install the gQuant 
 To install the gQuant graph computation library, first install the dependence libraries:
 ```bash
-conda install dask networkx python-graphviz ruamel.yaml pandas
+conda install dask networkx python-graphviz ruamel.yaml pandas pydot
 ```
 
 Then install `gquant`:

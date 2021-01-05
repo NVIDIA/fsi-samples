@@ -1,128 +1,128 @@
-- id: stock_data
-  type: CsvStockLoader
-  conf:
+- conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small/
+  id: stock_data
   inputs: {}
-  module: rapids_modules
-- id: sort_node
-  type: SortNode
-  conf:
+  module: gquant_rapids_plugin.dataloader
+  type: CsvStockLoader
+- conf:
     keys:
-      - asset
-      - datetime
+    - asset
+    - datetime
+  id: sort_node
   inputs:
     in: stock_data.cudf_out
-  module: rapids_modules
-- id: add_return_feature
-  type: ReturnFeatureNode
-  conf: {}
+  module: gquant_rapids_plugin.transform
+  type: SortNode
+- conf: {}
+  id: add_return_feature
   inputs:
     stock_in: sort_node.out
-  module: rapids_modules
-- id: find_stock_row
-  type: AssetIndicatorNode
-  conf: {}
+  module: gquant_rapids_plugin.transform
+  type: ReturnFeatureNode
+- conf: {}
+  id: find_stock_row
   inputs:
     stock_in: add_return_feature.stock_out
-  module: rapids_modules
-- id: average_volume
-  type: AverageNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: AssetIndicatorNode
+- conf:
     column: volume
+  id: average_volume
   inputs:
     stock_in: find_stock_row.stock_out
-  module: rapids_modules
-- id: rename_average_volume
-  type: RenameNode
-  conf:
-    old: volume
+  module: gquant_rapids_plugin.transform
+  type: AverageNode
+- conf:
     new: average_volume
+    old: volume
+  id: rename_average_volume
   inputs:
     in: average_volume.stock_out
-  module: rapids_modules
-- id: merge_average_volume
-  type: LeftMergeNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: RenameNode
+- conf:
     column: asset
+  id: merge_average_volume
   inputs:
     left: find_stock_row.stock_out
     right: rename_average_volume.out
-  module: rapids_modules
-- id: min_return
-  type: MinNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: LeftMergeNode
+- conf:
     column: returns
+  id: min_return
   inputs:
     in: find_stock_row.stock_out
-  module: rapids_modules
-- id: rename_min_return
-  type: RenameNode
-  conf:
-    old: returns
+  module: gquant_rapids_plugin.transform
+  type: MinNode
+- conf:
     new: min_return
+    old: returns
+  id: rename_min_return
   inputs:
     in: min_return.out
-  module: rapids_modules
-- id: merge_min_return
-  type: LeftMergeNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: RenameNode
+- conf:
     column: asset
+  id: merge_min_return
   inputs:
-    right: rename_min_return.out
     left: merge_average_volume.merged
-  module: rapids_modules
-- id: max_return
-  type: MaxNode
-  conf:
+    right: rename_min_return.out
+  module: gquant_rapids_plugin.transform
+  type: LeftMergeNode
+- conf:
     column: returns
+  id: max_return
   inputs:
     in: find_stock_row.stock_out
-  module: rapids_modules
-- id: rename_max_return
-  type: RenameNode
-  conf:
-    old: returns
+  module: gquant_rapids_plugin.transform
+  type: MaxNode
+- conf:
     new: max_return
+    old: returns
+  id: rename_max_return
   inputs:
     in: max_return.out
-  module: rapids_modules
-- id: merge_max_return
-  type: LeftMergeNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: RenameNode
+- conf:
     column: asset
+  id: merge_max_return
   inputs:
-    right: rename_max_return.out
     left: merge_min_return.merged
-  module: rapids_modules
-- id: ""
-  type: Output_Collector
-  conf: {}
+    right: rename_max_return.out
+  module: gquant_rapids_plugin.transform
+  type: LeftMergeNode
+- conf: {}
+  id: ''
   inputs:
     in1: drop_columns.out
-- id: value_filter
-  type: ValueFilterNode
-  conf:
-    - column: average_volume
-      min: 10
-    - column: min_return
-      min: -10
-    - column: max_return
-      max: 10
+  type: Output_Collector
+- conf:
+  - column: average_volume
+    min: 10
+  - column: min_return
+    min: -10
+  - column: max_return
+    max: 10
+  id: value_filter
   inputs:
     in: merge_max_return.merged
-  module: rapids_modules
-- id: drop_columns
-  type: DropNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: ValueFilterNode
+- conf:
     columns:
-      - average_volume
-      - min_return
-      - max_return
-      - open
-      - high
-      - low
-      - volume
+    - average_volume
+    - min_return
+    - max_return
+    - open
+    - high
+    - low
+    - volume
+  id: drop_columns
   inputs:
     in: value_filter.out
-  module: rapids_modules
+  module: gquant_rapids_plugin.transform
+  type: DropNode

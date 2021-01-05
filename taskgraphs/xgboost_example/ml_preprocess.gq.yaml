@@ -1,64 +1,64 @@
-- id: ""
-  type: Output_Collector
-  conf: {}
+- conf: {}
+  id: ''
   inputs:
     in1: train_norm.df_out
     in2: test_norm.df_out
-- id: data_generator
-  type: CompositeNode
-  conf:
+  type: Output_Collector
+- conf:
     output:
-      - drop_x2_x3.out
+    - drop_x2_x3.out
     subnode_ids:
-      - data_gen
+    - data_gen
     subnodes_conf:
       data_gen:
         conf:
-          n_samples: 10000
-          n_features: 10
-          n_informative: 4
-          n_redundant: 0
-          n_repeated: 0
+          class_sep: 1
+          dtype: float64
+          flip_y: 0.1
+          hypercube: true
           n_classes: 2
           n_clusters_per_class: 2
-          flip_y: 0.1
-          class_sep: 1
-          hypercube: true
-          shift: 0
-          scale: 1
-          shuffle: true
-          order: F
-          dtype: float64
+          n_features: 10
+          n_informative: 4
           n_parts: 4
+          n_redundant: 0
+          n_repeated: 0
+          n_samples: 10000
+          order: F
           random_state: 10
+          scale: 1
+          shift: 0
+          shuffle: true
     taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+  id: data_generator
   inputs: {}
-- id: data_splitter
-  type: DataSplittingNode
-  conf:
-    train_size: 0.8
+  type: CompositeNode
+- conf:
     target: y
+    train_size: 0.8
+  id: data_splitter
   inputs:
     in: data_generator.drop_x2_x3@out
-  module: rapids_modules
-- id: train_norm
-  type: NormalizationNode
-  conf:
+  module: gquant_rapids_plugin.ml
+  type: DataSplittingNode
+- conf:
     columns:
-      - x3_0
-      - x3_1
-      - x2_0
-      - x2_1
-      - y
+    - x3_0
+    - x3_1
+    - x2_0
+    - x2_1
+    - y
     include: false
+  id: train_norm
   inputs:
     df_in: data_splitter.train
-  module: rapids_modules
-- id: test_norm
+  module: gquant_rapids_plugin.transform
   type: NormalizationNode
-  conf:
+- conf:
     include: true
+  id: test_norm
   inputs:
-    norm_data_in: train_norm.norm_data_out
     df_in: data_splitter.test
-  module: rapids_modules
+    norm_data_in: train_norm.norm_data_out
+  module: gquant_rapids_plugin.transform
+  type: NormalizationNode

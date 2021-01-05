@@ -1,165 +1,165 @@
-- id: stock_data
-  type: CsvStockLoader
-  conf:
+- conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
+  id: stock_data
   inputs: {}
-  module: rapids_modules
-- id: preprocess
-  type: CompositeNode
-  conf:
+  module: gquant_rapids_plugin.dataloader
+  type: CsvStockLoader
+- conf:
+    input:
+    - sort_node.in
+    output:
+    - drop_columns.out
     subnode_ids:
-      - value_filter
-      - drop_columns
+    - value_filter
+    - drop_columns
     subnodes_conf:
-      value_filter:
-        conf:
-          - column: min_return
-            min: -10
-          - column: max_return
-            max: 10
-          - column: average_volume
-            min: 400
       drop_columns:
         conf:
           columns:
-            - average_volume
-            - min_return
-            - max_return
+          - average_volume
+          - min_return
+          - max_return
+      value_filter:
+        conf:
+        - column: min_return
+          min: -10
+        - column: max_return
+          max: 10
+        - column: average_volume
+          min: 400
     taskgraph: taskgraphs/preprocess.gq.yaml
-    input: 
-      - sort_node.in
-    output: 
-      - drop_columns.out
+  id: preprocess
   inputs:
     sort_node@in: stock_data.cudf_out
-- id: sort_after
-  type: SortNode
-  conf:
+  type: CompositeNode
+- conf:
     keys:
-      - asset
-      - datetime
+    - asset
+    - datetime
+  id: sort_after
   inputs:
     in: preprocess.drop_columns@out
-  module: rapids_modules
-- id: backtest
-  type: SimpleBackTestNode
-  conf: {}
+  module: gquant_rapids_plugin.transform
+  type: SortNode
+- conf: {}
+  id: backtest
   inputs:
     bardata_in: xgboost.stock_out
-  module: rapids_modules
-- id: portfolio_opt_train
-  type: SimpleAveragePortOpt
-  conf: {}
+  module: gquant_rapids_plugin.backtest
+  type: SimpleBackTestNode
+- conf: {}
+  id: portfolio_opt_train
   inputs:
     stock_in: train_df.stock_out
-  module: rapids_modules
-- id: sharpe_ratio_trn
-  type: SharpeRatioNode
-  conf: {}
+  module: gquant_rapids_plugin.portofolio
+  type: SimpleAveragePortOpt
+- conf: {}
+  id: sharpe_ratio_trn
   inputs:
     stock_in: portfolio_opt_train.stock_out
-  module: rapids_modules
-- id: cumulative_return_trn
-  type: CumReturnNode
-  conf:
-    points: 300
+  module: gquant_rapids_plugin.analysis
+  type: SharpeRatioNode
+- conf:
     label: training cumulative return
+    points: 300
+  id: cumulative_return_trn
   inputs:
     in: portfolio_opt_train.stock_out
-  module: rapids_modules
-- id: ""
-  type: Output_Collector
-  conf: {}
+  module: gquant_rapids_plugin.analysis
+  type: CumReturnNode
+- conf: {}
+  id: ''
   inputs:
     in1: sharpe_ratio_trn.sharpe_out
     in2: cumulative_return_trn.cum_return
     in3: sharpe_ratio_val.sharpe_out
     in4: cumulative_return_val.cum_return
-- id: technical_indicator
-  type: IndicatorNode
-  conf:
+  type: Output_Collector
+- conf:
     indicators:
-      - function: port_chaikin_oscillator
-        args:
-          - 10
-          - 20
-        columns:
-          - high
-          - low
-          - close
-          - volume
-      - function: port_bollinger_bands
-        args:
-          - 10
-        columns:
-          - close
-      - function: port_shift
-        args:
-          - -1
-        columns:
-          - returns
-    remove_na: true
-  inputs:
-    stock_in: sort_after.out
-  module: rapids_modules
-- id: xgboost
-  type: XGBoostStrategyNode
-  conf:
-    num_of_rounds: 100
-    no_feature:
-      - asset
-      - datetime
-      - volume
-      - close
+    - args:
+      - 10
+      - 20
+      columns:
       - high
       - low
+      - close
+      - volume
+      function: port_chaikin_oscillator
+    - args:
+      - 10
+      columns:
+      - close
+      function: port_bollinger_bands
+    - args:
+      - -1
+      columns:
       - returns
-      - indicator
-      - open
+      function: port_shift
+    remove_na: true
+  id: technical_indicator
+  inputs:
+    stock_in: sort_after.out
+  module: gquant_rapids_plugin.transform
+  type: IndicatorNode
+- conf:
+    no_feature:
+    - asset
+    - datetime
+    - volume
+    - close
+    - high
+    - low
+    - returns
+    - indicator
+    - open
+    num_of_rounds: 100
+    target: SHIFT_-1
+    train_date: 2010-01-01
     xgboost_parameters:
+      gamma: 0
       max_depth: 8
       max_leaves: 256
-      gamma: 0
       objective: reg:squarederror
-    train_date: 2010-01-01
-    target: SHIFT_-1
+  id: xgboost
   inputs:
     stock_in: technical_indicator.stock_out
-  module: rapids_modules
-- id: train_df
-  type: DatetimeFilterNode
-  conf:
-    end: 2010-01-01
+  module: gquant_rapids_plugin.strategy
+  type: XGBoostStrategyNode
+- conf:
     beg: 1985-01-01
+    end: 2010-01-01
+  id: train_df
   inputs:
     stock_in: backtest.backtest_out
-  module: rapids_modules
-- id: validation_df
+  module: gquant_rapids_plugin.transform
   type: DatetimeFilterNode
-  conf:
+- conf:
     beg: 2010-01-01
     end: 2025-01-01
+  id: validation_df
   inputs:
     stock_in: backtest.backtest_out
-  module: rapids_modules
-- id: portfolio_opt_validation
-  type: SimpleAveragePortOpt
-  conf: {}
+  module: gquant_rapids_plugin.transform
+  type: DatetimeFilterNode
+- conf: {}
+  id: portfolio_opt_validation
   inputs:
     stock_in: validation_df.stock_out
-  module: rapids_modules
-- id: sharpe_ratio_val
-  type: SharpeRatioNode
-  conf: {}
+  module: gquant_rapids_plugin.portofolio
+  type: SimpleAveragePortOpt
+- conf: {}
+  id: sharpe_ratio_val
   inputs:
     stock_in: portfolio_opt_validation.stock_out
-  module: rapids_modules
-- id: cumulative_return_val
-  type: CumReturnNode
-  conf:
-    points: 300
+  module: gquant_rapids_plugin.analysis
+  type: SharpeRatioNode
+- conf:
     label: validation cumulative return
+    points: 300
+  id: cumulative_return_val
   inputs:
     in: portfolio_opt_validation.stock_out
-  module: rapids_modules
+  module: gquant_rapids_plugin.analysis
+  type: CumReturnNode

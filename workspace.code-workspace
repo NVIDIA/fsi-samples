@@ -6,7 +6,7 @@
 	],
 	"settings": {
         "terminal.integrated.shell.linux": "/bin/bash",
-        "python.pythonPath": "${env:HOME}/miniconda3/bin/python",
+        "python.pythonPath": "/home/yi/miniconda3/envs/gdax/bin/python",
         "python.linting.enabled": true,
         "python.linting.pylintEnabled": true,
         "python.formatting.autopep8Path": "${env:HOME}/miniconda3/bin/autopep8",

@@ -1,78 +1,78 @@
-- id: stock_data
-  type: CsvStockLoader
-  conf:
+- conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
+  id: stock_data
   inputs: {}
-  module: rapids_modules
-- id: preprocess
-  type: CompositeNode
-  conf:
+  module: gquant_rapids_plugin.dataloader
+  type: CsvStockLoader
+- conf:
+    input:
+    - sort_node.in
+    output:
+    - drop_columns.out
     subnode_ids:
-      - value_filter
+    - value_filter
     subnodes_conf:
       value_filter:
         conf:
-          - column: min_return
-            min: -10
-          - column: max_return
-            max: 10
-          - column: average_volume
-            min: 400
+        - column: min_return
+          min: -10
+        - column: max_return
+          max: 10
+        - column: average_volume
+          min: 400
     taskgraph: taskgraphs/preprocess.gq.yaml
-    input:
-      - sort_node.in
-    output: 
-      - drop_columns.out
+  id: preprocess
   inputs:
     sort_node@in: stock_data.cudf_out
-- id: sort_after
-  type: SortNode
-  conf:
+  type: CompositeNode
+- conf:
     keys:
-      - asset
-      - datetime
+    - asset
+    - datetime
+  id: sort_after
   inputs:
     in: preprocess.drop_columns@out
-  module: rapids_modules
-- id: exp_mean_reversion
-  type: PortExpMovingAverageStrategyNode
-  conf:
+  module: gquant_rapids_plugin.transform
+  type: SortNode
+- conf:
     fast: 5
     slow: 20
+  id: exp_mean_reversion
   inputs:
     stock_in: sort_after.out
-  module: rapids_modules
-- id: backtest
-  type: SimpleBackTestNode
-  conf: {}
+  module: gquant_rapids_plugin.strategy
+  type: PortExpMovingAverageStrategyNode
+- conf: {}
+  id: backtest
   inputs:
     bardata_in: exp_mean_reversion.stock_out
-  module: rapids_modules
-- id: portfolio_opt
-  type: SimpleAveragePortOpt
-  conf: {}
+  module: gquant_rapids_plugin.backtest
+  type: SimpleBackTestNode
+- conf: {}
+  id: portfolio_opt
   inputs:
     stock_in: backtest.backtest_out
-  module: rapids_modules
-- id: sharpe_ratio
-  type: SharpeRatioNode
-  conf: {}
+  module: gquant_rapids_plugin.portofolio
+  type: SimpleAveragePortOpt
+- conf: {}
+  id: sharpe_ratio
   inputs:
     stock_in: portfolio_opt.stock_out
-  module: rapids_modules
-- id: cumulative_return
-  type: CumReturnNode
-  conf:
-    points: 300
+  module: gquant_rapids_plugin.analysis
+  type: SharpeRatioNode
+- conf:
     label: cumulative return
+    points: 300
+  id: cumulative_return
   inputs:
     in: portfolio_opt.stock_out
-  module: rapids_modules
-- id: ""
-  type: Output_Collector
-  conf: {}
+  module: gquant_rapids_plugin.analysis
+  type: CumReturnNode
+- conf: {}
+  id: ''
   inputs:
     in1: cumulative_return.cum_return
     in2: sharpe_ratio.sharpe_out
   module: rapids_modules
+  type: Output_Collector
