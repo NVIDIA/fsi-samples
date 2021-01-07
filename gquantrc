@@ -1,3 +1,2 @@
 [ModuleFiles]
-nemo_modules= %(MODULEPATH)s/nemo_gquant_modules
 my_node= %(MODULEPATH)s/my_node.py

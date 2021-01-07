@@ -39,8 +39,8 @@ pip install .
 ### Install the external example plugin
 ```
 conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.17
-conda install -c conda-forge bqplot pytables
-jupyter labextension install bqplot
+conda install -c conda-forge yarn pytables
+pip install git+https://github.com/bqplot/bqplot.git@master
 pip install ray[tune]
 ```
 To install the external plugin, in the plugin diretory, run following command
@@ -53,4 +53,3 @@ After launching the JupyterLab by,
 ```bash
 jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 ```
-You can see the `DistanceNode` and `PointNode` under the name `custom_node` in the menu.
