@@ -10,7 +10,7 @@ conda create -n test python=3.8
 ### Install the gQuant 
 To install the gQuant graph computation library, first install the dependence libraries:
 ```bash
-conda install dask networkx python-graphviz ruamel.yaml pandas pydot
+conda install -c conda-forge dask networkx python-graphviz ruamel.yaml pandas pydot
 ```
 
 Then install `gquant`:
@@ -25,7 +25,7 @@ pip install .
 ### Install the gquantlab JupyterLab plugin
 To install `gquantlab` JupyterLab plugin, install the following dependence libraries:
 ```bash
-conda install -c conda-forge --repodata-fn=repodata.json nodejs ipywidgets
+conda install -c conda-forge ipywidgets nodejs=12.4.0
 ```
 Then install the `gquantlab`:
 ```bash
