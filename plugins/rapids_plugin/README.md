@@ -39,7 +39,7 @@ Then install `gquant`:
 ```bash
 pip install gquant
 ```
-Or install `gquant` at the root directory:
+Or install `gquant` at the gQuant directory:
 ```bash
 pip install .
 ```

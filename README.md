@@ -7,12 +7,12 @@
 
 There are a few projects inside this repo:
 
-1. `gquant` -  A graph computation toolkit that helps you to organize the workflows in graph computation.
-2. `gquantlab` - A JupyterLab plugin that provides the UI interface for `gquant`.
-3. `plugins` - A few gquant plugins with example notebooks. 
-    1. `simple_example` - A simple external plugin example for gQuant.
-    2. `rapids_plugin` - An external plugin with a set of nodes for quantitative analyst tasks, built on top of the [RAPIDS AI](https://rapids.ai/) project, [Numba](https://numba.pydata.org/), and [Dask](https://dask.org/).
-    3. `nemo_plugin` - An external plugin with a set of nodes that wraps the [NeMo library](https://github.com/NVIDIA/NeMo) . 
+1. [gquant](gquant) -  A graph computation toolkit that helps you to organize the workflows in graph computation.
+2. [gquantlab](gquantlab) - A JupyterLab plugin that provides the UI interface for `gquant`.
+3. [plugins](plugins) - A few gquant plugins with example notebooks. 
+    1. [simple_example](plugins/simple_example) - A simple external plugin example for gQuant.
+    2. [rapids_plugin](plugins/rapids_plugin) - An external plugin with a set of nodes for quantitative analyst tasks, built on top of the [RAPIDS AI](https://rapids.ai/) project, [Numba](https://numba.pydata.org/), and [Dask](https://dask.org/).
+    3. [nemo_plugin](plugins/nemo_plugin) - An external plugin with a set of nodes that wraps the [NeMo library](https://github.com/NVIDIA/NeMo) . 
 
 These projects are all released as independent Python projects with their own `setup.py` files. 
 
@@ -23,7 +23,7 @@ These projects are all released as independent Python projects with their own `s
 
 ## Binary installation
 
-### Install the gquant JupyterLab plugin
+### Install the gGuant 
 To install the gQuant graph computation library, install the dependence libraries:
 ```bash
 conda install dask networkx python-graphviz ruamel.yaml pandas
@@ -32,12 +32,12 @@ Then install `gquant`:
 ```bash
 pip install gquant
 ```
-Or install `gquant` at the gquant directory:
+Or install `gquant` at the gQuant directory:
 ```bash
 pip install .
 ```
 
-### Install the gquantlab JupyterLab plugin
+### Install the gQuantLab JupyterLab plugin
 To install `gquantlab` JupyterLab plugin, install the following dependence libraries:
 ```bash
 conda install -c conda-forge ipywidgets nodejs=12.4.0
@@ -51,7 +51,7 @@ Or install `gquantlab` at the gquantlab directory:
 pip install .
 ```
 
-### Install the gquant plugins
+### Install the gQuant plugins
 
 Under the plugin root directory, run following command to install them:
 ```bash
