@@ -8,8 +8,8 @@ here = pathlib.Path(__file__).parent.resolve()
 # Get the long description from the README file
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 
-install_requires = ['dask', 'configparser', 'cloudpickle', 'PyYaml',
-                    'jsonpath_ng']
+install_requires = ['dask[distributed]', 'configparser', 'cloudpickle', 'PyYaml',
+                    'jsonpath_ng', 'networkx', 'ruamel.yaml', 'pandas']
 
 setup(
     name='gquant',
