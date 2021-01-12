@@ -22,11 +22,8 @@ pytest -v tests/unit/test_indicator_node.py
 import warnings
 import unittest
 import cudf
-import os
-from gquant.dataframe_flow.task import load_modules
-load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
-import rapids_modules.cuindicator as gi
-from rapids_modules.transform.indicatorNode import IndicatorNode
+import gquant_rapids_plugin.cuindicator as gi
+from gquant_rapids_plugin.transform.indicatorNode import IndicatorNode
 from gquant.dataframe_flow.task import Task
 from .utils import make_orderer
 import numpy as np

@@ -27,7 +27,7 @@ import yaml
 from io import StringIO
 import warnings
 import unittest
-
+import pandas as pd
 from gquant.dataframe_flow import (TaskSpecSchema, TaskGraph)
 from gquant.dataframe_flow.task import DEFAULT_MODULE  # noqa: F401
 from gquant.dataframe_flow import Node
@@ -44,7 +44,7 @@ TASKGRAPH_YAML = \
   conf:
     npts: 1000
   inputs: []
-- id: distance_by_cudf
+- id: distance_by_df
   type: DistanceNode
   conf: {}
   inputs:
@@ -55,10 +55,9 @@ TASKGRAPH_YAML = \
 class TestTaskGraphAPI(unittest.TestCase):
     def setUp(self):
         import gc  # python garbage collector
-        import cudf
 
         # warmup
-        s = cudf.Series([1, 2, 3, None, 4], nan_as_null=False)
+        s = pd.Series([1, 2, 3, None, 4])
         del(s)
         gc.collect()
 
@@ -72,7 +71,7 @@ class TestTaskGraphAPI(unittest.TestCase):
         }
 
         distance_task_spec = {
-            TaskSpecSchema.task_id: 'distance_by_cudf',
+            TaskSpecSchema.task_id: 'distance_by_df',
             TaskSpecSchema.node_type: 'DistanceNode',
             TaskSpecSchema.conf: {},
             TaskSpecSchema.inputs: {
@@ -100,14 +99,12 @@ class TestTaskGraphAPI(unittest.TestCase):
         '''
         nx_graph = self.tgraph.viz_graph(show_ports=True)
         nx_nodes = ['points_task', 'points_task.points_df_out',
-                    'points_task.points_ddf_out',
-                    'distance_by_cudf', 'distance_by_cudf.distance_df',
-                    'distance_by_cudf.distance_abs_df']
+                    'distance_by_df', 'distance_by_df.distance_df',
+                    'distance_by_df.distance_abs_df']
         nx_edges = [('points_task', 'points_task.points_df_out'),
-                    ('points_task', 'points_task.points_ddf_out'),
-                    ('points_task.points_df_out', 'distance_by_cudf'),
-                    ('distance_by_cudf', 'distance_by_cudf.distance_df'),
-                    ('distance_by_cudf', 'distance_by_cudf.distance_abs_df')]
+                    ('points_task.points_df_out', 'distance_by_df'),
+                    ('distance_by_df', 'distance_by_df.distance_df'),
+                    ('distance_by_df', 'distance_by_df.distance_abs_df')]
         self.assertEqual(list(nx_graph.nodes), nx_nodes)
         self.assertEqual(list(nx_graph.edges), nx_edges)
 
@@ -119,7 +116,7 @@ class TestTaskGraphAPI(unittest.TestCase):
         self.tgraph.build()
 
         points_node = self.tgraph['points_task']
-        distance_node = self.tgraph['distance_by_cudf']
+        distance_node = self.tgraph['distance_by_df']
 
         onode_info = {
             'to_node': distance_node,
@@ -147,10 +144,10 @@ class TestTaskGraphAPI(unittest.TestCase):
         }
         self.assertEqual(inode_in_cols, distance_node.get_input_meta())
 
-        inode_out_cols = {'distance_df': {'distance_cudf': 'float64',
+        inode_out_cols = {'distance_df': {'distance_df': 'float64',
                                           'x': 'float64',
                                           'y': 'float64'},
-                          'distance_abs_df': {'distance_abs_cudf': 'float64',
+                          'distance_abs_df': {'distance_abs_df': 'float64',
                                               'x': 'float64', 'y': 'float64'}}
         self.assertEqual(inode_out_cols, distance_node.meta_setup().outports)
 
@@ -158,7 +155,7 @@ class TestTaskGraphAPI(unittest.TestCase):
     def test_run(self):
         '''Test that a taskgraph can run successfully.
         '''
-        outlist = ['distance_by_cudf.distance_df']
+        outlist = ['distance_by_df.distance_df']
         # Using numpy random seed to get repeatable and deterministic results.
         # For seed 2335 should get something around 761.062831178.
         replace_spec = {
@@ -169,9 +166,9 @@ class TestTaskGraphAPI(unittest.TestCase):
                 }
             }
         }
-        (dist_df_w_cudf, ) = self.tgraph.run(
+        (dist_df_w_df, ) = self.tgraph.run(
             outputs=outlist, replace=replace_spec)
-        dist_sum = dist_df_w_cudf['distance_cudf'].sum()
+        dist_sum = dist_df_w_df['distance_df'].sum()
         # self.assertAlmostEqual(dist_sum, 0.0, places, msg, delta)
         self.assertAlmostEqual(dist_sum, 761.062831178)  # match to 7 places
 
@@ -243,7 +240,7 @@ class TestTaskGraphAPI(unittest.TestCase):
             2. Load points_task df from cache when running the taskgraph.
         '''
         replace_spec = {'points_task': {TaskSpecSchema.save: True}}
-        outlist = ['distance_by_cudf.distance_df']
+        outlist = ['distance_by_df.distance_df']
 
         with warnings.catch_warnings():
             # ignore UserWarning: Using CPU via Pandas to write HDF dataset

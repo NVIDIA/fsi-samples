@@ -62,16 +62,6 @@ class TestNodeAPI(unittest.TestCase):
 
         self.distance_task = Task(distance_task_spec)
 
-        points_noports_task_spec = {
-            TaskSpecSchema.task_id: 'points_noport_task',
-            TaskSpecSchema.node_type: 'PointNoPortsNode',
-            TaskSpecSchema.filepath: custom_module,
-            TaskSpecSchema.conf: {'npts': 1000},
-            TaskSpecSchema.inputs: {}
-        }
-
-        self.points_noports_task = Task(points_noports_task_spec)
-
     def tearDown(self):
         pass
 

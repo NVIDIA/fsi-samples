@@ -23,12 +23,9 @@ import pandas as pd
 import unittest
 import cudf
 from .utils import make_orderer, error_function
-import os
-from gquant.dataframe_flow.task import load_modules
-load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
-import rapids_modules.cuindicator as gi
+import gquant_rapids_plugin.cuindicator as gi
 from . import technical_indicators as ti
-from rapids_modules.cuindicator import PEwm
+from gquant_rapids_plugin.cuindicator import PEwm
 import numpy as np
 import warnings
 

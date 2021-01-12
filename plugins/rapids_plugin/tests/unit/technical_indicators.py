@@ -551,7 +551,7 @@ def donchian_channel(df, n):
 
     i = 0
     while i + n - 1 < df.index[-1]:
-        dc = max(df['High'].ix[i:i + n - 1]) - min(df['Low'].ix[i:i + n - 1])
+        dc = max(df['High'].loc[i:i + n - 1]) - min(df['Low'].loc[i:i + n - 1])
         dc_l.append(dc)
         i += 1
 

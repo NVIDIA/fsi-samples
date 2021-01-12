@@ -22,12 +22,9 @@ pytest -v tests/unit/test_nodes.py
 import warnings
 import unittest
 import cudf
-import os
-from gquant.dataframe_flow.task import load_modules
-load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
-from rapids_modules.transform.returnFeatureNode import ReturnFeatureNode
-from rapids_modules.transform.indicatorNode import IndicatorNode
-from rapids_modules.transform.assetIndicatorNode import AssetIndicatorNode
+from gquant_rapids_plugin.transform import ReturnFeatureNode
+from gquant_rapids_plugin.transform import IndicatorNode
+from gquant_rapids_plugin.transform import AssetIndicatorNode
 from gquant.dataframe_flow.task import Task
 from .utils import make_orderer, error_function_index
 import numpy as np
@@ -163,9 +160,8 @@ class TestNodes(unittest.TestCase):
         inN = AssetIndicatorNode(task)
 
         gt = self._cudf_data.to_pandas()['indicator']
-
         o = inN.process({'stock_in':
-                         self._cudf_data.drop('indicator')})['stock_out']
+                         self._cudf_data.drop('indicator', axis=1)})['stock_out']
 
         err, index_err = error_function_index(o['indicator'], gt)
         msg = "bad error %f\n" % (err,)

@@ -22,11 +22,9 @@ pytest -v tests/unit/test_fractional_diff.py
 import pandas as pd
 import unittest
 import cudf
-import os
-from gquant.dataframe_flow.task import load_modules
-load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
-from rapids_modules.cuindicator import (fractional_diff, get_weights_floored,
-                                        port_fractional_diff)
+from gquant_rapids_plugin.cuindicator import (fractional_diff,
+                                              get_weights_floored,
+                                              port_fractional_diff)
 import numpy as np
 from .utils import make_orderer
 import warnings
