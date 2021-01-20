@@ -1,8 +1,16 @@
 # Changelog
 
-## [1.0](https://github.com/rapidsai/gQuant/tree/1.0) (2020-12-17)
+## [v1.0.1](https://github.com/rapidsai/gQuant/tree/v1.0.1) (2021-01-20)
 
-[Full Changelog](https://github.com/rapidsai/gQuant/compare/0.5...1.0)
+[Full Changelog](https://github.com/rapidsai/gQuant/compare/v1.0.0...v1.0.1)
+
+**Merged pull requests:**
+
+- \[REVIEW\] Simple external plugin example [\#113](https://github.com/rapidsai/gQuant/pull/113) ([yidong72](https://github.com/yidong72))
+
+## [v1.0.0](https://github.com/rapidsai/gQuant/tree/v1.0.0) (2020-12-30)
+
+[Full Changelog](https://github.com/rapidsai/gQuant/compare/0.5...v1.0.0)
 
 **Closed issues:**
 
@@ -15,6 +23,7 @@
 
 - \[REVIEW\]gQuant plugin implementation [\#112](https://github.com/rapidsai/gQuant/pull/112) ([yidong72](https://github.com/yidong72))
 - Gpuciscripts clean and update [\#111](https://github.com/rapidsai/gQuant/pull/111) ([msadang](https://github.com/msadang))
+- \[REVIEW\] gQuant 1.0 [\#110](https://github.com/rapidsai/gQuant/pull/110) ([yidong72](https://github.com/yidong72))
 - Streamz gQuant example 2 [\#109](https://github.com/rapidsai/gQuant/pull/109) ([yidong72](https://github.com/yidong72))
 - Revert "Streamz gQuant example" [\#108](https://github.com/rapidsai/gQuant/pull/108) ([yidong72](https://github.com/yidong72))
 - Streamz gQuant example [\#107](https://github.com/rapidsai/gQuant/pull/107) ([yidong72](https://github.com/yidong72))
@@ -22,6 +31,7 @@
 - Nemo and xgboost integration  [\#103](https://github.com/rapidsai/gQuant/pull/103) ([yidong72](https://github.com/yidong72))
 - FIX Update change log check [\#102](https://github.com/rapidsai/gQuant/pull/102) ([mike-wendt](https://github.com/mike-wendt))
 - \[REVIEW\] Update CI scripts to remove references to master \[skip ci\] [\#99](https://github.com/rapidsai/gQuant/pull/99) ([dillon-cullinan](https://github.com/dillon-cullinan))
+- \[skip ci\] Update master references for main branch [\#98](https://github.com/rapidsai/gQuant/pull/98) ([ajschmidt8](https://github.com/ajschmidt8))
 - \[REVIEW\]gQuant UI, first version [\#89](https://github.com/rapidsai/gQuant/pull/89) ([yidong72](https://github.com/yidong72))
 
 ## [0.5](https://github.com/rapidsai/gQuant/tree/0.5) (2020-07-10)

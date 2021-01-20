@@ -13,7 +13,7 @@ install_requires = ['dask', 'configparser', 'cloudpickle', 'PyYaml',
 
 setup(
     name='gquant',
-    version='1.0.0',
+    version='1.0.1',
     description='gquant - RAPIDS Financial Services Algorithms',
     long_description=long_description,
     long_description_content_type='text/markdown',
