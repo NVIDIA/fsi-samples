@@ -7,6 +7,12 @@ from gquant.dataframe_flow.task import load_modules, get_gquant_config_modules
 import gquant.plugin_nodes as plugin_nodes
 import inspect
 import uuid
+try:
+    # For python 3.8 and later
+    import importlib.metadata as importlib_metadata
+except ImportError:
+    # prior to python 3.8 need to install importlib-metadata
+    import importlib_metadata
 from pathlib import Path
 
 dynamic_modules = {}
@@ -286,4 +292,36 @@ def add_nodes():
                 n = classObj(t)
                 nodeObj = get_node_obj(n, False)
                 node_lists.append(nodeObj)
+
+    # load all the plugins from entry points
+    for entry_point in importlib_metadata.entry_points().get('gquant.plugin',
+                                                             ()):
+        mod = entry_point.load()
+        modulename = entry_point.name
+
+        for node in inspect.getmembers(mod):
+            nodecls = node[1]
+            if not inspect.isclass(nodecls):
+                continue
+            if nodecls == Node:
+                continue
+
+            if not issubclass(nodecls, Node):
+                continue
+
+            if nodecls in loaded_node_classes:
+                continue
+
+            task = {'id': 'node_'+str(uuid.uuid4()),
+                    'type': node[0],
+                    'conf': {},
+                    'inputs': [],
+                    'module': modulename
+                    }
+            t = Task(task)
+            n = nodecls(t)
+            nodeObj = get_node_obj(n, False)
+            all_nodes.setdefault(modulename, []).append(nodeObj)
+            loaded_node_classes.append(nodecls)
+
     return all_nodes

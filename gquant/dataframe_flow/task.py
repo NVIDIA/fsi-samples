@@ -40,7 +40,7 @@ def get_gquant_config_modules():
     if Path(gquant_cfg).is_file():
         config.read(gquant_cfg)
     if 'ModuleFiles' not in config:
-        return []
+        return {}
     modules_names = config.options('ModuleFiles')
     modules_list = {imod: config['ModuleFiles'][imod]
                     for imod in modules_names}
