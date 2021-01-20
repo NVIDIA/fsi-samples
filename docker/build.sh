@@ -39,7 +39,7 @@ echo -e "\nPlease, select your CUDA version:\n" \
 
 read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
 
-RAPIDS_VERSION="0.14.1"
+RAPIDS_VERSION="0.17.0"
 
 CUDA_VERSION=${CUDA_VERSION:-1}
 case $CUDA_VERSION in
@@ -158,7 +158,7 @@ RUN conda install -y -c conda-forge jupyterlab'<3.0.0'
 RUN conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets \
     pytables mkl numexpr pydot flask pylint flake8 autopep8
 
-RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build  
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager@2.0 --no-build  
 RUN jupyter labextension install bqplot --no-build  
 #RUN jupyter labextension install jupyterlab-nvdashboard --no-build  
 RUN jupyter lab build && jupyter lab clean
@@ -169,7 +169,7 @@ RUN pip install jupyterlab-nvdashboard
 RUN jupyter labextension install jupyterlab-nvdashboard
 
 ## install the dask extension
-RUN pip install dask_labextension
+RUN pip install "dask_labextension<5.0.0"
 RUN jupyter labextension install dask-labextension
 RUN jupyter serverextension enable dask_labextension
 
@@ -289,9 +289,10 @@ index 901a79af..4eb76f95 100644
 @@ -14,4 +14,4 @@ unidecode
  webdataset
  kaldi-python-io
- librosa<=0.7.2
+-librosa<=0.7.2
++librosa<=0.8.0
 -numba<=0.48
-+numba==0.49.1
++numba==0.52.0
 diff --git a/requirements/requirements_nlp.txt b/requirements/requirements_nlp.txt
 index 885adf3e..0e4e44e2 100644
 --- a/requirements/requirements_nlp.txt
