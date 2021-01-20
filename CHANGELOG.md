@@ -1,8 +1,8 @@
 # Changelog
 
-## [1.0.1](https://github.com/rapidsai/gQuant/tree/1.0.1) (2021-01-20)
+## [v1.0.1](https://github.com/rapidsai/gQuant/tree/v1.0.1) (2021-01-20)
 
-[Full Changelog](https://github.com/rapidsai/gQuant/compare/v1.0.0...1.0.1)
+[Full Changelog](https://github.com/rapidsai/gQuant/compare/v1.0.0...v1.0.1)
 
 **Merged pull requests:**
 
@@ -137,6 +137,7 @@
 - Fix \#40 - Remove debug info [\#41](https://github.com/rapidsai/gQuant/pull/41) ([miguelusque](https://github.com/miguelusque))
 - Update mortgage example using TaskGraph API. [\#38](https://github.com/rapidsai/gQuant/pull/38) ([avolkov1](https://github.com/avolkov1))
 - fixed the issue 32 [\#37](https://github.com/rapidsai/gQuant/pull/37) ([yidong72](https://github.com/yidong72))
+- Fix \#35 - Refactor 01\_tutorial.ipynb notebook [\#36](https://github.com/rapidsai/gQuant/pull/36) ([miguelusque](https://github.com/miguelusque))
 - Fix \#26b - Add new issue templates [\#30](https://github.com/rapidsai/gQuant/pull/30) ([miguelusque](https://github.com/miguelusque))
 - Revert "fix \#26 - Add new issues template" [\#29](https://github.com/rapidsai/gQuant/pull/29) ([yidong72](https://github.com/yidong72))
 - Fix \#26 - Add new issues template [\#27](https://github.com/rapidsai/gQuant/pull/27) ([miguelusque](https://github.com/miguelusque))
@@ -170,7 +171,6 @@
 
 **Merged pull requests:**
 
-- Fix \#35 - Refactor 01\_tutorial.ipynb notebook [\#36](https://github.com/rapidsai/gQuant/pull/36) ([miguelusque](https://github.com/miguelusque))
 - Revert "gQuant34 - Update build.sh to make use of RAPIDS v0.8 container" [\#33](https://github.com/rapidsai/gQuant/pull/33) ([yidong72](https://github.com/yidong72))
 - gQuant34 - Update build.sh to make use of RAPIDS v0.8 container [\#12](https://github.com/rapidsai/gQuant/pull/12) ([miguelusque](https://github.com/miguelusque))
 - Synch master with develop [\#4](https://github.com/rapidsai/gQuant/pull/4) ([avolkov1](https://github.com/avolkov1))
