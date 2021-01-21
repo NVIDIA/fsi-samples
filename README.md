@@ -42,7 +42,11 @@ To install `gquantlab` JupyterLab plugin, install the following dependence libra
 ```bash
 conda install -c conda-forge ipywidgets nodejs=12.4.0
 ```
-Then install the `gquantlab`:
+Install the `gquantlab` for Jupyterlab2:
+```
+pip install gquantlab==0.1.2
+```
+For Jupyterlab>2, install the `gquantlab`:
 ```bash
 pip install gquantlab
 ```
