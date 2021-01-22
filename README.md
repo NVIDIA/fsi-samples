@@ -24,11 +24,7 @@ These projects are all released as independent Python projects with their own `s
 ## Binary installation
 
 ### Install the gGuant 
-To install the gQuant graph computation library, install the dependence libraries:
-```bash
-conda install dask networkx python-graphviz ruamel.yaml pandas
-```
-Then install `gquant`:
+To install the gQuant graph computation library, run:
 ```bash
 pip install gquant
 ```
@@ -38,15 +34,11 @@ pip install .
 ```
 
 ### Install the gQuantLab JupyterLab plugin
-To install `gquantlab` JupyterLab plugin, install the following dependence libraries:
+To install `gquantlab` JupyterLab plugin, make sure `nodejs` of version [12^14^15] is installed. E.g.:
 ```bash
-conda install -c conda-forge ipywidgets nodejs=12.4.0
+conda install -c conda-forge nodejs=12.4.0
 ```
-Install the `gquantlab` for Jupyterlab2:
-```
-pip install gquantlab==0.1.2
-```
-For Jupyterlab>2, install the `gquantlab`:
+Then install the `gquantlab`:
 ```bash
 pip install gquantlab
 ```
@@ -57,15 +49,15 @@ pip install .
 
 ### Install the gQuant plugins
 
-Under the plugin root directory, run following command to install them:
+Under the plugin root directory, install the plugin as normal python packages.
 ```bash
 pip install .
 ```
 
 Note, gQuant node plugins can be registered in two ways: 
 
-  1. Register the plugin in `gquantrc` file. Check the `System environment` for details
-  2. Write a external plugin using 'entry point' to register it. Check the `plugins` directory for details
+  1. (Recommended)Write a external plugin using 'entry point' to register it. Check the `plugins` directory for details
+  2. Register the plugin in `gquantrc` file. Check the `System environment` for details
 
 
 ## Docker Install

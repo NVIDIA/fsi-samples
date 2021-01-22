@@ -2,6 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name='gquant_rapids_plugin',
+    install_requires=[
+        "bqplot", "tables", "ray[tune]"
+    ],
     packages=find_packages(include=['gquant_rapids_plugin',
                                     'gquant_rapids_plugin.analysis',
                                     'gquant_rapids_plugin.backtest',

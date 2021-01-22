@@ -15,12 +15,7 @@ These examples can be used as-is or, as they are open source, can be extended to
 
 ## Binary pip installation
 
-To install the gQuant graph computation library, first install the dependence libraries:
-```bash
-conda install dask networkx python-graphviz ruamel.yaml pandas
-```
-
-Then install `gquant`:
+To install the gQuant graph computation library, run:
 ```bash
 pip install gquant
 ```
@@ -31,8 +26,8 @@ pip install .
 
 gQuant node plugins can be registered in two ways: 
 
-  1. Register the plugin in `gquantrc` file. Check the `System environment` for details
-  2. Write a external plugin using 'entry point' to register it. Check the `external` directory for details
+  1. (Recommended)Write a external plugin using 'entry point' to register it. Check the `external` directory for details
+  2. Register the plugin in `gquantrc` file. Check the `System environment` for details
 
 ## System environment 
 

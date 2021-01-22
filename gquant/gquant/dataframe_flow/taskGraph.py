@@ -1,5 +1,4 @@
 from collections import OrderedDict
-import networkx as nx
 import ruamel.yaml
 from .node import Node
 from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
@@ -317,6 +316,7 @@ class TaskGraph(object):
         -----
         nx.DiGraph
         """
+        import networkx as nx
         G = nx.DiGraph()
         # instantiate objects
         for itask in self:
@@ -650,6 +650,7 @@ class TaskGraph(object):
                              formated=formated)
 
     def to_pydot(self, show_ports=False):
+        import networkx as nx
         nx_graph = self.viz_graph(show_ports=show_ports)
         to_pydot = nx.drawing.nx_pydot.to_pydot
         pdot = to_pydot(nx_graph)

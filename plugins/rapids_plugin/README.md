@@ -30,24 +30,19 @@ bash download_data.sh
 ```
 
 ### Install the gQuant 
-To install the gQuant graph computation library, first install the dependence libraries:
-```bash
-conda install -c conda-forge dask networkx python-graphviz ruamel.yaml pandas pydot
-```
-
-Then install `gquant`:
+To install the gQuant graph computation library, run:
 ```bash
 pip install gquant
 ```
-Or install `gquant` at the gQuant directory:
+Or install `gquant` at the gquant directory:
 ```bash
 pip install .
 ```
 
 ### Install the gquantlab JupyterLab plugin
-To install `gquantlab` JupyterLab plugin, install the following dependence libraries:
+To install `gquantlab` JupyterLab plugin, make sure `nodejs` of version [12^14^15] is installed. E.g:
 ```bash
-conda install -c conda-forge ipywidgets nodejs=12.4.0
+conda install -c conda-forge nodejs=12.4.0
 ```
 Then install the `gquantlab`:
 ```bash
@@ -59,11 +54,9 @@ pip install .
 ```
 
 ### Install the external example plugin
-```
+Install RAPIDS:
+```bash
 conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.17
-conda install -c conda-forge yarn pytables
-pip install git+https://github.com/bqplot/bqplot.git@master
-pip install ray[tune]
 ```
 To install the external plugin, in the plugin diretory, run following command
 ```bash
