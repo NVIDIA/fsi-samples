@@ -79,9 +79,10 @@ index 901a79af..4eb76f95 100644
 @@ -14,4 +14,4 @@ unidecode
  webdataset
  kaldi-python-io
- librosa<=0.7.2
+-librosa<=0.7.2
++librosa<=0.8.0
 -numba<=0.48
-+numba==0.49.1
++numba==0.52.0
 diff --git a/requirements/requirements_nlp.txt b/requirements/requirements_nlp.txt
 index 885adf3e..0e4e44e2 100644
 --- a/requirements/requirements_nlp.txt
@@ -95,5 +96,4 @@ index 885adf3e..0e4e44e2 100644
  unidecode
  youtokentome
  numpy
-
 

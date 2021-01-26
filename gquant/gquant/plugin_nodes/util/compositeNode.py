@@ -77,8 +77,11 @@ class CompositeNode(Node):
         input_node = ""
         task_graph_obj = None
         if 'taskgraph' in self.conf:
-            task_graph = get_file_path(self.conf['taskgraph'])
-            if os.path.exists(task_graph):
+            try:
+                task_graph = get_file_path(self.conf['taskgraph'])
+            except FileNotFoundError:
+                task_graph = None
+            if task_graph is not None and os.path.exists(task_graph):
                 with open(task_graph) as f:
                     task_graph = hashlib.md5(f.read().encode()).hexdigest()
                 task_graph_obj = TaskGraph.load_taskgraph(
@@ -159,7 +162,7 @@ class CompositeNode(Node):
             return CACHE_PORTS[cache_key]
         inports = {}
         outports = {}
-        if 'taskgraph' in self.conf:
+        if task_graph:
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
@@ -191,7 +194,7 @@ class CompositeNode(Node):
             return CACHE_META[cache_key]
         required = {}
         out_meta = {}
-        if 'taskgraph' in self.conf:
+        if task_graph:
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
@@ -267,7 +270,7 @@ class CompositeNode(Node):
             "taskgraph": {"ui:widget": "TaskgraphSelector"},
             "subnodes_conf": {}
         }
-        if 'taskgraph' in self.conf:
+        if task_graph:
             task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
@@ -295,7 +298,7 @@ class CompositeNode(Node):
             json['properties']['input']['items']['enum'] = in_ports
             json['properties']['output']['items']['enum'] = out_ports
             json['properties']['subnode_ids']['items']['enum'] = ids_in_graph
-        if 'subnode_ids' in self.conf:
+        if 'subnode_ids' in self.conf and task_graph:
             for subnodeId in self.conf['subnode_ids']:
                 if subnodeId in task_graph:
                     nodeObj = task_graph[subnodeId]
