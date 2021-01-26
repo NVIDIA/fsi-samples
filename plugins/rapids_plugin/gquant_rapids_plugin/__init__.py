@@ -21,8 +21,7 @@ def _validate_df(df_to_val, ref_cols, obj):
         number of columns. TODO: Create a ValidationError subclass.
 
     '''
-    if (isinstance(df_to_val, cudf.DataFrame) or
-        isinstance(df_to_val, dask_cudf.DataFrame)) and \
+    if isinstance(df_to_val, cudf.DataFrame) and \
             len(df_to_val) == 0:
         err_msg = 'Node "{}" produced empty output'.format(obj.uid)
         raise Exception(err_msg)
