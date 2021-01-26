@@ -201,7 +201,7 @@ class XGBoostStrategyNode(_PortTypesMixin, Node):
                                  num_boost_round=self.conf["num_of_rounds"])
 
             dtrain = xgb.dask.DaskDMatrix(client, input_df[train_cols])
-            prediction = xgb.dask.predict(client, bst, dtrain).persist()
+            prediction = xgb.dask.predict(client, bst, dtrain)
             pred_df = dask_cudf.from_dask_dataframe(
                 prediction.to_dask_dataframe())
             pred_df.index = input_df.index

@@ -469,7 +469,7 @@ class InferXGBoostNode(Node):
             # get the client
             client = dask.distributed.client.default_client()
             dtrain = xgb.dask.DaskDMatrix(client, input_df[required_cols])
-            prediction = xgb.dask.predict(client, bst_model, dtrain).persist()
+            prediction = xgb.dask.predict(client, bst_model, dtrain)
             pred_df = dask_cudf.from_dask_dataframe(
                 prediction.to_dask_dataframe())
             pred_df.index = input_df.index

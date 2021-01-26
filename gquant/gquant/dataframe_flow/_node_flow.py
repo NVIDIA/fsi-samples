@@ -465,10 +465,12 @@ class NodeTaskGraphMixin(object):
         # Otherwise process will run several times.
         for inputs_ in inputs_dly.values():
             output_df_dly = dask.delayed(self.decorate_process())(inputs_)
-            output_df_dly_per = output_df_dly.persist()
+            # output_df_dly_per = output_df_dly.persist()
+            output_df_dly_per = output_df_dly
             for oport in self._get_output_ports():
                 oport_out = dask.delayed(get_pout)(output_df_dly_per, oport)
-                outputs_dly.setdefault(oport, []).append(oport_out.persist())
+                # outputs_dly.setdefault(oport, []).append(oport_out.persist())
+                outputs_dly.setdefault(oport, []).append(oport_out)
 
         # DEBUGGING
         # print('OUTPUTS_DLY:\n{}'.format(outputs_dly))
