@@ -92,6 +92,8 @@ class Node(_PortsMixin, _Node):
         self.save = task.get(TaskSpecSchema.save, False)
 
         self.delayed_process = False
+        # eargerly infer the metadata, costly
+        self.infer_meta = True
         # customized the column setup
         self.init()
         self.profile = False  # by default, do not profile

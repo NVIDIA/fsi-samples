@@ -14,7 +14,7 @@ install_requires = ['dask[distributed]', 'dask[dataframe]', 'configparser',
 
 setup(
     name='gquant',
-    version='1.0.1',
+    version='1.0.2',
     description='gquant - RAPIDS Financial Services Algorithms',
     long_description=long_description,
     long_description_content_type='text/markdown',

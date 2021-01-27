@@ -85,6 +85,7 @@ class NodeTaskGraphMixin(object):
             load
             save
             delayed_process
+            infer_meta
 
         METHODS
         -------
@@ -491,7 +492,12 @@ class NodeTaskGraphMixin(object):
             #     self.uid, oport, port_type))
             if any([issubclass(p_type,
                                DaskDataFrame) for p_type in port_type]):
-                output_df[oport] = from_delayed(outputs_dly[oport])
+                if self.infer_meta:
+                    output_df[oport] = from_delayed(outputs_dly[oport])
+                else:
+                    meta_data = self.meta_setup().outports
+                    output_df[oport] = from_delayed(outputs_dly[oport],
+                                                    meta=meta_data[oport])
             else:
                 # outputs_dly[oport] is currently a list. Run compute on each
                 # partition, and keep the first one.
