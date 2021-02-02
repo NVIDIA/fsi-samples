@@ -24,7 +24,7 @@ def get_file_path(path: str) -> str:
         print('current path', os.getcwd())
         print('input path', path)
         print('cannot find the file')
-        raise Exception("File path cannnot be found")
+        raise FileNotFoundError("File path cannnot be found")
 
 
 def get_encoded_class(classObj):
