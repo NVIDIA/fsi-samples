@@ -235,8 +235,7 @@ class NumbaDistanceNode(Node):
         number_of_threads = 16
         number_of_blocks = ((len(df) - 1) // number_of_threads) + 1
         # Inits device array by setting 0 for each index.
-        # df['distance_numba'] = 0.0
-        darr = cupy.zeros(len(df))
+        darr = cuda.device_array(len(df))
         distance_kernel[(number_of_blocks,), (number_of_threads,)](
             df['x'],
             df['y'],

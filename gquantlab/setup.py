@@ -77,11 +77,11 @@ setup_args = dict(
     zip_safe=False,
     include_package_data=True,
     python_requires=">=3.6",
-    license="BSD-3-Clause",
+    license="Apache",
     platforms="Linux, Mac OS X, Windows",
     keywords=["Jupyter", "JupyterLab", "JupyterLab3"],
     classifiers=[
-        "License :: OSI Approved :: BSD License",
+        "License :: OSI Approved :: Apache",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",
