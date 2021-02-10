@@ -153,12 +153,12 @@ RUN wget \
 RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
     -c defaults rapids=$RAPIDS_VERSION cudatoolkit=$CUDA_STR python=3.7
 
-RUN conda install -y -c conda-forge jupyterlab'<3.0.0'
+RUN conda install -y -c conda-forge jupyterlab
 
 RUN conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets \
     pytables mkl numexpr pydot flask pylint flake8 autopep8
 
-RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager@2.0 --no-build  
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build  
 RUN jupyter labextension install bqplot --no-build  
 #RUN jupyter labextension install jupyterlab-nvdashboard --no-build  
 RUN jupyter lab build && jupyter lab clean
@@ -169,7 +169,7 @@ RUN pip install jupyterlab-nvdashboard
 RUN jupyter labextension install jupyterlab-nvdashboard
 
 ## install the dask extension
-RUN pip install "dask_labextension<5.0.0"
+RUN pip install dask_labextension
 RUN jupyter labextension install dask-labextension
 RUN jupyter serverextension enable dask_labextension
 

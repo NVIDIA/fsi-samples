@@ -4,8 +4,8 @@ node_modules/
 *.egg-info/
 .ipynb_checkpoints
 *.tsbuildinfo
+gquantlab/labextension
 
-*/labextension/*.tgz
 # Created by https://www.gitignore.io/api/python
 # Edit at https://www.gitignore.io/?templates=python
 
@@ -107,3 +107,6 @@ dmypy.json
 .pyre/
 
 # End of https://www.gitignore.io/api/python
+
+# OSX files
+.DS_Store

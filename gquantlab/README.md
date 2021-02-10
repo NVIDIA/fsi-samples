@@ -2,7 +2,18 @@
 
 ![Github Actions Status](https://github.com/rapidsai/gQuant/gquantlab/workflows/Build/badge.svg)
 
-gQuant Jupyterlab extension
+## gQuant jupyterlab extension
+The gQuant Juyterlab extension provides the user interface to build the dataframe flow TaskGraph easily. It takes advantage of the open sources projects like [jupyterlab](https://github.com/jupyterlab/jupyterlab), [ipywidget](https://github.com/jupyter-widgets/ipywidgets), [React](https://reactjs.org/) and [D3](https://d3js.org/). It features:
+1. Takes full advantage of the JupyterLab project that the extension adds commands to Jupyterlab context menu, command palette and bind them with keyboard shortcuts to speed up the productivity.  
+2. Define a new TaskGraph file format `.gq.yaml` that can be edited in the Jupyterlab. 
+3. Visually presents the TaskGraph as a DAG graph. Users can zoom in and out, freely move the nodes around, and make connections between nodes.
+4. Use the special `Ouput Collector` to gather the results and organize them in a tab widget. The IPython [rich display](https://ipython.readthedocs.io/en/stable/config/integrating.html#rich-display) is fully supported.
+5. Visually shows the progress of graph evaluation and computation dependence.
+6. Automatically generate the UI elements to edit and validate the Node configuration given the configuration JSON schema. It exposes the function API in a user-friendly way. User can change the configuration and re-run the computation to test out the hyperparameters easily.
+7. Dynamically compute the input-output ports compatibility, dataframe columns names and types, ports types to prevent connection errors. 
+8. Nodes can have multiple output ports that can be used to generate different output types. E.g. some data loader Node provides both `cudf` and `dask_cudf` output ports. The multiple GPUs distributed computation computation is automatically enabled by switching to the `dask_cudf` output port. 
+9. Provides the standard API to extend your computation Nodes.
+10. The composite node can encapsulate the TaskGraph into a single node for easy reuse. The composite node can be exported as a regular gQuant node without any coding.
 
 
 This extension is composed of a Python package named `gquantlab`
@@ -29,11 +40,10 @@ Set the gQuant path as the folder to start the development or you can open the
 
 ## Install
 
-Note: You will need NodeJS to install the extension.
+Note: You will need NodeJS of version 12^14^15 to install the extension.
 
 ```bash
 pip install gquantlab
-jupyter lab build
 ```
 
 ## Troubleshoot
@@ -104,25 +114,4 @@ Now every change will be built locally and bundled into JupyterLab. Be sure to r
 ```bash
 pip uninstall gquantlab
 jupyter labextension uninstall gquantlab
-```
-
-### Start the JupyterLab
-
-Once the gquantlab plugin is install, the jupyterlab can be started. There is 
-one important environment to consider before starting. The custom module files 
-are specified in the `gquantrc` file. You can find an example `gquantrc` file in
-the gQuant root directory. `gquantrc` file is by default is read at the same location
-as the jupyterlab server's root directory. However, this can be overwirtten by 
-setting the `GQUANT_CONFIG` environment variable. In the example `gquantrc`, system 
-environment variable `MODULEPATH` is used to point to the paths of the module files.
-To start the jupyterlab, please make sure `MODULEPATH` is set properly. 
-
-For example, if you want to start the jupyterlab in the gQuant root directory.
-```bash
-MODULEPATH=$PWD/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
-```
-
-Or, if you want to start the jupyterlab in the gquantlab directory.
-```bash
-GQUANT_CONFIG=../gquantrc MODULEPATH=$PWD/../modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 ```

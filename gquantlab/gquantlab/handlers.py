@@ -1,7 +1,6 @@
 import json
-
-from notebook.base.handlers import APIHandler
-from notebook.utils import url_path_join
+from jupyter_server.base.handlers import APIHandler
+from jupyter_server.utils import url_path_join
 import tornado
 from gquant.dataframe_flow import TaskGraph
 from .server_utils import (get_nodes, add_nodes)
@@ -61,12 +60,14 @@ class RouteHandlerPlugins(APIHandler):
                     val_dict = getattr(client_mod, 'validation')
                     client_info['validation'].update(val_dict)
                 else:
-                    print(client_mod, 'no validation')
+                    pass
+                    # print(client_mod, 'no validation')
                 if hasattr(client_mod, 'display'):
                     val_dict = getattr(client_mod, 'display')
                     client_info['display'].update(val_dict)
                 else:
-                    print(client_mod, 'no display')
+                    pass
+                    # print(client_mod, 'no display')
 #                else:
 #                    print(key, mod.mod, 'no client')
 
@@ -78,12 +79,14 @@ class RouteHandlerPlugins(APIHandler):
                 val_dict = getattr(client_mod, 'validation')
                 client_info['validation'].update(val_dict)
             else:
-                print(client_mod, 'no validation')
+                pass
+                # print(client_mod, 'no validation')
             if hasattr(client_mod, 'display'):
                 val_dict = getattr(client_mod, 'display')
                 client_info['display'].update(val_dict)
             else:
-                print(client_mod, 'no display')
+                pass
+                # print(client_mod, 'no display')
         self.finish(json.dumps(client_info))
 
 

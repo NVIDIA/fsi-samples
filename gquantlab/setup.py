@@ -1,11 +1,12 @@
 """
-Setup Module to setup Python Handlers for the gquantlab extension.
+gquantlab setup
 """
+import json
 import os
 
 from jupyter_packaging import (
     create_cmdclass, install_npm, ensure_targets,
-    combine_commands, ensure_python, get_version,
+    combine_commands, skip_if_exists
 )
 import setuptools
 
@@ -14,17 +15,15 @@ HERE = os.path.abspath(os.path.dirname(__file__))
 # The name of the project
 name="gquantlab"
 
-# Ensure a valid python version
-ensure_python(">=3.5")
-
 # Get our version
-version = get_version(os.path.join(name, "_version.py"))
+with open(os.path.join(HERE, 'package.json')) as f:
+    version = json.load(f)['version']
 
 lab_path = os.path.join(HERE, name, "labextension")
 
 # Representative files that should exist after a successful build
 jstargets = [
-    os.path.join(HERE, "lib", "gquantlab.js"),
+    os.path.join(lab_path, "package.json"),
 ]
 
 package_data_spec = {
@@ -33,21 +32,30 @@ package_data_spec = {
     ]
 }
 
+labext_name = "gquantlab"
+
 data_files_spec = [
-    ("share/jupyter/lab/extensions", lab_path, "*.tgz"),
-    ("etc/jupyter/jupyter_notebook_config.d",
+    ("share/jupyter/labextensions/%s" % labext_name, lab_path, "**"),
+    ("share/jupyter/labextensions/%s" % labext_name, HERE, "install.json"),("etc/jupyter/jupyter_server_config.d",
      "jupyter-config", "gquantlab.json"),
+     
 ]
 
-cmdclass = create_cmdclass("jsdeps", 
+cmdclass = create_cmdclass("jsdeps",
     package_data_spec=package_data_spec,
     data_files_spec=data_files_spec
 )
 
-cmdclass["jsdeps"] = combine_commands(
-    install_npm(HERE, build_cmd="build:all", npm=["jlpm"]),
+js_command = combine_commands(
+    install_npm(HERE, build_cmd="build:prod", npm=["jlpm"]),
     ensure_targets(jstargets),
 )
+
+is_repo = os.path.exists(os.path.join(HERE, ".git"))
+if is_repo:
+    cmdclass["jsdeps"] = js_command
+else:
+    cmdclass["jsdeps"] = skip_if_exists(jstargets, js_command)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -55,25 +63,27 @@ with open("README.md", "r") as fh:
 setup_args = dict(
     name=name,
     version=version,
-    url="https://github.com/rapidsai/gQuant/gquantlab",
-    author="Yi",
+    url="https://github.com/rapidsai/gQuant.git",
+    author="{'name': 'Yi Dong', 'email': 'doyend@gmail.com'}",
     description="gQuant Jupyterlab extension",
     long_description= long_description,
     long_description_content_type="text/markdown",
     cmdclass= cmdclass,
     packages=setuptools.find_packages(),
     install_requires=[
-        "jupyterlab~=2.0",
+        "jupyterlab>=3.0.0rc13,==3.*",
+        "ipywidgets",
     ],
     zip_safe=False,
     include_package_data=True,
+    python_requires=">=3.6",
     license="Apache",
     platforms="Linux, Mac OS X, Windows",
-    keywords=["Jupyter", "JupyterLab"],
+    keywords=["Jupyter", "JupyterLab", "JupyterLab3"],
     classifiers=[
+        "License :: OSI Approved :: Apache",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",

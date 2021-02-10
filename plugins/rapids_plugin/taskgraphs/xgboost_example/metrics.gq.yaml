@@ -1,0 +1,106 @@
+- conf:
+    class_sep: 1
+    dtype: float64
+    flip_y: 0.01
+    hypercube: true
+    n_classes: 2
+    n_clusters_per_class: 2
+    n_features: 10
+    n_informative: 4
+    n_parts: 4
+    n_redundant: 0
+    n_repeated: 0
+    n_samples: 10000
+    order: F
+    scale: 1
+    shift: 0
+    shuffle: true
+  id: data_gen
+  inputs: {}
+  module: gquant_rapids_plugin.dataloader
+  type: ClassificationData
+- conf: {}
+  id: ''
+  inputs:
+    in1: train_roc.roc_curve
+    in2: test_roc.roc_curve
+    in3: feature_importance.importance_curve
+  type: Output_Collector
+- conf:
+    input:
+    - x2_to_sign.in
+    output:
+    - drop_x2_x3.out
+    subnode_ids:
+    - data_gen
+    subnodes_conf:
+      data_gen:
+        conf:
+          class_sep: 1
+          dtype: float64
+          flip_y: 0.1
+          hypercube: true
+          n_classes: 2
+          n_clusters_per_class: 2
+          n_features: 10
+          n_informative: 4
+          n_parts: 4
+          n_redundant: 0
+          n_repeated: 0
+          n_samples: 10000
+          order: F
+          random_state: 10
+          scale: 1
+          shift: 0
+          shuffle: true
+    taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+  id: data_generator
+  inputs:
+    x2_to_sign@in: data_gen.cudf_out
+  type: CompositeNode
+- conf:
+    input:
+    - train_norm.df_in
+    - test_norm.df_in
+    output:
+    - train_infer.out
+    - test_infer.out
+    - train_xgboost.model_out
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model.gq.yaml
+  id: xgboost_model
+  inputs:
+    test_norm@df_in: data_splitter.test
+    train_norm@df_in: data_splitter.train
+  type: CompositeNode
+- conf:
+    target: y
+    train_size: 0.8
+  id: data_splitter
+  inputs:
+    in: data_generator.drop_x2_x3@out
+  module: gquant_rapids_plugin.ml
+  type: DataSplittingNode
+- conf:
+    label: y
+    prediction: predict
+  id: train_roc
+  inputs:
+    in: xgboost_model.train_infer@out
+  module: gquant_rapids_plugin.analysis
+  type: RocCurveNode
+- conf:
+    label: y
+    prediction: predict
+  id: test_roc
+  inputs:
+    in: xgboost_model.test_infer@out
+  module: gquant_rapids_plugin.analysis
+  type: RocCurveNode
+- conf:
+    type: gain
+  id: feature_importance
+  inputs:
+    in: xgboost_model.train_xgboost@model_out
+  module: gquant_rapids_plugin.analysis
+  type: ImportanceCurveNode

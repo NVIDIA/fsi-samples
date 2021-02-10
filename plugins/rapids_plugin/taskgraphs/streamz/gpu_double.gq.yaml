@@ -1,0 +1,55 @@
+- conf: {}
+  id: source
+  inputs: {}
+  module: streamz
+  type: StreamNode
+- conf: {}
+  id: ''
+  inputs:
+    in1: source.stream_out
+    in2: plot.fig_out
+    in3: print.stream_out
+  type: Output_Collector
+- conf:
+    window: 50
+  id: slide_window
+  inputs:
+    stream_in: source.stream_out
+  module: streamz
+  type: SlideWindowNode
+- conf: {}
+  id: plot
+  inputs:
+    stream_in: to_stream.stream_out
+  module: streamz
+  type: PlotSinkNode
+- conf: {}
+  id: convert
+  inputs:
+    stream_in: slide_window.stream_out
+  module: streamz
+  type: TupleToCudf
+- conf: {}
+  id: to_dataframe
+  inputs:
+    stream_in: convert.stream_out
+  module: streamz
+  type: ToDataFrame
+- conf: {}
+  id: to_stream
+  inputs:
+    df_in: double_in_gpu.df_out
+  module: streamz
+  type: ToStream
+- conf: {}
+  id: double_in_gpu
+  inputs:
+    df_in: to_dataframe.df_out
+  module: streamz
+  type: GPUDouble
+- conf: {}
+  id: print
+  inputs:
+    stream_in: to_stream.stream_out
+  module: streamz
+  type: SinkNode

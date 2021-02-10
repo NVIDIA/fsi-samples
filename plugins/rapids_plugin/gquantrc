@@ -1,0 +1,2 @@
+[ModuleFiles]
+my_node= %(MODULEPATH)s/my_node.py

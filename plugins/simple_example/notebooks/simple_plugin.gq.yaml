@@ -1,0 +1,18 @@
+- id: points
+  type: PointNode
+  conf:
+    npts: 20
+  inputs: {}
+  module: custom_nodes
+- id: compute_distance
+  type: DistanceNode
+  conf: {}
+  inputs:
+    points_df_in: points.points_df_out
+  module: custom_nodes
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: compute_distance.distance_df
+    in2: compute_distance.distance_abs_df
