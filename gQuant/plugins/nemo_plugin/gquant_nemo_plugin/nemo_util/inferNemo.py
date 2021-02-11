@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from gquant.dataframe_flow import Node
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
+from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
 
 from nemo.core.neural_types import NmTensor
 import nemo

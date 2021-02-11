@@ -16,7 +16,7 @@ from dask.distributed import Client
 # from distributed import Client
 
 from mortgage_common import (
-    mortgage_etl_workflow_def, generate_mortgage_gquant_run_params_list,
+    mortgage_etl_workflow_def, generate_mortgage_greenflow_run_params_list,
     MortgageTaskNames)
 
 
@@ -35,7 +35,7 @@ def main():
 
     # Importing here in case RMM is used later on. Must start client prior
     # to importing cudf stuff if using RMM.
-    from gquant.dataframe_flow import (TaskSpecSchema, TaskGraph)
+    from greenflow.dataframe_flow import (TaskSpecSchema, TaskGraph)
 
     # workers_names = \
     #     [iw['name'] for iw in client.scheduler_info()['workers'].values()]
@@ -55,7 +55,7 @@ def main():
     # mortgage_etl_workflow_def(
     #     csvfile_names, csvfile_acqdata, csvfile_perfdata)
 
-    gquant_task_spec_list = mortgage_etl_workflow_def()
+    greenflow_task_spec_list = mortgage_etl_workflow_def()
 
     start_year = 2000
     end_year = 2001  # end_year is inclusive
@@ -78,12 +78,12 @@ def main():
     # Clean up intermediate dataframes in the xgboost training task.
     delete_dataframes = True
 
-    mortgage_run_params_dict_list = generate_mortgage_gquant_run_params_list(
+    mortgage_run_params_dict_list = generate_mortgage_greenflow_run_params_list(
         mortgage_data_path, start_year, end_year, part_count,
-        gquant_task_spec_list)
+        greenflow_task_spec_list)
 
     _basedir = os.path.dirname(__file__)
-    mortgage_lib_module = os.path.join(_basedir, 'mortgage_gquant_plugins.py')
+    mortgage_lib_module = os.path.join(_basedir, 'mortgage_greenflow_plugins.py')
 
     filter_dask_logger = False
 

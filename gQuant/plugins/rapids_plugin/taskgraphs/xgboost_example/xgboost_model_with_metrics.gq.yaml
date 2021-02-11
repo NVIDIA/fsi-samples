@@ -17,7 +17,7 @@
     shuffle: true
   id: data_gen
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: ClassificationData
 - conf: {}
   id: ''
@@ -63,7 +63,7 @@
   id: data_splitter
   inputs:
     in: data_generator.drop_x2_x3@out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: DataSplittingNode
 - conf:
     columns:
@@ -76,7 +76,7 @@
   id: train_norm
   inputs:
     df_in: data_splitter.train
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: NormalizationNode
 - conf:
     include: true
@@ -84,7 +84,7 @@
   inputs:
     df_in: data_splitter.test
     norm_data_in: train_norm.norm_data_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: NormalizationNode
 - conf:
     columns:
@@ -113,7 +113,7 @@
   id: train_xgboost
   inputs:
     in: train_norm.df_out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: TrainXGBoostNode
 - conf:
     prediction: predict
@@ -121,7 +121,7 @@
   inputs:
     data_in: train_norm.df_out
     model_in: train_xgboost.model_out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: InferXGBoostNode
 - conf:
     prediction: predict
@@ -129,7 +129,7 @@
   inputs:
     data_in: test_norm.df_out
     model_in: train_xgboost.model_out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: InferXGBoostNode
 - conf:
     label: y
@@ -137,7 +137,7 @@
   id: train_roc
   inputs:
     in: train_infer.out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: RocCurveNode
 - conf:
     label: y
@@ -145,5 +145,5 @@
   id: test_roc
   inputs:
     in: test_infer.out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: RocCurveNode

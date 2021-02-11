@@ -5,8 +5,8 @@ __pycache__
 dask-worker-space/
 dist/
 build/
-gquant.egg-info/
+greenflow.egg-info/
 *.swp
 docker/Dockerfile.Rapids
-docker/gQuant
+docker/greenflow
 node_modules

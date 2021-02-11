@@ -3,7 +3,7 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: CsvStockLoader
 - conf: {}
   id: ''
@@ -213,7 +213,7 @@
   id: pos_neg_return
   inputs:
     in: stock_feature.technical_indicator@stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AddSignIndicatorNode
 - conf:
     columns:
@@ -228,7 +228,7 @@
   id: drop_col
   inputs:
     in: pos_neg_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DropNode
 - conf:
     target: sign
@@ -236,7 +236,7 @@
   id: split_data
   inputs:
     in: drop_col.out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: DataSplittingNode
 - conf:
     train_norm:
@@ -281,7 +281,7 @@
   id: train_roc
   inputs:
     in: xgboost_model.train_infer@out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: RocCurveNode
 - conf:
     label: sign
@@ -289,12 +289,12 @@
   id: test_roc
   inputs:
     in: xgboost_model.test_infer@out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: RocCurveNode
 - conf:
     type: gain
   id: feature_importance
   inputs:
     in: xgboost_model.train_xgboost@model_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: ImportanceCurveNode

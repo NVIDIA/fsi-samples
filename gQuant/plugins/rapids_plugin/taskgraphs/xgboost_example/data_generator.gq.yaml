@@ -17,7 +17,7 @@
     shuffle: true
   id: data_gen
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: ClassificationData
 - conf: {}
   id: ''
@@ -30,7 +30,7 @@
   id: x2_to_sign
   inputs:
     in: data_gen.cudf_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AddSignIndicatorNode
 - conf:
     column: x3
@@ -38,7 +38,7 @@
   id: x3_to_sign
   inputs:
     in: x2_to_sign.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AddSignIndicatorNode
 - conf:
     columns:
@@ -49,7 +49,7 @@
   id: drop_x2_x3
   inputs:
     in: one_hot_encoding.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DropNode
 - conf:
   - cats:
@@ -69,5 +69,5 @@
   id: one_hot_encoding
   inputs:
     in: x3_to_sign.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: OneHotEncodingNode

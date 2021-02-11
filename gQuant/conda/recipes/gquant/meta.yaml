@@ -8,7 +8,7 @@
 {% set py_version=environ.get('CONDA_PY', 36) %}
 {% set py_version=environ.get('RAPIDS_VERSION', '0.10') %}
 package:
-  name: gquant
+  name: greenflow
   version: {{ version }}
 
 source:
@@ -35,12 +35,12 @@ requirements:
 
 test:
   imports:
-    - gquant
-    - gquant.dataframe_flow
+    - greenflow
+    - greenflow.dataframe_flow
 
 
 about:
   home: http://rapids.ai/
   license: Apache-2.0
   license_file: ../../../LICENSE
-  summary: gquant library
+  summary: greenflow library

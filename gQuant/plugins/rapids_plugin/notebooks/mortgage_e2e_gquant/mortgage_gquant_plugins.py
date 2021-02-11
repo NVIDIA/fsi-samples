@@ -4,7 +4,7 @@ import sys
 from collections import OrderedDict
 import re
 import numpy as np
-from gquant.dataframe_flow import Node
+from greenflow.dataframe_flow import Node
 
 import logging
 
@@ -55,7 +55,7 @@ _CONFIGLOG = True
 
 
 class MortgagePluginsLoggerMgr(object):
-    '''Logger manager for gQuant mortgage plugins.
+    '''Logger manager for greenflow mortgage plugins.
 
     When using this log manager to hijack dask distributed.worker logger
     (worker is not None), must first initialize worker loggers via:
@@ -156,7 +156,7 @@ def convert(name):
 
 
 class CsvMortgageAcquisitionDataLoader(Node):
-    '''gQuant task/node to read in a mortgage acquisition CSV file into a cudf
+    '''greenflow task/node to read in a mortgage acquisition CSV file into a cudf
     dataframe. Configuration requirements:
         'conf': {
             'csvfile_names': path to mortgage seller names csv datafile
@@ -257,7 +257,7 @@ class CsvMortgageAcquisitionDataLoader(Node):
 
 
 class CsvMortgagePerformanceDataLoader(Node):
-    '''gQuant task/node to read in a mortgage performance CSV file into a cudf
+    '''greenflow task/node to read in a mortgage performance CSV file into a cudf
     dataframe. Configuration requirements:
         'conf': {
             'csvfile_perfdata': path to mortgage performance csv datafile
@@ -342,7 +342,7 @@ class CsvMortgagePerformanceDataLoader(Node):
 
 
 class CreateEverFeatures(Node):
-    '''gQuant task/node to calculate delinquecy status period features.
+    '''greenflow task/node to calculate delinquecy status period features.
     Refer to meta_setup method for the columns produced.
     '''
     def meta_setup(self):
@@ -376,7 +376,7 @@ class CreateEverFeatures(Node):
 
 
 class CreateDelinqFeatures(Node):
-    '''gQuant task/node to calculate delinquecy features.
+    '''greenflow task/node to calculate delinquecy features.
     Refer to meta_setup method for the columns produced.
     '''
     def meta_setup(self):
@@ -439,7 +439,7 @@ class CreateDelinqFeatures(Node):
 
 
 class JoinPerfEverDelinqFeatures(Node):
-    '''gQuant task/node to merge delinquecy features. Merges dataframes
+    '''greenflow task/node to merge delinquecy features. Merges dataframes
     produced by CreateEverFeatures and CreateDelinqFeatures.
     Refer to meta_setup method for the columns produced.
     '''
@@ -532,7 +532,7 @@ class JoinPerfEverDelinqFeatures(Node):
 
 
 class Create12MonFeatures(Node):
-    '''gQuant task/node to calculate delinquecy feature over 12 months.
+    '''greenflow task/node to calculate delinquecy feature over 12 months.
     Refer to meta_setup method for the columns produced.
     '''
     def meta_setup(self):
@@ -769,26 +769,26 @@ class JoinFinalPerfAcqClean(Node):
         return perf_acq_df
 
 
-def mortgage_gquant_run(run_params_dict):
+def mortgage_greenflow_run(run_params_dict):
     '''Using dataframe-flow runs the tasks/workflow specified in the
     run_params_dict. Expected run_params_dict ex:
         run_params_dict = {
             'replace_spec': replace_spec,
-            'task_spec_list': gquant_task_spec_list,
+            'task_spec_list': greenflow_task_spec_list,
             'out_list': out_list
         }
 
-    gquant_task_spec_list - Mortgage ETL workflow list of task-specs. Refer to
+    greenflow_task_spec_list - Mortgage ETL workflow list of task-specs. Refer to
         module mortgage_common function mortgage_etl_workflow_def.
 
     out_list - Expected to specify one output which should be the final
         dataframe produced by the mortgage ETL workflow.
 
-    :param run_params_dict: Dictionary with parameters and gquant task list to
+    :param run_params_dict: Dictionary with parameters and greenflow task list to
         run mortgage workflow.
 
     '''
-    from gquant.dataframe_flow import TaskGraph
+    from greenflow.dataframe_flow import TaskGraph
 
     task_spec_list = run_params_dict['task_spec_list']
     out_list = run_params_dict['out_list']
@@ -821,12 +821,12 @@ def print_ram_usage(worker_name='', logger=None):
 
 
 def mortgage_workflow_runner(mortgage_run_params_dict_list):
-    '''Runs the mortgage_gquant_run for each entry in the
+    '''Runs the mortgage_greenflow_run for each entry in the
     mortgage_run_params_dict_list. Each entry is a run_params_dict.
     Expected run_params_dict:
         run_params_dict = {
             'replace_spec': replace_spec,
-            'task_spec_list': gquant_task_spec_list,
+            'task_spec_list': greenflow_task_spec_list,
             'out_list': out_list
         }
 
@@ -867,7 +867,7 @@ def mortgage_workflow_runner(mortgage_run_params_dict_list):
         # performance_path = run_params_dict['csvfile_perfdata']
         # logger.info(worker_name + 'LOADING: {}'.format(performance_path))
 
-        final_perf_acq_gdf = mortgage_gquant_run(run_params_dict)
+        final_perf_acq_gdf = mortgage_greenflow_run(run_params_dict)
 
         # CONCATENATE DATAFRAMES AS THEY ARE CALCULATED
 
@@ -932,7 +932,7 @@ def mortgage_workflow_runner(mortgage_run_params_dict_list):
 
 
 class MortgageWorkflowRunner(Node):
-    '''Runs the mortgage gquant workflow and returns the mortgage features
+    '''Runs the mortgage greenflow workflow and returns the mortgage features
     dataframe and mortgage delinquency dataframe. These can be passed on
     to xgboost for training.
 
@@ -943,7 +943,7 @@ class MortgageWorkflowRunner(Node):
 
         mortgage_run_param_dict = {
             'replace_spec': replace_spec,
-            'task_spec_list': gquant_task_spec_list,
+            'task_spec_list': greenflow_task_spec_list,
             'out_list': out_list
         }
 
@@ -1073,7 +1073,7 @@ class XgbMortgageTrainer(Node):
 
 # RMM - RAPIDS Memory Manager.
 # IMPORTANT!!! IF USING RMM START CLIENT prior to any cudf imports and that
-# means prior to any gQuant imports, 3rd party libs with cudf, etc.
+# means prior to any greenflow imports, 3rd party libs with cudf, etc.
 # This is needed if distributing workflows to workers.
 
 def initialize_rmm_pool():
@@ -1119,7 +1119,7 @@ def print_distributed_dask_hijacked_logs(wlogs, logger, filters=None):
 
 
 class DaskMortgageWorkflowRunner(Node):
-    '''Runs the mortgage gquant workflow and returns the mortgage features
+    '''Runs the mortgage greenflow workflow and returns the mortgage features
     dataframe and mortgage delinquency dataframe. These can be passed on
     to xgboost for training.
 
@@ -1137,7 +1137,7 @@ class DaskMortgageWorkflowRunner(Node):
     Format of expected mortgage run params:
         mortgage_run_param_dict = {
             'replace_spec': replace_spec,
-            'task_spec_list': gquant_task_spec_list,
+            'task_spec_list': greenflow_task_spec_list,
             'out_list': out_list
         }
 

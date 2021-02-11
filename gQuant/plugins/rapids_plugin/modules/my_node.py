@@ -1,5 +1,5 @@
-import gquant
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema
+import greenflow
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 import json
 
 data = """{
@@ -26,7 +26,7 @@ data = """{
 """
 
 
-class CustXGBoostNode(gquant.plugin_nodes.util.CompositeNode):
+class CustXGBoostNode(greenflow.plugin_nodes.util.CompositeNode):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # modify the self.conf to the one that this Composite node wants

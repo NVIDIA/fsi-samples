@@ -1,11 +1,11 @@
-from gquant.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from gquant.dataframe_flow.portsSpecSchema import NodePorts, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
+from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
 
 from nemo.core.neural_types import NmTensor
 import inspect
-from gquant.plugin_nodes.util.json_util import type_map
+from greenflow.plugin_nodes.util.json_util import type_map
 from collections import OrderedDict
-from gquant.dataframe_flow.util import get_file_path
+from greenflow.dataframe_flow.util import get_file_path
 from nemo.backends.pytorch.nm import (DataLayerNM,
                                       TrainableNM, LossNM)
 import nemo

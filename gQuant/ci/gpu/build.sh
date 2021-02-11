@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2020, NVIDIA CORPORATION.
 ###########################################
-# gQuant GPU build and test script for CI #
+# greenflow GPU build and test script for CI #
 ###########################################
 set -e
 NUMARGS=$#
@@ -56,22 +56,22 @@ conda config --show-sources
 conda list --show-channel-urls
 
 ################################################################################
-# BUILD - Build gQuant
+# BUILD - Build greenflow
 ################################################################################
 
-gpuci_logger "Build gQuant"
+gpuci_logger "Build greenflow"
 cd $WORKSPACE
 python -m pip install -e .
 
 
 ################################################################################
-# TEST - Run py.tests for gQuant
+# TEST - Run py.tests for greenflow
 ################################################################################
 
 if hasArg --skip-tests; then
     gpuci_logger "Skipping Tests"
 else
-    gpuci_logger "Python py.test for gQuant"
+    gpuci_logger "Python py.test for greenflow"
     cd $WORKSPACE
-    py.test -vs --cache-clear --junitxml=${WORKSPACE}/junit-gquant.xml --cov-config=.coveragerc --cov=gquant --cov-report=xml:${WORKSPACE}/gquant-coverage.xml --cov-report term tests/
+    py.test -vs --cache-clear --junitxml=${WORKSPACE}/junit-greenflow.xml --cov-config=.coveragerc --cov=greenflow --cov-report=xml:${WORKSPACE}/greenflow-coverage.xml --cov-report term tests/
 fi

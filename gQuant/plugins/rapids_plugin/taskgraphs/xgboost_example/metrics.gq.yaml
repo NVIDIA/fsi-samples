@@ -17,7 +17,7 @@
     shuffle: true
   id: data_gen
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: ClassificationData
 - conf: {}
   id: ''
@@ -79,7 +79,7 @@
   id: data_splitter
   inputs:
     in: data_generator.drop_x2_x3@out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: DataSplittingNode
 - conf:
     label: y
@@ -87,7 +87,7 @@
   id: train_roc
   inputs:
     in: xgboost_model.train_infer@out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: RocCurveNode
 - conf:
     label: y
@@ -95,12 +95,12 @@
   id: test_roc
   inputs:
     in: xgboost_model.test_infer@out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: RocCurveNode
 - conf:
     type: gain
   id: feature_importance
   inputs:
     in: xgboost_model.train_xgboost@model_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: ImportanceCurveNode

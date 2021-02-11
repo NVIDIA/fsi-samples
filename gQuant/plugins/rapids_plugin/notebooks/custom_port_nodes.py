@@ -5,9 +5,9 @@ import cupy
 import cudf
 import dask_cudf
 import dask
-from gquant.dataframe_flow import Node, MetaData
-from gquant.dataframe_flow import NodePorts, PortsSpecSchema
-from gquant.dataframe_flow import ConfSchema
+from greenflow.dataframe_flow import Node, MetaData
+from greenflow.dataframe_flow import NodePorts, PortsSpecSchema
+from greenflow.dataframe_flow import ConfSchema
 import copy
 
 

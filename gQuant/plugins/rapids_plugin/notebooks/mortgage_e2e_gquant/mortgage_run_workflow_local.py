@@ -2,11 +2,11 @@
 '''
 import os
 
-from gquant.dataframe_flow import (TaskSpecSchema, TaskGraph)
+from greenflow.dataframe_flow import (TaskSpecSchema, TaskGraph)
 
 
 from mortgage_common import (
-    mortgage_etl_workflow_def, generate_mortgage_gquant_run_params_list,
+    mortgage_etl_workflow_def, generate_mortgage_greenflow_run_params_list,
     MortgageTaskNames)
 
 
@@ -26,7 +26,7 @@ def main():
     # mortgage_etl_workflow_def(
     #     csvfile_names, csvfile_acqdata, csvfile_perfdata)
 
-    gquant_task_spec_list = mortgage_etl_workflow_def()
+    greenflow_task_spec_list = mortgage_etl_workflow_def()
 
     start_year = 2000
     end_year = 2001  # end_year is inclusive
@@ -35,12 +35,12 @@ def main():
     part_count = 12  # the number of data files to train against
     # part_count = 4  # the number of data files to train against
 
-    mortgage_run_params_dict_list = generate_mortgage_gquant_run_params_list(
+    mortgage_run_params_dict_list = generate_mortgage_greenflow_run_params_list(
         mortgage_data_path, start_year, end_year, part_count,
-        gquant_task_spec_list)
+        greenflow_task_spec_list)
 
     _basedir = os.path.dirname(__file__)
-    mortgage_lib_module = os.path.join(_basedir, 'mortgage_gquant_plugins.py')
+    mortgage_lib_module = os.path.join(_basedir, 'mortgage_greenflow_plugins.py')
 
     mortgage_workflow_runner_task = {
         TaskSpecSchema.task_id:

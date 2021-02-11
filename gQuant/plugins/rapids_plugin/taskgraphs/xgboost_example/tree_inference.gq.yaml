@@ -17,7 +17,7 @@
     shuffle: true
   id: data_gen
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: ClassificationData
 - conf: {}
   id: ''
@@ -83,14 +83,14 @@
   id: data_splitter
   inputs:
     in: data_generator.drop_x2_x3@out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: DataSplittingNode
 - conf:
     path: xgboost_model_file
   id: model_export
   inputs:
     model_in: xgboost_model.train_xgboost@model_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: XGBoostExportNode
 - conf:
     columns:
@@ -102,23 +102,23 @@
   inputs:
     data_in: xgboost_model.test_norm@df_out
     model_file: model_export.filename
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: ForestInferenceNode
 - conf: {}
   id: test_data
   inputs:
     in: xgboost_model.test_norm@df_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DaskComputeNode
 - conf: {}
   id: test_infer
   inputs:
     in: tree_inference.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DaskComputeNode
 - conf: {}
   id: xgboost_infer
   inputs:
     in: xgboost_model.test_infer@out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DaskComputeNode

@@ -41,15 +41,15 @@ fi
 ################################################################################
 
 gpuci_logger "Get conda file output locations"
-export GQAUNT_FILE=`conda build conda/recipes/gquant --python=$PYTHON --output`
+export GQAUNT_FILE=`conda build conda/recipes/greenflow --python=$PYTHON --output`
 
 ################################################################################
 # UPLOAD - Conda packages
 ################################################################################
 
-if [ "$UPLOAD_GQUANT" == "1" ]; then
+if [ "$UPLOAD_GREENFLOW" == "1" ]; then
   test -e ${GQAUNT_FILE}
-  echo "Upload gquant"
+  echo "Upload greenflow"
   echo ${GQAUNT_FILE}
   gpuci_retry anaconda -t ${MY_UPLOAD_KEY} upload -u ${CONDA_USERNAME:-rapidsai} ${LABEL_OPTION} --force ${GQAUNT_FILE}
 fi

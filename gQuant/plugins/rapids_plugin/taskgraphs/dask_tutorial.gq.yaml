@@ -3,7 +3,7 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: CsvStockLoader
 - conf:
     keys:
@@ -12,7 +12,7 @@
   id: sort_node
   inputs:
     in: stock_data.dask_cudf_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: SortNode
 - conf: {}
   id: ''
@@ -24,12 +24,12 @@
   id: average_volume
   inputs:
     stock_in: sort_node.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AverageNode
 - conf:
     path: notebooks/dask_average_volume.csv
   id: output_csv
   inputs:
     df_in: average_volume.stock_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: OutCsvNode

@@ -1,4 +1,4 @@
-from gquant.dataframe_flow import Node
+from greenflow.dataframe_flow import Node
 from .nemoBaseNode import NeMoBase
 import nemo
 import nemo.collections.cv

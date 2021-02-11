@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Copyright (c) 2020, NVIDIA CORPORATION.
 ################################################################################
-# gQuant cpu build
+# greenflow cpu build
 ################################################################################
 set -e
 
@@ -55,7 +55,7 @@ conda config --set ssl_verify False
 # BUILD - Conda package build
 ################################################################################
 
-gpuci_conda_retry build conda/recipes/gquant --python=${PYTHON}
+gpuci_conda_retry build conda/recipes/greenflow --python=${PYTHON}
 
 ################################################################################
 # UPLOAD - Conda package

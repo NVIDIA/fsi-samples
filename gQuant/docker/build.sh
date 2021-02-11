@@ -6,7 +6,7 @@ USERID=$(id -u)
 USERGID=$(id -g)
 
 D_FILE=${D_FILE:='Dockerfile.dev'}
-echo "Building gQuant container..."
+echo "Building greenflow container..."
 
 echo -e "\nPlease, select your operating system:\n" \
     "- '1' for Ubuntu 16.04\n" \
@@ -66,45 +66,45 @@ read -p "Enable dev model [y/n]:" DEV_MODE
 case $DEV_MODE in
     y)
 	echo "Dev mode"
-    read -r -d '' INSTALL_GQUANT<< EOM
-## copy gquantlab extension
-ADD --chown=$USERID:$USERGID ./gQuant /home/quant/gQuant
-WORKDIR /home/quant/gQuant
+    read -r -d '' INSTALL_GREENFLOW<< EOM
+## copy greenflowlab extension
+ADD --chown=$USERID:$USERGID ./greenflow /home/quant/greenflow
+WORKDIR /home/quant/greenflow
 EOM
     MODE_STR="dev"
 	;;
     *)
 	echo "Production mode"
-    read -r -d '' INSTALL_GQUANT<< EOM
-## install gquantlab extension
-ADD --chown=$USERID:$USERGID ./gQuant /home/quant/gQuant
+    read -r -d '' INSTALL_GREENFLOW<< EOM
+## install greenflowlab extension
+ADD --chown=$USERID:$USERGID ./greenflow /home/quant/greenflow
 RUN pip install .
-WORKDIR /home/quant/gQuant/gquantlab
+WORKDIR /home/quant/greenflow/greenflowlab
 RUN pip install .
 RUN jupyter lab build
-WORKDIR /home/quant/gQuant
-ENTRYPOINT MODULEPATH=\$HOME/gQuant/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+WORKDIR /home/quant/greenflow
+ENTRYPOINT MODULEPATH=\$HOME/greenflow/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 EOM
     MODE_STR="prod"
 	;;
 esac
 
-mkdir -p gQuant
-cp -r ../gquant ./gQuant
-cp -r ../modules ./gQuant
-cp -r ../taskgraphs ./gQuant
-cp ../setup.cfg ./gQuant
-cp ../setup.py ./gQuant
-cp ../LICENSE ./gQuant
-cp ../download_data.sh ./gQuant
-cp ../gquantrc ./gQuant
-cp ../README.md ./gQuant
-rsync -av --progress ../notebooks ./gQuant --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
-rsync -av --progress ../gquantlab ./gQuant --exclude node_modules 
+mkdir -p greenflow
+cp -r ../greenflow ./greenflow
+cp -r ../modules ./greenflow
+cp -r ../taskgraphs ./greenflow
+cp ../setup.cfg ./greenflow
+cp ../setup.py ./greenflow
+cp ../LICENSE ./greenflow
+cp ../download_data.sh ./greenflow
+cp ../greenflowrc ./greenflow
+cp ../README.md ./greenflow
+rsync -av --progress ../notebooks ./greenflow --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
+rsync -av --progress ../greenflowlab ./greenflow --exclude node_modules 
 
-gquant_ver=$(grep version gQuant/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
+greenflow_ver=$(grep version greenflow/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
 CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
-D_CONT=${D_CONT:="gquant/gquant:${gquant_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
+D_CONT=${D_CONT:="greenflow/greenflow:${greenflow_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
 
 
 gen_nemo_patches
@@ -134,7 +134,7 @@ ARG USER_GID=$USERGID
 # Create the user
 RUN groupadd --gid \$USER_GID \$USERNAME     && useradd --uid \$USER_UID --gid \$USER_GID -m \$USERNAME     && apt-get update     && apt-get install -y sudo     && echo \$USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/\$USERNAME     && chmod 0440 /etc/sudoers.d/\$USERNAME
 
-############ here is done for user gquant #########
+############ here is done for user greenflow #########
 USER \$USERNAME
 
 ENV PATH="/home/quant/miniconda3/bin:\${PATH}"
@@ -186,13 +186,13 @@ RUN git apply nemo.patch && \
 RUN conda install -y ruamel.yaml
 RUN conda install -c conda-forge -y cloudpickle
 
-RUN mkdir -p /home/quant/gQuant
-WORKDIR /home/quant/gQuant
+RUN mkdir -p /home/quant/greenflow
+WORKDIR /home/quant/greenflow
 
 RUN pip install streamz && \
     pip uninstall -y dataclasses
 
-$INSTALL_GQUANT
+$INSTALL_GREENFLOW
 
 
 EOF

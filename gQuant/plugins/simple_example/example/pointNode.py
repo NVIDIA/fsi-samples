@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from gquant.dataframe_flow import Node, MetaData
-from gquant.dataframe_flow import NodePorts, PortsSpecSchema
-from gquant.dataframe_flow import ConfSchema
+from greenflow.dataframe_flow import Node, MetaData
+from greenflow.dataframe_flow import NodePorts, PortsSpecSchema
+from greenflow.dataframe_flow import ConfSchema
 
 
 class PointNode(Node):

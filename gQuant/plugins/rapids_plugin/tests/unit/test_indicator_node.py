@@ -22,9 +22,9 @@ pytest -v tests/unit/test_indicator_node.py
 import warnings
 import unittest
 import cudf
-import gquant_rapids_plugin.cuindicator as gi
-from gquant_rapids_plugin.transform.indicatorNode import IndicatorNode
-from gquant.dataframe_flow.task import Task
+import greenflow_rapids_plugin.cuindicator as gi
+from greenflow_rapids_plugin.transform.indicatorNode import IndicatorNode
+from greenflow.dataframe_flow.task import Task
 from .utils import make_orderer
 import numpy as np
 import copy

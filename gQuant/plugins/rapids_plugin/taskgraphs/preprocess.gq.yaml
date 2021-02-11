@@ -3,7 +3,7 @@
     path: notebooks/many-small/
   id: stock_data
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: CsvStockLoader
 - conf:
     keys:
@@ -12,26 +12,26 @@
   id: sort_node
   inputs:
     in: stock_data.cudf_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: SortNode
 - conf: {}
   id: add_return_feature
   inputs:
     stock_in: sort_node.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: ReturnFeatureNode
 - conf: {}
   id: find_stock_row
   inputs:
     stock_in: add_return_feature.stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AssetIndicatorNode
 - conf:
     column: volume
   id: average_volume
   inputs:
     stock_in: find_stock_row.stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AverageNode
 - conf:
     new: average_volume
@@ -39,7 +39,7 @@
   id: rename_average_volume
   inputs:
     in: average_volume.stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: RenameNode
 - conf:
     column: asset
@@ -47,14 +47,14 @@
   inputs:
     left: find_stock_row.stock_out
     right: rename_average_volume.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: LeftMergeNode
 - conf:
     column: returns
   id: min_return
   inputs:
     in: find_stock_row.stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: MinNode
 - conf:
     new: min_return
@@ -62,7 +62,7 @@
   id: rename_min_return
   inputs:
     in: min_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: RenameNode
 - conf:
     column: asset
@@ -70,14 +70,14 @@
   inputs:
     left: merge_average_volume.merged
     right: rename_min_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: LeftMergeNode
 - conf:
     column: returns
   id: max_return
   inputs:
     in: find_stock_row.stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: MaxNode
 - conf:
     new: max_return
@@ -85,7 +85,7 @@
   id: rename_max_return
   inputs:
     in: max_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: RenameNode
 - conf:
     column: asset
@@ -93,7 +93,7 @@
   inputs:
     left: merge_min_return.merged
     right: rename_max_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: LeftMergeNode
 - conf: {}
   id: ''
@@ -110,7 +110,7 @@
   id: value_filter
   inputs:
     in: merge_max_return.merged
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: ValueFilterNode
 - conf:
     columns:
@@ -124,5 +124,5 @@
   id: drop_columns
   inputs:
     in: value_filter.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DropNode

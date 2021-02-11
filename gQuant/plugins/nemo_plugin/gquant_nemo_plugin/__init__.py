@@ -1,11 +1,11 @@
 from .client import validation, display  # noqa: #401
-from gquant.dataframe_flow._node_flow import register_cleanup
+from greenflow.dataframe_flow._node_flow import register_cleanup
 
 
 def clean_nemo(ui_clean):
     """
     ui_clean is True if the client send
-    'clean' command to the gQuant backend
+    'clean' command to the greenflow backend
     """
     try:
         import nemo

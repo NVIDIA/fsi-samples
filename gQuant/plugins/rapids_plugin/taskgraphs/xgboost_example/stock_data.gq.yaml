@@ -3,7 +3,7 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: CsvStockLoader
 - conf: {}
   id: ''
@@ -210,7 +210,7 @@
   id: pos_neg_return
   inputs:
     in: stock_feature.technical_indicator@stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AddSignIndicatorNode
 - conf:
     columns:
@@ -225,5 +225,5 @@
   id: drop_col
   inputs:
     in: pos_neg_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DropNode

@@ -3,7 +3,7 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: CsvStockLoader
 - conf:
     input:
@@ -40,25 +40,25 @@
   id: sort_after
   inputs:
     in: preprocess.drop_columns@out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: SortNode
 - conf: {}
   id: backtest
   inputs:
     bardata_in: xgboost.stock_out
-  module: gquant_rapids_plugin.backtest
+  module: greenflow_rapids_plugin.backtest
   type: SimpleBackTestNode
 - conf: {}
   id: portfolio_opt_train
   inputs:
     stock_in: train_df.stock_out
-  module: gquant_rapids_plugin.portofolio
+  module: greenflow_rapids_plugin.portofolio
   type: SimpleAveragePortOpt
 - conf: {}
   id: sharpe_ratio_trn
   inputs:
     stock_in: portfolio_opt_train.stock_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: SharpeRatioNode
 - conf:
     label: training cumulative return
@@ -66,7 +66,7 @@
   id: cumulative_return_trn
   inputs:
     in: portfolio_opt_train.stock_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: CumReturnNode
 - conf: {}
   id: ''
@@ -101,7 +101,7 @@
   id: technical_indicator
   inputs:
     stock_in: sort_after.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: IndicatorNode
 - conf:
     no_feature:
@@ -125,7 +125,7 @@
   id: xgboost
   inputs:
     stock_in: technical_indicator.stock_out
-  module: gquant_rapids_plugin.strategy
+  module: greenflow_rapids_plugin.strategy
   type: XGBoostStrategyNode
 - conf:
     beg: 1985-01-01
@@ -133,7 +133,7 @@
   id: train_df
   inputs:
     stock_in: backtest.backtest_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DatetimeFilterNode
 - conf:
     beg: 2010-01-01
@@ -141,19 +141,19 @@
   id: validation_df
   inputs:
     stock_in: backtest.backtest_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DatetimeFilterNode
 - conf: {}
   id: portfolio_opt_validation
   inputs:
     stock_in: validation_df.stock_out
-  module: gquant_rapids_plugin.portofolio
+  module: greenflow_rapids_plugin.portofolio
   type: SimpleAveragePortOpt
 - conf: {}
   id: sharpe_ratio_val
   inputs:
     stock_in: portfolio_opt_validation.stock_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: SharpeRatioNode
 - conf:
     label: validation cumulative return
@@ -161,5 +161,5 @@
   id: cumulative_return_val
   inputs:
     in: portfolio_opt_validation.stock_out
-  module: gquant_rapids_plugin.analysis
+  module: greenflow_rapids_plugin.analysis
   type: CumReturnNode

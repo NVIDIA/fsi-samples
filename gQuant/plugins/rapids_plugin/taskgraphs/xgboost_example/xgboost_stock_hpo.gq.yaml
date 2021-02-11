@@ -146,14 +146,14 @@
     conf_in: xgboost_model.conf_out
     test_norm@df_in: split_data.test
     train_norm@df_in: split_data.train
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: GridRandomSearchNode
 - conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: gquant_rapids_plugin.dataloader
+  module: greenflow_rapids_plugin.dataloader
   type: CsvStockLoader
 - conf:
     input:
@@ -355,7 +355,7 @@
   id: pos_neg_return
   inputs:
     in: stock_feature.technical_indicator@stock_out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: AddSignIndicatorNode
 - conf:
     columns:
@@ -370,7 +370,7 @@
   id: drop_col
   inputs:
     in: pos_neg_return.out
-  module: gquant_rapids_plugin.transform
+  module: greenflow_rapids_plugin.transform
   type: DropNode
 - conf:
     target: sign
@@ -378,5 +378,5 @@
   id: split_data
   inputs:
     in: drop_col.out
-  module: gquant_rapids_plugin.ml
+  module: greenflow_rapids_plugin.ml
   type: DataSplittingNode

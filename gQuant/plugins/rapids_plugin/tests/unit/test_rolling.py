@@ -22,7 +22,7 @@ pytest -v tests/unit/test_rolling.py
 import pandas as pd
 import unittest
 import cudf
-from gquant_rapids_plugin.cuindicator import Rolling, Ewm
+from greenflow_rapids_plugin.cuindicator import Rolling, Ewm
 from .utils import make_orderer, error_function
 import numpy as np
 

@@ -1,12 +1,12 @@
-from gquant_rapids_plugin.ml import GridRandomSearchNode
-from gquant.plugin_nodes.util.contextCompositeNode import ContextCompositeNode # noqa #E402
-from gquant.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
+from greenflow_rapids_plugin.ml import GridRandomSearchNode
+from greenflow.plugin_nodes.util.contextCompositeNode import ContextCompositeNode # noqa #E402
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
                                                    NodePorts)
-from gquant.dataframe_flow import TaskGraph # noqa #E402
-from gquant.dataframe_flow import Node # noqa #E402
-from gquant.dataframe_flow.util import get_file_path # noqa #E402
-from gquant.dataframe_flow.cache import CACHE_SCHEMA # noqa #E402
-from gquant.dataframe_flow.taskSpecSchema import TaskSpecSchema # noqa #E402
+from greenflow.dataframe_flow import TaskGraph # noqa #E402
+from greenflow.dataframe_flow import Node # noqa #E402
+from greenflow.dataframe_flow.util import get_file_path # noqa #E402
+from greenflow.dataframe_flow.cache import CACHE_SCHEMA # noqa #E402
+from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema # noqa #E402
 import cudf # noqa #E402
 import uuid # noqa #E402
 import pandas # noqa #E402

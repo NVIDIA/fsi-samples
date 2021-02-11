@@ -1,28 +1,28 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='gquant_rapids_plugin',
+    name='greenflow_gquant_plugin',
     install_requires=[
         "bqplot", "tables", "ray[tune]"
     ],
-    packages=find_packages(include=['gquant_rapids_plugin',
-                                    'gquant_rapids_plugin.analysis',
-                                    'gquant_rapids_plugin.backtest',
-                                    'gquant_rapids_plugin.dataloader',
-                                    'gquant_rapids_plugin.ml',
-                                    'gquant_rapids_plugin.portofolio',
-                                    'gquant_rapids_plugin.strategy',
-                                    'gquant_rapids_plugin.cuindicator',
-                                    'gquant_rapids_plugin.transform']),
+    packages=find_packages(include=['greenflow_gquant_plugin',
+                                    'greenflow_gquant_plugin.analysis',
+                                    'greenflow_gquant_plugin.backtest',
+                                    'greenflow_gquant_plugin.dataloader',
+                                    'greenflow_gquant_plugin.ml',
+                                    'greenflow_gquant_plugin.portofolio',
+                                    'greenflow_gquant_plugin.strategy',
+                                    'greenflow_gquant_plugin.cuindicator',
+                                    'greenflow_gquant_plugin.transform']),
     entry_points={
-        'gquant.plugin':
-        ['gquant_rapids_plugin = gquant_rapids_plugin',
-         'gquant_rapids_plugin.analysis = gquant_rapids_plugin.analysis',
-         'gquant_rapids_plugin.backtest = gquant_rapids_plugin.backtest',
-         'gquant_rapids_plugin.dataloader = gquant_rapids_plugin.dataloader',
-         'gquant_rapids_plugin.ml = gquant_rapids_plugin.ml',
-         'gquant_rapids_plugin.portofolio = gquant_rapids_plugin.portofolio',
-         'gquant_rapids_plugin.strategy = gquant_rapids_plugin.strategy',
-         'gquant_rapids_plugin.transform = gquant_rapids_plugin.transform'],
+        'greenflow.plugin':
+        ['greenflow_gquant_plugin = greenflow_gquant_plugin',
+         'greenflow_gquant_plugin.analysis = greenflow_gquant_plugin.analysis',
+         'greenflow_gquant_plugin.backtest = greenflow_gquant_plugin.backtest',
+         'greenflow_gquant_plugin.dataloader = greenflow_gquant_plugin.dataloader',
+         'greenflow_gquant_plugin.ml = greenflow_gquant_plugin.ml',
+         'greenflow_gquant_plugin.portofolio = greenflow_gquant_plugin.portofolio',
+         'greenflow_gquant_plugin.strategy = greenflow_gquant_plugin.strategy',
+         'greenflow_gquant_plugin.transform = greenflow_gquant_plugin.transform'],
     }
 )
