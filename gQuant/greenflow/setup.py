@@ -19,7 +19,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     author='NVIDIA Corporation',
-    url='https://github.com/rapidsai/greenflow',
+    url='https://github.com/NVIDIA/fsi-samples/tree/main/greenflow',
     packages=find_packages(include=['greenflow', 'greenflow.*']),
     install_requires=install_requires,
     license="Apache",

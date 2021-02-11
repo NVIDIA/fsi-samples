@@ -38,7 +38,7 @@ data_files_spec = [
     ("share/jupyter/labextensions/%s" % labext_name, lab_path, "**"),
     ("share/jupyter/labextensions/%s" % labext_name, HERE, "install.json"),("etc/jupyter/jupyter_server_config.d",
      "jupyter-config", "greenflowlab.json"),
-     
+
 ]
 
 cmdclass = create_cmdclass("jsdeps",
@@ -63,7 +63,7 @@ with open("README.md", "r") as fh:
 setup_args = dict(
     name=name,
     version=version,
-    url="https://github.com/rapidsai/greenflow.git",
+    url="https://github.com/NVIDIA/fsi-samples/tree/main/greenflowlab",
     author="{'name': 'Yi Dong', 'email': 'doyend@gmail.com'}",
     description="greenflow Jupyterlab extension",
     long_description= long_description,
