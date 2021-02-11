@@ -91,7 +91,6 @@ esac
 
 mkdir -p gQuant
 cp -r ../gquant ./gQuant
-cp -r ../task_example ./gQuant
 cp -r ../modules ./gQuant
 cp -r ../taskgraphs ./gQuant
 cp ../setup.cfg ./gQuant
