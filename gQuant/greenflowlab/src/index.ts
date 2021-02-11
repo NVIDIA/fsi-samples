@@ -42,7 +42,7 @@ import {
   IWidgetTracker,
   WidgetTracker
 } from '@jupyterlab/apputils';
-import { GquantWidget, GquantFactory, IAllNodes } from './document';
+import { GreenflowWidget, GreenflowFactory, IAllNodes } from './document';
 import { Menu, Widget } from '@lumino/widgets';
 import { IJupyterWidgetRegistry } from '@jupyter-widgets/base';
 import { INotebookTracker } from '@jupyterlab/notebook';
@@ -76,7 +76,7 @@ import { registerDisplay } from './showType';
 
 export const FACTORY = 'GREENFLOWLAB';
 
-type IGREENFLOWTracker = IWidgetTracker<GquantWidget>;
+type IGREENFLOWTracker = IWidgetTracker<GreenflowWidget>;
 
 export const gqIcon = new LabIcon({ name: 'greenflowlab:gq', svgstr: gqStr });
 
@@ -175,42 +175,42 @@ export async function setupContextMenu(
 ): Promise<Menu> {
   contextMenu.addItem({
     command: COMMAND_OPEN_EDITOR,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: 'docmanager:save',
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: 'filebrowser:download',
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_CONVERT_CELL_TO_FILE,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_OPEN_NEW_FILE,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_INCLUDE_NEW_FILE,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_RELAYOUT,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     type: 'separator',
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   const addNodeMenu = new Menu({ commands });
@@ -279,32 +279,32 @@ export async function setupContextMenu(
   contextMenu.addItem({
     type: 'submenu',
     submenu: addNodeMenu,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     type: 'separator',
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_EXECUTE,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_CLEAN,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     command: COMMAND_ADD_OUTPUT_COLLECTOR,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   contextMenu.addItem({
     type: 'separator',
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   const submenu = new Menu({ commands });
@@ -321,7 +321,7 @@ export async function setupContextMenu(
   contextMenu.addItem({
     type: 'submenu',
     submenu: submenu,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 
   const plugins = requestAPI<any>('register_plugins');
@@ -376,7 +376,7 @@ async function activateFun(
   launcher: ILauncher | null
 ): Promise<void> {
   const namespace = 'greenflow';
-  const factory = new GquantFactory({
+  const factory = new GreenflowFactory({
     name: FACTORY,
     fileTypes: ['gq.yaml'],
     defaultFor: ['gq.yaml'],
@@ -464,7 +464,7 @@ async function activateFun(
     }
   });
   const { commands } = app;
-  const tracker = new WidgetTracker<GquantWidget>({ namespace });
+  const tracker = new WidgetTracker<GreenflowWidget>({ namespace });
 
   function getMainView(): MainView {
     const currentWidget = app.shell.currentWidget;
@@ -521,7 +521,7 @@ async function activateFun(
   /**
    * Whether there is an active graph editor
    */
-  function isGquantVisible(): boolean {
+  function isGreenflowVisible(): boolean {
     const greenflowVisible =
       tracker.currentWidget !== null &&
       tracker.currentWidget === app.shell.currentWidget;
@@ -562,7 +562,7 @@ async function activateFun(
     getMainView,
     browserFactory,
     isCellVisible,
-    isGquantVisible,
+    isGreenflowVisible,
     notebookTracker
   );
 
@@ -598,13 +598,13 @@ async function activateFun(
     });
     palette.addItem({
       command: COMMAND_RELAYOUT,
-      category: 'GquantLab',
+      category: 'GreenflowLab',
       args: args
     });
     [0.3, 0.5, 0.7, 1.0].forEach(d => {
       palette.addItem({
         command: COMMAND_CHANGE_ASPECT_RATIO,
-        category: 'GquantLab',
+        category: 'GreenflowLab',
         args: { aspect: d }
       });
     });
@@ -615,17 +615,17 @@ async function activateFun(
     });
     palette.addItem({
       command: COMMAND_CONVERT_CELL_TO_FILE,
-      category: 'GquantLab',
+      category: 'GreenflowLab',
       args: args
     });
     palette.addItem({
       command: COMMAND_CLEAN,
-      category: 'GquantLab',
+      category: 'GreenflowLab',
       args: args
     });
     palette.addItem({
       command: COMMAND_EXECUTE,
-      category: 'GquantLab',
+      category: 'GreenflowLab',
       args: args
     });
   }
@@ -633,12 +633,12 @@ async function activateFun(
   app.commands.addKeyBinding({
     command: COMMAND_RELAYOUT,
     keys: ['Alt A'],
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
   app.commands.addKeyBinding({
     command: COMMAND_ADD_OUTPUT_COLLECTOR,
     keys: ['Alt O'],
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
   //add key board shortcuts
   app.commands.addKeyBinding({
@@ -686,7 +686,7 @@ async function activateFun(
 
   app.contextMenu.addItem({
     command: COMMAND_OPEN_NEW_NOTEBOOK,
-    selector: '.jp-GQuant'
+    selector: '.jp-Greenflow'
   });
 }
 
@@ -696,8 +696,8 @@ function activateWidget(
   jupyterWidgetRegistry: IJupyterWidgetRegistry
 ): void {
   // passing the commands registry
-  widgetExports.GQuantView.apps = app;
-  widgetExports.GQuantView.browserFactory = browserFactory;
+  widgetExports.GreenflowView.apps = app;
+  widgetExports.GreenflowView.browserFactory = browserFactory;
   jupyterWidgetRegistry.registerWidget({
     name: MODULE_NAME,
     version: MODULE_VERSION,

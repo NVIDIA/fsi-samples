@@ -855,7 +855,7 @@ def mortgage_workflow_runner(mortgage_run_params_dict_list):
     worker_name = ''
     if worker is not None:
         worker_name = 'WORKER {} '.format(worker.name)
-        logger.info(worker_name + 'RUNNING MORTGAGE gQUANT DataframeFlow')
+        logger.info(worker_name + 'RUNNING MORTGAGE Greenflow DataframeFlow')
         logger.info(worker_name + 'NCCL_P2P_DISABLE: {}'.format(
             os.environ.get('NCCL_P2P_DISABLE')))
         logger.info(worker_name + 'CUDA_VISIBLE_DEVICES: {}'.format(

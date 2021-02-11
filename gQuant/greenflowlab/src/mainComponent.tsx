@@ -95,7 +95,7 @@ export class MainView extends ReactWidget {
   constructor(contentHandler: ContentHandler) {
     super();
     this._contentHandler = contentHandler;
-    this.addClass('jp-GQuant');
+    this.addClass('jp-Greenflow');
     this.firstTimeReSize = false;
   }
 

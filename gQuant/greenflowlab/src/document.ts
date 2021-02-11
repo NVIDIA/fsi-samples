@@ -244,7 +244,7 @@ export interface IAllNodes {
   [key: string]: INode[];
 }
 
-export class GquantWidget extends DocumentWidget<MainAreaWidget<MainView>> {
+export class GreenflowWidget extends DocumentWidget<MainAreaWidget<MainView>> {
   constructor(options: DocumentWidget.IOptions<MainAreaWidget<MainView>>) {
     super({ ...options });
     this.context = options['context'];
@@ -262,8 +262,8 @@ export class GquantWidget extends DocumentWidget<MainAreaWidget<MainView>> {
 /**
  * A widget factory for drawio.
  */
-export class GquantFactory extends ABCWidgetFactory<
-  GquantWidget,
+export class GreenflowFactory extends ABCWidgetFactory<
+  GreenflowWidget,
   DocumentRegistry.IModel
 > {
   /**
@@ -273,11 +273,11 @@ export class GquantFactory extends ABCWidgetFactory<
     super(options);
   }
 
-  protected createNewWidget(context: DocumentRegistry.Context): GquantWidget {
+  protected createNewWidget(context: DocumentRegistry.Context): GreenflowWidget {
     const contentHandler = new ContentHandler(context);
     const mainView = new MainView(contentHandler);
     const widget = new MainAreaWidget<MainView>({ content: mainView });
     widget.toolbar.hide();
-    return new GquantWidget({ context, content: widget });
+    return new GreenflowWidget({ context, content: widget });
   }
 }

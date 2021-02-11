@@ -12,13 +12,13 @@ from traitlets import Unicode, List, Dict, Instance
 from ._frontend import module_name, module_version
 
 
-class GQuantWidget(DOMWidget):
+class GreenflowWidget(DOMWidget):
     """TODO: Add docstring here
     """
-    _model_name = Unicode('GQuantModel').tag(sync=True)
+    _model_name = Unicode('GreenflowModel').tag(sync=True)
     _model_module = Unicode(module_name).tag(sync=True)
     _model_module_version = Unicode(module_version).tag(sync=True)
-    _view_name = Unicode('GQuantView').tag(sync=True)
+    _view_name = Unicode('GreenflowView').tag(sync=True)
     _view_module = Unicode(module_name).tag(sync=True)
     _view_module_version = Unicode(module_version).tag(sync=True)
 

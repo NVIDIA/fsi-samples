@@ -167,7 +167,7 @@ export class ChartEngine extends React.Component<IProps, IState> {
       inputs.width ? inputs.width : DefaultWidth,
       inputs.height ? inputs.height : DefaultHeight
     );
-    // if the cache is empty and the height/width are determined, populate it so it can be shared between GquantViews
+    // if the cache is empty and the height/width are determined, populate it so it can be shared between GreenflowViews
     if (
       this.props.contentHandler.privateCopy &&
       this.props.contentHandler.privateCopy.get('cache') &&

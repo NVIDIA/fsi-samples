@@ -27,7 +27,7 @@ import { ContextMenuSvg } from '@jupyterlab/ui-components';
 import { setupContextMenu } from '.';
 import { Cell } from '@jupyterlab/cells';
 
-export class GQuantModel extends DOMWidgetModel {
+export class GreenflowModel extends DOMWidgetModel {
   static serializers = {
     ...DOMWidgetModel.serializers,
     sub: { deserialize: widgets.unpack_models }
@@ -36,27 +36,27 @@ export class GQuantModel extends DOMWidgetModel {
   defaults(): any {
     return {
       ...super.defaults(),
-      _model_name: GQuantModel.model_name,
-      _model_module: GQuantModel.model_module,
-      _model_module_version: GQuantModel.model_module_version,
-      _view_name: GQuantModel.view_name,
-      _view_module: GQuantModel.view_module,
-      _view_module_version: GQuantModel.view_module_version,
+      _model_name: GreenflowModel.model_name,
+      _model_module: GreenflowModel.model_module,
+      _model_module_version: GreenflowModel.model_module_version,
+      _view_name: GreenflowModel.view_name,
+      _view_module: GreenflowModel.view_module,
+      _view_module_version: GreenflowModel.view_module_version,
       value: [],
       cache: { nodes: [], edges: [] },
       sub: null
     };
   }
 
-  static model_name = 'GQuantModel';
+  static model_name = 'GreenflowModel';
   static model_module = MODULE_NAME;
   static model_module_version = MODULE_VERSION;
-  static view_name = 'GQuantView'; // Set to null if no view
+  static view_name = 'GreenflowView'; // Set to null if no view
   static view_module = MODULE_NAME; // Set to null if no view
   static view_module_version = MODULE_VERSION;
 }
 
-export class GQuantView extends DOMWidgetView {
+export class GreenflowView extends DOMWidgetView {
   static apps: JupyterFrontEnd = null;
   static browserFactory: IFileBrowserFactory = null;
   private _contentHandler: ContentHandler;
@@ -123,9 +123,9 @@ export class GQuantView extends DOMWidgetView {
     setupToolBarCommands(
       commands,
       this._contentHandler,
-      GQuantView.browserFactory,
-      GQuantView.apps.commands,
-      GQuantView.apps
+      GreenflowView.browserFactory,
+      GreenflowView.apps.commands,
+      GreenflowView.apps
     );
     this.addCommands(commands, toolBar);
     this.createContexMenu();
@@ -212,19 +212,19 @@ export class GQuantView extends DOMWidgetView {
   }
 
   createContexMenu(): void {
-    const commands = GQuantView.apps.commands;
+    const commands = GreenflowView.apps.commands;
     const contextMenu = new ContextMenuSvg({ commands });
     setupContextMenu(contextMenu, commands, null);
     const createOuputView = 'notebook:create-output-view';
 
     contextMenu.addItem({
       type: 'separator',
-      selector: '.jp-GQuant'
+      selector: '.jp-Greenflow'
     });
 
     contextMenu.addItem({
       command: createOuputView,
-      selector: '.jp-GQuant'
+      selector: '.jp-Greenflow'
     });
 
     this.pWidget.node.addEventListener('contextmenu', (event: MouseEvent) => {

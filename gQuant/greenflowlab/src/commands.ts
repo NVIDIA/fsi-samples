@@ -66,7 +66,7 @@ export function setupCommands(
   getMainView: Function,
   browserFactory: IFileBrowserFactory,
   isCellVisible: any,
-  isGquantVisible: any,
+  isGreenflowVisible: any,
   notebookTracker: INotebookTracker
 ): void {
   // eslint-disable-next-line @typescript-eslint/explicit-function-return-type
@@ -127,7 +127,7 @@ export function setupCommands(
    * Whether there is an active graph editor
    */
   function isVisible(): boolean {
-    return isGquantVisible() || isCellVisible();
+    return isGreenflowVisible() || isCellVisible();
   }
 
   const convertToGQFile = async (cwd: string): Promise<void> => {
@@ -343,7 +343,7 @@ class ${args['nodeName']}(greenflow.plugin_nodes.util.CompositeNode):
           if (isCellVisible()) {
             const mainView = getMainView() as MainView;
             mainView.contentHandler.includeContent.emit(workflows);
-          } else if (isGquantVisible()) {
+          } else if (isGreenflowVisible()) {
             const mainView = app.shell.currentWidget as any;
             mainView.contentHandler.includeContent.emit(workflows);
           }
@@ -461,7 +461,7 @@ class ${args['nodeName']}(greenflow.plugin_nodes.util.CompositeNode):
           mainView.contentHandler.privateCopy.get('value')
         );
       }
-      if (isGquantVisible()) {
+      if (isGreenflowVisible()) {
         mainView = app.shell.currentWidget as any;
         objStr = JSON.stringify(
           jsyaml.safeLoad(mainView.contentHandler.context.model.toString()),
@@ -486,7 +486,7 @@ taskGraph.draw()`;
       return createNewNotebook(input1, input2, input3);
       // Execute the statement
     },
-    isVisible: isGquantVisible
+    isVisible: isGreenflowVisible
   });
 
   commands.addCommand(COMMAND_ADD_NODE, {
@@ -598,7 +598,7 @@ taskGraph.draw()`;
           mainView.contentHandler.nodeAddedSignal.emit(output);
         }
       }
-      if (isGquantVisible()) {
+      if (isGreenflowVisible()) {
         const wdg = app.shell.currentWidget as any;
         wdg.contentHandler.nodeAddedSignal.emit(output);
       }

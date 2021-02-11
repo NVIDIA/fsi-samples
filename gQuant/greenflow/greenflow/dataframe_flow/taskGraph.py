@@ -220,7 +220,7 @@ class TaskGraph(object):
     @staticmethod
     def register_lab_node(module_name, class_obj):
         """
-        Register the node class for the GQuantlab. It put the class_obj
+        Register the node class for the Greenflowlab. It put the class_obj
         into a sys.modules with `module_name`. It will register the node
         class into the Jupyterlab kernel space, communicate with the
          client to populate the add nodes menus, sync up with
@@ -658,8 +658,8 @@ class TaskGraph(object):
 
     def get_widget(self):
         if self.__widget is None:
-            from greenflowlab.greenflowmodel import GQuantWidget
-            widget = GQuantWidget()
+            from greenflowlab.greenflowmodel import GreenflowWidget
+            widget = GreenflowWidget()
             widget.value = self.export_task_speclist()
             widget.set_taskgraph(self)
             self.__widget = widget

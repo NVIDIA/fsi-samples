@@ -26,8 +26,8 @@ export class EditorView extends ReactWidget {
   constructor(contentHandler: ContentHandler) {
     super();
     this._contentHandler = contentHandler;
-    this.id = 'jp-Gquant-NodeEditor';
-    this.addClass('jp-GQuant-first');
+    this.id = 'jp-Greenflow-NodeEditor';
+    this.addClass('jp-Greenflow-first');
   }
 
   protected render(): React.ReactElement<any> {
