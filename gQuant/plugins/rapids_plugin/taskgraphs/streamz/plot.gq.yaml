@@ -1,0 +1,30 @@
+- conf: {}
+  id: source
+  inputs: {}
+  module: streamz
+  type: StreamNode
+- conf: {}
+  id: double
+  inputs:
+    stream_in: source.stream_out
+  module: streamz
+  type: TransformNode
+- conf: {}
+  id: ''
+  inputs:
+    in1: source.stream_out
+    in2: plot.fig_out
+  type: Output_Collector
+- conf:
+    window: 50
+  id: slide_window
+  inputs:
+    stream_in: double.stream_out
+  module: streamz
+  type: SlideWindowNode
+- conf: {}
+  id: plot
+  inputs:
+    stream_in: slide_window.stream_out
+  module: streamz
+  type: PlotSinkNode

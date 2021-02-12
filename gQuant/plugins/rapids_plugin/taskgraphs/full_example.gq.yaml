@@ -1,0 +1,65 @@
+- conf:
+    npartitions: 4
+    npts: 80
+  id: points_task
+  inputs: {}
+  type: PointNode
+- conf: {}
+  id: numba
+  inputs:
+    points_df_in: points_task.points_df_out
+  type: NumbaDistanceNode
+- conf: {}
+  id: cupy
+  inputs:
+    points_df_in: points_task.points_df_out
+  type: CupyDistanceNode
+- conf:
+    df1_col: distance_numba
+    df2_col: distance_cupy
+  id: verify
+  inputs:
+    df1: numba.distance_df
+    df2: cupy.distance_df
+  type: VerifyNode
+- conf: {}
+  id: cudf
+  inputs:
+    points_df_in: points_task.points_df_out
+  type: DistanceNode
+- conf:
+    df1_col: distance_cupy
+    df2_col: distance_cudf
+  id: verify2
+  inputs:
+    df1: cupy.distance_df
+    df2: cudf.distance_df
+  type: VerifyNode
+- conf: {}
+  id: dask_cudf
+  inputs:
+    points_df_in: points_task.points_ddf_out
+  module: custom_port_nodes
+  type: DistanceNode
+- conf:
+    df1_col: distance_cudf
+    df2_col: distance_numba
+  id: verify_dask
+  inputs:
+    df1: dask_cudf.distance_df
+    df2: dask_numba.distance_df
+  module: custom_port_nodes
+  type: VerifyNode
+- conf:
+    npartitions: 4
+  id: distributed_data
+  inputs:
+    points_df_in: points_task.points_df_out
+  module: custom_port_nodes
+  type: DistributedNode
+- conf: {}
+  id: dask_numba
+  inputs:
+    points_df_in: distributed_data.points_ddf_out
+  module: custom_port_nodes
+  type: NumbaDistanceNode
