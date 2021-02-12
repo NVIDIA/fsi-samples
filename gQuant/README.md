@@ -1,17 +1,11 @@
-# greenflow - Graph Computation Tool
-
-**NOTE:** For the latest stable [README.md](https://github.com/rapidsai/greenflow/blob/main/README.md) ensure you are on the `main` branch.
+# Greenflow Plugins for FSI Examples
 
 
 ## What's Inside This Repo
 
-There are a few projects inside this repo:
-
-1. [greenflow](greenflow) -  A graph computation toolkit that helps you to organize the workflows in graph computation.
-2. [greenflowlab](greenflowlab) - A JupyterLab plugin that provides the UI interface for `greenflow`.
-3. [plugins](plugins) - A few greenflow plugins with example notebooks. 
+. [plugins](plugins) - A few greenflow plugins with example notebooks. 
     1. [simple_example](plugins/simple_example) - A simple external plugin example for greenflow.
-    2. [rapids_plugin](plugins/rapids_plugin) - An external plugin with a set of nodes for quantitative analyst tasks, built on top of the [RAPIDS AI](https://rapids.ai/) project, [Numba](https://numba.pydata.org/), and [Dask](https://dask.org/).
+    2. [gquant_plugin](plugins/gQuant_plugin) - An external plugin with a set of nodes for quantitative analyst tasks, built on top of the [RAPIDS AI](https://rapids.ai/) project, [Numba](https://numba.pydata.org/), and [Dask](https://dask.org/).
     3. [nemo_plugin](plugins/nemo_plugin) - An external plugin with a set of nodes that wraps the [NeMo library](https://github.com/NVIDIA/NeMo) . 
 
 These projects are all released as independent Python projects with their own `setup.py` files. 
