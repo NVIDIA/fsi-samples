@@ -9,7 +9,7 @@
     name: data
   inputs: {}
   module: nemo_modules
-module: gquant_nemo_plugin.tutorials
+module: greenflow_nemo_plugin.tutorials
 - id: train
   type: NemoTrainNode
   conf:
@@ -45,7 +45,7 @@ module: gquant_nemo_plugin.tutorials
       name: sgd
   inputs:
     network@loss@loss: network.loss@loss
-  module: gquant_nemo_plugin.util
+  module: greenflow_nemo_plugin.util
 - id: ""
   type: Output_Collector
   conf: {}
@@ -80,4 +80,4 @@ module: gquant_nemo_plugin.tutorials
   inputs:
     net@x: data.x
     loss@target: data.y
-  module: gquant_nemo_plugin.util
+  module: greenflow_nemo_plugin.util

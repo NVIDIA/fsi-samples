@@ -7,9 +7,9 @@ modulespath = '{}/modules'.format(file_.resolve().parents[1])
 sys.path.insert(1, modulespath)
 
 from nemo.backends.pytorch.nm import NeuralModule
-from nemo_gquant_modules.nemoBaseNode import FeedProperty
+from nemo_greenflow_modules.nemoBaseNode import FeedProperty
 
-TEMPLATE = """from gquant.dataframe_flow import Node
+TEMPLATE = """from greenflow.dataframe_flow import Node
 from .nemoBaseNode import NeMoBase
 import nemo
 import {}
@@ -78,7 +78,7 @@ def gen_module_file(module, overwrite=None):
         module_name = overwrite
     else:
         module_name = module.__name__.split('.')[-1]
-    with open('../modules/nemo_gquant_modules/' + module_name + '.py', 'w') as f:
+    with open('../modules/nemo_greenflow_modules/' + module_name + '.py', 'w') as f:
         f.write(file_str)
 
 

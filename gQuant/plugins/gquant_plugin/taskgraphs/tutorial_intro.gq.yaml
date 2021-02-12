@@ -1,0 +1,80 @@
+- conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+  id: stock_data
+  inputs: {}
+  module: greenflow_gquant_plugin.dataloader
+  type: CsvStockLoader
+- conf: {}
+  id: ''
+  inputs:
+    in1: csv_output2.df_out
+    in2: csv_output1.df_out
+  module: rapids_modules
+  type: Output_Collector
+- conf:
+    input:
+    - volume_filter.in
+    output:
+    - add_return_feature.stock_out
+    subnode_ids:
+    - volume_filter
+    subnodes_conf:
+      volume_filter:
+        conf:
+        - column: volume
+          min: 100
+    taskgraph: taskgraphs/get_return_feature.gq.yaml
+  id: get_return
+  inputs:
+    volume_filter@in: stock_data.cudf_out
+  type: CompositeNode
+- conf:
+    column: volume
+  id: average_volume
+  inputs:
+    stock_in: get_return.add_return_feature@stock_out
+  module: greenflow_gquant_plugin.transform
+  type: AverageNode
+- conf:
+    column: returns
+  id: average_return
+  inputs:
+    stock_in: get_return.add_return_feature@stock_out
+  module: greenflow_gquant_plugin.transform
+  type: AverageNode
+- conf:
+    file: notebooks/data/security_master.csv.gz
+  id: stock_name
+  inputs: {}
+  module: greenflow_gquant_plugin.dataloader
+  type: StockNameLoader
+- conf:
+    column: asset
+  id: left_merge1
+  inputs:
+    left: average_volume.stock_out
+    right: stock_name.stock_name
+  module: greenflow_gquant_plugin.transform
+  type: LeftMergeNode
+- conf:
+    column: asset
+  id: left_merge2
+  inputs:
+    left: average_return.stock_out
+    right: stock_name.stock_name
+  module: greenflow_gquant_plugin.transform
+  type: LeftMergeNode
+- conf:
+    path: notebooks/average_return.csv
+  id: csv_output1
+  inputs:
+    df_in: left_merge2.merged
+  module: greenflow_gquant_plugin.analysis
+  type: OutCsvNode
+- conf:
+    path: notebooks/average_volume.csv
+  id: csv_output2
+  inputs:
+    df_in: left_merge1.merged
+  module: greenflow_gquant_plugin.analysis
+  type: OutCsvNode

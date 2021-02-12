@@ -1,32 +1,32 @@
 ## Simple External Plugin Example
 
-This is a simple example to show how to write an external gQuant plugin. gQuant take advantage of the `entry point` inside the `setup.py` file to register the plugin. gQuant can discover all the plugins that has the entry point group name `gquant.plugin`. Check the `setup.py` file to see details.
+This is a simple example to show how to write an external greenflow plugin. greenflow take advantage of the `entry point` inside the `setup.py` file to register the plugin. greenflow can discover all the plugins that has the entry point group name `greenflow.plugin`. Check the `setup.py` file to see details.
 
 ### Create an new Python enviroment
 ```bash
 conda create -n test python=3.8
 ```
 
-### Install the gQuant 
-To install the gQuant graph computation library, run:
+### Install the greenflow 
+To install the greenflow graph computation library, run:
 ```bash
-pip install gquant
+pip install greenflow
 ```
-Or install `gquant` at the gquant directory:
+Or install `greenflow` at the greenflow directory:
 ```bash
 pip install .
 ```
 
-### Install the gquantlab JupyterLab plugin
-To install `gquantlab` JupyterLab plugin, make sure `nodejs` of version [12^14^15] is installed. E.g:
+### Install the greenflowlab JupyterLab plugin
+To install `greenflowlab` JupyterLab plugin, make sure `nodejs` of version [12^14^15] is installed. E.g:
 ```bash
 conda install -c conda-forge nodejs=12.4.0
 ```
-Then install the `gquantlab`:
+Then install the `greenflowlab`:
 ```bash
-pip install gquantlab
+pip install greenflowlab
 ```
-Or install `gquantlab` at the gquantlab directory:
+Or install `greenflowlab` at the greenflowlab directory:
 ```bash
 pip install .
 ```

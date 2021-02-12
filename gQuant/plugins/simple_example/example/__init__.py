@@ -3,8 +3,8 @@ from .pointNode import PointNode
 import pandas as pd
 import numpy as np
 from .client import validation, display  # noqa: F40
-from gquant.dataframe_flow._node_flow import register_validator
-from gquant.dataframe_flow._node_flow import register_copy_function
+from greenflow.dataframe_flow._node_flow import register_validator
+from greenflow.dataframe_flow._node_flow import register_copy_function
 
 
 def _validate_df(df_to_val, ref_cols, obj):

@@ -1,0 +1,211 @@
+- conf:
+    class_sep: 1
+    dtype: float64
+    flip_y: 0.01
+    hypercube: true
+    n_classes: 2
+    n_clusters_per_class: 2
+    n_features: 10
+    n_informative: 4
+    n_parts: 4
+    n_redundant: 0
+    n_repeated: 0
+    n_samples: 10000
+    order: F
+    scale: 1
+    shift: 0
+    shuffle: true
+  id: data_gen
+  inputs: {}
+  module: greenflow_gquant_plugin.dataloader
+  type: ClassificationData
+- conf: {}
+  id: ''
+  inputs:
+    in1: xgboost_model.train_roc@roc_curve
+    in2: xgboost_model.test_roc@roc_curve
+    in3: hpo.conf_out
+    in4: hpo.train_roc@roc_curve
+    in5: hpo.test_roc@roc_curve
+  type: Output_Collector
+- conf:
+    input:
+    - x2_to_sign.in
+    output:
+    - drop_x2_x3.out
+    subnode_ids:
+    - data_gen
+    subnodes_conf:
+      data_gen:
+        conf:
+          class_sep: 1
+          dtype: float64
+          flip_y: 0.1
+          hypercube: true
+          n_classes: 2
+          n_clusters_per_class: 2
+          n_features: 10
+          n_informative: 4
+          n_parts: 4
+          n_redundant: 0
+          n_repeated: 0
+          n_samples: 10000
+          order: F
+          random_state: 10
+          scale: 1
+          shift: 0
+          shuffle: true
+    taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+  id: data_generator
+  inputs:
+    x2_to_sign@in: data_gen.cudf_out
+  type: CompositeNode
+- conf:
+    target: y
+    train_size: 0.8
+  id: data_splitter
+  inputs:
+    in: data_generator.drop_x2_x3@out
+  module: greenflow_gquant_plugin.ml
+  type: DataSplittingNode
+- conf:
+    context:
+      depth:
+        map:
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.xgboost_parameters.max_depth
+        type: number
+        value: 1
+      eta:
+        map:
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.xgboost_parameters.eta
+        type: number
+        value: 0.1
+      features:
+        map:
+        - node_id: train_norm
+          xpath: train_norm.conf.columns
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.columns
+        type: array_string
+        value:
+        - y
+      inclusive:
+        map:
+        - node_id: train_norm
+          xpath: train_norm.conf.include
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.include
+        type: boolean
+        value: false
+      target:
+        map:
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.target
+        - node_id: train_roc
+          xpath: train_roc.conf.label
+        - node_id: test_roc
+          xpath: test_roc.conf.label
+        type: string
+        value: y
+    input:
+    - train_norm.df_in
+    - test_norm.df_in
+    output:
+    - train_infer.out
+    - test_infer.out
+    - train_roc.roc_curve
+    - test_roc.roc_curve
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model_with_metrics.gq.yaml
+  id: xgboost_model
+  inputs:
+    test_norm@df_in: data_splitter.test
+    train_norm@df_in: data_splitter.train
+  type: ContextCompositeNode
+- conf:
+    best:
+      metric: test_roc.value
+      mode: max
+    context:
+      depth:
+        map:
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.xgboost_parameters.max_depth
+        type: number
+        value: 3
+      eta:
+        map:
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.xgboost_parameters.eta
+        type: number
+        value: 0.2719547419145216
+      features:
+        map:
+        - node_id: train_norm
+          xpath: train_norm.conf.columns
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.columns
+        type: array_string
+        value:
+        - y
+      inclusive:
+        map:
+        - node_id: train_norm
+          xpath: train_norm.conf.include
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.include
+        type: boolean
+        value: false
+      target:
+        map:
+        - node_id: train_xgboost
+          xpath: train_xgboost.conf.target
+        - node_id: train_roc
+          xpath: train_roc.conf.label
+        - node_id: test_roc
+          xpath: test_roc.conf.label
+        type: string
+        value: y
+    input:
+    - train_norm.df_in
+    - test_norm.df_in
+    metrics:
+    - train_roc.value
+    - test_roc.value
+    output:
+    - train_infer.out
+    - test_infer.out
+    - train_roc.roc_curve
+    - test_roc.roc_curve
+    parameters:
+    - name: depth
+      search:
+        args:
+        - 1
+        - 3
+        - 5
+        function: grid_search
+    - name: eta
+      search:
+        args:
+        - 0.1
+        - 0.8
+        function: uniform
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model_with_metrics.gq.yaml
+    tune:
+      local_dir: ./ray
+      name: exp
+      num_samples: 1
+      resources_per_trial:
+        cpu: 1
+        gpu: 1
+  id: hpo
+  inputs:
+    conf_in: xgboost_model.conf_out
+    test_norm@df_in: data_splitter.test
+    train_norm@df_in: data_splitter.train
+  module: greenflow_gquant_plugin.ml
+  type: GridRandomSearchNode

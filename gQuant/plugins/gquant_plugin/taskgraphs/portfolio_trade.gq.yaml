@@ -1,0 +1,78 @@
+- conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  id: stock_data
+  inputs: {}
+  module: greenflow_gquant_plugin.dataloader
+  type: CsvStockLoader
+- conf:
+    input:
+    - sort_node.in
+    output:
+    - drop_columns.out
+    subnode_ids:
+    - value_filter
+    subnodes_conf:
+      value_filter:
+        conf:
+        - column: min_return
+          min: -10
+        - column: max_return
+          max: 10
+        - column: average_volume
+          min: 400
+    taskgraph: taskgraphs/preprocess.gq.yaml
+  id: preprocess
+  inputs:
+    sort_node@in: stock_data.cudf_out
+  type: CompositeNode
+- conf:
+    keys:
+    - asset
+    - datetime
+  id: sort_after
+  inputs:
+    in: preprocess.drop_columns@out
+  module: greenflow_gquant_plugin.transform
+  type: SortNode
+- conf:
+    fast: 5
+    slow: 20
+  id: exp_mean_reversion
+  inputs:
+    stock_in: sort_after.out
+  module: greenflow_gquant_plugin.strategy
+  type: PortExpMovingAverageStrategyNode
+- conf: {}
+  id: backtest
+  inputs:
+    bardata_in: exp_mean_reversion.stock_out
+  module: greenflow_gquant_plugin.backtest
+  type: SimpleBackTestNode
+- conf: {}
+  id: portfolio_opt
+  inputs:
+    stock_in: backtest.backtest_out
+  module: greenflow_gquant_plugin.portofolio
+  type: SimpleAveragePortOpt
+- conf: {}
+  id: sharpe_ratio
+  inputs:
+    stock_in: portfolio_opt.stock_out
+  module: greenflow_gquant_plugin.analysis
+  type: SharpeRatioNode
+- conf:
+    label: cumulative return
+    points: 300
+  id: cumulative_return
+  inputs:
+    in: portfolio_opt.stock_out
+  module: greenflow_gquant_plugin.analysis
+  type: CumReturnNode
+- conf: {}
+  id: ''
+  inputs:
+    in1: cumulative_return.cum_return
+    in2: sharpe_ratio.sharpe_out
+  module: rapids_modules
+  type: Output_Collector

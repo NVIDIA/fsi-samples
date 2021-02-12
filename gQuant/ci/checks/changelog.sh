@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2020, NVIDIA CORPORATION.
 ###########################
-# gQuant CHANGELOG Tester #
+# greenflow CHANGELOG Tester #
 ###########################
 
 # Checkout main for comparison
