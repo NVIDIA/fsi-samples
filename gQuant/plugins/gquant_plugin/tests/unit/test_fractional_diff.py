@@ -22,7 +22,7 @@ pytest -v tests/unit/test_fractional_diff.py
 import pandas as pd
 import unittest
 import cudf
-from greenflow_rapids_plugin.cuindicator import (fractional_diff,
+from greenflow_gquant_plugin.cuindicator import (fractional_diff,
                                               get_weights_floored,
                                               port_fractional_diff)
 import numpy as np

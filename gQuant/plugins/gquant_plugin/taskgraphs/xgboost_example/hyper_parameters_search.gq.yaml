@@ -17,7 +17,7 @@
     shuffle: true
   id: data_gen
   inputs: {}
-  module: greenflow_rapids_plugin.dataloader
+  module: greenflow_gquant_plugin.dataloader
   type: ClassificationData
 - conf: {}
   id: ''
@@ -66,7 +66,7 @@
   id: data_splitter
   inputs:
     in: data_generator.drop_x2_x3@out
-  module: greenflow_rapids_plugin.ml
+  module: greenflow_gquant_plugin.ml
   type: DataSplittingNode
 - conf:
     context:
@@ -207,5 +207,5 @@
     conf_in: xgboost_model.conf_out
     test_norm@df_in: data_splitter.test
     train_norm@df_in: data_splitter.train
-  module: greenflow_rapids_plugin.ml
+  module: greenflow_gquant_plugin.ml
   type: GridRandomSearchNode

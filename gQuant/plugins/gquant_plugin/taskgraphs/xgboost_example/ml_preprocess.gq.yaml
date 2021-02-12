@@ -39,7 +39,7 @@
   id: data_splitter
   inputs:
     in: data_generator.drop_x2_x3@out
-  module: greenflow_rapids_plugin.ml
+  module: greenflow_gquant_plugin.ml
   type: DataSplittingNode
 - conf:
     columns:
@@ -52,7 +52,7 @@
   id: train_norm
   inputs:
     df_in: data_splitter.train
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: NormalizationNode
 - conf:
     include: true
@@ -60,5 +60,5 @@
   inputs:
     df_in: data_splitter.test
     norm_data_in: train_norm.norm_data_out
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: NormalizationNode

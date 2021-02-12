@@ -3,7 +3,7 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: greenflow_rapids_plugin.dataloader
+  module: greenflow_gquant_plugin.dataloader
   type: CsvStockLoader
 - conf:
     input:
@@ -33,7 +33,7 @@
   id: sort_after
   inputs:
     in: preprocess.drop_columns@out
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: SortNode
 - conf:
     fast: 5
@@ -41,25 +41,25 @@
   id: exp_mean_reversion
   inputs:
     stock_in: sort_after.out
-  module: greenflow_rapids_plugin.strategy
+  module: greenflow_gquant_plugin.strategy
   type: PortExpMovingAverageStrategyNode
 - conf: {}
   id: backtest
   inputs:
     bardata_in: exp_mean_reversion.stock_out
-  module: greenflow_rapids_plugin.backtest
+  module: greenflow_gquant_plugin.backtest
   type: SimpleBackTestNode
 - conf: {}
   id: portfolio_opt
   inputs:
     stock_in: backtest.backtest_out
-  module: greenflow_rapids_plugin.portofolio
+  module: greenflow_gquant_plugin.portofolio
   type: SimpleAveragePortOpt
 - conf: {}
   id: sharpe_ratio
   inputs:
     stock_in: portfolio_opt.stock_out
-  module: greenflow_rapids_plugin.analysis
+  module: greenflow_gquant_plugin.analysis
   type: SharpeRatioNode
 - conf:
     label: cumulative return
@@ -67,7 +67,7 @@
   id: cumulative_return
   inputs:
     in: portfolio_opt.stock_out
-  module: greenflow_rapids_plugin.analysis
+  module: greenflow_gquant_plugin.analysis
   type: CumReturnNode
 - conf: {}
   id: ''

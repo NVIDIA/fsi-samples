@@ -2,7 +2,7 @@
     file: notebooks/data/stock_price_hist.csv.gz
   id: stock_data
   inputs: {}
-  module: greenflow_rapids_plugin.dataloader
+  module: greenflow_gquant_plugin.dataloader
   type: CsvStockLoader
 - conf: {}
   id: ''
@@ -33,20 +33,20 @@
   id: average_volume
   inputs:
     stock_in: get_return.add_return_feature@stock_out
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: AverageNode
 - conf:
     column: returns
   id: average_return
   inputs:
     stock_in: get_return.add_return_feature@stock_out
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: AverageNode
 - conf:
     file: notebooks/data/security_master.csv.gz
   id: stock_name
   inputs: {}
-  module: greenflow_rapids_plugin.dataloader
+  module: greenflow_gquant_plugin.dataloader
   type: StockNameLoader
 - conf:
     column: asset
@@ -54,7 +54,7 @@
   inputs:
     left: average_volume.stock_out
     right: stock_name.stock_name
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: LeftMergeNode
 - conf:
     column: asset
@@ -62,19 +62,19 @@
   inputs:
     left: average_return.stock_out
     right: stock_name.stock_name
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: LeftMergeNode
 - conf:
     path: notebooks/average_return.csv
   id: csv_output1
   inputs:
     df_in: left_merge2.merged
-  module: greenflow_rapids_plugin.analysis
+  module: greenflow_gquant_plugin.analysis
   type: OutCsvNode
 - conf:
     path: notebooks/average_volume.csv
   id: csv_output2
   inputs:
     df_in: left_merge1.merged
-  module: greenflow_rapids_plugin.analysis
+  module: greenflow_gquant_plugin.analysis
   type: OutCsvNode

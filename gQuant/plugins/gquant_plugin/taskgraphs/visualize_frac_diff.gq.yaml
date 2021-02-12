@@ -3,14 +3,14 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: greenflow_rapids_plugin.dataloader
+  module: greenflow_gquant_plugin.dataloader
   type: CsvStockLoader
 - conf:
     asset: 22123
   id: asset_filter
   inputs:
     stock_in: xgboost_graph.technical_indicator@stock_out
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: AssetFilterNode
 - conf: {}
   id: ''
@@ -36,7 +36,7 @@
   id: lineplot
   inputs:
     in: asset_filter.stock_out
-  module: greenflow_rapids_plugin.analysis
+  module: greenflow_gquant_plugin.analysis
   type: LinePlotNode
 - conf:
     input:

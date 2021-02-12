@@ -1,4 +1,4 @@
-from greenflow_rapids_plugin.ml import GridRandomSearchNode
+from greenflow_gquant_plugin.ml import GridRandomSearchNode
 from greenflow.plugin_nodes.util.contextCompositeNode import ContextCompositeNode # noqa #E402
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, # noqa #E402
                                                    NodePorts)

@@ -32,7 +32,7 @@ pip install .
 ```
 
 ### Install the external example plugin
-It depends on `greenflow_rapids_plugin` plugin, install it first. Check the README file in `greenflow_rapids_plugin` directory.
+It depends on `greenflow_gquant_plugin` plugin, install it first. Check the README file in `greenflow_gquant_plugin` directory.
 Next install `nemo` library. Currently, it is only compatible with old version of nemo.
 ```
 git clone -b v0.11.1 https://github.com/NVIDIA/NeMo.git

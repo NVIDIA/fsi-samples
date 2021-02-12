@@ -3,7 +3,7 @@
     path: notebooks/many-small
   id: stock_data
   inputs: {}
-  module: greenflow_rapids_plugin.dataloader
+  module: greenflow_gquant_plugin.dataloader
   type: CsvStockLoader
 - conf:
     keys:
@@ -12,7 +12,7 @@
   id: sort_node
   inputs:
     in: stock_data.cudf_out
-  module: greenflow_rapids_plugin.transform
+  module: greenflow_gquant_plugin.transform
   type: SortNode
 - conf: {}
   id: ''

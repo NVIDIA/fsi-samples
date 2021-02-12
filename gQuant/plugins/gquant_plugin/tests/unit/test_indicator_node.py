@@ -22,8 +22,8 @@ pytest -v tests/unit/test_indicator_node.py
 import warnings
 import unittest
 import cudf
-import greenflow_rapids_plugin.cuindicator as gi
-from greenflow_rapids_plugin.transform.indicatorNode import IndicatorNode
+import greenflow_gquant_plugin.cuindicator as gi
+from greenflow_gquant_plugin.transform.indicatorNode import IndicatorNode
 from greenflow.dataframe_flow.task import Task
 from .utils import make_orderer
 import numpy as np

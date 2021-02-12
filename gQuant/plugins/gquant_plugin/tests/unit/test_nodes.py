@@ -22,9 +22,9 @@ pytest -v tests/unit/test_nodes.py
 import warnings
 import unittest
 import cudf
-from greenflow_rapids_plugin.transform import ReturnFeatureNode
-from greenflow_rapids_plugin.transform import IndicatorNode
-from greenflow_rapids_plugin.transform import AssetIndicatorNode
+from greenflow_gquant_plugin.transform import ReturnFeatureNode
+from greenflow_gquant_plugin.transform import IndicatorNode
+from greenflow_gquant_plugin.transform import AssetIndicatorNode
 from greenflow.dataframe_flow.task import Task
 from .utils import make_orderer, error_function_index
 import numpy as np
