@@ -1,11 +1,22 @@
 # Changelog
 
-## [v1.0.2](https://github.com/NVIDIA/fsi-samples/tree/v1.0.2) (2021-02-11)
+## [v1.0.3](https://github.com/NVIDIA/fsi-samples/tree/v1.0.3) (2021-02-13)
+
+[Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.2...v1.0.3)
+
+**Merged pull requests:**
+
+- \[REVIEW\]Change "gquant" to "greenflow" [\#119](https://github.com/NVIDIA/fsi-samples/pull/119) ([yidong72](https://github.com/yidong72))
+
+## [v1.0.2](https://github.com/NVIDIA/fsi-samples/tree/v1.0.2) (2021-02-12)
 
 [Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.1...v1.0.2)
 
 **Merged pull requests:**
 
+- Merge pull request \#116 from rapidsai/develop [\#118](https://github.com/NVIDIA/fsi-samples/pull/118) ([avolkov1](https://github.com/avolkov1))
+- \[REVIEW\]gQuant 1.0.2 [\#117](https://github.com/NVIDIA/fsi-samples/pull/117) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\] update the readme file and version number [\#116](https://github.com/NVIDIA/fsi-samples/pull/116) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\]Upgrade the plugin to JupyterLab 3 [\#114](https://github.com/NVIDIA/fsi-samples/pull/114) ([yidong72](https://github.com/yidong72))
 
 ## [v1.0.1](https://github.com/NVIDIA/fsi-samples/tree/v1.0.1) (2021-01-20)
@@ -14,7 +25,7 @@
 
 **Merged pull requests:**
 
-- \[REVIEW\]greenflow 1.0.1 [\#115](https://github.com/NVIDIA/fsi-samples/pull/115) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\]gquant 1.0.1 [\#115](https://github.com/NVIDIA/fsi-samples/pull/115) ([yidong72](https://github.com/yidong72))
 
 ## [v1.0.0](https://github.com/NVIDIA/fsi-samples/tree/v1.0.0) (2020-12-30)
 
@@ -24,23 +35,23 @@
 
 - \[FEA\]We need Plugin file support [\#106](https://github.com/NVIDIA/fsi-samples/issues/106)
 - \[FEA\]Migrate to the new input/output port API [\#97](https://github.com/NVIDIA/fsi-samples/issues/97)
-- \[FEA\]Add the greenflow Web UI [\#95](https://github.com/NVIDIA/fsi-samples/issues/95)
+- \[FEA\]Add the gQuant Web UI [\#95](https://github.com/NVIDIA/fsi-samples/issues/95)
 - \[DOC\] Add CHANGELOG.md [\#48](https://github.com/NVIDIA/fsi-samples/issues/48)
 
 **Merged pull requests:**
 
-- \[REVIEW\]greenflow plugin implementation [\#112](https://github.com/NVIDIA/fsi-samples/pull/112) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\]gQuant plugin implementation [\#112](https://github.com/NVIDIA/fsi-samples/pull/112) ([yidong72](https://github.com/yidong72))
 - Gpuciscripts clean and update [\#111](https://github.com/NVIDIA/fsi-samples/pull/111) ([msadang](https://github.com/msadang))
-- \[REVIEW\] greenflow 1.0 [\#110](https://github.com/NVIDIA/fsi-samples/pull/110) ([yidong72](https://github.com/yidong72))
-- Streamz greenflow example 2 [\#109](https://github.com/NVIDIA/fsi-samples/pull/109) ([yidong72](https://github.com/yidong72))
-- Revert "Streamz greenflow example" [\#108](https://github.com/NVIDIA/fsi-samples/pull/108) ([yidong72](https://github.com/yidong72))
-- Streamz greenflow example [\#107](https://github.com/NVIDIA/fsi-samples/pull/107) ([yidong72](https://github.com/yidong72))
-- Bump node-fetch from 2.6.0 to 2.6.1 in /greenflowlab [\#104](https://github.com/NVIDIA/fsi-samples/pull/104) ([dependabot[bot]](https://github.com/apps/dependabot))
+- \[REVIEW\] gQuant 1.0 [\#110](https://github.com/NVIDIA/fsi-samples/pull/110) ([yidong72](https://github.com/yidong72))
+- Streamz gQuant example 2 [\#109](https://github.com/NVIDIA/fsi-samples/pull/109) ([yidong72](https://github.com/yidong72))
+- Revert "Streamz gQuant example" [\#108](https://github.com/NVIDIA/fsi-samples/pull/108) ([yidong72](https://github.com/yidong72))
+- Streamz gQuant example [\#107](https://github.com/NVIDIA/fsi-samples/pull/107) ([yidong72](https://github.com/yidong72))
+- Bump node-fetch from 2.6.0 to 2.6.1 in /gquantlab [\#104](https://github.com/NVIDIA/fsi-samples/pull/104) ([dependabot[bot]](https://github.com/apps/dependabot))
 - Nemo and xgboost integration  [\#103](https://github.com/NVIDIA/fsi-samples/pull/103) ([yidong72](https://github.com/yidong72))
 - FIX Update change log check [\#102](https://github.com/NVIDIA/fsi-samples/pull/102) ([mike-wendt](https://github.com/mike-wendt))
 - \[REVIEW\] Update CI scripts to remove references to master \[skip ci\] [\#99](https://github.com/NVIDIA/fsi-samples/pull/99) ([dillon-cullinan](https://github.com/dillon-cullinan))
 - \[skip ci\] Update master references for main branch [\#98](https://github.com/NVIDIA/fsi-samples/pull/98) ([ajschmidt8](https://github.com/ajschmidt8))
-- \[REVIEW\]greenflow UI, first version [\#89](https://github.com/NVIDIA/fsi-samples/pull/89) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\]gQuant UI, first version [\#89](https://github.com/NVIDIA/fsi-samples/pull/89) ([yidong72](https://github.com/yidong72))
 
 ## [0.5](https://github.com/NVIDIA/fsi-samples/tree/0.5) (2020-07-10)
 
@@ -63,7 +74,7 @@
 
 **Merged pull requests:**
 
-- \[REIVEW\]greenflow 0.5 release [\#94](https://github.com/NVIDIA/fsi-samples/pull/94) ([yidong72](https://github.com/yidong72))
+- \[REIVEW\]gQuant 0.5 release [\#94](https://github.com/NVIDIA/fsi-samples/pull/94) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\] Fix mortgage e2e example for rapids 0.14. [\#93](https://github.com/NVIDIA/fsi-samples/pull/93) ([avolkov1](https://github.com/avolkov1))
 - \[REVIEW\] Update RAPIDS to version 0.14 [\#92](https://github.com/NVIDIA/fsi-samples/pull/92) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\]Multiple gpu xgboost - Dask performance fix [\#91](https://github.com/NVIDIA/fsi-samples/pull/91) ([yidong72](https://github.com/yidong72))
@@ -118,6 +129,7 @@
 - \[REVIEW\]upgrade to RAPIDS 0.9 [\#57](https://github.com/NVIDIA/fsi-samples/pull/57) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\] change the text for notebook 05 [\#55](https://github.com/NVIDIA/fsi-samples/pull/55) ([yidong72](https://github.com/yidong72))
 - Fix \#50b - Rename notebook folder to notebooks [\#52](https://github.com/NVIDIA/fsi-samples/pull/52) ([miguelusque](https://github.com/miguelusque))
+- Fix \#50 - Rename notebook folder to notebooks [\#51](https://github.com/NVIDIA/fsi-samples/pull/51) ([miguelusque](https://github.com/miguelusque))
 
 ## [v0.2](https://github.com/NVIDIA/fsi-samples/tree/v0.2) (2019-08-16)
 
@@ -138,7 +150,6 @@
 
 **Merged pull requests:**
 
-- Fix \#50 - Rename notebook folder to notebooks [\#51](https://github.com/NVIDIA/fsi-samples/pull/51) ([miguelusque](https://github.com/miguelusque))
 - Fix \#17 - cuIndicator notebook plot widget is too complicated \(WIP\) [\#45](https://github.com/NVIDIA/fsi-samples/pull/45) ([miguelusque](https://github.com/miguelusque))
 - Fix \#39 - Refactor 04\_portfolio\_trade.ipynb notebook [\#44](https://github.com/NVIDIA/fsi-samples/pull/44) ([miguelusque](https://github.com/miguelusque))
 - Merge develop to master [\#43](https://github.com/NVIDIA/fsi-samples/pull/43) ([yidong72](https://github.com/yidong72))
@@ -155,7 +166,8 @@
 - Fix \#13, \#14, \#16 in cuIndicator.ipynb notebook [\#18](https://github.com/NVIDIA/fsi-samples/pull/18) ([miguelusque](https://github.com/miguelusque))
 - update the build.sh [\#15](https://github.com/NVIDIA/fsi-samples/pull/15) ([yidong72](https://github.com/yidong72))
 - Feature xgb notebook [\#11](https://github.com/NVIDIA/fsi-samples/pull/11) ([yidong72](https://github.com/yidong72))
-- CUQ-5: Mortgage example using greenflow. [\#10](https://github.com/NVIDIA/fsi-samples/pull/10) ([avolkov1](https://github.com/avolkov1))
+- CUQ-5: Mortgage example using gQuant. [\#10](https://github.com/NVIDIA/fsi-samples/pull/10) ([avolkov1](https://github.com/avolkov1))
+- CUQ-5: Mortgage example using  gQuant. [\#9](https://github.com/NVIDIA/fsi-samples/pull/9) ([avolkov1](https://github.com/avolkov1))
 - Feature indicator node [\#8](https://github.com/NVIDIA/fsi-samples/pull/8) ([yidong72](https://github.com/yidong72))
 - Feature mulit assets indicator [\#7](https://github.com/NVIDIA/fsi-samples/pull/7) ([yidong72](https://github.com/yidong72))
 - Update build.sh [\#6](https://github.com/NVIDIA/fsi-samples/pull/6) ([phogan-nvidia](https://github.com/phogan-nvidia))
@@ -178,12 +190,11 @@
 
 **Merged pull requests:**
 
-- Revert "greenflow34 - Update build.sh to make use of RAPIDS v0.8 container" [\#33](https://github.com/NVIDIA/fsi-samples/pull/33) ([yidong72](https://github.com/yidong72))
-- greenflow34 - Update build.sh to make use of RAPIDS v0.8 container [\#12](https://github.com/NVIDIA/fsi-samples/pull/12) ([miguelusque](https://github.com/miguelusque))
-- CUQ-5: Mortgage example using  greenflow. [\#9](https://github.com/NVIDIA/fsi-samples/pull/9) ([avolkov1](https://github.com/avolkov1))
+- Revert "gQuant34 - Update build.sh to make use of RAPIDS v0.8 container" [\#33](https://github.com/NVIDIA/fsi-samples/pull/33) ([yidong72](https://github.com/yidong72))
+- gQuant34 - Update build.sh to make use of RAPIDS v0.8 container [\#12](https://github.com/NVIDIA/fsi-samples/pull/12) ([miguelusque](https://github.com/miguelusque))
 - Synch master with develop [\#4](https://github.com/NVIDIA/fsi-samples/pull/4) ([avolkov1](https://github.com/avolkov1))
 - added unit tests for the cuindicator [\#3](https://github.com/NVIDIA/fsi-samples/pull/3) ([yidong72](https://github.com/yidong72))
-- CUQ-21: Improving tutorials for greenflow [\#2](https://github.com/NVIDIA/fsi-samples/pull/2) ([avolkov1](https://github.com/avolkov1))
+- CUQ-21: Improving tutorials for gQuant [\#2](https://github.com/NVIDIA/fsi-samples/pull/2) ([avolkov1](https://github.com/avolkov1))
 - Add download script and instructions in the readme [\#1](https://github.com/NVIDIA/fsi-samples/pull/1) ([yidong72](https://github.com/yidong72))
 
 
