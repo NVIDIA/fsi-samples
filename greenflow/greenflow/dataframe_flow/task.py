@@ -10,6 +10,7 @@ from pathlib import Path
 import sys
 from collections import namedtuple
 import configparser
+from .util import get_file_path
 
 
 __all__ = ['Task']
@@ -55,9 +56,9 @@ def append_path(path):
 
 def import_submodules(package, recursive=True, _main_package=None):
     """Import all submodules of a module, recursively, including subpackages.
-    Finds members of those packages. If a member is a greenflow Node subclass then
-    sets the top level package attribute with the class. This is done so that
-    the class can be accessed via:
+    Finds members of those packages. If a member is a greenflow Node subclass
+     then sets the top level package attribute with the class. This is done so
+      that the class can be accessed via:
         NodeClass = getattr(mod, node_type)
     Where mod is the package.
 
@@ -97,6 +98,10 @@ def load_modules(pathfile, name=None):
         namedtuple, absolute path and loaded module
     """
     filename = Path(pathfile)
+    if not filename.exists():
+        filename = get_file_path(str(filename))
+        filename = Path(filename)
+
     if name is None:
         modulename = filename.stem
     else:
@@ -202,7 +207,8 @@ class Task(object):
             else:
                 try:
                     global DEFAULT_MODULE
-                    plugmod = os.getenv('GREENFLOW_PLUGIN_MODULE', DEFAULT_MODULE)
+                    plugmod = os.getenv('GREENFLOW_PLUGIN_MODULE',
+                                        DEFAULT_MODULE)
                     MODLIB = importlib.import_module(plugmod)
                     NodeClass = getattr(MODLIB, node_type)
                 except AttributeError:

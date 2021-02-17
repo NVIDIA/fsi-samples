@@ -638,7 +638,6 @@ class TaskGraph(object):
             finally:
                 import ipywidgets
                 out = ipywidgets.Output(layout={'border': '1px solid black'})
-                print(err)
                 out.append_stderr(err)
             if result is None:
                 result = ipywidgets.Tab()
