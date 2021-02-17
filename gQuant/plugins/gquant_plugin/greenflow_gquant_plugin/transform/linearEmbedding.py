@@ -1,9 +1,8 @@
 from greenflow.dataframe_flow import Node
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                   PortsSpecSchema,
-                                                   NodePorts,
-                                                   MetaData)
+                                                      PortsSpecSchema,
+                                                      NodePorts, MetaData)
 from .data_obj import ProjectionData
 import cupy as cp
 import copy
@@ -236,7 +235,7 @@ class LinearEmbeddingNode(_PortTypesMixin, Node):
             if 'seed' in self.conf:
                 cp.random.seed(self.conf['seed'])
             proj_data = cp.random.rand(len(cols), self.conf['out_dimension'])
-        cols.sort()
+        # cols.sort()
         # print(self.uid, cols)
         # print(self.uid, proj_data)
         output_matrix = input_df[cols].values.dot(proj_data)

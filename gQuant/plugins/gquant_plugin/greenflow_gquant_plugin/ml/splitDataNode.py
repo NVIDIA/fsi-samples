@@ -61,12 +61,17 @@ class DataSplittingNode(_PortTypesMixin, Node):
         }
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
-            col_from_inport = input_meta[self.INPUT_PORT_NAME]
+            col_inport = input_meta[self.INPUT_PORT_NAME]
             if 'target' in self.conf:
                 target_col = self.conf['target']
-                if target_col in col_from_inport:
+                col_from_inport = {}
+                for i in sorted(col_inport.keys()):
+                    if i != target_col:
+                        col_from_inport[i] = col_inport[i]
+                col_from_inport[target_col] = col_inport[target_col]
+                if target_col in col_inport:
                     required[self.INPUT_PORT_NAME][target_col] = \
-                        col_from_inport[target_col]
+                        col_inport[target_col]
         else:
             col_from_inport = required[self.INPUT_PORT_NAME]
         output_cols = {

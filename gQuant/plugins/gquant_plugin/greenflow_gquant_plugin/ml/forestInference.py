@@ -210,7 +210,7 @@ class ForestInferenceNode(_PortTypesMixin, Node):
                 else:
                     train_cols = [col for col in data_df.columns
                                   if col not in self.conf['columns']]
-        train_cols.sort()
+        # train_cols.sort()
         fm = ForestInference.load(filename,
                                   model_type=self.conf.get("model_type",
                                                            "xgboost"))

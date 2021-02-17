@@ -16,6 +16,7 @@ from .addSignIndicator import AddSignIndicatorNode
 from .linearEmbedding import LinearEmbeddingNode
 from .onehotEncoding import OneHotEncodingNode
 from .daskComputeNode import DaskComputeNode
+from .persistNode import PersistNode
 
 __all__ = ["AverageNode", "AssetFilterNode", "LeftMergeNode",
            "ReturnFeatureNode", "SortNode",
@@ -23,4 +24,4 @@ __all__ = ["AverageNode", "AssetFilterNode", "LeftMergeNode",
            "ValueFilterNode", "RenameNode", "AssetIndicatorNode",
            "DropNode", "IndicatorNode", "NormalizationNode",
            "AddSignIndicatorNode", "LinearEmbeddingNode",
-           "OneHotEncodingNode", "DaskComputeNode"]
+           "OneHotEncodingNode", "DaskComputeNode", "PersistNode"]

@@ -4,7 +4,8 @@ import dask_cudf
 import xgboost as xgb
 import dask
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                   PortsSpecSchema, NodePorts)
+                                                      PortsSpecSchema,
+                                                      NodePorts)
 from xgboost import Booster
 import copy
 from collections import OrderedDict
@@ -323,7 +324,7 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                                if col not in self.conf['columns']]
         train_cols = [col for col in included_colums
                       if col != self.conf['target']]
-        train_cols.sort()
+        # train_cols.sort()
 
         if isinstance(input_df, dask_cudf.DataFrame):
             # get the client
@@ -382,6 +383,7 @@ class InferXGBoostNode(Node):
         required = {self.INPUT_PORT_NAME: {},
                     self.INPUT_PORT_MODEL_NAME: {}}
         predict = self.conf.get('prediction', 'predict')
+        pred_contribs: bool = self.conf.get('pred_contribs', False)
         output_cols = {
             self.OUTPUT_PORT_NAME: {predict: None}
         }
@@ -394,7 +396,12 @@ class InferXGBoostNode(Node):
             else:
                 required_cols = {}
             predict = self.conf.get('prediction', 'predict')
-            col_from_inport[predict] = None  # the type is not determined
+            if not pred_contribs:
+                col_from_inport[predict] = None  # the type is not determined
+            else:
+                col_from_inport = {}
+                for i in range(len(required_cols)+1):
+                    col_from_inport[i] = None
             required = {self.INPUT_PORT_NAME: required_cols,
                         self.INPUT_PORT_MODEL_NAME: {}}
             output_cols = {
@@ -411,7 +418,12 @@ class InferXGBoostNode(Node):
                 required_cols = {}
             predict = self.conf.get('prediction', 'predict')
             col_from_inport = copy.copy(required_cols)
-            col_from_inport[predict] = None  # the type is not determined
+            if not pred_contribs:
+                col_from_inport[predict] = None  # the type is not determined
+            else:
+                col_from_inport = {}
+                for i in range(len(required_cols)+1):
+                    col_from_inport[i] = None
             required = {self.INPUT_PORT_NAME: required_cols,
                         self.INPUT_PORT_MODEL_NAME: {}}
             output_cols = {
@@ -423,7 +435,8 @@ class InferXGBoostNode(Node):
               self.INPUT_PORT_MODEL_NAME not in input_meta):
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
             predict = self.conf.get('prediction', 'predict')
-            col_from_inport[predict] = None  # the type is not determined
+            if not pred_contribs:
+                col_from_inport[predict] = None  # the type is not determined
             output_cols = {
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
@@ -444,12 +457,24 @@ class InferXGBoostNode(Node):
             "description": """make predictions for all the input
              data points""",
             "properties": {
-                "prediction":  {
+                "prediction": {
                     "type": "string",
                     "description": "the column name for prediction",
                     "default": "predict"
                 },
-
+                "pred_contribs": {
+                    "type": "boolean",
+                    "description":
+                    """
+                    When this is True the output will be a matrix of size
+                    (nsample, nfeats + 1) with each record indicating the
+                    feature contributions (SHAP values) for that prediction.
+                    The sum of all feature contributions is equal to the raw
+                     untransformed margin value of the prediction. Note the
+                      final column is the bias term.
+                    """,
+                    "default": False
+                }
             },
             "required": [],
         }
@@ -463,22 +488,35 @@ class InferXGBoostNode(Node):
         required_cols = input_meta[
             self.INPUT_PORT_MODEL_NAME]['train']
         required_cols = list(required_cols.keys())
-        required_cols.sort()
+        # required_cols.sort()
         predict_col = self.conf.get('prediction', 'predict')
+        pred_contribs: bool = self.conf.get('pred_contribs', False)
         if isinstance(input_df, dask_cudf.DataFrame):
             # get the client
             client = dask.distributed.client.default_client()
             dtrain = xgb.dask.DaskDMatrix(client, input_df[required_cols])
-            prediction = xgb.dask.predict(client, bst_model, dtrain)
+            prediction = xgb.dask.predict(client,
+                                          bst_model,
+                                          dtrain,
+                                          pred_contribs=pred_contribs)
             pred_df = dask_cudf.from_dask_dataframe(
                 prediction.to_dask_dataframe())
             pred_df.index = input_df.index
-            input_df[predict_col] = pred_df
+            if not pred_contribs:
+                input_df[predict_col] = pred_df
+            else:
+                input_df = pred_df
         else:
             infer_dmatrix = xgb.DMatrix(input_df[required_cols])
-            prediction = cudf.Series(bst_model.predict(infer_dmatrix),
-                                     nan_as_null=False,
-                                     index=input_df.index
-                                     )
-            input_df[predict_col] = prediction
+            if not pred_contribs:
+                prediction = cudf.Series(bst_model.predict(infer_dmatrix),
+                                         nan_as_null=False,
+                                         index=input_df.index
+                                         )
+                input_df[predict_col] = prediction
+            else:
+                prediction = cudf.DataFrame(bst_model.predict(
+                    infer_dmatrix, pred_contribs=pred_contribs),
+                                            index=input_df.index)
+                input_df = prediction
         return {self.OUTPUT_PORT_NAME: input_df}

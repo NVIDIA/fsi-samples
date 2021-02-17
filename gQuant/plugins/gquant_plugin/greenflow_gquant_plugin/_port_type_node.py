@@ -104,9 +104,9 @@ class _PortTypesMixin(object):
         }
         # additional ports
         output_cols = {
-            self.OUTPUT_PORT_NAME: addition
+            self.OUTPUT_PORT_NAME: col_from_inport
         }
-        output_cols[self.OUTPUT_PORT_NAME].update(col_from_inport)
+        output_cols[self.OUTPUT_PORT_NAME].update(addition)
         meta_data = MetaData(inports=input_cols, outports=output_cols)
         return meta_data
 

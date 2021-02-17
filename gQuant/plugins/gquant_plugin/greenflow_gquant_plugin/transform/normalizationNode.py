@@ -184,7 +184,7 @@ class NormalizationNode(_PortTypesMixin, Node):
             stds = norm_data['std']
             col_from_inport = input_meta[self.INPUT_NORM_MODEL_NAME]
             cols = [i for i in col_from_inport.keys()]
-            cols.sort()
+            # cols.sort()
         else:
             # need to compute the mean and std
             if self.conf.get('include', True):
@@ -192,7 +192,7 @@ class NormalizationNode(_PortTypesMixin, Node):
             else:
                 cols = input_df.columns.difference(
                     self.conf['columns']).values.tolist()
-            cols.sort()
+            # cols.sort()
             means = input_df[cols].mean()
             stds = input_df[cols].std()
         norm = (input_df[cols] - means) / stds
