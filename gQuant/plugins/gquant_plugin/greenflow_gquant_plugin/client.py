@@ -26,3 +26,4 @@ display = {}
 display['cudf.core.dataframe.DataFrame'] = display_fun
 display['dask_cudf.core.DataFrame'] = display_fun
 display['pandas.core.frame.DataFrame'] = display_fun
+display['dask.dataframe.core.DataFrame'] = display_fun

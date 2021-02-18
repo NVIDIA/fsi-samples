@@ -7,6 +7,7 @@ import cudf
 import dask_cudf
 import pandas
 import numpy as np
+import dask.dataframe
 
 
 def _validate_df(df_to_val, ref_cols, obj):
@@ -102,9 +103,11 @@ def clean_dask(ui_clean):
 register_validator(cudf.DataFrame, _validate_df)
 register_validator(dask_cudf.DataFrame, _validate_df)
 register_validator(pandas.DataFrame, _validate_df)
+register_validator(dask.dataframe.DataFrame, _validate_df)
 
 register_copy_function(cudf.DataFrame, copy_df)
 register_copy_function(dask_cudf.DataFrame, copy_dask_cudf)
 register_copy_function(pandas.DataFrame, copy_df)
+register_copy_function(dask.dataframe.DataFrame, copy_dask_cudf)
 
 register_cleanup('cleandask', clean_dask)

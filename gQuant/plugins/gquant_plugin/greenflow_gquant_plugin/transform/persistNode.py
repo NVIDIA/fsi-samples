@@ -2,7 +2,7 @@ from greenflow.dataframe_flow import (ConfSchema, PortsSpecSchema, NodePorts,
                                       MetaData)
 from greenflow_gquant_plugin._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow import Node
-import dask_cudf
+from dask.dataframe import DataFrame as DaskDataFrame
 from dask.distributed import wait
 import dask.distributed
 
@@ -18,13 +18,14 @@ class PersistNode(_PortTypesMixin, Node):
         o_inports = {}
         o_outports = {}
         o_inports[self.INPUT_PORT_NAME] = {
-            port_type: [dask_cudf.DataFrame],
+            port_type: [DaskDataFrame],
             dy: True
         }
         input_connections = self.get_connected_inports()
         for port_name in input_connections.keys():
             if port_name != self.INPUT_PORT_NAME:
-                o_outports[port_name] = {port_type: dask_cudf.DataFrame}
+                determined_type = input_connections[port_name]
+                o_outports[port_name] = {port_type: determined_type}
         return NodePorts(inports=o_inports, outports=o_outports)
 
     def conf_schema(self):
