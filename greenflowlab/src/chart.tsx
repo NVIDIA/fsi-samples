@@ -466,6 +466,62 @@ export class Chart extends React.Component<IChartProp, IChartState> {
     this.props.layout(this.props.nodes, this.props.edges, this.transform);
   }
 
+  private _fixDynamicPorts(state: IState): void {
+    const portNames: string[] = [];
+
+    state.nodes.forEach(d => {
+      d.inputs.forEach(e => {
+        if ('dynamic' in e) {
+          portNames.push(d.id + '.' + e.name);
+        }
+      })
+    });
+
+    if (portNames.length === 0) {
+      return;
+    }
+    // fixed the port and connections
+    state.edges.forEach((d: IEdge) => {
+      if (portNames.includes(d.to)) {
+        d.to =
+          d.to.split('.')[0] +
+          '.' +
+          d.from.split('.')[0] +
+          '@' +
+          d.from.split('.')[1];
+      }
+    });
+  }
+
+  private _fixOutputCollectorPorts(state: IState): void {
+    const index = state.nodes.findIndex(
+      (d: INode) => d.id === OUTPUT_COLLECTOR
+    );
+
+    if (index < 0) {
+      return;
+    }
+    const connectedEdges = state.edges.filter(
+      (d: IEdge) => d.to.split('.')[0] === OUTPUT_COLLECTOR
+    );
+    this.props.contentHandler.outputs = connectedEdges.map(
+      (d: IEdge) => d.from
+    );
+    const usedPortNames = connectedEdges.map((d: IEdge) => d.to.split('.')[1]);
+    const outputCollector = state.nodes[index];
+    // total
+    const totalNeed = usedPortNames.length + 1;
+    // reset the input ports
+    outputCollector.inputs = [];
+    for (let i = 0; i < totalNeed; i++) {
+      outputCollector.inputs.push({ name: `in${i + 1}`, type: [['any']] });
+    }
+    connectedEdges.forEach((d: IEdge, i: number) => {
+      d.to = `${OUTPUT_COLLECTOR}.in${i + 1}`;
+    });
+    //inputs: [ {name: "in1", type: ['any']}]
+  }
+
   /**
    * Update the charts, also send back to server to reculcate the columns,
    * types and UI schema etc
@@ -473,6 +529,8 @@ export class Chart extends React.Component<IChartProp, IChartState> {
    * @param edges
    */
   fullUpdate(nodes: INode[], edges: IEdge[]): void {
+    this._fixDynamicPorts({nodes: nodes, edges: edges, height:0, width:0});
+    this._fixOutputCollectorPorts({nodes: nodes, edges: edges, height:0, width:0});
     const content = exportWorkFlowNodes(nodes, edges);
     const jsonString = JSON.stringify(content);
     this._updateInputs(jsonString, nodes, edges);

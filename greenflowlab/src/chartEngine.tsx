@@ -429,68 +429,11 @@ export class ChartEngine extends React.Component<IProps, IState> {
     this.setState({ nodes: layoutNodes, edges: edges });
   }
 
-  private _fixDynamicPorts(state: IState): void {
-    const portNames: string[] = [];
-
-    state.nodes.forEach(d => {
-      d.inputs.forEach(e => {
-        if ('dynamic' in e) {
-          portNames.push(d.id + '.' + e.name);
-        }
-      })
-    });
-
-    if (portNames.length === 0) {
-      return;
-    }
-    // fixed the port and connections
-    state.edges.forEach((d: IEdge) => {
-      if (portNames.includes(d.to)) {
-        d.to =
-          d.to.split('.')[0] +
-          '.' +
-          d.from.split('.')[0] +
-          '@' +
-          d.from.split('.')[1];
-      }
-    });
-  }
-
-  private _fixOutputCollectorPorts(state: IState): void {
-    const index = state.nodes.findIndex(
-      (d: INode) => d.id === OUTPUT_COLLECTOR
-    );
-
-    if (index < 0) {
-      return;
-    }
-    const connectedEdges = state.edges.filter(
-      (d: IEdge) => d.to.split('.')[0] === OUTPUT_COLLECTOR
-    );
-    this.props.contentHandler.outputs = connectedEdges.map(
-      (d: IEdge) => d.from
-    );
-    const usedPortNames = connectedEdges.map((d: IEdge) => d.to.split('.')[1]);
-    const outputCollector = state.nodes[index];
-    // total
-    const totalNeed = usedPortNames.length + 1;
-    // reset the input ports
-    outputCollector.inputs = [];
-    for (let i = 0; i < totalNeed; i++) {
-      outputCollector.inputs.push({ name: `in${i + 1}`, type: [['any']] });
-    }
-    connectedEdges.forEach((d: IEdge, i: number) => {
-      d.to = `${OUTPUT_COLLECTOR}.in${i + 1}`;
-    });
-    //inputs: [ {name: "in1", type: ['any']}]
-  }
 
   updateWorkFlow(state: IState, update = true): void {
     if (state.edges && state.nodes) {
       //TODO need Need to think about how the logic to handle dynamic ports can be refactored in a generic manner in the future. 
       // Maybe a node could have a self state flag to indicate that it creates ports dynamically.
-      this._fixOutputCollectorPorts(state);
-      this._fixDynamicPorts(state);
       const output = exportWorkFlowNodes(state.nodes, state.edges);
       if (this.props.contentHandler.privateCopy) {
         this.props.contentHandler.privateCopy.set('value', output);
