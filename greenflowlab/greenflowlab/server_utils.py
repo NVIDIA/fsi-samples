@@ -109,9 +109,9 @@ def get_nodes(task_graph):
             inputs = []
             num = 0
             for port, v in connection_inputs.items():
-                inputs.append({'name': port, "type": ["any"]})
+                inputs.append({'name': port, "type": [["any"]]})
                 num = max(int(port[2:]), num)
-            inputs.append({'name': 'in'+str(num+1), "type": ["any"]})
+            inputs.append({'name': 'in'+str(num+1), "type": [["any"]]})
             out_node['inputs'] = inputs
     task_graph.run_cleanup()
     return {'nodes': nodes, 'edges': edges}

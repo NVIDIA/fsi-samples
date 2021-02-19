@@ -66,5 +66,5 @@ pip install .
 ### Launch the Jupyter lab
 After launching the JupyterLab by,
 ```bash
-jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+MODULEPATH=modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 ```
