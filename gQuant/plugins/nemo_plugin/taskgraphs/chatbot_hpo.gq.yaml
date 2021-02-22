@@ -85,4 +85,4 @@
     taskgraph: taskgraphs/nemo_examples/chatbot_example.gq.yaml
   inputs:
     conf_in: rnn_train.conf_out
-  module: gquant_nemo_plugin.util
+  module: greenflow_nemo_plugin.util

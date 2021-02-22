@@ -1,0 +1,300 @@
+- conf:
+    file: notebooks/data/stock_price_hist.csv.gz
+    path: notebooks/many-small
+  id: stock_data
+  inputs: {}
+  module: greenflow_gquant_plugin.dataloader
+  type: CsvStockLoader
+- conf: {}
+  id: ''
+  inputs:
+    in1: test_roc.roc_curve
+    in2: train_roc.roc_curve
+    in3: feature_importance.importance_curve
+    in4: xgboost_model.train_xgboost@model_out
+  type: Output_Collector
+- conf:
+    input:
+    - preprocess.sort_node@in
+    output:
+    - technical_indicator.stock_out
+    subnode_ids:
+    - technical_indicator
+    subnodes_conf:
+      technical_indicator:
+        conf:
+          indicators:
+          - args:
+            - 10
+            columns:
+            - close
+            function: port_bollinger_bands
+          - args:
+            - 2
+            - 3
+            columns:
+            - high
+            - low
+            - close
+            - volume
+            function: port_chaikin_oscillator
+          - args:
+            - 2
+            - 3
+            columns:
+            - close
+            function: port_macd
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            function: port_relative_strength_index
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_average_true_range
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_stochastic_oscillator_k
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_stochastic_oscillator_d
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            - volume
+            function: port_money_flow_index
+          - args:
+            - 2
+            columns:
+            - close
+            - volume
+            function: port_force_index
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_ultimate_oscillator
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            - volume
+            function: port_accumulation_distribution
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_commodity_channel_index
+          - args:
+            - 2
+            columns:
+            - close
+            - volume
+            function: port_on_balance_volume
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_vortex_indicator
+          - args:
+            - 3
+            - 4
+            - 5
+            - 6
+            - 7
+            - 8
+            - 9
+            - 10
+            columns:
+            - close
+            function: port_kst_oscillator
+          - args:
+            - 2
+            - 3
+            columns:
+            - high
+            - low
+            function: port_mass_index
+          - args:
+            - 2
+            - 3
+            columns:
+            - close
+            function: port_true_strength_index
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - volume
+            function: port_ease_of_movement
+          - args:
+            - 2
+            columns:
+            - close
+            function: port_coppock_curve
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_keltner_channel
+          - args:
+            - 2
+            columns:
+            - high
+            - low
+            - close
+            function: port_ppsr
+          - args:
+            - 0.9
+            columns:
+            - close
+            function: port_fractional_diff
+          - args:
+            - 0.7
+            columns:
+            - close
+            function: port_fractional_diff
+          - args:
+            - 0.5
+            columns:
+            - close
+            function: port_fractional_diff
+          - args:
+            - 0.3
+            columns:
+            - close
+            function: port_fractional_diff
+          - args:
+            - 0.1
+            columns:
+            - close
+            function: port_fractional_diff
+          - args:
+            - -1
+            columns:
+            - returns
+            function: port_shift
+          remove_na: true
+    taskgraph: taskgraphs/xgboost_trade.gq.yaml
+  id: stock_feature
+  inputs:
+    preprocess@sort_node@in: stock_data.dask_cudf_out
+  type: CompositeNode
+- conf:
+    column: SHIFT_-1
+    sign: sign
+  id: pos_neg_return
+  inputs:
+    in: stock_feature.technical_indicator@stock_out
+  module: greenflow_gquant_plugin.transform
+  type: AddSignIndicatorNode
+- conf:
+    columns:
+    - indicator
+    - datetime
+    - asset
+    - SHIFT_-1
+    - open
+    - high
+    - low
+    - close
+  id: drop_col
+  inputs:
+    in: pos_neg_return.out
+  module: greenflow_gquant_plugin.transform
+  type: DropNode
+- conf:
+    target: sign
+    train_size: 0.8
+  id: split_data
+  inputs:
+    in: drop_col.out
+  module: greenflow_gquant_plugin.ml
+  type: DataSplittingNode
+- conf:
+    train_norm:
+      conf:
+        columns:
+        - sign
+        include: false
+    train_xgboost:
+      conf:
+        columns:
+        - sign
+        include: false
+        num_of_rounds: 100
+        target: sign
+        xgboost_parameters:
+          alpha: 0
+          colsample_bylevel: 1
+          colsample_bynode: 1
+          colsample_bytree: 1
+          deterministic_histogram: false
+          eta: 0.3
+          gamma: 0
+          grow_policy: depthwise
+          lambda: 1
+          max_depth: 8
+          max_leaves: 256
+          min_child_weight: 1
+          objective: binary:logistic
+          sampling_method: uniform
+          single_precision_histogram: false
+          subsample: 1
+          tree_method: gpu_hist
+  id: xgboost_model
+  inputs:
+    test_norm@df_in: split_data.test
+    train_norm@df_in: split_data.train
+  module: my_node
+  type: CustXGBoostNode
+- conf:
+    label: sign
+    prediction: predict
+  id: train_roc
+  inputs:
+    in: xgboost_model.train_infer@out
+  module: greenflow_gquant_plugin.analysis
+  type: RocCurveNode
+- conf:
+    label: sign
+    prediction: predict
+  id: test_roc
+  inputs:
+    in: xgboost_model.test_infer@out
+  module: greenflow_gquant_plugin.analysis
+  type: RocCurveNode
+- conf:
+    type: gain
+  id: feature_importance
+  inputs:
+    in: xgboost_model.train_xgboost@model_out
+  module: greenflow_gquant_plugin.analysis
+  type: ImportanceCurveNode

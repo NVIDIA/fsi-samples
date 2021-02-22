@@ -1,7 +1,7 @@
 #!/bin/bash
 # Copyright (c) 2020, NVIDIA CORPORATION.
 ################################################################################
-# gQuant Style Tester
+# greenflow Style Tester
 ################################################################################
 
 # Ignore errors and set path

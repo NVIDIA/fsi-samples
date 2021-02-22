@@ -1,0 +1,131 @@
+- id: data_gen
+  type: ClassificationData
+  conf:
+    class_sep: 1
+    dtype: float64
+    flip_y: 0.01
+    hypercube: true
+    n_classes: 2
+    n_clusters_per_class: 2
+    n_features: 10
+    n_informative: 4
+    n_parts: 4
+    n_redundant: 0
+    n_repeated: 0
+    n_samples: 10000
+    order: F
+    scale: 1
+    shift: 0
+    shuffle: true
+  inputs: {}
+  module: greenflow_gquant_plugin.dataloader
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: model_export.filename
+    in2: test_data.out
+    in3: test_infer.out
+    in4: xgboost_infer.out
+- id: data_generator
+  type: CompositeNode
+  conf:
+    input:
+      - x2_to_sign.in
+    output:
+      - drop_x2_x3.out
+    subnode_ids:
+      - data_gen
+    subnodes_conf:
+      data_gen:
+        conf:
+          class_sep: 1
+          dtype: float64
+          flip_y: 0.1
+          hypercube: true
+          n_classes: 2
+          n_clusters_per_class: 2
+          n_features: 10
+          n_informative: 4
+          n_parts: 4
+          n_redundant: 0
+          n_repeated: 0
+          n_samples: 10000
+          order: F
+          random_state: 10
+          scale: 1
+          shift: 0
+          shuffle: true
+    taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+  inputs:
+    x2_to_sign@in: data_gen.dask_cudf_out
+- id: xgboost_model
+  type: CompositeNode
+  conf:
+    input:
+      - train_norm.df_in
+      - test_norm.df_in
+    output:
+      - train_infer.out
+      - test_infer.out
+      - train_xgboost.model_out
+      - train_norm.df_out
+      - test_norm.df_out
+    subnode_ids: []
+    subnodes_conf: {}
+    taskgraph: taskgraphs/xgboost_example/xgboost_model.gq.yaml
+  inputs:
+    train_norm@df_in: persist.data_splitter@train
+    test_norm@df_in: persist.data_splitter@test
+- id: data_splitter
+  type: DataSplittingNode
+  conf:
+    target: 'y'
+    train_size: 0.8
+  inputs:
+    in: data_generator.drop_x2_x3@out
+  module: greenflow_gquant_plugin.ml
+- id: model_export
+  type: XGBoostExportNode
+  conf:
+    path: xgboost_model_file
+  inputs:
+    model_in: xgboost_model.train_xgboost@model_out
+  module: greenflow_gquant_plugin.analysis
+- id: tree_inference
+  type: ForestInferenceNode
+  conf:
+    columns:
+      - 'y'
+    file: xgboost_model_file
+    include: false
+    prediction: predict
+  inputs:
+    data_in: xgboost_model.test_norm@df_out
+    model_file: model_export.filename
+  module: greenflow_gquant_plugin.ml
+- id: test_data
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: xgboost_model.test_norm@df_out
+  module: greenflow_gquant_plugin.transform
+- id: test_infer
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: tree_inference.out
+  module: greenflow_gquant_plugin.transform
+- id: xgboost_infer
+  type: DaskComputeNode
+  conf: {}
+  inputs:
+    in: xgboost_model.test_infer@out
+  module: greenflow_gquant_plugin.transform
+- id: persist
+  type: PersistNode
+  conf: {}
+  inputs:
+    data_splitter@test: data_splitter.test
+    data_splitter@train: data_splitter.train
+  module: greenflow_gquant_plugin.transform

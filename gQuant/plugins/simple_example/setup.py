@@ -4,7 +4,7 @@ setup(
     name='example_plugin',
     packages=find_packages(include=['example']),
     entry_points={
-        'gquant.plugin': [
+        'greenflow.plugin': [
             'custom_nodes = example',
         ],
     }
