@@ -56,6 +56,7 @@ class DataSplittingNode(_PortTypesMixin, Node):
 
     def meta_setup(self):
         cols_required = {}
+        col_from_inport = {}
         required = {
             self.INPUT_PORT_NAME: cols_required
         }
@@ -64,7 +65,6 @@ class DataSplittingNode(_PortTypesMixin, Node):
             col_inport = input_meta[self.INPUT_PORT_NAME]
             if 'target' in self.conf:
                 target_col = self.conf['target']
-                col_from_inport = {}
                 for i in sorted(col_inport.keys()):
                     if i != target_col:
                         col_from_inport[i] = col_inport[i]
