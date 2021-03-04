@@ -5,6 +5,8 @@ from greenflow.dataframe_flow import Node
 from dask.dataframe import DataFrame as DaskDataFrame
 from dask.distributed import wait
 import dask.distributed
+from cudf import DataFrame as CDataFrame
+from pandas import DataFrame as PDataFrame
 
 
 class PersistNode(_PortTypesMixin, Node):
@@ -18,7 +20,7 @@ class PersistNode(_PortTypesMixin, Node):
         o_inports = {}
         o_outports = {}
         o_inports[self.INPUT_PORT_NAME] = {
-            port_type: [DaskDataFrame],
+            port_type: [DaskDataFrame, PDataFrame, CDataFrame],
             dy: True
         }
         input_connections = self.get_connected_inports()
@@ -55,17 +57,30 @@ class PersistNode(_PortTypesMixin, Node):
 
     def process(self, inputs):
         # df = df.drop('datetime', axis=1)
-        output = {}
-        client = dask.distributed.client.default_client()
         input_connections = self.get_connected_inports()
-        objs = []
+        determined_type = None
         for port_name in input_connections.keys():
             if port_name != self.INPUT_PORT_NAME:
-                df = inputs[port_name]
-                objs.append(df)
-        objs = client.persist(objs)
-        wait([objs])
-        for port_name in input_connections.keys():
-            if port_name != self.INPUT_PORT_NAME:
-                output[port_name] = objs.pop(0)
+                determined_type = input_connections[port_name]
+
+        output = {}
+        if (determined_type[0] is not None and issubclass(determined_type[0],
+                                                          DaskDataFrame)):
+            client = dask.distributed.client.default_client()
+            input_connections = self.get_connected_inports()
+            objs = []
+            for port_name in input_connections.keys():
+                if port_name != self.INPUT_PORT_NAME:
+                    df = inputs[port_name]
+                    objs.append(df)
+            objs = client.persist(objs)
+            wait([objs])
+            for port_name in input_connections.keys():
+                if port_name != self.INPUT_PORT_NAME:
+                    output[port_name] = objs.pop(0)
+        else:
+            for port_name in input_connections.keys():
+                if port_name != self.INPUT_PORT_NAME:
+                    df = inputs[port_name]
+                    output[port_name] = df
         return output

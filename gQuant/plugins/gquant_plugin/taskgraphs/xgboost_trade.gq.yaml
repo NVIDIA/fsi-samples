@@ -1,165 +1,222 @@
-- conf:
+- id: stock_data
+  type: CsvStockLoader
+  conf:
     file: notebooks/data/stock_price_hist.csv.gz
     path: notebooks/many-small
-  id: stock_data
   inputs: {}
   module: greenflow_gquant_plugin.dataloader
-  type: CsvStockLoader
-- conf:
+- id: preprocess
+  type: CompositeNode
+  conf:
     input:
-    - sort_node.in
+      - sort_node.in
     output:
-    - drop_columns.out
+      - drop_columns.out
     subnode_ids:
-    - value_filter
-    - drop_columns
+      - value_filter
+      - drop_columns
     subnodes_conf:
       drop_columns:
         conf:
           columns:
-          - average_volume
-          - min_return
-          - max_return
+            - average_volume
+            - min_return
+            - max_return
       value_filter:
         conf:
-        - column: min_return
-          min: -10
-        - column: max_return
-          max: 10
-        - column: average_volume
-          min: 400
+          - column: min_return
+            min: -10
+          - column: max_return
+            max: 10
+          - column: average_volume
+            min: 400
     taskgraph: taskgraphs/preprocess.gq.yaml
-  id: preprocess
   inputs:
     sort_node@in: stock_data.cudf_out
-  type: CompositeNode
-- conf:
+- id: sort_after
+  type: SortNode
+  conf:
     keys:
-    - asset
-    - datetime
-  id: sort_after
+      - asset
+      - datetime
   inputs:
     in: preprocess.drop_columns@out
   module: greenflow_gquant_plugin.transform
-  type: SortNode
-- conf: {}
-  id: backtest
-  inputs:
-    bardata_in: xgboost.stock_out
-  module: greenflow_gquant_plugin.backtest
+- id: train_backtest
   type: SimpleBackTestNode
-- conf: {}
-  id: portfolio_opt_train
+  conf: {}
   inputs:
-    stock_in: train_df.stock_out
-  module: greenflow_gquant_plugin.portofolio
+    bardata_in: train_signal.stock_out
+  module: greenflow_gquant_plugin.backtest
+- id: portfolio_opt_train
   type: SimpleAveragePortOpt
-- conf: {}
-  id: sharpe_ratio_trn
+  conf: {}
+  inputs:
+    stock_in: train_backtest.backtest_out
+  module: greenflow_gquant_plugin.portofolio
+- id: sharpe_ratio_trn
+  type: SharpeRatioNode
+  conf: {}
   inputs:
     stock_in: portfolio_opt_train.stock_out
   module: greenflow_gquant_plugin.analysis
-  type: SharpeRatioNode
-- conf:
+- id: cumulative_return_trn
+  type: CumReturnNode
+  conf:
     label: training cumulative return
     points: 300
-  id: cumulative_return_trn
   inputs:
     in: portfolio_opt_train.stock_out
   module: greenflow_gquant_plugin.analysis
-  type: CumReturnNode
-- conf: {}
-  id: ''
+- id: ''
+  type: Output_Collector
+  conf: {}
   inputs:
     in1: sharpe_ratio_trn.sharpe_out
     in2: cumulative_return_trn.cum_return
     in3: sharpe_ratio_val.sharpe_out
     in4: cumulative_return_val.cum_return
-  type: Output_Collector
-- conf:
+- id: technical_indicator
+  type: IndicatorNode
+  conf:
     indicators:
-    - args:
-      - 10
-      - 20
-      columns:
-      - high
-      - low
-      - close
-      - volume
-      function: port_chaikin_oscillator
-    - args:
-      - 10
-      columns:
-      - close
-      function: port_bollinger_bands
-    - args:
-      - -1
-      columns:
-      - returns
-      function: port_shift
+      - args:
+          - 10
+          - 20
+        columns:
+          - high
+          - low
+          - close
+          - volume
+        function: port_chaikin_oscillator
+      - args:
+          - 10
+        columns:
+          - close
+        function: port_bollinger_bands
+      - args:
+          - -1
+        columns:
+          - returns
+        function: port_shift
     remove_na: true
-  id: technical_indicator
   inputs:
     stock_in: sort_after.out
   module: greenflow_gquant_plugin.transform
-  type: IndicatorNode
-- conf:
-    no_feature:
-    - asset
-    - datetime
-    - volume
-    - close
-    - high
-    - low
-    - returns
-    - indicator
-    - open
-    num_of_rounds: 100
-    target: SHIFT_-1
-    train_date: 2010-01-01
-    xgboost_parameters:
-      gamma: 0
-      max_depth: 8
-      max_leaves: 256
-      objective: reg:squarederror
-  id: xgboost
+- id: train_df
+  type: DatetimeFilterNode
+  conf:
+    beg: '1985-01-01T00:00:00.000Z'
+    end: '2010-01-01T00:00:00.000Z'
   inputs:
     stock_in: technical_indicator.stock_out
-  module: greenflow_gquant_plugin.strategy
-  type: XGBoostStrategyNode
-- conf:
-    beg: 1985-01-01
-    end: 2010-01-01
-  id: train_df
-  inputs:
-    stock_in: backtest.backtest_out
   module: greenflow_gquant_plugin.transform
+- id: validation_df
   type: DatetimeFilterNode
-- conf:
-    beg: 2010-01-01
-    end: 2025-01-01
-  id: validation_df
+  conf:
+    beg: '2010-01-01T00:00:00.000Z'
+    end: '2025-01-01T00:00:00.000Z'
   inputs:
-    stock_in: backtest.backtest_out
+    stock_in: technical_indicator.stock_out
   module: greenflow_gquant_plugin.transform
-  type: DatetimeFilterNode
-- conf: {}
-  id: portfolio_opt_validation
-  inputs:
-    stock_in: validation_df.stock_out
-  module: greenflow_gquant_plugin.portofolio
+- id: portfolio_opt_validation
   type: SimpleAveragePortOpt
-- conf: {}
-  id: sharpe_ratio_val
+  conf: {}
+  inputs:
+    stock_in: val_backtest.backtest_out
+  module: greenflow_gquant_plugin.portofolio
+- id: sharpe_ratio_val
+  type: SharpeRatioNode
+  conf: {}
   inputs:
     stock_in: portfolio_opt_validation.stock_out
   module: greenflow_gquant_plugin.analysis
-  type: SharpeRatioNode
-- conf:
+- id: cumulative_return_val
+  type: CumReturnNode
+  conf:
     label: validation cumulative return
     points: 300
-  id: cumulative_return_val
   inputs:
     in: portfolio_opt_validation.stock_out
   module: greenflow_gquant_plugin.analysis
-  type: CumReturnNode
+- id: xboost_model
+  type: TrainXGBoostNode
+  conf:
+    num_of_rounds: 100
+    columns:
+      - datetime
+      - open
+      - close
+      - high
+      - low
+      - asset
+      - volume
+      - returns
+      - indicator
+      - SHIFT_-1
+    include: false
+    xgboost_parameters:
+      eta: 0.3
+      min_child_weight: 1
+      subsample: 1
+      sampling_method: uniform
+      colsample_bytree: 1
+      colsample_bylevel: 1
+      colsample_bynode: 1
+      max_depth: 8
+      max_leaves: 256
+      grow_policy: depthwise
+      gamma: 0
+      lambda: 1
+      alpha: 0
+      tree_method: gpu_hist
+      single_precision_histogram: false
+      deterministic_histogram: false
+      objective: 'reg:squarederror'
+    target: SHIFT_-1
+  inputs:
+    in: persist.train_df@stock_out
+  module: greenflow_gquant_plugin.ml
+- id: train_infer
+  type: InferXGBoostNode
+  conf:
+    prediction: predict
+    pred_contribs: false
+  inputs:
+    model_in: xboost_model.model_out
+    data_in: persist.train_df@stock_out
+  module: greenflow_gquant_plugin.ml
+- id: val_infer
+  type: InferXGBoostNode
+  conf:
+    prediction: predict
+    pred_contribs: false
+  inputs:
+    model_in: xboost_model.model_out
+    data_in: persist.validation_df@stock_out
+  module: greenflow_gquant_plugin.ml
+- id: train_signal
+  type: XGBoostStrategyNode
+  conf: {}
+  inputs:
+    stock_in: train_infer.out
+  module: greenflow_gquant_plugin.strategy
+- id: val_signal
+  type: XGBoostStrategyNode
+  conf: {}
+  inputs:
+    stock_in: val_infer.out
+  module: greenflow_gquant_plugin.strategy
+- id: val_backtest
+  type: SimpleBackTestNode
+  conf: {}
+  inputs:
+    bardata_in: val_signal.stock_out
+  module: greenflow_gquant_plugin.backtest
+- id: persist
+  type: PersistNode
+  conf: {}
+  inputs:
+    train_df@stock_out: train_df.stock_out
+    validation_df@stock_out: validation_df.stock_out
+  module: greenflow_gquant_plugin.transform

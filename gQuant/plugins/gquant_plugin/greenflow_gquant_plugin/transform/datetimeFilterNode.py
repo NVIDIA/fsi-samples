@@ -78,11 +78,13 @@ class DatetimeFilterNode(_PortTypesMixin, Node):
         dataframe
         """
         df = inputs[self.INPUT_PORT_NAME]
-        beg_date = \
-            datetime.datetime.strptime(self.conf['beg'], '%Y-%m-%d')
-        end_date = \
-            datetime.datetime.strptime(self.conf['end'], '%Y-%m-%d')
+        beg_date = datetime.datetime.strptime(self.conf['beg'],
+                                              '%Y-%m-%dT%H:%M:%S.%fZ')
+        end_date = datetime.datetime.strptime(self.conf['end'],
+                                              '%Y-%m-%dT%H:%M:%S.%fZ')
         df = df.query('datetime<@end_date and datetime>=@beg_date',
-                      local_dict={'beg_date': beg_date,
-                                  'end_date': end_date})
+                      local_dict={
+                          'beg_date': beg_date,
+                          'end_date': end_date
+                      })
         return {self.OUTPUT_PORT_NAME: df}
