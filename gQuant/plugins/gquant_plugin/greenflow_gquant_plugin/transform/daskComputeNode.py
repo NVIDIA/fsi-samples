@@ -1,60 +1,85 @@
-import pandas as pd
-import cudf
-from dask.dataframe import DataFrame as DaskDataFrame
-import dask_cudf
-
+from greenflow.dataframe_flow import (ConfSchema, PortsSpecSchema, NodePorts,
+                                      MetaData)
+from greenflow_gquant_plugin._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow import Node
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
-
-from greenflow.dataframe_flow.portsSpecSchema import (
-    PortsSpecSchema, NodePorts)
-
-__all__ = ["DaskComputeNode"]
+from dask.dataframe import DataFrame as DaskDataFrame
+# from dask.distributed import wait
+import dask.distributed
+import cudf
 
 
 class DaskComputeNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)
-        self.INPUT_PORT_NAME = 'in'
-        self.OUTPUT_PORT_NAME = 'out'
+
+    def ports_setup(self):
+        dy = PortsSpecSchema.dynamic
+        port_type = PortsSpecSchema.port_type
+        o_inports = {}
+        o_outports = {}
+        o_inports[self.INPUT_PORT_NAME] = {
+            port_type: [DaskDataFrame, object],
+            dy: True
+        }
+        input_connections = self.get_connected_inports()
+        for port_name in input_connections.keys():
+            if port_name != self.INPUT_PORT_NAME:
+                # determined_type = input_connections[port_name]
+                o_outports[port_name] = {port_type: cudf.DataFrame}
+        return NodePorts(inports=o_inports, outports=o_outports)
 
     def conf_schema(self):
         json = {
-            "title": "Run dask compute",
+            "title": "Compute the dask dataframe",
             "type": "object",
-            "description": "If the input is a dask or dask_cudf dataframe "
-            "then run compute on it, otherwise pass through."
+            "properties": {
+            },
         }
 
-        return ConfSchema(json=json)
-
-    def ports_setup(self):
-        port_type = PortsSpecSchema.port_type
-
-        input_connections = self.get_connected_inports()
-        if (self.INPUT_PORT_NAME in input_connections):
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            inports = {self.INPUT_PORT_NAME: {port_type: determined_type}}
-        else:
-            intypes = [cudf.DataFrame, dask_cudf.DataFrame,
-                       pd.DataFrame, DaskDataFrame]
-            inports = {self.INPUT_PORT_NAME: {port_type: intypes}}
-
-        out_types = [cudf.DataFrame, pd.DataFrame]
-        outports = {self.OUTPUT_PORT_NAME: {port_type: out_types}}
-
-        return NodePorts(inports=inports, outports=outports)
+        ui = {
+        }
+        return ConfSchema(json=json, ui=ui)
 
     def meta_setup(self):
-        # no required columns
-        required = {}
-        '''Pass through columns from inputs to outputs'''
-        return _PortTypesMixin.meta_setup(self, required=required)
+        input_meta = self.get_input_meta()
+        input_connections = self.get_connected_inports()
+        input_cols = {}
+        output_cols = {}
+        for port_name in input_connections.keys():
+            if port_name in input_meta:
+                meta = input_meta[port_name]
+                input_cols[port_name] = meta
+                output_cols[port_name] = meta
+        meta_data = MetaData(inports=input_cols, outports=output_cols)
+        return meta_data
 
     def process(self, inputs):
-        din = inputs[self.INPUT_PORT_NAME]
-        dout = din.compute() if isinstance(din, DaskDataFrame) else din
+        # df = df.drop('datetime', axis=1)
+        input_connections = self.get_connected_inports()
+        determined_type = None
+        for port_name in input_connections.keys():
+            if port_name != self.INPUT_PORT_NAME:
+                determined_type = input_connections[port_name]
 
-        return {self.OUTPUT_PORT_NAME: dout}
+        output = {}
+        if (determined_type[0] is not None and issubclass(determined_type[0],
+                                                          DaskDataFrame)):
+            client = dask.distributed.client.default_client()
+            input_connections = self.get_connected_inports()
+            objs = []
+            for port_name in input_connections.keys():
+                if port_name != self.INPUT_PORT_NAME:
+                    df = inputs[port_name]
+                    objs.append(df)
+            objs = client.compute(objs)
+            # wait([objs])
+            for port_name in input_connections.keys():
+                if port_name != self.INPUT_PORT_NAME:
+                    output[port_name] = objs.pop(0).result()
+        else:
+            for port_name in input_connections.keys():
+                if port_name != self.INPUT_PORT_NAME:
+                    df = inputs[port_name]
+                    output[port_name] = df
+        return output
