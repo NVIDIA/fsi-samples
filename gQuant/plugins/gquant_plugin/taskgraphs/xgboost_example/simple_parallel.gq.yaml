@@ -1,0 +1,26 @@
+- id: paralell
+  type: SimpleParallelNode
+  conf:
+    output:
+      - drop_x2_x3.out
+      - x3_to_sign.out
+    context:
+      num_points:
+        type: number
+        map:
+          - node_id: data_gen
+            xpath: data_gen.conf.n_samples
+        value: 300
+    map:
+      - node_id: data_gen
+        xpath: data_gen.conf.random_state
+    taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
+    iterations: 4
+  inputs: {}
+  module: greenflow_gquant_plugin.transform
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: paralell.drop_x2_x3@out
+    in2: paralell.x3_to_sign@out
