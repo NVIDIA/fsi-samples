@@ -3,8 +3,8 @@ from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
-from greenflow.dataframe_flow.cache import (CACHE_META,
-                                         CACHE_PORTS, CACHE_SCHEMA)
+from greenflow.dataframe_flow.cache import (CACHE_META, CACHE_PORTS,
+                                            CACHE_SCHEMA)
 import json
 import os
 import hashlib

@@ -8,6 +8,7 @@ from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
 import copy
 from cuml import ForestInference
 from greenflow.dataframe_flow.util import get_file_path
+from dask.dataframe import DataFrame as DaskDataFrame
 
 
 __all__ = ['ForestInferenceNode']
@@ -132,7 +133,8 @@ class ForestInferenceNode(_PortTypesMixin, Node):
 
     def ports_setup(self):
         types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
+                 dask_cudf.DataFrame,
+                 DaskDataFrame]
         return self.ports_setup_from_types(types)
 
     def conf_schema(self):

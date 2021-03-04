@@ -3,10 +3,12 @@ from greenflow.dataframe_flow import (ConfSchema, PortsSpecSchema, NodePorts,
 from greenflow_gquant_plugin._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow import Node
 from dask.dataframe import DataFrame as DaskDataFrame
+# from dask.distributed import wait
 import dask.distributed
+import cudf
 
 
-class PersistNode(_PortTypesMixin, Node):
+class DaskComputeNode(_PortTypesMixin, Node):
 
     def init(self):
         _PortTypesMixin.init(self)
@@ -23,13 +25,13 @@ class PersistNode(_PortTypesMixin, Node):
         input_connections = self.get_connected_inports()
         for port_name in input_connections.keys():
             if port_name != self.INPUT_PORT_NAME:
-                determined_type = input_connections[port_name]
-                o_outports[port_name] = {port_type: determined_type}
+                # determined_type = input_connections[port_name]
+                o_outports[port_name] = {port_type: cudf.DataFrame}
         return NodePorts(inports=o_inports, outports=o_outports)
 
     def conf_schema(self):
         json = {
-            "title": "Persist the dask dataframe",
+            "title": "Compute the dask dataframe",
             "type": "object",
             "properties": {
             },
@@ -70,10 +72,11 @@ class PersistNode(_PortTypesMixin, Node):
                 if port_name != self.INPUT_PORT_NAME:
                     df = inputs[port_name]
                     objs.append(df)
-            objs = client.persist(objs)
+            objs = client.compute(objs)
+            # wait([objs])
             for port_name in input_connections.keys():
                 if port_name != self.INPUT_PORT_NAME:
-                    output[port_name] = objs.pop(0)
+                    output[port_name] = objs.pop(0).result()
         else:
             for port_name in input_connections.keys():
                 if port_name != self.INPUT_PORT_NAME:

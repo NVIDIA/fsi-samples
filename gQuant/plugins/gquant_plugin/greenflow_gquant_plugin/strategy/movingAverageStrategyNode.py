@@ -7,6 +7,7 @@ import cudf
 import dask_cudf
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from dask.dataframe import DataFrame as DaskDataFrame
 
 
 @cuda.jit
@@ -60,8 +61,7 @@ class MovingAverageStrategyNode(_PortTypesMixin, Node):
                                                    required=cols_required)
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
+        types = [cudf.DataFrame, DaskDataFrame, dask_cudf.DataFrame]
         return _PortTypesMixin.ports_setup_from_types(self, types)
 
     def conf_schema(self):

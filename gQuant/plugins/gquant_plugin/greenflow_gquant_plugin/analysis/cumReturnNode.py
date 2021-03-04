@@ -3,7 +3,7 @@ from greenflow.dataframe_flow import Node
 import matplotlib as mpl
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-import dask_cudf
+from dask.dataframe import DataFrame as DaskDataFrame
 import cudf
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 from .._port_type_node import _PortTypesMixin
@@ -66,7 +66,7 @@ class CumReturnNode(Node, _PortTypesMixin):
 
         """
         input_df = inputs[self.INPUT_PORT_NAME]
-        if isinstance(input_df,  dask_cudf.DataFrame):
+        if isinstance(input_df,  DaskDataFrame):
             input_df = input_df.compute()  # get the computed value
         label = 'stock'
         if 'label' in self.conf:
@@ -79,7 +79,7 @@ class CumReturnNode(Node, _PortTypesMixin):
         f = plt.figure()
         if (isinstance(input_df,
                        cudf.DataFrame) or isinstance(input_df,
-                                                     dask_cudf.DataFrame)):
+                                                     DaskDataFrame)):
             plt.plot(input_df['datetime'][::stride].to_array(), (input_df[
                              'strategy_returns'].cumsum())[
                                  ::stride].to_array(), 'b', label=label)

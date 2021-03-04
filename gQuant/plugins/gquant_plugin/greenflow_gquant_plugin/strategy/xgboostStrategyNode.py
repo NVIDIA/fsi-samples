@@ -1,5 +1,6 @@
 from greenflow.dataframe_flow import Node
 import cudf
+import dask
 import dask_cudf
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
@@ -28,6 +29,7 @@ class XGBoostStrategyNode(_PortTypesMixin, Node):
 
     def ports_setup(self):
         types = [cudf.DataFrame,
+                 dask.dataframe.DataFrame,
                  dask_cudf.DataFrame]
         return _PortTypesMixin.ports_setup_from_types(self, types)
 

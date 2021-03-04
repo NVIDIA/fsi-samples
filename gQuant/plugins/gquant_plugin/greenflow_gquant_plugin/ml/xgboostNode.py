@@ -10,6 +10,7 @@ from xgboost import Booster
 import copy
 from collections import OrderedDict
 from .._port_type_node import _PortTypesMixin
+from dask.dataframe import DataFrame as DaskDataFrame
 
 
 __all__ = ['TrainXGBoostNode', 'InferXGBoostNode']
@@ -104,8 +105,7 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
             return metadata
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
+        types = [cudf.DataFrame, DaskDataFrame, dask_cudf.DataFrame]
         return self.ports_setup_from_types(types)
 
     def conf_schema(self):
@@ -446,8 +446,7 @@ class InferXGBoostNode(Node):
         return metadata
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
+        types = [cudf.DataFrame, DaskDataFrame, dask_cudf.DataFrame]
         return self.ports_setup_from_types(types)
 
     def conf_schema(self):

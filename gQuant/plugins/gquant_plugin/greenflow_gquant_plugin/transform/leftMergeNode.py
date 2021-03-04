@@ -3,6 +3,7 @@ from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
                                                       MetaData, NodePorts)
 import cudf
+import dask
 import dask_cudf
 import pandas as pd
 from .._port_type_node import _PortTypesMixin
@@ -53,6 +54,7 @@ class LeftMergeNode(_PortTypesMixin, Node):
     def ports_setup(self):
         types = [cudf.DataFrame,
                  dask_cudf.DataFrame,
+                 dask.dataframe.DataFrame,
                  pd.DataFrame]
         return self.ports_setup_from_types(types)
 

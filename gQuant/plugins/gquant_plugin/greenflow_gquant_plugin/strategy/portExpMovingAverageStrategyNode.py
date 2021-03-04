@@ -9,6 +9,7 @@ import math
 import numpy as np
 import cudf
 import pandas as pd
+import dask
 
 
 @cuda.jit
@@ -55,9 +56,10 @@ class PortExpMovingAverageStrategyNode(_PortTypesMixin, Node):
         self.delayed_process = True
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame,
-                 pd.DataFrame]
+        types = [
+            cudf.DataFrame, dask.dataframe.DataFrame, dask_cudf.DataFrame,
+            pd.DataFrame
+        ]
         return _PortTypesMixin.ports_setup_from_types(self, types)
 
     def meta_setup(self):

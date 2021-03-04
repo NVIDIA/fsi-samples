@@ -71,17 +71,19 @@ class BarPlotNode(Node):
         bqplot.Figure
         """
         stock = inputs[self.INPUT_PORT_NAME]
+        num_points = self.conf['points']
+        stride = max(len(stock) // num_points, 1)
         buf = io.BytesIO()
         # Construct the marks
         if (isinstance(stock, cudf.DataFrame)
                 or isinstance(stock, dask_cudf.DataFrame)):
             data_df = stock[[
                 'datetime', 'open', 'high', 'low', 'close', 'volume'
-            ]].to_pandas()
+            ]].iloc[::stride].to_pandas()
         else:
             data_df = stock[[
                 'datetime', 'open', 'high', 'low', 'close', 'volume'
-            ]]
+            ]].iloc[::stride]
         data_df.columns = [
             'Date', 'Open', 'High', 'Low', 'Close', 'Volume'
         ]

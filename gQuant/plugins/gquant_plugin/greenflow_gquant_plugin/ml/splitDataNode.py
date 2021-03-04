@@ -7,6 +7,7 @@ import cudf
 import dask_cudf
 import cuml
 import copy
+from dask.dataframe import DataFrame as DaskDataFrame
 
 
 __all__ = ['DataSplittingNode']
@@ -52,7 +53,8 @@ class DataSplittingNode(_PortTypesMixin, Node):
 
     def ports_setup(self):
         types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
+                 dask_cudf.DataFrame,
+                 DaskDataFrame]
         return self.ports_setup_from_types(types)
 
     def meta_setup(self):

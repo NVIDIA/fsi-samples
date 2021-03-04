@@ -1,7 +1,8 @@
 from .compositeNode import CompositeNode
 from greenflow.dataframe_flow.cache import CACHE_SCHEMA
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                   PortsSpecSchema, NodePorts)
+                                                      PortsSpecSchema,
+                                                      NodePorts)
 from .data_obj import ConfData
 from .json_util import parse_config
 from jsonpath_ng import parse
