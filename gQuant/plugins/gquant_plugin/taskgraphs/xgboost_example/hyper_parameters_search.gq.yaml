@@ -215,4 +215,4 @@
   inputs:
     data_splitter@test: data_splitter.test
     data_splitter@train: data_splitter.train
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin

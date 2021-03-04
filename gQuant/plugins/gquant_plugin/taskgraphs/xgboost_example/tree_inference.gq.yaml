@@ -111,11 +111,11 @@
     xgboost_model@test_infer@out: xgboost_model.test_infer@out
     xgboost_model@test_norm@df_out: xgboost_model.test_norm@df_out
     tree_inference@out: tree_inference.out
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin
 - id: persist
   type: PersistNode
   conf: {}
   inputs:
     data_splitter@test: data_splitter.test
     data_splitter@train: data_splitter.train
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin

@@ -17,7 +17,7 @@
     taskgraph: taskgraphs/xgboost_example/data_generator.gq.yaml
     iterations: 4
   inputs: {}
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin
 - id: ''
   type: Output_Collector
   conf: {}

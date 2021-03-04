@@ -46,9 +46,11 @@ class XGBoostExportNode(Node):
             "description": """Export the xgboost model to a file
             """,
             "properties": {
-                "path":  {
+                "path": {
                     "type": "string",
-                    "description": """The output filepath for the xgboost model"""
+                    "description":
+                    """The output filepath for the xgboost
+                     model"""
                 }
             },
             "required": ["path"],

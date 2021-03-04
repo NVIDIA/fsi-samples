@@ -304,4 +304,4 @@
   inputs:
     split_data@train: split_data.train
     split_data@test: split_data.test
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin

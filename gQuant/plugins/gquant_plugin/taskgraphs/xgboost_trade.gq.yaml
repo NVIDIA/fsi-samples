@@ -219,4 +219,4 @@
   inputs:
     train_df@stock_out: train_df.stock_out
     validation_df@stock_out: validation_df.stock_out
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin
