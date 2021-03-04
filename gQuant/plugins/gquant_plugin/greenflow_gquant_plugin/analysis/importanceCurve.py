@@ -1,5 +1,9 @@
 from greenflow.dataframe_flow import Node
-from bqplot import Axis, LinearScale,  Figure, OrdinalScale, Bars
+# from bqplot import Axis, LinearScale,  Figure, OrdinalScale, Bars
+import matplotlib as mpl
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
+import numpy as np
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, NodePorts,
                                                       MetaData,
                                                       PortsSpecSchema)
@@ -83,8 +87,12 @@ class ImportanceCurveNode(Node):
         model = inputs[self.INPUT_PORT_NAME]
         if isinstance(model, dict):
             model = model['booster']
-        x_ord = OrdinalScale()
-        y_sc = LinearScale()
+        # x_ord = OrdinalScale()
+        # y_sc = LinearScale()
+        backend_ = mpl.get_backend()
+        mpl.use("Agg")  # Prevent showing stuff
+        f = plt.figure()
+
         data = model.get_score(importance_type=self.conf.get('type', 'gain'))
         x_values = []
         y_values = []
@@ -92,9 +100,17 @@ class ImportanceCurveNode(Node):
             x_values.append(key)
             y_values.append(data[key])
 
-        bar = Bars(x=x_values, y=y_values, scales={'x': x_ord, 'y': y_sc})
-        ax_x = Axis(scale=x_ord)
-        ax_y = Axis(scale=y_sc, tick_format='0.2f', orientation='vertical')
-        newFig = Figure(marks=[bar], axes=[ax_x, ax_y], padding_x=0.025,
-                        padding_y=0.025)
-        return {self.OUTPUT_PORT_NAME: newFig}
+        width = 0.35  # the width of the bars
+        x = np.arange(len(x_values))
+        plt.bar(x - width/2, y_values, width, label='Feature Importance')
+        plt.xticks(x, x_values, rotation='vertical')
+        # ax = f.get_axes()[0]
+        # ax.set_xticks(x)
+        # ax.set_xticklabels(x_values)
+        plt.xlabel('Features')
+        plt.ylabel('Importance')
+        plt.grid(True)
+        f.set_figwidth(15)
+        f.set_figheight(8)
+        mpl.use(backend_)
+        return {self.OUTPUT_PORT_NAME: f}

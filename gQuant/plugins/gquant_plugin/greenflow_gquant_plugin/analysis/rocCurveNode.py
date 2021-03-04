@@ -1,6 +1,9 @@
 from greenflow.dataframe_flow import Node
-from bqplot import Axis, LinearScale,  Figure, Lines, PanZoom
+# from bqplot import Axis, LinearScale,  Figure, Lines, PanZoom
 import dask_cudf
+import matplotlib as mpl
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 import cudf
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema,
@@ -96,23 +99,35 @@ class RocCurveNode(Node, _PortTypesMixin):
                                             pred_col)
         auc_value = metrics.auc(fpr, tpr)
         out = {}
+        backend_ = mpl.get_backend()
+        mpl.use("Agg")  # Prevent showing stuff
+
+        f = plt.figure()
 
         if self.outport_connected(self.OUTPUT_PORT_NAME):
-            linear_x = LinearScale()
-            linear_y = LinearScale()
-            yax = Axis(label='True Positive Rate', scale=linear_x,
-                       orientation='vertical')
-            xax = Axis(label='False Positive Rate', scale=linear_y,
-                       orientation='horizontal')
-            panzoom_main = PanZoom(scales={'x': [linear_x]})
+            # linear_x = LinearScale()
+            # linear_y = LinearScale()
+            # yax = Axis(label='True Positive Rate', scale=linear_x,
+            #            orientation='vertical')
+            # xax = Axis(label='False Positive Rate', scale=linear_y,
+            #            orientation='horizontal')
+            # panzoom_main = PanZoom(scales={'x': [linear_x]})
             curve_label = 'ROC (area = {:.2f})'.format(auc_value)
-            line = Lines(x=fpr, y=tpr,
-                         scales={'x': linear_x, 'y': linear_y},
-                         colors=['blue'], labels=[curve_label],
-                         display_legend=True)
-            new_fig = Figure(marks=[line], axes=[yax, xax], title='ROC Curve',
-                             interaction=panzoom_main)
-            out.update({self.OUTPUT_PORT_NAME: new_fig})
+            plt.plot(fpr, tpr, color='blue', label=curve_label)
+            # line = Lines(x=fpr, y=tpr,
+            #              scales={'x': linear_x, 'y': linear_y},
+            #              colors=['blue'], labels=[curve_label],
+            #              display_legend=True)
+            # new_fig = Figure(marks=[line], axes=[yax, xax],
+            #                  title='ROC Curve',
+            #                  interaction=panzoom_main)
+            plt.xlabel('False Positive Rate')
+            plt.ylabel('True Positive Rate')
+            plt.grid(True)
+            plt.title('ROC Curve')
+            plt.legend()
+            mpl.use(backend_)
+            out.update({self.OUTPUT_PORT_NAME: f})
         if self.outport_connected(self.OUTPUT_VALUE_NAME):
             out.update({self.OUTPUT_VALUE_NAME: float(auc_value)})
         return out
