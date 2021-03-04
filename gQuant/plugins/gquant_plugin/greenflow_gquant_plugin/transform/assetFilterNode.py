@@ -1,8 +1,8 @@
 from greenflow.dataframe_flow import Node
 from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                   MetaData,
-                                                   PortsSpecSchema, NodePorts)
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
+                                                      PortsSpecSchema,
+                                                      NodePorts)
 from ..dataloader.stockMap import StockMap
 
 

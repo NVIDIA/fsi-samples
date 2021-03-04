@@ -79,16 +79,16 @@ class _PortTypesMixin(object):
                 self.OUTPUT_PORT_NAME: col_from_inport
             }
             input_cols = {
-                self.INPUT_PORT_NAME: required
+                self.INPUT_PORT_NAME: required.copy()
             }
             meta_data = MetaData(inports=input_cols, outports=output_cols)
             return meta_data
         else:
             input_cols = {
-                self.INPUT_PORT_NAME: required
+                self.INPUT_PORT_NAME: required.copy()
             }
             output_cols = {
-                self.OUTPUT_PORT_NAME: required
+                self.OUTPUT_PORT_NAME: required.copy()
             }
             meta_data = MetaData(inports=input_cols, outports=output_cols)
             return meta_data
@@ -96,11 +96,11 @@ class _PortTypesMixin(object):
     def addition_meta_setup(self, addition, required={}):
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME not in input_meta:
-            col_from_inport = required
+            col_from_inport = required.copy()
         else:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
         input_cols = {
-            self.INPUT_PORT_NAME: required
+            self.INPUT_PORT_NAME: required.copy()
         }
         # additional ports
         output_cols = {
@@ -113,12 +113,12 @@ class _PortTypesMixin(object):
     def deletion_meta_setup(self, deletion, required={}):
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME not in input_meta:
-            col_from_inport = required
+            col_from_inport = required.copy()
         else:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
         # delete the columns from the inputs
         input_cols = {
-            self.INPUT_PORT_NAME: required
+            self.INPUT_PORT_NAME: required.copy()
         }
         for key in deletion:
             if key in col_from_inport:
@@ -129,7 +129,7 @@ class _PortTypesMixin(object):
 
     def retention_meta_setup(self, retention, required={}):
         input_cols = {
-            self.INPUT_PORT_NAME: required
+            self.INPUT_PORT_NAME: required.copy()
         }
         meta_data = MetaData(inports=input_cols,
                              outports={self.OUTPUT_PORT_NAME: retention})

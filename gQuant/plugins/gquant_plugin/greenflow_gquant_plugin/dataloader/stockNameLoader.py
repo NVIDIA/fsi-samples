@@ -1,9 +1,8 @@
 from greenflow.dataframe_flow import Node
 import cudf
 from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   NodePorts,
-                                                   MetaData,
-                                                   ConfSchema)
+                                                      NodePorts, MetaData,
+                                                      ConfSchema)
 from ..cache import CACHE_NAME
 from greenflow.dataframe_flow.util import get_file_path
 

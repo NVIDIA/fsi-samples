@@ -2,9 +2,9 @@ from greenflow.dataframe_flow import Node
 import cudf
 import dask_cudf
 from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                   MetaData,
-                                                   PortsSpecSchema, NodePorts)
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
+                                                      PortsSpecSchema,
+                                                      NodePorts)
 import copy
 from cuml import ForestInference
 from greenflow.dataframe_flow.util import get_file_path

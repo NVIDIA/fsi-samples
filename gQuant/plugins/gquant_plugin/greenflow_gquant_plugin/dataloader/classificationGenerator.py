@@ -1,8 +1,7 @@
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   NodePorts,
-                                                   MetaData,
-                                                   ConfSchema)
+                                                      NodePorts, MetaData,
+                                                      ConfSchema)
 import cudf
 import dask_cudf
 import cuml

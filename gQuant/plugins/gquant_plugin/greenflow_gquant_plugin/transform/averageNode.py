@@ -62,8 +62,10 @@ class AverageNode(_PortTypesMixin, Node):
     def meta_setup(self):
         required_col = {"asset": "int64"}
         if 'column' in self.conf:
-            retention = {self.conf['column']: "float64",
-                         "asset": "int64"}
+            retention = {
+                "asset": "int64",
+                self.conf['column']: "float64",
+            }
             return _PortTypesMixin.retention_meta_setup(self,
                                                         retention,
                                                         required=required_col)

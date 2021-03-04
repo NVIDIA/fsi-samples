@@ -1,8 +1,7 @@
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   NodePorts,
-                                                   MetaData,
-                                                   ConfSchema)
+                                                      NodePorts, MetaData,
+                                                      ConfSchema)
 import cudf
 import dask_cudf
 import pandas as pd
@@ -35,13 +34,15 @@ class CsvStockLoader(_PortTypesMixin, Node):
         pass
 
     def meta_setup(self):
-        column_types = {"datetime": "date",
-                        "asset": "int64",
-                        "volume": "float64",
-                        "close": "float64",
-                        "open": "float64",
-                        "high": "float64",
-                        "low": "float64"}
+        column_types = {
+            "datetime": "datetime64[ns]",
+            "open": "float64",
+            "close": "float64",
+            "high": "float64",
+            "low": "float64",
+            "asset": "int64",
+            "volume": "float64"
+        }
         out_cols = {
             CUDF_PORT_NAME: column_types,
             DASK_CUDF_PORT_NAME: column_types,
@@ -96,7 +97,7 @@ class CsvStockLoader(_PortTypesMixin, Node):
             # construct the standard datetime str
             df['DTE'] = ymd[0].str.cat(
                 ymd[1],
-                '-').str.cat(ymd[2], '-').astype('datetime64[ms]')
+                '-').str.cat(ymd[2], '-').astype('datetime64[ns]')
             df = df[['DTE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'SM_ID', 'VOLUME']]
             df['VOLUME'] /= 1000
             # change the names

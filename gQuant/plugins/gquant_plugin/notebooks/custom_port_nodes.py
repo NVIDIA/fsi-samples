@@ -128,14 +128,14 @@ class DistanceNode(Node):
         input_meta = self.get_input_meta()
         output_cols = ({
                 'distance_df': {
-                    'distance_cudf': 'float64',
                     'x': 'float64',
-                    'y': 'float64'
+                    'y': 'float64',
+                    'distance_cudf': 'float64',
                 },
                 'distance_abs_df': {
-                    'distance_abs_cudf': 'float64',
                     'x': 'float64',
-                    'y': 'float64'
+                    'y': 'float64',
+                    'distance_abs_cudf': 'float64',
                 }
             })
         if 'points_df_in' in input_meta:
@@ -206,9 +206,9 @@ class NumbaDistanceNode(Node):
         input_meta = self.get_input_meta()
         output_cols = ({
                 'distance_df': {
-                    'distance_numba': 'float64',
                     'x': 'float64',
-                    'y': 'float64'
+                    'y': 'float64',
+                    'distance_numba': 'float64',
                 }
             })
         if 'points_df_in' in input_meta:
@@ -297,9 +297,9 @@ class CupyDistanceNode(Node):
         input_meta = self.get_input_meta()
         output_cols = ({
                 'distance_df': {
-                    'distance_cupy': 'float64',
                     'x': 'float64',
-                    'y': 'float64'
+                    'y': 'float64',
+                    'distance_cupy': 'float64',
                 }
             })
         if 'points_df_in' in input_meta:

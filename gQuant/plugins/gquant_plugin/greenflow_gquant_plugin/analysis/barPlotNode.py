@@ -42,7 +42,7 @@ class BarPlotNode(Node):
                                                                  Figure)
 
     def meta_setup(self):
-        cols_required = {"datetime": "date",
+        cols_required = {"datetime": "datetime64[ns]",
                          "open": "float64",
                          "close": "float64",
                          "high": "float64",

@@ -38,7 +38,7 @@ class XGBoostStrategyNode(_PortTypesMixin, Node):
         # if 'no_feature' in self.conf:
         #     retention = self.conf['no_feature']
         # else:
-        cols_required = {'datetime': 'date',
+        cols_required = {'datetime': 'datetime64[ns]',
                          "asset": "int64"}
         # self.delayed_process = True
         required = {

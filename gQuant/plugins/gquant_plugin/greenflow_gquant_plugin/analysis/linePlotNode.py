@@ -68,7 +68,7 @@ class LinePlotNode(Node, _PortTypesMixin):
                                                                  Figure)
 
     def meta_setup(self):
-        cols_required = {"datetime": "date"}
+        cols_required = {"datetime": "datetime64[ns]"}
         required = {
             self.INPUT_PORT_NAME: cols_required
         }

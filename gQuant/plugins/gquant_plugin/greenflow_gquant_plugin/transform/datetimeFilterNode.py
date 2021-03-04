@@ -22,7 +22,7 @@ class DatetimeFilterNode(_PortTypesMixin, Node):
         self.OUTPUT_PORT_NAME = 'stock_out'
 
     def meta_setup(self):
-        cols_required = {"datetime": "date"}
+        cols_required = {"datetime": "datetime64[ns]"}
         return _PortTypesMixin.meta_setup(self,
                                           required=cols_required)
 

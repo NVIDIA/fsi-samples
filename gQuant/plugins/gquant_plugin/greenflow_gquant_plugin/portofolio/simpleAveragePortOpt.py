@@ -11,10 +11,10 @@ class SimpleAveragePortOpt(_PortTypesMixin, Node):
         self.OUTPUT_PORT_NAME = 'stock_out'
 
     def meta_setup(self):
-        cols_required = {"datetime": "date",
+        cols_required = {"datetime": "datetime64[ns]",
                          "strategy_returns": "float64",
                          "asset": "int64"}
-        retention = {"datetime": "date",
+        retention = {"datetime": "datetime64[ns]",
                      "strategy_returns": "float64"}
         return _PortTypesMixin.retention_meta_setup(self,
                                                     retention,
@@ -48,6 +48,6 @@ class SimpleAveragePortOpt(_PortTypesMixin, Node):
         """
         input_df = inputs[self.INPUT_PORT_NAME]
         port = input_df[['datetime', 'strategy_returns']] \
-            .groupby(['datetime']).mean().reset_index()
+            .groupby(['datetime']).mean().reset_index().sort_values('datetime')
         port.columns = ['datetime', 'strategy_returns']
         return {self.OUTPUT_PORT_NAME: port}

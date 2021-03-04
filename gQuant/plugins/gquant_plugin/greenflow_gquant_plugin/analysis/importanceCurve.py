@@ -1,8 +1,8 @@
 from greenflow.dataframe_flow import Node
 from bqplot import Axis, LinearScale,  Figure, OrdinalScale, Bars
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, NodePorts,
-                                                   MetaData,
-                                                   PortsSpecSchema)
+                                                      MetaData,
+                                                      PortsSpecSchema)
 from xgboost import Booster
 
 

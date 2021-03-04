@@ -1,13 +1,13 @@
-## greenflow RAPIDS Plugin Example
-This is a example to show how to write an external greenflow RAPIDS plugin. greenflow take advantage of the `entry point` inside the `setup.py` file to register the plugin. greenflow can discover all the plugins that has the entry point group name `greenflow.plugin`. Check the `setup.py` file to see details.
-
+## Greenflow RAPIDS Plugin Example
 The examples range from simple accelerated calculation of technical trading indicators through defining workflows for interactively developing trading strategies and automating many typical tasks.
 
-The extensibility of the system is highlighted by examples showing how to create a dataframe flow graph, which allows for easy re-use and composability of higher level workflows.
+The extensibility of the system is highlighted by examples showing how to create a taskgraph workflow, which allows for easy re-use and composability of higher level workflows.
 
 The examples also show how to easily convert a single-threaded solution into a Dask distributed one. 
 
 These examples can be used as-is or, as they are open source, can be extended to suit your environments.
+
+Greenflow take advantage of the `entry point` inside the `setup.py` file to register the plugin. Greenflow can discover all the plugins that has the entry point group name `greenflow.plugin`. Check the `setup.py` file to see details.
 
 ### Create an new Python enviroment
 ```bash
@@ -29,20 +29,10 @@ bash download_data.sh
 
 ```
 
-### Install the greenflow 
-To install the greenflow graph computation library, run:
-```bash
-pip install greenflow
-```
-Or install `greenflow` at the greenflow directory:
-```bash
-pip install .
-```
-
 ### Install the greenflowlab JupyterLab plugin
 To install `greenflowlab` JupyterLab plugin, make sure `nodejs` of version [12^14^15] is installed. E.g:
 ```bash
-conda install -c conda-forge nodejs=12.4.0
+conda install -c conda-forge python-graphviz nodejs=12.4.0 pydot
 ```
 Then install the `greenflowlab`:
 ```bash
@@ -56,7 +46,7 @@ pip install .
 ### Install the external example plugin
 Install RAPIDS:
 ```bash
-conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.17
+conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.18
 ```
 To install the external plugin, in the plugin diretory, run following command
 ```bash

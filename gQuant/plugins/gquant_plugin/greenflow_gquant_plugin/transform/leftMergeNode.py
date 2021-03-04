@@ -1,8 +1,7 @@
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   MetaData,
-                                                   NodePorts)
+                                                      MetaData, NodePorts)
 import cudf
 import dask_cudf
 import pandas as pd

@@ -1,6 +1,8 @@
-from greenflow.plugin_nodes.util.contextCompositeNode import ContextCompositeNode
+from greenflow.plugin_nodes.util.contextCompositeNode import \
+    ContextCompositeNode
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                   PortsSpecSchema, NodePorts)
+                                                      PortsSpecSchema,
+                                                      NodePorts)
 from greenflow.dataframe_flow.cache import CACHE_SCHEMA
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow import Node

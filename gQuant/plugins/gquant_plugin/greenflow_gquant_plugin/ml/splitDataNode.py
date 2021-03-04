@@ -1,6 +1,7 @@
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                   NodePorts, PortsSpecSchema)
+                                                      NodePorts,
+                                                      PortsSpecSchema)
 from greenflow.dataframe_flow import Node
 import cudf
 import dask_cudf

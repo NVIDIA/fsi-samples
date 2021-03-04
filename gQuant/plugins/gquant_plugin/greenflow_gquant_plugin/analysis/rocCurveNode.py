@@ -2,8 +2,9 @@ from greenflow.dataframe_flow import Node
 from bqplot import Axis, LinearScale,  Figure, Lines, PanZoom
 import dask_cudf
 import cudf
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, PortsSpecSchema,
-                                                   MetaData)
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema,
+                                                      MetaData)
 from .._port_type_node import _PortTypesMixin
 from sklearn import metrics
 

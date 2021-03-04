@@ -93,7 +93,7 @@ class Node(_PortsMixin, _Node):
 
         self.delayed_process = False
         # eargerly infer the metadata, costly
-        self.infer_meta = True
+        self.infer_meta = False
         # customized the column setup
         self.init()
         self.profile = False  # by default, do not profile
