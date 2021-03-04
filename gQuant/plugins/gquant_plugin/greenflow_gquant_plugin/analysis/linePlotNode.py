@@ -1,5 +1,7 @@
 from greenflow.dataframe_flow import Node
-from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
+import matplotlib as mpl
+from matplotlib.figure import Figure
+import matplotlib.pyplot as plt
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
 import cudf
 import dask_cudf
@@ -96,12 +98,10 @@ class LinePlotNode(Node, _PortTypesMixin):
 
         num_points = self.conf['points']
         stride = max(len(input_df) // num_points, 1)
-        date_co = DateScale()
-        linear_co = LinearScale()
-        yax = Axis(label='', scale=linear_co, orientation='vertical')
-        xax = Axis(label='Time', scale=date_co, orientation='horizontal')
-        panzoom_main = PanZoom(scales={'x': [date_co]})
-        lines = []
+        backend_ = mpl.get_backend()
+        mpl.use("Agg")  # Prevent showing stuff
+        f = plt.figure()
+
         for line in self.conf['lines']:
             col_name = line['column']
             label_name = line['label']
@@ -109,19 +109,14 @@ class LinePlotNode(Node, _PortTypesMixin):
             if (isinstance(input_df,
                            cudf.DataFrame) or isinstance(input_df,
                                                          dask_cudf.DataFrame)):
-                line = Lines(x=input_df['datetime'][::stride].to_array(),
-                             y=input_df[col_name][::stride].to_array(),
-                             scales={'x': date_co, 'y': linear_co},
-                             colors=[color],
-                             labels=[label_name], display_legend=True)
+                line = plt.plot(input_df['datetime'][::stride].to_array(),
+                                input_df[col_name][::stride].to_array(),
+                                color=color, label=label_name)
             else:
-                line = Lines(x=input_df['datetime'][::stride],
-                             y=input_df[col_name][::stride],
-                             scales={'x': date_co, 'y': linear_co},
-                             colors=[color],
-                             labels=[label_name], display_legend=True)
-
-            lines.append(line)
-        new_fig = Figure(marks=lines, axes=[yax, xax],
-                         title=self.conf['title'], interaction=panzoom_main)
-        return {self.OUTPUT_PORT_NAME: new_fig}
+                line = plt.plot(input_df['datetime'][::stride],
+                                input_df[col_name][::stride],
+                                color=color, label=label_name)
+        plt.grid(True)
+        plt.legend()
+        mpl.use(backend_)
+        return {self.OUTPUT_PORT_NAME: f}

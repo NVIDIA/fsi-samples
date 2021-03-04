@@ -5,8 +5,6 @@ from greenflow.dataframe_flow import Node
 from dask.dataframe import DataFrame as DaskDataFrame
 from dask.distributed import wait
 import dask.distributed
-from cudf import DataFrame as CDataFrame
-from pandas import DataFrame as PDataFrame
 
 
 class PersistNode(_PortTypesMixin, Node):
@@ -20,7 +18,7 @@ class PersistNode(_PortTypesMixin, Node):
         o_inports = {}
         o_outports = {}
         o_inports[self.INPUT_PORT_NAME] = {
-            port_type: [DaskDataFrame, PDataFrame, CDataFrame],
+            port_type: [DaskDataFrame, object],
             dy: True
         }
         input_connections = self.get_connected_inports()
