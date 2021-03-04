@@ -4,7 +4,7 @@ setup(
     name='greenflow_gquant_plugin',
     version='0.0.2',
     install_requires=[
-        "bqplot", "tables", "ray[tune]"
+        "bqplot", "tables", "ray[tune]", "matplotlib", "mplfinance"
     ],
     packages=find_packages(include=['greenflow_gquant_plugin',
                                     'greenflow_gquant_plugin.analysis',
