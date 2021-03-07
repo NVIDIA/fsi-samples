@@ -1,27 +1,47 @@
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow import Node, PortsSpecSchema
+from ..simpleNodeMixin import SimpleNodeMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class DropNode(_PortTypesMixin, Node):
+class DropNode(SimpleNodeMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        SimpleNodeMixin.init(self)
+        port_type = PortsSpecSchema.port_type
+        self.INPUT_PORT_NAME = 'in'
+        self.OUTPUT_PORT_NAME = 'out'
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: {}
+        }
+        dropped = {}
+        for k in self.conf.get('columns', {}):
+            dropped[k] = None
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_DELETION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: dropped
+            }
+        }
 
     def meta_setup(self):
-        cols_required = {}
-        if 'columns' in self.conf:
-            dropped = {}
-            for k in self.conf['columns']:
-                dropped[k] = None
-            return _PortTypesMixin.deletion_meta_setup(self,
-                                                       dropped,
-                                                       required=cols_required)
-        else:
-            return _PortTypesMixin.meta_setup(self, required=cols_required)
+        return SimpleNodeMixin.meta_setup(self)
 
     def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+        return SimpleNodeMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

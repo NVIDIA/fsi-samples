@@ -1,88 +1,77 @@
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                      NodePorts,
+from ..simpleNodeMixin import SimpleNodeMixin
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema)
 from greenflow.dataframe_flow import Node
-import cudf
-import dask_cudf
 import cuml
 import copy
-from dask.dataframe import DataFrame as DaskDataFrame
 
 
 __all__ = ['DataSplittingNode']
 
 
-class DataSplittingNode(_PortTypesMixin, Node):
+class DataSplittingNode(SimpleNodeMixin, Node):
 
     def init(self):
+        SimpleNodeMixin.init(self)
         self.delayed_process = True
+        port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME_TRAIN = 'train'
         self.OUTPUT_PORT_NAME_TEST = 'test'
-
-    def ports_setup_from_types(self, types):
-        port_type = PortsSpecSchema.port_type
-        input_ports = {
+        self.port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
-            }
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
         }
-
-        output_ports = {
+        self.port_outports = {
             self.OUTPUT_PORT_NAME_TRAIN: {
-                port_type: types
+                port_type: "${port:in}"
             },
             self.OUTPUT_PORT_NAME_TEST: {
-                port_type: types
+                port_type: "${port:in}"
             }
         }
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            # connected
-            return NodePorts(inports={self.INPUT_PORT_NAME: {
-                port_type: determined_type}},
-                outports={self.OUTPUT_PORT_NAME_TEST: {
-                    port_type: determined_type},
-                    self.OUTPUT_PORT_NAME_TRAIN: {
-                    port_type: determined_type}
-            })
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: {}
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME_TRAIN: {
+                self.META_OP: self.META_OP_DELETION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: {}
+            },
+            self.OUTPUT_PORT_NAME_TEST: {
+                self.META_OP: self.META_OP_DELETION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: {}
+            }
+        }
+        if 'target' in self.conf:
+            target_col = self.conf['target']
+            self.meta_inports = {
+                self.INPUT_PORT_NAME: {
+                    target_col: None
+                }
+            }
+            self.meta_outports[self.OUTPUT_PORT_NAME_TEST][self.META_ORDER] = {
+                target_col: -1
+            }
+            self.meta_outports[self.OUTPUT_PORT_NAME_TRAIN][
+                self.META_ORDER] = {
+                    target_col: -1,
+                }
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame,
-                 DaskDataFrame]
-        return self.ports_setup_from_types(types)
+        return SimpleNodeMixin.ports_setup(self)
 
     def meta_setup(self):
-        cols_required = {}
-        col_from_inport = {}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        input_meta = self.get_input_meta()
-        if self.INPUT_PORT_NAME in input_meta:
-            col_inport = input_meta[self.INPUT_PORT_NAME]
-            if 'target' in self.conf:
-                target_col = self.conf['target']
-                for i in sorted(col_inport.keys()):
-                    if i != target_col:
-                        col_from_inport[i] = col_inport[i]
-                col_from_inport[target_col] = col_inport[target_col]
-                if target_col in col_inport:
-                    required[self.INPUT_PORT_NAME][target_col] = \
-                        col_inport[target_col]
-        else:
-            col_from_inport = required[self.INPUT_PORT_NAME]
-        output_cols = {
-            self.OUTPUT_PORT_NAME_TRAIN: col_from_inport,
-            self.OUTPUT_PORT_NAME_TEST: col_from_inport
-        }
-        metadata = MetaData(inports=required, outports=output_cols)
-        return metadata
+        return SimpleNodeMixin.meta_setup(self)
+        # outputs = meta.outports[self.OUTPUT_PORT_NAME_TRAIN]
+        # myList = list(outputs.keys())
+        # [i[0] for i in sorted(enumerate(myList), key=lambda x:x[1])]
 
     def conf_schema(self):
         json = {
@@ -132,7 +121,9 @@ class DataSplittingNode(_PortTypesMixin, Node):
         """
         input_df = inputs[self.INPUT_PORT_NAME]
         target_col = self.conf['target']
-        train_cols = input_df.columns.difference([target_col])
+        train_cols = list(input_df.columns)
+        if target_col in train_cols:
+            train_cols.remove(target_col)
         conf = copy.copy(self.conf)
         del conf['target']
         r = cuml.preprocessing.model_selection.train_test_split(

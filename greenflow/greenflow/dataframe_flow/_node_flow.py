@@ -707,6 +707,9 @@ class NodeTaskGraphMixin(object):
 
             ival = icols[kcol]
             if kval != ival:
+                if kval is None:
+                    # bypass None type
+                    return
                 # special case for 'date'
                 if (kval == 'date' and ival
                         in ('datetime64[ms]', 'date', 'datetime64[ns]')):
