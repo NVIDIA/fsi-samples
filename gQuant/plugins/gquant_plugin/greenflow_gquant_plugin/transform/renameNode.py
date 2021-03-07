@@ -27,6 +27,12 @@ class RenameNode(_PortTypesMixin, Node):
         self.meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: {}
+            }
+        }
 
     def update(self):
         retention = {}
@@ -40,12 +46,7 @@ class RenameNode(_PortTypesMixin, Node):
                 del col_from_inport[self.conf['old']]
                 col_from_inport[self.conf['new']] = oldType
                 retention = col_from_inport
-        self.meta_outports = {
-            self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: retention
-            }
-        }
+        self.meta_outports[self.OUTPUT_PORT_NAME][self.META_DATA] = retention
         _PortTypesMixin.update(self)
 
     def meta_setup(self):

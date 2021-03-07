@@ -39,7 +39,17 @@ class ForestInferenceNode(_PortTypesMixin, Node):
             self.INPUT_PORT_NAME: {},
             self.INPUT_PORT_MODEL_NAME: {}
         }
-    
+        predict = self.conf.get('prediction', 'predict')
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_ADDITION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: {
+                    predict: None
+                }
+            }
+        }
+
     def update(self):
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_MODEL_NAME in input_meta:
@@ -66,16 +76,6 @@ class ForestInferenceNode(_PortTypesMixin, Node):
                             self.INPUT_PORT_NAME][col] = col_from_inport[col]
                     else:
                         self.meta_inports[self.INPUT_PORT_NAME][col] = None
-        predict = self.conf.get('prediction', 'predict')
-        self.meta_outports = {
-            self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: {
-                    predict: None
-                }
-            }
-        }
         _PortTypesMixin.update(self)
 
     def meta_setup(self):

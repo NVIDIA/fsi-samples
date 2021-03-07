@@ -150,6 +150,7 @@ class NodeTaskGraphMixin(object):
         else:
             return ports
         if hasattr(self, 'inputs'):
+            connected_inports = self.get_connected_inports()
             for inp in self.inputs:
                 to_port = inp['to_port']
                 if to_port in inports and (not inports[to_port].get(dy,
@@ -157,6 +158,8 @@ class NodeTaskGraphMixin(object):
                     # skip connected non dynamic ports
                     continue
                 else:
+                    if to_port in connected_inports:
+                        types = connected_inports[to_port]
                     inports[inp['from_node'].uid+'@'+inp['from_port']] = {
                         port_type: types, dy: True}
         return ports

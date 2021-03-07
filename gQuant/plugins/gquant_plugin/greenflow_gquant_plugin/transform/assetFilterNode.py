@@ -36,8 +36,6 @@ class AssetFilterNode(_PortTypesMixin, Node):
             }
         }
         cols_required = {"asset": "int64"}
-        name = self._find_asset_name()
-        asset_retension = {"asset_name": name}
         self.meta_inports = {
             self.INPUT_PORT_NAME: cols_required,
             self.INPUT_MAP_NAME: {}
@@ -50,7 +48,7 @@ class AssetFilterNode(_PortTypesMixin, Node):
             },
             self.OUTPUT_ASSET_NAME: {
                 self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: asset_retension
+                self.META_DATA: {}
             }
         }
 
@@ -59,6 +57,13 @@ class AssetFilterNode(_PortTypesMixin, Node):
 
     def meta_setup(self):
         return _PortTypesMixin.meta_setup(self)
+
+    def update(self):
+        name = self._find_asset_name()
+        asset_retension = {"asset_name": name}
+        self.meta_outports[self.OUTPUT_ASSET_NAME][
+            self.META_DATA] = asset_retension
+        _PortTypesMixin.update(self)
 
     def _find_asset_name(self):
         name = ""
