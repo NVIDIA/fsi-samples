@@ -1,4 +1,4 @@
-from ..simpleNodeMixin import SimpleNodeMixin
+from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema)
 from greenflow.dataframe_flow import Node
@@ -9,10 +9,10 @@ import copy
 __all__ = ['DataSplittingNode']
 
 
-class DataSplittingNode(SimpleNodeMixin, Node):
+class DataSplittingNode(_PortTypesMixin, Node):
 
     def init(self):
-        SimpleNodeMixin.init(self)
+        _PortTypesMixin.init(self)
         self.delayed_process = True
         port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = 'in'
@@ -65,13 +65,10 @@ class DataSplittingNode(SimpleNodeMixin, Node):
                 }
 
     def ports_setup(self):
-        return SimpleNodeMixin.ports_setup(self)
+        return _PortTypesMixin.ports_setup(self)
 
     def meta_setup(self):
-        return SimpleNodeMixin.meta_setup(self)
-        # outputs = meta.outports[self.OUTPUT_PORT_NAME_TRAIN]
-        # myList = list(outputs.keys())
-        # [i[0] for i in sorted(enumerate(myList), key=lambda x:x[1])]
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

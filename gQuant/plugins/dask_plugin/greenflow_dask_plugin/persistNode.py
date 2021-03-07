@@ -1,5 +1,5 @@
 from greenflow.dataframe_flow import (ConfSchema, PortsSpecSchema)
-from greenflow_gquant_plugin.simpleNodeMixin import SimpleNodeMixin
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 from greenflow.dataframe_flow import Node
 from dask.dataframe import DataFrame as DaskDataFrame
 import dask.distributed
@@ -27,6 +27,9 @@ class PersistNode(SimpleNodeMixin, Node):
     def ports_setup(self):
         return SimpleNodeMixin.ports_setup(self)
 
+    def meta_setup(self):
+        return SimpleNodeMixin.meta_setup(self)
+
     def conf_schema(self):
         json = {
             "title": "Persist the dask dataframe",
@@ -38,9 +41,6 @@ class PersistNode(SimpleNodeMixin, Node):
         ui = {
         }
         return ConfSchema(json=json, ui=ui)
-
-    def meta_setup(self):
-        return SimpleNodeMixin.meta_setup(self)
 
     def process(self, inputs):
         # df = df.drop('datetime', axis=1)

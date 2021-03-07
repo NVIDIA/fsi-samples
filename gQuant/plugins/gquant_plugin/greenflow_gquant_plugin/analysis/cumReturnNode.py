@@ -1,33 +1,50 @@
-from greenflow.dataframe_flow import Node
-# from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 import matplotlib as mpl
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from dask.dataframe import DataFrame as DaskDataFrame
 import cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
 
-class CumReturnNode(Node, _PortTypesMixin):
+class CumReturnNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'cum_return'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["matplotlib.figure.Figure"]
+            }
+        }
         cols_required = {"datetime": "datetime64[ns]",
                          "strategy_returns": "float64"}
-        required = {
+        retension = {}
+        self.meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retension
+            }
+        }
 
     def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Figure)
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

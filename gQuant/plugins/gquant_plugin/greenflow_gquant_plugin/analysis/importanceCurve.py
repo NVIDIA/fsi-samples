@@ -1,43 +1,45 @@
-from greenflow.dataframe_flow import Node
-# from bqplot import Axis, LinearScale,  Figure, OrdinalScale, Bars
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 import matplotlib as mpl
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, NodePorts,
-                                                      MetaData,
-                                                      PortsSpecSchema)
-from xgboost import Booster
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from .._port_type_node import _PortTypesMixin
 
 
-class ImportanceCurveNode(Node):
+class ImportanceCurveNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'importance_curve'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: ["Booster", "builtins.dict"]
+            }
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["xgboost.matplotlib.figure.Figure"]
+            }
+        }
         cols_required = {}
-        required = {
+        retension = {}
+        self.meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retension
+            }
+        }
 
     def ports_setup(self):
-        port_type = PortsSpecSchema.port_type
-        output_ports = {
-            self.OUTPUT_PORT_NAME: {
-                port_type: Figure
-            }
-        }
-        input_ports = {
-            self.INPUT_PORT_NAME: {
-                port_type: [Booster, dict]
-            }
-        }
-        return NodePorts(inports=input_ports, outports=output_ports)
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

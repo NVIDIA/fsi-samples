@@ -1,18 +1,49 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 import matplotlib as mpl
-from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 import cudf
 import dask_cudf
 from .._port_type_node import _PortTypesMixin
 
 
-class LinePlotNode(Node, _PortTypesMixin):
+class LinePlotNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'lineplot'
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["matplotlib.figure.Figure"]
+            }
+        }
+        cols_required = {"datetime": "datetime64[ns]"}
+        retension = {}
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retension
+            }
+        }
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         color_strings = ['black', 'yellow', 'blue',
@@ -64,19 +95,6 @@ class LinePlotNode(Node, _PortTypesMixin):
             return ConfSchema(json=json, ui=ui)
         else:
             return ConfSchema(json=json, ui=ui)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Figure)
-
-    def meta_setup(self):
-        cols_required = {"datetime": "datetime64[ns]"}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
 
     def process(self, inputs):
         """

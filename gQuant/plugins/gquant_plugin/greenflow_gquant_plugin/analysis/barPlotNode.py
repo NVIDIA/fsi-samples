@@ -1,19 +1,55 @@
-from greenflow.dataframe_flow import Node
-# from bqplot import Axis, LinearScale, DateScale, Figure, OHLC, Bars, Tooltip
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 import mplfinance as mpf
 from ipywidgets import Image
 import dask_cudf
 import io
 import cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
 
-class BarPlotNode(Node):
+class BarPlotNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'barplot'
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["ipywidgets.Image"]
+            }
+        }
+        cols_required = {"datetime": "datetime64[ns]",
+                         "open": "float64",
+                         "close": "float64",
+                         "high": "float64",
+                         "low": "float64",
+                         "volume": "float64"}
+        retension = {}
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retension
+            }
+        }
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {
@@ -38,24 +74,6 @@ class BarPlotNode(Node):
         ui = {
         }
         return ConfSchema(json=json, ui=ui)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Image)
-
-    def meta_setup(self):
-        cols_required = {"datetime": "datetime64[ns]",
-                         "open": "float64",
-                         "close": "float64",
-                         "high": "float64",
-                         "low": "float64",
-                         "volume": "float64"}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
 
     def process(self, inputs):
         """

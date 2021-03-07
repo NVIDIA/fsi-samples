@@ -1,4 +1,4 @@
-from .._port_type_node import _PortTypesMixin
+from .._port_type_node import _PortTypesMixin, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from greenflow.dataframe_flow import Node
 
@@ -6,16 +6,42 @@ from greenflow.dataframe_flow import Node
 class SortNode(_PortTypesMixin, Node):
 
     def init(self):
-        self.delayed_process = True
         _PortTypesMixin.init(self)
+        self.INPUT_PORT_NAME = 'in'
+        self.OUTPUT_PORT_NAME = 'out'
+        self.delayed_process = True
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        cols_required = {}
+        addition = {}
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_ADDITION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: addition
+            }
+        }
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
 
     def meta_setup(self):
-        cols_required = {}
-        return _PortTypesMixin.meta_setup(self,
-                                          required=cols_required)
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

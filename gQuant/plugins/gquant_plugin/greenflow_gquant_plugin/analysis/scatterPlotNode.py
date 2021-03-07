@@ -1,9 +1,9 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from bqplot import (Axis, LinearScale,  Figure,
                     DateScale, ColorScale, ColorAxis, Scatter)
 import dask_cudf
 import cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
 __all__ = ["ScatterPlotNode"]
@@ -15,13 +15,26 @@ scaleMap = {
 }
 
 
-class ScatterPlotNode(Node, _PortTypesMixin):
+class ScatterPlotNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'scatter_plot'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["bqplot.Figure"]
+            }
+        }
         cols_required = {}
         if 'col_x' in self.conf:
             cols_required[self.conf['col_x']] = None
@@ -29,16 +42,22 @@ class ScatterPlotNode(Node, _PortTypesMixin):
             cols_required[self.conf['col_y']] = None
         if 'col_color' in self.conf:
             cols_required[self.conf['col_color']] = None
-        required = {
+        retension = {}
+        self.meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retension
+            }
+        }
 
     def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Figure)
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

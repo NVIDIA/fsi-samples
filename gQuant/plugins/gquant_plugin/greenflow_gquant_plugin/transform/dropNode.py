@@ -1,12 +1,12 @@
 from greenflow.dataframe_flow import Node, PortsSpecSchema
-from ..simpleNodeMixin import SimpleNodeMixin
+from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 
 
-class DropNode(SimpleNodeMixin, Node):
+class DropNode(_PortTypesMixin, Node):
 
     def init(self):
-        SimpleNodeMixin.init(self)
+        _PortTypesMixin.init(self)
         port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
@@ -38,10 +38,10 @@ class DropNode(SimpleNodeMixin, Node):
         }
 
     def meta_setup(self):
-        return SimpleNodeMixin.meta_setup(self)
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
-        return SimpleNodeMixin.ports_setup(self)
+        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

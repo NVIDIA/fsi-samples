@@ -1,13 +1,11 @@
 from .. import cuindicator as ci
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from numba import cuda
 import math
 import numpy as np
 import cudf
-import dask_cudf
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from dask.dataframe import DataFrame as DaskDataFrame
 
 
 @cuda.jit
@@ -50,19 +48,40 @@ class MovingAverageStrategyNode(_PortTypesMixin, Node):
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         self.delayed_process = True
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:stock_in}"
+            }
+        }
         cols_required = {"close": "float64"}
         addition = {"signal": "float64",
                     "ma_slow": "float64",
                     "ma_fast": "float64"}
-        return _PortTypesMixin.addition_meta_setup(self,
-                                                   addition,
-                                                   required=cols_required)
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: addition
+            }
+        }
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
-        types = [cudf.DataFrame, DaskDataFrame, dask_cudf.DataFrame]
-        return _PortTypesMixin.ports_setup_from_types(self, types)
+        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

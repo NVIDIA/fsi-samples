@@ -1,28 +1,47 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 import math
 import dask_cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
 
-class SharpeRatioNode(Node, _PortTypesMixin):
+class SharpeRatioNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'sharpe_out'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["builtins.float"]
+            }
+        }
         cols_required = {"strategy_returns": "float64"}
-        required = {
+        retension = {}
+        self.meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retension
+            }
+        }
 
     def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 float)
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

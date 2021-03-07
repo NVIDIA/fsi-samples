@@ -1,4 +1,4 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
@@ -12,9 +12,42 @@ class OneHotEncodingNode(_PortTypesMixin, Node):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
         self.delayed_process = True
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        cols_required = {}
+        addition = {}
+        for col in self.conf:
+            for cat in col['cats']:
+                name = col.get('prefix')+col.get('prefix_sep', '_')+str(cat)
+                addition.update({name: col.get('dtype', 'float64')})
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_ADDITION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: addition
+            }
+        }
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {
@@ -82,14 +115,3 @@ class OneHotEncodingNode(_PortTypesMixin, Node):
         for col in self.conf:
             input_df = input_df.one_hot_encoding(**col)
         return {self.OUTPUT_PORT_NAME: input_df}
-
-    def meta_setup(self):
-        cols_required = {}
-        addition = {}
-        for col in self.conf:
-            for cat in col['cats']:
-                name = col.get('prefix')+col.get('prefix_sep', '_')+str(cat)
-                addition.update({name: col.get('dtype', 'float64')})
-        return _PortTypesMixin.addition_meta_setup(self,
-                                                   addition,
-                                                   required=cols_required)

@@ -1,7 +1,4 @@
-from greenflow.dataframe_flow import Node
-import cudf
-import dask
-import dask_cudf
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 
@@ -19,19 +16,39 @@ class XGBoostStrategyNode(_PortTypesMixin, Node):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:stock_in}"
+            }
+        }
         cols_required = {'predict': None, "asset": "int64"}
         addition = {}
         addition['signal'] = 'float64'
-        return _PortTypesMixin.addition_meta_setup(self, addition,
-                                                   cols_required)
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: addition
+            }
+        }
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask.dataframe.DataFrame,
-                 dask_cudf.DataFrame]
-        return _PortTypesMixin.ports_setup_from_types(self, types)
+        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

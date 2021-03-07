@@ -1,9 +1,7 @@
 from greenflow.dataframe_flow import Node
 from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                      PortsSpecSchema,
-                                                      NodePorts)
-from ..dataloader.stockMap import StockMap
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
 
 
 class AssetFilterNode(_PortTypesMixin, Node):
@@ -15,38 +13,52 @@ class AssetFilterNode(_PortTypesMixin, Node):
         self.INPUT_MAP_NAME = 'name_map'
         self.OUTPUT_ASSET_NAME = 'stock_name'
 
-    def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        self.port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             },
             self.INPUT_MAP_NAME: {
-                port_type: StockMap
+                port_type: [
+                    "greenflow_gquant_plugin.dataloader.stockMap"
+                ]
             }
         }
-
-        output_ports = {
+        self.port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: types
+                port_type: "${port:stock_in}"
             },
             self.OUTPUT_ASSET_NAME: {
-                port_type: str
+                port_type: ['builtins.str']
+            }
+        }
+        cols_required = {"asset": "int64"}
+        name = self._find_asset_name()
+        asset_retension = {"asset_name": name}
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required,
+            self.INPUT_MAP_NAME: {}
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_ADDITION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: {}
+            },
+            self.OUTPUT_ASSET_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: asset_retension
             }
         }
 
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            output_ports.update({self.OUTPUT_PORT_NAME: {
-                                 port_type: determined_type}})
-            # connected
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def _find_asset_name(self):
         name = ""
@@ -64,33 +76,6 @@ class AssetFilterNode(_PortTypesMixin, Node):
                 if not found:
                     name = ""
         return name
-
-    def meta_setup(self):
-        cols_required = {"asset": "int64"}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        input_meta = self.get_input_meta()
-        name = self._find_asset_name()
-        if self.INPUT_PORT_NAME in input_meta:
-            col_from_inport = input_meta[self.INPUT_PORT_NAME]
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport,
-                self.OUTPUT_ASSET_NAME: {"asset_name": name}
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-        else:
-            col_from_inport = required[self.INPUT_PORT_NAME]
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport,
-                self.OUTPUT_ASSET_NAME: {"asset_name": name}
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

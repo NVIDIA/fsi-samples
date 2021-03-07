@@ -1,15 +1,13 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .. import cuindicator as ci
-import dask_cudf
 from numba import cuda
 from functools import partial
 import math
 import numpy as np
 import cudf
 import pandas as pd
-import dask
 
 
 @cuda.jit
@@ -54,23 +52,41 @@ class PortExpMovingAverageStrategyNode(_PortTypesMixin, Node):
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         self.delayed_process = True
-
-    def ports_setup(self):
-        types = [
-            cudf.DataFrame, dask.dataframe.DataFrame, dask_cudf.DataFrame,
-            pd.DataFrame
-        ]
-        return _PortTypesMixin.ports_setup_from_types(self, types)
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:stock_in}"
+            }
+        }
         cols_required = {"close": "float64",
                          "indicator": "int32"}
         addition = {"signal": "float64",
                     "exp_ma_slow": "float64",
                     "exp_ma_fast": "float64"}
-        return _PortTypesMixin.addition_meta_setup(self,
-                                                   addition,
-                                                   required=cols_required)
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_REF_INPUT: self.INPUT_PORT_NAME,
+                self.META_DATA: addition
+            }
+        }
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

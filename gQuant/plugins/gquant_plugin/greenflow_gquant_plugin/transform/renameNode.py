@@ -1,4 +1,4 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from .._port_type_node import _PortTypesMixin
 
@@ -9,6 +9,44 @@ class RenameNode(_PortTypesMixin, Node):
         _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
+        port_type = PortsSpecSchema.port_type
+        self.port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        cols_required = {}
+        retention = {}
+        if 'new' in self.conf and 'old' in self.conf:
+            input_meta = self.get_input_meta()
+            if self.INPUT_PORT_NAME not in input_meta:
+                retention = {}
+            else:
+                col_from_inport = input_meta[self.INPUT_PORT_NAME]
+                oldType = col_from_inport[self.conf['old']]
+                del col_from_inport[self.conf['old']]
+                col_from_inport[self.conf['new']] = oldType
+                retention = col_from_inport
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: retention
+            }
+        }
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)
@@ -61,24 +99,3 @@ class RenameNode(_PortTypesMixin, Node):
         old_column = self.conf['old']
         return {self.OUTPUT_PORT_NAME: input_df.rename(columns={
             old_column: new_column})}
-
-    def meta_setup(self):
-        empty = {}
-        if 'new' in self.conf and 'old' in self.conf:
-            input_meta = self.get_input_meta()
-            if self.INPUT_PORT_NAME not in input_meta:
-                return _PortTypesMixin.retention_meta_setup(self,
-                                                            {},
-                                                            required=empty)
-            else:
-                col_from_inport = input_meta[self.INPUT_PORT_NAME]
-                oldType = col_from_inport[self.conf['old']]
-                del col_from_inport[self.conf['old']]
-                col_from_inport[self.conf['new']] = oldType
-                return _PortTypesMixin.retention_meta_setup(self,
-                                                            col_from_inport,
-                                                            required=empty)
-        else:
-            return _PortTypesMixin.retention_meta_setup(self,
-                                                        {},
-                                                        required=empty)
