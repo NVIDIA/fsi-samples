@@ -15,12 +15,12 @@ class ImportanceCurveNode(_PortTypesMixin, Node):
         port_type = PortsSpecSchema.port_type
         self.port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: ["Booster", "builtins.dict"]
+                port_type: ["xgboost.Booster", "builtins.dict"]
             }
         }
         self.port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: ["xgboost.matplotlib.figure.Figure"]
+                port_type: ["matplotlib.figure.Figure"]
             }
         }
         cols_required = {}

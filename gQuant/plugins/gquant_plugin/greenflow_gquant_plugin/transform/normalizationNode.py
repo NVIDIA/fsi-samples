@@ -32,7 +32,7 @@ class NormalizationNode(_PortTypesMixin, Node):
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:df_in}"
             },
-            self.OUTPUT_NORM_MODEL_NAME_NAME: {
+            self.OUTPUT_NORM_MODEL_NAME: {
                 port_type: [
                     "greenflow_gquant_plugin.transform.data_obj.NormalizationData"  # noqa
                 ]

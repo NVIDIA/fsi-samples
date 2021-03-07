@@ -6,8 +6,8 @@ from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 class AssetIndicatorNode(_PortTypesMixin, Node):
 
     def init(self):
-        self.delayed_process = True
         _PortTypesMixin.init(self)
+        self.delayed_process = True
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         port_type = PortsSpecSchema.port_type

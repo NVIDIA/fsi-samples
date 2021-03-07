@@ -71,7 +71,7 @@ class MovingAverageStrategyNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
+                self.META_OP: self.META_OP_ADDITION,
                 self.META_REF_INPUT: self.INPUT_PORT_NAME,
                 self.META_DATA: addition
             }

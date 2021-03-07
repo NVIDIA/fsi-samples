@@ -97,83 +97,87 @@ class SimpleNodeMixin(object):
         port_type = PortsSpecSchema.port_type
         # resolve all the variables
         port_inports = {}
-        for key in self.port_inports:
-            key_name = self._parse_variable(key)
-            value = self.port_inports[key]
-            if isinstance(value[port_type], list):
-                value[port_type] = [
-                    self._parse_variable(item) for item in value[port_type]
-                ]
-            elif isinstance(value[port_type], str):
-                value[port_type] = self._parse_variable(value[port_type])
-            else:
-                raise ValueError
-            if dy in value:
-                dynamic_value = value[dy]
-                m_outputs = dynamic_value[self.DYN_MATCH]
-                if isinstance(m_outputs, bool):
-                    pass
-                elif isinstance(m_outputs, list):
-                    dynamic_value[self.DYN_MATCH] = [
-                        self._parse_variable(item) for item in m_outputs
+        if hasattr(self, 'port_inports'):
+            for key in self.port_inports:
+                key_name = self._parse_variable(key)
+                value = self.port_inports[key]
+                if isinstance(value[port_type], list):
+                    value[port_type] = [
+                        self._parse_variable(item) for item in value[port_type]
                     ]
-                elif isinstance(m_outputs, str):
-                    dynamic_value[self.DYN_MATCH] = self._parse_variable(
-                        m_outputs)
+                elif isinstance(value[port_type], str):
+                    value[port_type] = self._parse_variable(value[port_type])
                 else:
                     raise ValueError
-            port_inports[key_name] = value
-        self.port_inports = port_inports
+                if dy in value:
+                    dynamic_value = value[dy]
+                    m_outputs = dynamic_value[self.DYN_MATCH]
+                    if isinstance(m_outputs, bool):
+                        pass
+                    elif isinstance(m_outputs, list):
+                        dynamic_value[self.DYN_MATCH] = [
+                            self._parse_variable(item) for item in m_outputs
+                        ]
+                    elif isinstance(m_outputs, str):
+                        dynamic_value[self.DYN_MATCH] = self._parse_variable(
+                            m_outputs)
+                    else:
+                        raise ValueError
+                port_inports[key_name] = value
+            self.port_inports = port_inports
 
         # resolve all the variables
         port_outports = {}
-        for key in self.port_outports:
-            key_name = self._parse_variable(key)
-            value = self.port_outports[key]
-            if isinstance(value[port_type], list):
-                value[port_type] = [
-                    self._parse_variable(item) for item in value[port_type]
-                ]
-            elif isinstance(value[port_type], str):
-                # it will be resolved inside the port_setup
-                pass
-            else:
-                raise ValueError
-            port_outports[key_name] = value
-        self.port_outports = port_outports
+        if hasattr(self, 'port_outports'):
+            for key in self.port_outports:
+                key_name = self._parse_variable(key)
+                value = self.port_outports[key]
+                if isinstance(value[port_type], list):
+                    value[port_type] = [
+                        self._parse_variable(item) for item in value[port_type]
+                    ]
+                elif isinstance(value[port_type], str):
+                    # it will be resolved inside the port_setup
+                    pass
+                else:
+                    raise ValueError
+                port_outports[key_name] = value
+            self.port_outports = port_outports
 
         meta_inports = {}
-        for key in self.meta_inports:
-            key_name = self._parse_variable(key)
-            value = self.meta_inports[key]
+        if hasattr(self, 'meta_inports'):
+            for key in self.meta_inports:
+                key_name = self._parse_variable(key)
+                value = self.meta_inports[key]
 
-            new_value = {}
-            for vk in value:
-                nvk = self._parse_variable(vk)
-                new_value[nvk] = self._parse_variable(value[vk])
-            meta_inports[key_name] = new_value
-        self.meta_inports = meta_inports
+                new_value = {}
+                for vk in value:
+                    nvk = self._parse_variable(vk)
+                    new_value[nvk] = self._parse_variable(value[vk])
+                meta_inports[key_name] = new_value
+            self.meta_inports = meta_inports
 
         meta_outports = {}
-        for key in self.meta_outports:
-            meta_outports[key] = self.meta_outports[key].copy()
+        if hasattr(self, 'meta_outports'):
+            for key in self.meta_outports:
+                meta_outports[key] = self.meta_outports[key].copy()
 
-            key_name = self._parse_variable(key)
-            value = self.meta_outports[key]
+                key_name = self._parse_variable(key)
+                value = self.meta_outports[key]
 
-            new_data = {}
-            for vk in value['data']:
-                nvk = self._parse_variable(vk)
-                new_data[nvk] = self._parse_variable(value['data'][vk])
-            meta_outports[key_name]['data'] = new_data
-
-            if 'order' in value:
-                new_order = {}
-                for vk in value['order']:
+                new_data = {}
+                for vk in value['data']:
                     nvk = self._parse_variable(vk)
-                    new_order[nvk] = value['order'][vk]
-                meta_outports[key_name]['order'] = new_order
-        self.meta_outports = meta_outports
+                    new_data[nvk] = self._parse_variable(value['data'][vk])
+                meta_outports[key_name]['data'] = new_data
+
+                if 'order' in value:
+                    new_order = {}
+                    for vk in value['order']:
+                        nvk = self._parse_variable(vk)
+                        new_order[nvk] = value['order'][vk]
+                    meta_outports[key_name]['order'] = new_order
+            self.meta_outports = meta_outports
 
     def _parse_variable(self, variable):
         if variable is None:

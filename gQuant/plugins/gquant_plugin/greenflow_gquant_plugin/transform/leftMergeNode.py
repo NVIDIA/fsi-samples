@@ -7,6 +7,7 @@ from .._port_type_node import _PortTypesMixin
 class LeftMergeNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_LEFT_NAME = 'left'
         self.INPUT_PORT_RIGHT_NAME = 'right'
         self.OUTPUT_PORT_NAME = 'merged'
@@ -35,6 +36,8 @@ class LeftMergeNode(_PortTypesMixin, Node):
             self.INPUT_PORT_LEFT_NAME: cols_required,
             self.INPUT_PORT_RIGHT_NAME: cols_required
         }
+
+    def update(self):
         input_meta = self.get_input_meta()
         output_cols = {}
         if (self.INPUT_PORT_LEFT_NAME in input_meta
@@ -56,6 +59,7 @@ class LeftMergeNode(_PortTypesMixin, Node):
                 self.META_DATA: output_cols
             }
         }
+        _PortTypesMixin.update(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

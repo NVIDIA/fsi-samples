@@ -14,7 +14,7 @@ class XGBoostExportNode(_PortTypesMixin, Node):
         port_type = PortsSpecSchema.port_type
         self.port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: ["Booster", "builtins.dict"]
+                port_type: ["xgboost.Booster", "builtins.dict"]
             }
         }
         self.port_outports = {

@@ -112,8 +112,10 @@ class PortsSpecSchema(object):
         if (schema_field == cls.port_type):
             def check_ptype(val):
                 err_msg = 'Port type must be a pythonic '\
-                    'type i.e type(port_type) == type. Instead got: {}'
-                assert isinstance(val, type), err_msg.format(type(val))
+                    'type i.e type(port_type) == type. Instead got: {}, {}'
+                assert isinstance(val,
+                                  type), err_msg.format(type(val), val)
+
             if isinstance(value, Iterable):
                 for ptype in value:
                     check_ptype(ptype)

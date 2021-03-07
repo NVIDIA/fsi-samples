@@ -23,7 +23,7 @@ class AssetFilterNode(_PortTypesMixin, Node):
             },
             self.INPUT_MAP_NAME: {
                 port_type: [
-                    "greenflow_gquant_plugin.dataloader.stockMap"
+                    "greenflow_gquant_plugin.dataloader.stockMap.StockMap"
                 ]
             }
         }
