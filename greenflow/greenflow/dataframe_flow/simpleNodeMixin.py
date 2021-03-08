@@ -103,10 +103,12 @@ class SimpleNodeMixin(object):
                 value = self.port_inports[key]
                 if isinstance(value[port_type], list):
                     value[port_type] = [
-                        self._parse_variable(item) for item in value[port_type]
+                        self._load_type(self._parse_variable(item))
+                        for item in value[port_type]
                     ]
                 elif isinstance(value[port_type], str):
-                    value[port_type] = self._parse_variable(value[port_type])
+                    value[port_type] = self._load_type(
+                        self._parse_variable(value[port_type]))
                 else:
                     raise ValueError
                 if dy in value:
@@ -116,11 +118,12 @@ class SimpleNodeMixin(object):
                         pass
                     elif isinstance(m_outputs, list):
                         dynamic_value[self.DYN_MATCH] = [
-                            self._parse_variable(item) for item in m_outputs
+                            self._load_type(self._parse_variable(item))
+                            for item in m_outputs
                         ]
                     elif isinstance(m_outputs, str):
-                        dynamic_value[self.DYN_MATCH] = self._parse_variable(
-                            m_outputs)
+                        dynamic_value[self.DYN_MATCH] = self._load_type(
+                            self._parse_variable(m_outputs))
                     else:
                         raise ValueError
                 port_inports[key_name] = value
@@ -134,11 +137,16 @@ class SimpleNodeMixin(object):
                 value = self.port_outports[key]
                 if isinstance(value[port_type], list):
                     value[port_type] = [
-                        self._parse_variable(item) for item in value[port_type]
+                        self._load_type(self._parse_variable(item))
+                        for item in value[port_type]
                     ]
                 elif isinstance(value[port_type], str):
-                    # it will be resolved inside the port_setup
-                    pass
+                    if not value[port_type].startswith('$'):
+                        value[port_type] = self._load_type(
+                            self._parse_variable(value[port_type]))
+                    else:
+                        # it will be resolved inside the port_setup
+                        pass
                 else:
                     raise ValueError
                 port_outports[key_name] = value
@@ -218,12 +226,12 @@ class SimpleNodeMixin(object):
             else:
                 types = self.port_inports[input_port][port_type]
                 # load the str type
-                if isinstance(types, list):
-                    types = [self._load_type(t) for t in types]
-                elif isinstance(types, str):
-                    types = self._load_type(types)
-                else:
-                    raise ValueError("not recongized type {}".format(types))
+                # if isinstance(types, list):
+                #     types = [self._load_type(t) for t in types]
+                # elif isinstance(types, str):
+                #     types = self._load_type(types)
+                # else:
+                #     raise ValueError("not recongized type {}".format(types))
                 inports[input_port] = {
                     port_type: types
                 }
@@ -249,21 +257,19 @@ class SimpleNodeMixin(object):
                 }
             else:
                 # load the str type
-                if isinstance(types, list):
-                    types = [self._load_type(t) for t in types]
-                elif isinstance(types, str):
-                    types = self._load_type(types)
-                else:
-                    raise ValueError("not recongized type {}".format(types))
+                # if isinstance(types, list):
+                #     types = [self._load_type(t) for t in types]
+                # elif isinstance(types, str):
+                #     types = self._load_type(types)
+                # else:
+                #     raise ValueError("not recongized type {}".format(types))
                 outports[output_port] = {
                     port_type: types
                 }
         if dynamic is not None:
             types = None
-            if isinstance(dynamic, str):
-                types = self._load_type(dynamic)
-            elif isinstance(dynamic, list):
-                types = [self._load_type(t) for t in dynamic]
+            if not isinstance(dynamic, bool):
+                types = dynamic
             for port_name in input_connections.keys():
                 if port_name not in self.port_inports:
                     if types is not None:

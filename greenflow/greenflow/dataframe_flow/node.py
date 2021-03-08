@@ -98,7 +98,7 @@ class Node(_PortsMixin, _Node):
         self.init()
         self.profile = False  # by default, do not profile
 
-        PortsSpecSchema.validate_ports(self.ports_setup())
+        # PortsSpecSchema.validate_ports(self.ports_setup())
 
     def ports_setup(self) -> NodePorts:
         """Virtual method for specifying inputs/outputs ports.

@@ -132,6 +132,8 @@ def get_node_obj(node, count_id=True):
     dict
         node data for client
     """
+    node.init()
+    node.update()
     ports = node.ports_setup()
     metadata = node.meta_setup()
     schema = node.conf_schema()

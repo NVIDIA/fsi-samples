@@ -4,7 +4,7 @@ from .node import Node
 from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import NodePorts, ConfSchema
+from .portsSpecSchema import NodePorts, ConfSchema, PortsSpecSchema
 import warnings
 import copy
 import traceback
@@ -546,6 +546,7 @@ class TaskGraph(object):
                 continue
 
             # Run ports validation.
+            PortsSpecSchema.validate_ports(node.ports_setup())
             node.validate_connected_ports()
 
             # Run meta setup in case the required meta are calculated
