@@ -175,7 +175,7 @@ class ContextCompositeNode(CompositeNode):
             typelist.append(obj_temp)
 
         if 'taskgraph' in self.conf:
-            task_graph.build(replace=replacementObj)
+            task_graph.build(replace=replacementObj, clean_cache=True)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
