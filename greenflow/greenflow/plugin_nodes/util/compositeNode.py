@@ -4,11 +4,7 @@ from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
-from greenflow.dataframe_flow.cache import (CACHE_META, CACHE_PORTS,
-                                            CACHE_SCHEMA)
-import json
 import os
-import hashlib
 from greenflow.dataframe_flow.util import get_file_path
 import uuid
 
@@ -78,43 +74,6 @@ class CompositeNode(SimpleNodeMixin, Node):
         external sources
         """
         pass
-
-    def _compute_hash_key(self):
-        """
-        if hash changed, the port_setup, meta_setup
-        and conf_json should be different
-        In very rara case, might have the problem of hash collision,
-        It affects the column, port and conf calculation. It won't
-        change the computation result though.
-        It returns the hash code, the loaded task_graph,
-        the replacement conf obj
-        """
-        task_graph = ""
-        inputs = ()
-        replacementObj = {}
-        input_node = ""
-        task_graph_obj = None
-        if 'taskgraph' in self.conf:
-            try:
-                task_graph = get_file_path(self.conf['taskgraph'])
-            except FileNotFoundError:
-                task_graph = None
-            if task_graph is not None and os.path.exists(task_graph):
-                with open(task_graph) as f:
-                    task_graph = hashlib.md5(f.read().encode()).hexdigest()
-                task_graph_obj = TaskGraph.load_taskgraph(
-                    get_file_path(self.conf['taskgraph']))
-        self.update_replace(replacementObj, task_graph_obj)
-        if 'input' in self.conf:
-            for inp in self.conf['input']:
-                input_node += inp+","
-                if hasattr(self, 'inputs'):
-                    for i in self.inputs:
-                        inputs += (hash(i['from_node']),
-                                   i['to_port'], i['from_port'])
-        return (hash((self.uid, task_graph, inputs, json.dumps(self.conf),
-                      input_node, json.dumps(replacementObj))), task_graph_obj,
-                replacementObj)
 
     def _make_sub_graph_connection(self, task_graph,
                                    inputNode_fun,

@@ -3,7 +3,6 @@ from greenflow.plugin_nodes.util.contextCompositeNode import \
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
                                                       PortsSpecSchema,
                                                       NodePorts)
-from greenflow.dataframe_flow.cache import CACHE_SCHEMA
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.util import get_file_path
@@ -314,9 +313,12 @@ class GridRandomSearchNode(ContextCompositeNode):
         return ContextCompositeNode.ports_setup(self)
 
     def conf_schema(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_SCHEMA:
-            return CACHE_SCHEMA[cache_key]
+        task_graph = self.task_graph
+        replacementObj = self.replacementObj
+        # # cache_key, task_graph, replacementObj = self._compute_has
+        # cache_key, task_graph, replacementObj = self._compute_hash_key()
+        # if cache_key in CACHE_SCHEMA:
+        #     return CACHE_SCHEMA[cache_key]
         # get's the input when it gets the conf
         input_meta = self.get_input_meta()
         json = {}
@@ -325,7 +327,7 @@ class GridRandomSearchNode(ContextCompositeNode):
             if 'context' in conf:
                 json = deepcopy(_CONF_JSON)
                 metrics = []
-                task_graph.build(replace=replacementObj)
+                task_graph.build(replace=replacementObj, clean_cache=True)
                 for t in task_graph:
                     node_id = t.get('id')
                     if node_id != '':
@@ -368,7 +370,7 @@ class GridRandomSearchNode(ContextCompositeNode):
             }
         }
         out_schema = ConfSchema(json=json, ui=ui)
-        CACHE_SCHEMA[cache_key] = out_schema
+        # CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def meta_setup(self):
@@ -420,7 +422,7 @@ class GridRandomSearchNode(ContextCompositeNode):
                         myinputs[key] = v
                 task_graph = TaskGraph.load_taskgraph(
                     get_file_path(self.conf['taskgraph']))
-                task_graph.build()
+                task_graph.build(clean_cache=True)
 
                 outputLists = []
                 replaceObj = {}

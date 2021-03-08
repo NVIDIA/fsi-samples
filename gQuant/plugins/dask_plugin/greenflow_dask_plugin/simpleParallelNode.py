@@ -1,6 +1,5 @@
 from greenflow.plugin_nodes import CompositeNode
 from greenflow.plugin_nodes import ContextCompositeNode
-from greenflow.dataframe_flow.cache import CACHE_SCHEMA
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema,
                                                       MetaData,
@@ -44,9 +43,12 @@ class SimpleParallelNode(CompositeNode):
         return out_meta
 
     def conf_schema(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_SCHEMA:
-            return CACHE_SCHEMA[cache_key]
+        task_graph = self.task_graph
+        replacementObj = self.replacementObj
+        # cache_key, task_graph, replacementObj = self._compute_has
+        # cache_key, task_graph, replacementObj = self._compute_hash_key()
+        # if cache_key in CACHE_SCHEMA:
+        #     return CACHE_SCHEMA[cache_key]
         conf = ContextCompositeNode.conf_schema(self)
         json = {
             "title": "Simple Parallel Node",
@@ -142,7 +144,7 @@ class SimpleParallelNode(CompositeNode):
         cudf_df_name = 'cudf.core.dataframe.DataFrame'
 
         if 'taskgraph' in self.conf:
-            task_graph.build(replace=replacementObj)
+            task_graph.build(replace=replacementObj, clean_cache=True)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -185,7 +187,7 @@ class SimpleParallelNode(CompositeNode):
             json['properties']['input']['items']['enum'] = in_ports
             json['properties']['output']['items']['enum'] = out_ports
         out_schema = ConfSchema(json=json, ui=ui)
-        CACHE_SCHEMA[cache_key] = out_schema
+        # CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def conf_update(self):
@@ -263,7 +265,7 @@ class SimpleParallelNode(CompositeNode):
         if 'taskgraph' in self.conf:
             task_graph = TaskGraph.load_taskgraph(
                 get_file_path(self.conf['taskgraph']))
-            task_graph.build()
+            task_graph.build(clean_cache=True)
 
             outputLists = []
             replaceObj = {}

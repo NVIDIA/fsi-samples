@@ -440,8 +440,7 @@ class TaskGraph(object):
 
         # this part is to update each of the node so dynamic inputs can be
         # processed
-        for k in self.__node_dict.keys():
-            self.__node_dict[k].update()
+        self.breadth_first_update()
 
         if clean_cache:
             # simple node mixin can cache the port_setup and meta_setup result
@@ -458,6 +457,22 @@ class TaskGraph(object):
                     delattr(self.__node_dict[k], 'ports_setup_cache')
                 if hasattr(self.__node_dict[k], 'meta_data_cache'):
                     delattr(self.__node_dict[k], 'meta_data_cache')
+
+    def breadth_first_update(self):
+        queue = []
+        updated = set()
+        for k in self.__node_dict.keys():
+            if len(self.__node_dict[k].inputs) == 0:
+                queue.append(self.__node_dict[k])
+        while (len(queue) != 0):
+            node_to_update = queue.pop(0)
+            # print('update {}'.format(node_to_update.uid))
+            node_to_update.update()
+            updated.add(node_to_update)
+            for element in node_to_update.outputs:
+                child = element['to_node']
+                if all([i['from_node'] in updated for i in child.inputs]):
+                    queue.append(child)
 
     def cache_update_result(self):
         for k in self.__node_dict.keys():
