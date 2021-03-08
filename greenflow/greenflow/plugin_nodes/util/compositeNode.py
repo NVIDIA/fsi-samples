@@ -154,6 +154,9 @@ class CompositeNode(Node):
                     # will remove the output collector from taskgraph if
                     # the outputlist is set
                     outNode_fun(outNode, oup_groups[oup])
+        # this part is to update each of the node so dynamic inputs can be
+        # processed
+        task_graph.cache_update_result()
 
     def ports_setup(self):
         cache_key, task_graph, replacementObj = self._compute_hash_key()
@@ -163,7 +166,7 @@ class CompositeNode(Node):
         inports = {}
         outports = {}
         if task_graph:
-            task_graph.build(replace=replacementObj)
+            task_graph.build(replace=replacementObj, clean_cache=True)
 
             def inputNode_fun(inputNode, in_ports):
                 inport = {}
@@ -195,7 +198,7 @@ class CompositeNode(Node):
         required = {}
         out_meta = {}
         if task_graph:
-            task_graph.build(replace=replacementObj)
+            task_graph.build(replace=replacementObj, clean_cache=True)
 
             def inputNode_fun(inputNode, in_ports):
                 req = {}
@@ -271,7 +274,7 @@ class CompositeNode(Node):
             "subnodes_conf": {}
         }
         if task_graph:
-            task_graph.build(replace=replacementObj)
+            task_graph.build(replace=replacementObj, clean_cache=True)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -347,7 +350,7 @@ class CompositeNode(Node):
         if 'taskgraph' in self.conf:
             task_graph = TaskGraph.load_taskgraph(
                 get_file_path(self.conf['taskgraph']))
-            task_graph.build()
+            task_graph.build(clean_cache=True)
 
             outputLists = []
             replaceObj = {}

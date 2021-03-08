@@ -92,6 +92,13 @@ class SimpleNodeMixin(object):
         self.META_ORDER = 'order'
         self.DYN_MATCH = 'matching_outputs'
 
+    def cache_update_result(self):
+        # backup input connecitons
+        self.input_connections = self.get_connected_inports()
+        self.input_meta = self.get_input_meta()
+        self.ports_setup_cache = self.ports_setup()
+        self.meta_data_cache = self.meta_setup()
+
     def update(self):
         dy = PortsSpecSchema.dynamic
         port_type = PortsSpecSchema.port_type
@@ -212,9 +219,14 @@ class SimpleNodeMixin(object):
         return groups
 
     def ports_setup(self):
+        # if hasattr(self, 'ports_setup_cache'):
+        #     return self.ports_setup_cache
         port_type = PortsSpecSchema.port_type
         dy = PortsSpecSchema.dynamic
-        input_connections = self.get_connected_inports()
+        if hasattr(self, 'input_connections'):
+            input_connections = self.input_connections
+        else:
+            input_connections = self.get_connected_inports()
         dynamic = None
         inports = {}
         for input_port in self.port_inports:
@@ -287,7 +299,12 @@ class SimpleNodeMixin(object):
         return getattr(mod, splits[-1])
 
     def meta_setup(self, required={}):
-        input_meta = self.get_input_meta()
+        # if hasattr(self, 'meta_data_cache'):
+        #     return self.meta_data_cache
+        if hasattr(self, 'input_meta'):
+            input_meta = self.input_meta
+        else:
+            input_meta = self.get_input_meta()
         inports = self.meta_inports.copy()
         outports = {}
         for out_port_name in self.meta_outports:
@@ -352,7 +369,10 @@ class SimpleNodeMixin(object):
             elif isinstance(dynamic, bool) and dynamic:
                 output_meta = True
             if output_meta:
-                input_connections = self.get_connected_inports()
+                if hasattr(self, 'input_connections'):
+                    input_connections = self.input_connections
+                else:
+                    input_connections = self.get_connected_inports()
                 for port_name in input_connections.keys():
                     if port_name not in self.port_inports:
                         outports[port_name] = input_meta[port_name]

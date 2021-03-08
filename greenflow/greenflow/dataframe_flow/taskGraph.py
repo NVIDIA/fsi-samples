@@ -1,4 +1,6 @@
 from collections import OrderedDict
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
+from cloudpickle.cloudpickle import instance
 import ruamel.yaml
 from .node import Node
 from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
@@ -363,7 +365,7 @@ class TaskGraph(object):
                         'shape': 'point'})
         return G
 
-    def build(self, replace=None, profile=False):
+    def build(self, replace=None, profile=False, clean_cache=False):
         """
         compute the graph structure of the nodes. It will set the input and
         output nodes for each of the node
@@ -441,6 +443,16 @@ class TaskGraph(object):
         # processed
         for k in self.__node_dict.keys():
             self.__node_dict[k].update()
+
+        if not clean_cache:
+            for k in self.__node_dict.keys():
+                if isinstance(self.__node_dict[k], SimpleNodeMixin):
+                    self.__node_dict[k].cache_update_result()
+
+    def cache_update_result(self):
+        for k in self.__node_dict.keys():
+            if isinstance(self.__node_dict[k], SimpleNodeMixin):
+                self.__node_dict[k].cache_update_result()
 
     def __getitem__(self, key):
         return self.__node_dict[key]
@@ -597,6 +609,17 @@ class TaskGraph(object):
         ####
         # this is for nemo work around, to clean up the nemo graph
         self.run_cleanup()
+
+        # # clear the cache
+        # for k in self.__node_dict.keys():
+        #     if hasattr(self.__node_dict[k], 'input_connections'):
+        #         delattr(self.__node_dict[k], 'input_connections')
+        #     if hasattr(self.__node_dict[k], 'input_meta'):
+        #         delattr(self.__node_dict[k], 'input_meta')
+        #     if hasattr(self.__node_dict[k], 'ports_setup_cache'):
+        #         delattr(self.__node_dict[k], 'ports_setup_cache')
+        #     if hasattr(self.__node_dict[k], 'meta_data_cache'):
+        #         delattr(self.__node_dict[k], 'meta_data_cache')
         ####
         if formated:
             return formated_result(result)

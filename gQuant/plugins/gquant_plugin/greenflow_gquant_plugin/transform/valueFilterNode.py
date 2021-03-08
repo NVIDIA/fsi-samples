@@ -36,6 +36,9 @@ class ValueFilterNode(_PortTypesMixin, Node):
             }
         }
 
+    def update(self):
+        _PortTypesMixin.update(self)
+
     def meta_setup(self):
         return _PortTypesMixin.meta_setup(self)
 

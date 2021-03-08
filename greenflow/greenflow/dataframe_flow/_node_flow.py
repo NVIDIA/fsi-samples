@@ -244,12 +244,18 @@ class NodeTaskGraphMixin(object):
         output = {}
         if not hasattr(self, 'inputs'):
             return output
-        ports = self.ports_setup()
+        if hasattr(self, 'ports_setup_cache'):
+            ports = self.ports_setup_cache
+        else:
+            ports = self.ports_setup()
         inports = ports.inports
         dy = PortsSpecSchema.dynamic
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            meta_data = copy.deepcopy(from_node.meta_setup())
+            if hasattr(from_node, "meta_data_cache"):
+                meta_data = copy.deepcopy(from_node.meta_data_cache)
+            else:
+                meta_data = copy.deepcopy(from_node.meta_setup())
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name not in meta_data.outports:
@@ -546,7 +552,10 @@ class NodeTaskGraphMixin(object):
             return output
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            ports = from_node.ports_setup()
+            if hasattr(from_node, 'ports_setup_cache'):
+                ports = from_node.ports_setup_cache
+            else:
+                ports = from_node.ports_setup()
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name in ports.outports:
