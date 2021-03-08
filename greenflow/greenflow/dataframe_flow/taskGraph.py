@@ -466,13 +466,15 @@ class TaskGraph(object):
                 queue.append(self.__node_dict[k])
         while (len(queue) != 0):
             node_to_update = queue.pop(0)
-            # print('update {}'.format(node_to_update.uid))
-            node_to_update.update()
+            print('update {}'.format(node_to_update.uid))
+            if node_to_update not in updated:
+                node_to_update.update()
             updated.add(node_to_update)
             for element in node_to_update.outputs:
                 child = element['to_node']
                 if all([i['from_node'] in updated for i in child.inputs]):
                     queue.append(child)
+        print('----done----')
 
     def cache_update_result(self):
         for k in self.__node_dict.keys():
