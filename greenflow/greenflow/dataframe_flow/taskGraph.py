@@ -443,15 +443,21 @@ class TaskGraph(object):
         for k in self.__node_dict.keys():
             self.__node_dict[k].update()
 
-        if not clean_cache:
+        if clean_cache:
             # simple node mixin can cache the port_setup and meta_setup result
             # don't cache it if only need to build the graph for later updates
             # e.g. in composite node, the graph is built first and modified
             # in this case, DON"T cache it. Cache after the graph is fully
             # modified
             for k in self.__node_dict.keys():
-                if isinstance(self.__node_dict[k], SimpleNodeMixin):
-                    self.__node_dict[k].cache_update_result()
+                if hasattr(self.__node_dict[k], 'input_connections'):
+                    delattr(self.__node_dict[k], 'input_connections')
+                if hasattr(self.__node_dict[k], 'input_meta'):
+                    delattr(self.__node_dict[k], 'input_meta')
+                if hasattr(self.__node_dict[k], 'ports_setup_cache'):
+                    delattr(self.__node_dict[k], 'ports_setup_cache')
+                if hasattr(self.__node_dict[k], 'meta_data_cache'):
+                    delattr(self.__node_dict[k], 'meta_data_cache')
 
     def cache_update_result(self):
         for k in self.__node_dict.keys():

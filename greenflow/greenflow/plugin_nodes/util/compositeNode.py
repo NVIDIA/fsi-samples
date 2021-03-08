@@ -1,3 +1,4 @@
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
@@ -49,10 +50,27 @@ def group_ports(input_list):
     return nodes_group
 
 
-class CompositeNode(Node):
+class CompositeNode(SimpleNodeMixin, Node):
 
     def update(self):
+        task_graph = ""
+        replacementObj = {}
+        task_graph_obj = None
+        if 'taskgraph' in self.conf:
+            try:
+                task_graph = get_file_path(self.conf['taskgraph'])
+            except FileNotFoundError:
+                task_graph = None
+            if task_graph is not None and os.path.exists(task_graph):
+                # with open(task_graph) as f:
+                #     task_graph = hashlib.md5(f.read().encode()).hexdigest()
+                task_graph_obj = TaskGraph.load_taskgraph(
+                    get_file_path(self.conf['taskgraph']))
+        self.update_replace(replacementObj, task_graph_obj)
+        self.task_graph = task_graph_obj
+        self.replacementObj = replacementObj
         self.conf_update()  # update the conf
+        SimpleNodeMixin.update(self)
 
     def conf_update(self):
         """
@@ -159,10 +177,14 @@ class CompositeNode(Node):
         task_graph.cache_update_result()
 
     def ports_setup(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_PORTS:
-            # print('cache hit')
-            return CACHE_PORTS[cache_key]
+        if hasattr(self, 'ports_setup_cache'):
+            return self.ports_setup_cache
+        task_graph = self.task_graph
+        replacementObj = self.replacementObj
+        # cache_key, task_graph, replacementObj = self._compute_hash_key()
+        # if cache_key in CACHE_PORTS:
+        #     # print('cache hit')
+        #     return CACHE_PORTS[cache_key]
         inports = {}
         outports = {}
         if task_graph:
@@ -187,14 +209,19 @@ class CompositeNode(Node):
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
         output_port = NodePorts(inports=inports, outports=outports)
-        CACHE_PORTS[cache_key] = output_port
+        # CACHE_PORTS[cache_key] = output_port
         return output_port
 
     def meta_setup(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_META:
-            # print('cache hit')
-            return CACHE_META[cache_key]
+        if hasattr(self, 'meta_data_cache'):
+            return self.meta_data_cache
+        task_graph = self.task_graph
+        replacementObj = self.replacementObj
+ 
+        # cache_key, task_graph, replacementObj = self._compute_hash_key()
+        # if cache_key in CACHE_META:
+        #     # print('cache hit')
+        #     return CACHE_META[cache_key]
         required = {}
         out_meta = {}
         if task_graph:
@@ -221,14 +248,16 @@ class CompositeNode(Node):
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
         metadata = MetaData(inports=required, outports=out_meta)
-        CACHE_META[cache_key] = metadata
+        # CACHE_META[cache_key] = metadata
         return metadata
 
     def conf_schema(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_SCHEMA:
-            # print('cache hit')
-            return CACHE_SCHEMA[cache_key]
+        task_graph = self.task_graph
+        replacementObj = self.replacementObj
+        # cache_key, task_graph, replacementObj = self._compute_hash_key()
+        # if cache_key in CACHE_SCHEMA:
+        #     # print('cache hit')
+        #     return CACHE_SCHEMA[cache_key]
         json = {
             "title": "Composite Node configure",
             "type": "object",
@@ -319,7 +348,7 @@ class CompositeNode(Node):
                         }
                     })
         out_schema = ConfSchema(json=json, ui=ui)
-        CACHE_SCHEMA[cache_key] = out_schema
+        # CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def update_replace(self, replaceObj, task_graph=None):
