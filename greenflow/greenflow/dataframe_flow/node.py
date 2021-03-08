@@ -1,7 +1,7 @@
 import abc
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData, NodePorts
+from .portsSpecSchema import ConfSchema, MetaData, NodePorts
 
 from ._node import _Node
 

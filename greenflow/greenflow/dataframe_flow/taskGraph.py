@@ -1,6 +1,5 @@
 from collections import OrderedDict
 from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
-from cloudpickle.cloudpickle import instance
 import ruamel.yaml
 from .node import Node
 from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
@@ -238,8 +237,8 @@ class TaskGraph(object):
               will automatically construct the hierachical menus based on '.'
 
         class_obj: Node
-            The node class that is the subclass of greenflow 'Node'. It is usually
-            defined dynamically so it can be registered.
+            The node class that is the subclass of greenflow 'Node'. It is
+             usually defined dynamically so it can be registered.
 
         Returns
         -----
@@ -445,6 +444,11 @@ class TaskGraph(object):
             self.__node_dict[k].update()
 
         if not clean_cache:
+            # simple node mixin can cache the port_setup and meta_setup result
+            # don't cache it if only need to build the graph for later updates
+            # e.g. in composite node, the graph is built first and modified
+            # in this case, DON"T cache it. Cache after the graph is fully
+            # modified
             for k in self.__node_dict.keys():
                 if isinstance(self.__node_dict[k], SimpleNodeMixin):
                     self.__node_dict[k].cache_update_result()
