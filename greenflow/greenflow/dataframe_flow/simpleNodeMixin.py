@@ -7,6 +7,17 @@ class SimpleNodeMixin(object):
 
     def init(self):
         """
+        Used to initilze the Node. called from the node constructore
+
+        In this function. Define the static ports and meta setup. Note,
+        only static information can be used includig the self.conf
+        information. If need information from
+        self.get_connected_inports() and self.get_input_meta(),
+        please define it in update() function.
+
+        Define the ports setup in self.port_inports and self.port_outputs
+        E.g.
+
         self.port_inports = {
             "port0_name": {
                 PortsSpecSchema.port_type: ["type0", "type1"]
@@ -35,6 +46,11 @@ class SimpleNodeMixin(object):
             },
             ...
         }
+
+        Define the meta data setup in self.meta_inports and
+        self.meta_outports.
+        E.g.
+
         self.meta_inports = {
             "port0_name": {
                 "name0": "type0",
@@ -100,6 +116,22 @@ class SimpleNodeMixin(object):
         self.meta_data_cache = self.meta_setup()
 
     def update(self):
+        """
+        This function is called after the computation graph is
+        constructed by Taskgraph.build method. It assumes the
+        graph structure is up to date
+
+        If need information from self.get_connected_inports()
+        or self.get_input_meta() to modify the ports_setup or
+        meta_setup, this is the place to do it.
+
+        Other dynamic information can be defined here too.
+        For customized node, following is the pattern
+
+        def update(self):
+            your code to use latest graph structure
+            SimpleNodeMixin.update(self)
+        """
         dy = PortsSpecSchema.dynamic
         port_type = PortsSpecSchema.port_type
         # resolve all the variables

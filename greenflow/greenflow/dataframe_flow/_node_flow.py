@@ -135,7 +135,10 @@ class NodeTaskGraphMixin(object):
         for icls in nodecls_list:
             if not hasattr(icls, 'ports_setup'):
                 continue
-            ports = icls.ports_setup(self)
+            if hasattr(self, 'ports_setup_cache'):
+                ports = self.ports_setup_cache
+            else:
+                ports = icls.ports_setup(self)
             break
         else:
             raise Exception('ports_setup method missing')
@@ -165,7 +168,10 @@ class NodeTaskGraphMixin(object):
         return ports
 
     def __valide(self, node_output: dict):
-        output_meta = self.meta_setup().outports
+        if hasattr(self, "meta_data_cache"):
+            output_meta = self.meta_data_cache.outports
+        else:
+            output_meta = self.meta_setup().outports
         # Validate each port
         out_ports = self._get_output_ports(full_port_spec=True)
         for pname, pspec in out_ports.items():
@@ -504,7 +510,10 @@ class NodeTaskGraphMixin(object):
                 if self.infer_meta:
                     output_df[oport] = from_delayed(outputs_dly[oport])
                 else:
-                    meta_data = self.meta_setup().outports
+                    if hasattr(self, "meta_data_cache"):
+                        meta_data = self.meta_data_cache.outports
+                    else:
+                        meta_data = self.meta_setup().outports
                     output_df[oport] = from_delayed(outputs_dly[oport],
                                                     meta=meta_data[oport])
             else:
@@ -681,7 +690,10 @@ class NodeTaskGraphMixin(object):
         Validate the connected metadata match the requirements.
         metadata.inports specify the required metadata.
         """
-        metadata = self.meta_setup()
+        if hasattr(self, "meta_data_cache"):
+            metadata = self.meta_data_cache
+        else:
+            metadata = self.meta_setup()
 
         # as current behavior of matching in the validate_required
         def validate_required(iport, kcol, kval, ientnode, icols):
