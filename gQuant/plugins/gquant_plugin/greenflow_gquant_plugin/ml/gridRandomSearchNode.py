@@ -328,7 +328,7 @@ class GridRandomSearchNode(ContextCompositeNode):
             if 'context' in conf:
                 json = deepcopy(_CONF_JSON)
                 metrics = []
-                task_graph._build(replace=replacementObj)
+                task_graph.build(replace=replacementObj)
                 for t in task_graph:
                     node_id = t.get('id')
                     if node_id != '':
