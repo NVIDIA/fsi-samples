@@ -113,10 +113,10 @@ class SimpleNodeMixin(object):
         self.DYN_MATCH = 'matching_outputs'
 
     def cache_update_result(self):
-        # backup input connecitons
-        self.input_connections = self.get_connected_inports()
-        self.input_meta = self.get_input_meta()
+        # cache all the intermediate results
         self.ports_setup_cache = self.ports_setup()
+        self.input_meta = self.get_input_meta()
+        self.input_connections = self.get_connected_inports()
         self.meta_data_cache = self.meta_setup()
 
     def update(self):
@@ -133,8 +133,15 @@ class SimpleNodeMixin(object):
         For customized node, following is the pattern
 
         def update(self):
-            your code to use latest graph structure
             SimpleNodeMixin.update(self)
+            # your code to use latest graph structure
+            # to update self.meta_inports, self.meta_outports.
+            # Note, currently ports_setup is cached for the
+            # first time calling it. Make sure all the information
+            # for self.port_inports and self.port_outports
+            # is properly set before calling self.get_connected_inports()
+            # or self.get_input_meta() as they are calling ports_setup 
+            # inside
         """
         dy = PortsSpecSchema.dynamic
         port_type = PortsSpecSchema.port_type
@@ -229,7 +236,6 @@ class SimpleNodeMixin(object):
                         new_order[nvk] = value['order'][vk]
                     meta_outports[key_name]['order'] = new_order
             self.meta_outports = meta_outports
-        self.cache_update_result()
 
     def _parse_variable(self, variable):
         if isinstance(variable, int):
@@ -331,7 +337,8 @@ class SimpleNodeMixin(object):
                         if isinstance(dynamic, bool) and dynamic:
                             types = input_connections[port_name]
                             outports[port_name] = {port_type: types}
-        return NodePorts(inports=inports, outports=outports)
+        self.ports_setup_cache = NodePorts(inports=inports, outports=outports)
+        return self.ports_setup_cache
 
     def _load_type(self, type_str):
         splits = type_str.split('.')

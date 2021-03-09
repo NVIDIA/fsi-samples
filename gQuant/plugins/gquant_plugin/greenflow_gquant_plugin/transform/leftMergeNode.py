@@ -44,6 +44,7 @@ class LeftMergeNode(_PortTypesMixin, Node):
         }
 
     def update(self):
+        _PortTypesMixin.update(self)
         input_meta = self.get_input_meta()
         output_cols = {}
         if (self.INPUT_PORT_LEFT_NAME in input_meta
@@ -59,7 +60,6 @@ class LeftMergeNode(_PortTypesMixin, Node):
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             output_cols = col_from_right_inport
         self.meta_outports[self.OUTPUT_PORT_NAME][self.META_DATA] = output_cols
-        _PortTypesMixin.update(self)
 
     def ports_setup(self):
         return _PortTypesMixin.ports_setup(self)

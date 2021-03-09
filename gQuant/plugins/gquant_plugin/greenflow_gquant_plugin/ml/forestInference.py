@@ -51,6 +51,7 @@ class ForestInferenceNode(_PortTypesMixin, Node):
         }
 
     def update(self):
+        _PortTypesMixin.update(self)
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_MODEL_NAME in input_meta:
             if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
@@ -76,7 +77,6 @@ class ForestInferenceNode(_PortTypesMixin, Node):
                             self.INPUT_PORT_NAME][col] = col_from_inport[col]
                     else:
                         self.meta_inports[self.INPUT_PORT_NAME][col] = None
-        _PortTypesMixin.update(self)
 
     def meta_setup(self):
         return _PortTypesMixin.meta_setup(self)

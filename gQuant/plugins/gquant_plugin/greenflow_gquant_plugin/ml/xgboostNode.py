@@ -56,6 +56,7 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         return _PortTypesMixin.meta_setup(self)
 
     def update(self):
+        _PortTypesMixin.update(self)
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
@@ -91,7 +92,6 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                 self.meta_inports[self.INPUT_PORT_NAME] = cols_required
             self.meta_outports[self.OUTPUT_PORT_NAME][
                 self.META_DATA] = cols_output
-        _PortTypesMixin.update(self)
 
     def conf_schema(self):
         json = {
@@ -373,6 +373,7 @@ class InferXGBoostNode(_PortTypesMixin, Node):
         return _PortTypesMixin.meta_setup(self)
 
     def update(self):
+        _PortTypesMixin.update(self)
         input_meta = self.get_input_meta()
         predict = self.conf.get('prediction', 'predict')
         pred_contribs: bool = self.conf.get('pred_contribs', False)
@@ -417,7 +418,6 @@ class InferXGBoostNode(_PortTypesMixin, Node):
                 col_from_inport[predict] = None  # the type is not determined
             self.meta_outports[self.OUTPUT_PORT_NAME][
                 self.META_DATA] = col_from_inport
-        _PortTypesMixin.update(self)
 
     def conf_schema(self):
         json = {

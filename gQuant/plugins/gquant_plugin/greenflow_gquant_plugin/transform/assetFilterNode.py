@@ -59,11 +59,11 @@ class AssetFilterNode(_PortTypesMixin, Node):
         return _PortTypesMixin.meta_setup(self)
 
     def update(self):
+        _PortTypesMixin.update(self)
         name = self._find_asset_name()
         asset_retension = {"asset_name": name}
         self.meta_outports[self.OUTPUT_ASSET_NAME][
             self.META_DATA] = asset_retension
-        _PortTypesMixin.update(self)
 
     def _find_asset_name(self):
         name = ""

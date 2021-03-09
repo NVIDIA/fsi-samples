@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 import ruamel.yaml
 from .node import Node
 from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
@@ -485,11 +484,6 @@ class TaskGraph(object):
                 if all([i['from_node'] in updated for i in child.inputs]):
                     queue.append(child)
         # print('----done----')
-
-    def cache_update_result(self):
-        for k in self.__node_dict.keys():
-            if isinstance(self.__node_dict[k], SimpleNodeMixin):
-                self.__node_dict[k].cache_update_result()
 
     def __getitem__(self, key):
         return self.__node_dict[key]

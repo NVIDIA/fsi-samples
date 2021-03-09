@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 import warnings
 import dask
 from dask.dataframe import DataFrame as DaskDataFrame
@@ -121,6 +122,21 @@ class NodeTaskGraphMixin(object):
         #     user configurable i.e. "df" is just some python object which is
         #     typically a data container.
         self.clear_input = True
+
+    def update(self):
+        """
+        overwrite the super class ports_setup so it can cache
+        """
+        # this will filter out the primary class with ports_setup
+        nodecls_list = _get_nodetype(self)
+        for icls in nodecls_list:
+            if not hasattr(icls, 'update'):
+                continue
+            icls.update(self)
+        else:
+            pass
+        # cache it after update
+        SimpleNodeMixin.cache_update_result(self)
 
     def ports_setup(self):
         """
