@@ -364,7 +364,7 @@ class TaskGraph(object):
                         'shape': 'point'})
         return G
 
-    def build(self, replace=None, profile=False, clean_cache=False):
+    def _build(self, replace=None, profile=False):
         """
         compute the graph structure of the nodes. It will set the input and
         output nodes for each of the node
@@ -435,6 +435,19 @@ class TaskGraph(object):
                     'from_port': src_port
                 })
 
+    def build(self, replace=None, profile=False):
+        """
+        compute the graph structure of the nodes. It will set the input and
+        output nodes for each of the node
+
+        Arguments
+        -------
+        replace: dict
+            conf parameters replacement
+        """
+        # make connection only
+        self._build(replace=replace, profile=profile)
+
         # Columns type checking is done in the :meth:`TaskGraph._run` after the
         # outputs are specified and participating tasks are determined.
 
@@ -442,28 +455,25 @@ class TaskGraph(object):
         # processed
         self.breadth_first_update()
 
-        if clean_cache:
-            # simple node mixin can cache the port_setup and meta_setup result
-            # don't cache it if only need to build the graph for later updates
-            # e.g. in composite node, the graph is built first and modified
-            # in this case, DON"T cache it. Cache after the graph is fully
-            # modified
-            for k in self.__node_dict.keys():
-                if hasattr(self.__node_dict[k], 'input_connections'):
-                    delattr(self.__node_dict[k], 'input_connections')
-                if hasattr(self.__node_dict[k], 'input_meta'):
-                    delattr(self.__node_dict[k], 'input_meta')
-                if hasattr(self.__node_dict[k], 'ports_setup_cache'):
-                    delattr(self.__node_dict[k], 'ports_setup_cache')
-                if hasattr(self.__node_dict[k], 'meta_data_cache'):
-                    delattr(self.__node_dict[k], 'meta_data_cache')
+    def breadth_first_update(self, extra_roots=[], extra_updated=set()):
+        """
+        Do a breadth first graph traversal and update nodes.
 
-    def breadth_first_update(self):
+        Update each note following the causal order. The children notes are
+        only added to the queue if all the parents are updated.
+
+        Each node is only updated once.
+
+        extra_roots and extra_updated should be empty for normal graph. It
+        is used for composite node when the graph is connected to other
+        graph.
+        """
         queue = []
-        updated = set()
+        updated = extra_updated
         for k in self.__node_dict.keys():
             if len(self.__node_dict[k].inputs) == 0:
                 queue.append(self.__node_dict[k])
+        queue.extend(extra_roots)
         while (len(queue) != 0):
             node_to_update = queue.pop(0)
             # print('update {}'.format(node_to_update.uid))

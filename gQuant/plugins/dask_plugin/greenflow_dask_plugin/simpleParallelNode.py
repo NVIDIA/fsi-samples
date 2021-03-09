@@ -1,3 +1,4 @@
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 from greenflow.plugin_nodes import CompositeNode
 from greenflow.plugin_nodes import ContextCompositeNode
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
@@ -144,7 +145,7 @@ class SimpleParallelNode(CompositeNode):
         cudf_df_name = 'cudf.core.dataframe.DataFrame'
 
         if 'taskgraph' in self.conf:
-            task_graph.build(replace=replacementObj, clean_cache=True)
+            task_graph._build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -265,7 +266,7 @@ class SimpleParallelNode(CompositeNode):
         if 'taskgraph' in self.conf:
             task_graph = TaskGraph.load_taskgraph(
                 get_file_path(self.conf['taskgraph']))
-            task_graph.build(clean_cache=True)
+            task_graph._build()
 
             outputLists = []
             replaceObj = {}
@@ -274,7 +275,7 @@ class SimpleParallelNode(CompositeNode):
             def inputNode_fun(inputNode, in_ports):
                 inports = inputNode.ports_setup().inports
 
-                class InputFeed(Node):
+                class InputFeed(SimpleNodeMixin, Node):
 
                     def meta_setup(self):
                         output = {}
@@ -284,6 +285,9 @@ class SimpleParallelNode(CompositeNode):
                                     inp['from_port']]
                         # it will be something like { input_port: columns }
                         return MetaData(inports={}, outports=output)
+
+                    def update(self):
+                        SimpleNodeMixin.update(self)
 
                     def ports_setup(self):
                         # it will be something like { input_port: types }

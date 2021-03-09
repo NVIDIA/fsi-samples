@@ -153,7 +153,10 @@ class NodeTaskGraphMixin(object):
         else:
             return ports
         if hasattr(self, 'inputs'):
-            connected_inports = self.get_connected_inports()
+            if hasattr(self, 'input_connections'):
+                connected_inports = self.input_connections
+            else:
+                connected_inports = self.get_connected_inports()
             for inp in self.inputs:
                 to_port = inp['to_port']
                 if to_port in inports and (not inports[to_port].get(dy,
@@ -631,7 +634,10 @@ class NodeTaskGraphMixin(object):
         msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
             'type(s) "{ioport_types}"'
 
-        iports_connected = self.get_connected_inports()
+        if hasattr(self, 'input_connections'):
+            iports_connected = self.input_connections
+        else:
+            iports_connected = self.get_connected_inports()
         iports_spec = self._get_input_ports(full_port_spec=True)
         for iport in iports_connected.keys():
             iport_spec = iports_spec[iport]
@@ -744,7 +750,10 @@ class NodeTaskGraphMixin(object):
                     out_err = '{}\n{}'.format(info_msg, err_msg)
                     raise LookupError(out_err)
 
-        inputs_meta = self.get_input_meta()
+        if hasattr(self, 'input_meta'):
+            inputs_meta = self.input_meta
+        else:
+            inputs_meta = self.get_input_meta()
         required = metadata.inports
 
         if not required:

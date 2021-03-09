@@ -86,6 +86,10 @@ class CompositeNode(SimpleNodeMixin, Node):
         outputNode_fun has subgraph outputNode and all the outpout ports
         as argument, it processes the outNode logics
         """
+        all_inputs = []
+        all_outputs = []
+        extra_updated = set()
+        extra_roots = []
         if 'input' in self.conf:
             # group input ports by node id
             inp_groups = group_ports(self.conf['input'])
@@ -118,7 +122,20 @@ class CompositeNode(SimpleNodeMixin, Node):
                         else:
                             update_inputs.append(oldInput)
                     inputNode.inputs = update_inputs
-                    inputNode_fun(inputNode, inp_groups[inp])
+
+                    # add all the `updated` parents to the set
+                    for i in inputNode.inputs:
+                        if hasattr(i['from_node'], 'ports_setup_cache'):
+                            extra_updated.add(i['from_node'])
+                    # if all the parents are updated, this is
+                    # a new root node
+                    if all([
+                            i['from_node'] in extra_updated
+                            for i in inputNode.inputs
+                    ]):
+                        extra_roots.append(inputNode)
+
+                    all_inputs.append((inputNode, inp))
 
         if 'output' in self.conf:
             oup_groups = group_ports(self.conf['output'])
@@ -130,10 +147,20 @@ class CompositeNode(SimpleNodeMixin, Node):
                     # Node, we rely on the fact that taskgraph.run method
                     # will remove the output collector from taskgraph if
                     # the outputlist is set
-                    outNode_fun(outNode, oup_groups[oup])
+                    all_outputs.append((outNode, oup))
+                    # outNode_fun(outNode, oup_groups[oup])
+
+        # update all the nodes and cache it
+        task_graph.breadth_first_update(extra_roots=extra_roots,
+                                        extra_updated=extra_updated)
+        for innode in all_inputs:
+            inputNode_fun(innode[0], inp_groups[innode[1]])
+        for outnode in all_outputs:
+            # inputNode_fun(innode[0], inp_groups[innode[1]])
+            outNode_fun(outnode[0], oup_groups[outnode[1]])
         # this part is to update each of the node so dynamic inputs can be
         # processed
-        task_graph.cache_update_result()
+        # task_graph.cache_update_result()
 
     def ports_setup(self):
         if hasattr(self, 'ports_setup_cache'):
@@ -147,7 +174,7 @@ class CompositeNode(SimpleNodeMixin, Node):
         inports = {}
         outports = {}
         if task_graph:
-            task_graph.build(replace=replacementObj, clean_cache=True)
+            task_graph._build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 inport = {}
@@ -176,7 +203,7 @@ class CompositeNode(SimpleNodeMixin, Node):
             return self.meta_data_cache
         task_graph = self.task_graph
         replacementObj = self.replacementObj
- 
+
         # cache_key, task_graph, replacementObj = self._compute_hash_key()
         # if cache_key in CACHE_META:
         #     # print('cache hit')
@@ -184,7 +211,7 @@ class CompositeNode(SimpleNodeMixin, Node):
         required = {}
         out_meta = {}
         if task_graph:
-            task_graph.build(replace=replacementObj, clean_cache=True)
+            task_graph._build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 req = {}
@@ -262,7 +289,7 @@ class CompositeNode(SimpleNodeMixin, Node):
             "subnodes_conf": {}
         }
         if task_graph:
-            task_graph.build(replace=replacementObj, clean_cache=True)
+            task_graph._build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -338,7 +365,7 @@ class CompositeNode(SimpleNodeMixin, Node):
         if 'taskgraph' in self.conf:
             task_graph = TaskGraph.load_taskgraph(
                 get_file_path(self.conf['taskgraph']))
-            task_graph.build(clean_cache=True)
+            task_graph._build()
 
             outputLists = []
             replaceObj = {}
@@ -347,7 +374,7 @@ class CompositeNode(SimpleNodeMixin, Node):
             def inputNode_fun(inputNode, in_ports):
                 inports = inputNode.ports_setup().inports
 
-                class InputFeed(Node):
+                class InputFeed(SimpleNodeMixin, Node):
 
                     def meta_setup(self):
                         output = {}
@@ -361,6 +388,9 @@ class CompositeNode(SimpleNodeMixin, Node):
                     def ports_setup(self):
                         # it will be something like { input_port: types }
                         return NodePorts(inports={}, outports=inports)
+
+                    def update(self):
+                        SimpleNodeMixin.update(self)
 
                     def conf_schema(self):
                         return ConfSchema()

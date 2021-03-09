@@ -1,3 +1,4 @@
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 from greenflow.plugin_nodes.util.contextCompositeNode import \
     ContextCompositeNode
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
@@ -327,7 +328,7 @@ class GridRandomSearchNode(ContextCompositeNode):
             if 'context' in conf:
                 json = deepcopy(_CONF_JSON)
                 metrics = []
-                task_graph.build(replace=replacementObj, clean_cache=True)
+                task_graph._build(replace=replacementObj)
                 for t in task_graph:
                     node_id = t.get('id')
                     if node_id != '':
@@ -422,7 +423,7 @@ class GridRandomSearchNode(ContextCompositeNode):
                         myinputs[key] = v
                 task_graph = TaskGraph.load_taskgraph(
                     get_file_path(self.conf['taskgraph']))
-                task_graph.build(clean_cache=True)
+                task_graph._build()
 
                 outputLists = []
                 replaceObj = {}
@@ -431,7 +432,7 @@ class GridRandomSearchNode(ContextCompositeNode):
                 def inputNode_fun(inputNode, in_ports):
                     inports = inputNode.ports_setup().inports
 
-                    class InputFeed(Node):
+                    class InputFeed(SimpleNodeMixin, Node):
 
                         def meta_setup(self):
                             output = {}
@@ -448,6 +449,9 @@ class GridRandomSearchNode(ContextCompositeNode):
 
                         def conf_schema(self):
                             return ConfSchema()
+                        
+                        def update(self):
+                            SimpleNodeMixin.update(self)
 
                         def process(self, empty):
                             output = {}
