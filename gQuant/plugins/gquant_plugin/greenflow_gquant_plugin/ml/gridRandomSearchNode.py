@@ -449,7 +449,7 @@ class GridRandomSearchNode(ContextCompositeNode):
 
                         def conf_schema(self):
                             return ConfSchema()
-                        
+
                         def update(self):
                             SimpleNodeMixin.update(self)
 

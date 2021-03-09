@@ -3,14 +3,11 @@ import cudf
 import dask_cudf
 import xgboost as xgb
 import dask
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                      PortsSpecSchema,
-                                                      NodePorts)
-from xgboost import Booster
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
 import copy
 from collections import OrderedDict
 from .._port_type_node import _PortTypesMixin
-from dask.dataframe import DataFrame as DaskDataFrame
 
 
 __all__ = ['TrainXGBoostNode', 'InferXGBoostNode']
@@ -19,43 +16,46 @@ __all__ = ['TrainXGBoostNode', 'InferXGBoostNode']
 class TrainXGBoostNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'model_out'
-
-    def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        self.port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             }
         }
-        output_ports = {
+        self.port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: [Booster, dict]
+                port_type: ['xgboost.Booster', 'builtins.dict']
             }
         }
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
 
-    def meta_setup(self):
         cols_required = {}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
         if 'columns' in self.conf and self.conf.get('include', True):
             cols_required = {}
             for col in self.conf['columns']:
                 cols_required[col] = None
-            required = {
-                self.INPUT_PORT_NAME: cols_required
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: cols_required,
+        }
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: {}
             }
+        }
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
+
+    def meta_setup(self):
+        return _PortTypesMixin.meta_setup(self)
+
+    def update(self):
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
@@ -88,25 +88,10 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                     cols_required[self.conf['target']] = None
                     cols_output['label'][
                         self.conf['target']] = None
-                required = {
-                    self.INPUT_PORT_NAME: cols_required,
-                }
-            output_cols = {
-                self.OUTPUT_PORT_NAME: cols_output,
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-        else:
-            col_from_inport = {}
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport,
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-
-    def ports_setup(self):
-        types = [cudf.DataFrame, DaskDataFrame, dask_cudf.DataFrame]
-        return self.ports_setup_from_types(types)
+                self.meta_inports[self.INPUT_PORT_NAME] = cols_required
+            self.meta_outports[self.OUTPUT_PORT_NAME][
+                self.META_DATA] = cols_output
+        _PortTypesMixin.update(self)
 
     def conf_schema(self):
         json = {
@@ -343,50 +328,54 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         return {self.OUTPUT_PORT_NAME: bst}
 
 
-class InferXGBoostNode(Node):
+class InferXGBoostNode(_PortTypesMixin, Node):
 
     def init(self):
+        _PortTypesMixin.init(self)
         self.INPUT_PORT_NAME = 'data_in'
         self.INPUT_PORT_MODEL_NAME = 'model_in'
         self.OUTPUT_PORT_NAME = 'out'
-
-    def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        self.port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             },
             self.INPUT_PORT_MODEL_NAME: {
-                port_type: [Booster, dict]
-            }
+                port_type: ['xgboost.Booster', 'builtins.dict']
+            },
         }
-        output_ports = {
+        self.port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: types
+                port_type: "${port:data_in}"
             }
         }
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            output_ports.update({self.OUTPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
+
+        self.meta_inports = {
+            self.INPUT_PORT_NAME: {},
+            self.INPUT_PORT_MODEL_NAME: {}
+        }
+        predict = self.conf.get('prediction', 'predict')
+        out_cols = {predict: None}
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: out_cols
+            }
+        }
+
+    def ports_setup(self):
+        return _PortTypesMixin.ports_setup(self)
 
     def meta_setup(self):
-        metadata = MetaData()
+        return _PortTypesMixin.meta_setup(self)
+
+    def update(self):
         input_meta = self.get_input_meta()
-        required = {self.INPUT_PORT_NAME: {},
-                    self.INPUT_PORT_MODEL_NAME: {}}
         predict = self.conf.get('prediction', 'predict')
         pred_contribs: bool = self.conf.get('pred_contribs', False)
-        output_cols = {
-            self.OUTPUT_PORT_NAME: {predict: None}
-        }
         if (self.INPUT_PORT_NAME in input_meta
                 and self.INPUT_PORT_MODEL_NAME in input_meta):
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
@@ -395,20 +384,15 @@ class InferXGBoostNode(Node):
                     self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
-            predict = self.conf.get('prediction', 'predict')
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
             else:
                 col_from_inport = {}
                 for i in range(len(required_cols)+1):
                     col_from_inport[i] = None
-            required = {self.INPUT_PORT_NAME: required_cols,
-                        self.INPUT_PORT_MODEL_NAME: {}}
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport,
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
+            self.meta_inports[self.INPUT_PORT_NAME] = required_cols
+            self.meta_outports[self.OUTPUT_PORT_NAME][
+                self.META_DATA] = col_from_inport
         elif (self.INPUT_PORT_NAME not in input_meta and
               self.INPUT_PORT_MODEL_NAME in input_meta):
             if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
@@ -416,7 +400,6 @@ class InferXGBoostNode(Node):
                     self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
-            predict = self.conf.get('prediction', 'predict')
             col_from_inport = copy.copy(required_cols)
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
@@ -424,30 +407,17 @@ class InferXGBoostNode(Node):
                 col_from_inport = {}
                 for i in range(len(required_cols)+1):
                     col_from_inport[i] = None
-            required = {self.INPUT_PORT_NAME: required_cols,
-                        self.INPUT_PORT_MODEL_NAME: {}}
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
+            self.meta_inports[self.INPUT_PORT_NAME] = required_cols
+            self.meta_outports[self.OUTPUT_PORT_NAME][
+                self.META_DATA] = col_from_inport
         elif (self.INPUT_PORT_NAME in input_meta and
               self.INPUT_PORT_MODEL_NAME not in input_meta):
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
-            predict = self.conf.get('prediction', 'predict')
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-        metadata = MetaData(inports=required, outports=output_cols)
-        return metadata
-
-    def ports_setup(self):
-        types = [cudf.DataFrame, DaskDataFrame, dask_cudf.DataFrame]
-        return self.ports_setup_from_types(types)
+            self.meta_outports[self.OUTPUT_PORT_NAME][
+                self.META_DATA] = col_from_inport
+        _PortTypesMixin.update(self)
 
     def conf_schema(self):
         json = {

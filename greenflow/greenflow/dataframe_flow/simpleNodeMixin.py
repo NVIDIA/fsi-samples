@@ -8,6 +8,10 @@ class SimpleNodeMixin(object):
     def init(self):
         """
         Used to initilze the Node. called from the node constructore
+        all children should run parent init first in the construtor e.g.
+        def init(self):
+            SimpleNodeMixin(self)
+            ....
 
         In this function. Define the static ports and meta setup. Note,
         only static information can be used includig the self.conf
@@ -228,7 +232,11 @@ class SimpleNodeMixin(object):
         self.cache_update_result()
 
     def _parse_variable(self, variable):
-        if variable is None:
+        if isinstance(variable, int):
+            return variable
+        elif isinstance(variable, dict):
+            return variable
+        elif variable is None:
             return None
         port_type = PortsSpecSchema.port_type
         groups = self._sep_variable(variable)
