@@ -3,7 +3,8 @@ from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.task import Task
 from greenflow.dataframe_flow._node_flow import OUTPUT_TYPE, OUTPUT_ID
 from greenflow.dataframe_flow import TaskSpecSchema
-from greenflow.dataframe_flow.task import load_modules, get_greenflow_config_modules
+from greenflow.dataframe_flow.task import (load_modules,
+                                           get_greenflow_config_modules)
 import greenflow.plugin_nodes as plugin_nodes
 import inspect
 import uuid
@@ -117,6 +118,12 @@ def get_nodes(task_graph):
     return {'nodes': nodes, 'edges': edges}
 
 
+def init_get_node_obj(node, count_id=True):
+    node.init()
+    node.update()
+    return get_node_obj(node, count_id=count_id)
+
+
 def get_node_obj(node, count_id=True):
     """
     It is a private function to convert a Node instance into a dictionary for
@@ -132,8 +139,6 @@ def get_node_obj(node, count_id=True):
     dict
         node data for client
     """
-    # node.init()
-    # node.update()
     ports = node.ports_setup()
     metadata = node.meta_setup()
     schema = node.conf_schema()
@@ -233,7 +238,7 @@ def add_nodes():
                         'inputs': []}
                 t = Task(task)
                 n = nodecls(t)
-                nodeObj = get_node_obj(n, False)
+                nodeObj = init_get_node_obj(n, False)
                 all_nodes[labmod_pkg].append(nodeObj)
                 loaded_node_classes.append(nodecls)
 
@@ -265,7 +270,7 @@ def add_nodes():
                     }
             t = Task(task)
             n = nodecls(t)
-            nodeObj = get_node_obj(n, False)
+            nodeObj = init_get_node_obj(n, False)
             if module_file_or_path.is_dir():
                 # submod = nodecls.__module__.split('.')[1:]
                 # flatten out the namespace hierarchy
@@ -292,12 +297,12 @@ def add_nodes():
                         }
                 t = Task(task)
                 n = classObj(t)
-                nodeObj = get_node_obj(n, False)
+                nodeObj = init_get_node_obj(n, False)
                 node_lists.append(nodeObj)
 
     # load all the plugins from entry points
-    for entry_point in importlib_metadata.entry_points().get('greenflow.plugin',
-                                                             ()):
+    for entry_point in importlib_metadata.entry_points().get(
+            'greenflow.plugin', ()):
         mod = entry_point.load()
         modulename = entry_point.name
 
@@ -322,7 +327,7 @@ def add_nodes():
                     }
             t = Task(task)
             n = nodecls(t)
-            nodeObj = get_node_obj(n, False)
+            nodeObj = init_get_node_obj(n, False)
             all_nodes.setdefault(modulename, []).append(nodeObj)
             loaded_node_classes.append(nodecls)
 
