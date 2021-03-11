@@ -1,6 +1,7 @@
 from .portsSpecSchema import (PortsSpecSchema, MetaData, NodePorts)
 import re
 import importlib
+module_cache = {}
 
 
 class SimpleNodeMixin(object):
@@ -140,7 +141,7 @@ class SimpleNodeMixin(object):
             # first time calling it. Make sure all the information
             # for self.port_inports and self.port_outports
             # is properly set before calling self.get_connected_inports()
-            # or self.get_input_meta() as they are calling ports_setup 
+            # or self.get_input_meta() as they are calling ports_setup
             # inside
         """
         dy = PortsSpecSchema.dynamic
@@ -266,8 +267,6 @@ class SimpleNodeMixin(object):
         return groups
 
     def ports_setup(self):
-        if hasattr(self, 'ports_setup_cache'):
-            return self.ports_setup_cache
         port_type = PortsSpecSchema.port_type
         dy = PortsSpecSchema.dynamic
         if hasattr(self, 'input_connections'):
@@ -341,14 +340,16 @@ class SimpleNodeMixin(object):
         return self.ports_setup_cache
 
     def _load_type(self, type_str):
+        if type_str in module_cache:
+            return module_cache[type_str]
         splits = type_str.split('.')
         mod_str = ".".join(splits[:-1])
         mod = importlib.import_module(mod_str)
-        return getattr(mod, splits[-1])
+        clsobj = getattr(mod, splits[-1])
+        module_cache[type_str] = clsobj
+        return clsobj
 
     def meta_setup(self, required={}):
-        if hasattr(self, 'meta_data_cache'):
-            return self.meta_data_cache
         if hasattr(self, 'input_meta'):
             input_meta = self.input_meta
         else:

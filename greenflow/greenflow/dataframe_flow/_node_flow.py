@@ -137,6 +137,31 @@ class NodeTaskGraphMixin(object):
             pass
         # cache it after update
         SimpleNodeMixin.cache_update_result(self)
+        # cache the conf_schema too
+        for icls in nodecls_list:
+            if not hasattr(icls, 'conf_schema'):
+                continue
+            self.conf_schema_cache = icls.conf_schema(self)
+        else:
+            pass
+
+    def conf_schema(self):
+        if hasattr(self, 'conf_schema_cache'):
+            return self.conf_schema_cache
+        nodecls_list = _get_nodetype(self)
+        for icls in nodecls_list:
+            if not hasattr(icls, 'conf_schema'):
+                continue
+            return icls.conf_schema(self)
+
+    def meta_setup(self):
+        if hasattr(self, 'meta_data_cache'):
+            return self.meta_data_cache
+        nodecls_list = _get_nodetype(self)
+        for icls in nodecls_list:
+            if not hasattr(icls, 'meta_setup'):
+                continue
+            return icls.meta_setup(self)
 
     def ports_setup(self):
         """

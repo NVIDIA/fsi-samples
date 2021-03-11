@@ -163,8 +163,6 @@ class CompositeNode(SimpleNodeMixin, Node):
         # task_graph.cache_update_result()
 
     def ports_setup(self):
-        if hasattr(self, 'ports_setup_cache'):
-            return self.ports_setup_cache
         task_graph = self.task_graph
         replacementObj = self.replacementObj
         # cache_key, task_graph, replacementObj = self._compute_hash_key()
@@ -199,8 +197,6 @@ class CompositeNode(SimpleNodeMixin, Node):
         return output_port
 
     def meta_setup(self):
-        if hasattr(self, 'meta_data_cache'):
-            return self.meta_data_cache
         task_graph = self.task_graph
         replacementObj = self.replacementObj
 

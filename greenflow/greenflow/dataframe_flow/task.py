@@ -12,6 +12,8 @@ from collections import namedtuple
 import configparser
 from .util import get_file_path
 
+module_cache = {}
+
 
 __all__ = ['Task']
 
@@ -97,6 +99,9 @@ def load_modules(pathfile, name=None):
     @returns
         namedtuple, absolute path and loaded module
     """
+    key = (pathfile, name)
+    if key in module_cache:
+        return module_cache[key]
     filename = Path(pathfile)
     if not filename.exists():
         filename = get_file_path(str(filename))
@@ -123,7 +128,9 @@ def load_modules(pathfile, name=None):
 
     spec.loader.exec_module(mod)
     Load = namedtuple("Load", "path mod")
-    return Load(module_dir, mod)
+    loaded = Load(module_dir, mod)
+    module_cache[key] = loaded
+    return loaded
 
 
 class Task(object):
