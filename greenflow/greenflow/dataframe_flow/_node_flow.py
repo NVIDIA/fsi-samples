@@ -104,6 +104,9 @@ class NodeTaskGraphMixin(object):
         # print('state', state)
         return state
 
+    def __getitem__(self, key):
+        return getattr(self, key)
+
     def __setstate__(self, state):
         self.__dict__.update(state)
 
@@ -141,7 +144,7 @@ class NodeTaskGraphMixin(object):
         for icls in nodecls_list:
             if not hasattr(icls, 'conf_schema'):
                 continue
-            self.conf_schema_cache = icls.conf_schema(self)
+            self.conf_schema_cache = self.conf_schema()
         else:
             pass
 
