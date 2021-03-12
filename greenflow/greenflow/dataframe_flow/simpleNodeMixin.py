@@ -338,8 +338,7 @@ class SimpleNodeMixin(object):
                         if isinstance(dynamic, bool) and dynamic:
                             types = input_connections[port_name]
                             outports[port_name] = {port_type: types}
-        self.ports_setup_cache = NodePorts(inports=inports, outports=outports)
-        return self.ports_setup_cache
+        return NodePorts(inports=inports, outports=outports)
 
     def _load_type(self, type_str):
         if type_str in module_cache:

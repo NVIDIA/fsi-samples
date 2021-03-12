@@ -17,7 +17,6 @@ import pandas
 from copy import deepcopy
 import ray
 from ray import tune
-import json
 
 __all__ = ["GridRandomSearchNode"]
 
@@ -588,8 +587,12 @@ class GridRandomSearchNode(ContextCompositeNode):
                         node = task_graph[node_id]
                         all_ports = node.ports_setup()
                         for port in all_ports.outports.keys():
-                            if all_ports.outports[port][
-                                    PortsSpecSchema.port_type] == float:
+                            types = all_ports.outports[port][
+                                PortsSpecSchema.port_type]
+                            if types == float:
+                                metrics.append(node_id+'.'+port)
+                            elif (isinstance(types, list)
+                                  and types[0] == float):
                                 metrics.append(node_id+'.'+port)
                 context = conf['context']
                 json['properties']['parameters'][
