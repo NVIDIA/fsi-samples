@@ -194,10 +194,7 @@ class NodeTaskGraphMixin(object):
         else:
             return ports
         if hasattr(self, 'inputs'):
-            if hasattr(self, 'input_connections'):
-                connected_inports = self.input_connections
-            else:
-                connected_inports = self.get_connected_inports()
+            has_dynamic = False
             for inp in self.inputs:
                 to_port = inp['to_port']
                 if to_port in inports and (not inports[to_port].get(dy,
@@ -205,10 +202,23 @@ class NodeTaskGraphMixin(object):
                     # skip connected non dynamic ports
                     continue
                 else:
-                    if to_port in connected_inports:
-                        types = connected_inports[to_port]
-                    inports[inp['from_node'].uid+'@'+inp['from_port']] = {
-                        port_type: types, dy: True}
+                    has_dynamic = True
+            if has_dynamic:
+                if hasattr(self, 'input_connections'):
+                    connected_inports = self.input_connections
+                else:
+                    connected_inports = self.get_connected_inports()
+                for inp in self.inputs:
+                    to_port = inp['to_port']
+                    if to_port in inports and (not inports[to_port].get(
+                            dy, False)):
+                        # skip connected non dynamic ports
+                        continue
+                    else:
+                        if to_port in connected_inports:
+                            types = connected_inports[to_port]
+                        inports[inp['from_node'].uid+'@'+inp['from_port']] = {
+                            port_type: types, dy: True}
         return ports
 
     def __valide(self, node_output: dict):
@@ -294,12 +304,10 @@ class NodeTaskGraphMixin(object):
         output = {}
         if not hasattr(self, 'inputs'):
             return output
-        if hasattr(self, 'ports_setup_cache'):
-            ports = self.ports_setup_cache
-        else:
-            ports = self.ports_setup()
-        inports = ports.inports
-        dy = PortsSpecSchema.dynamic
+        out_port_names = []
+        to_port_names = []
+        from_port_names = []
+        meta_data_list = []
         for node_input in self.inputs:
             from_node = node_input['from_node']
             if hasattr(from_node, "meta_data_cache"):
@@ -323,8 +331,22 @@ class NodeTaskGraphMixin(object):
                 )
             else:
                 out_port_name = from_node.uid+'@'+from_port_name
-                if out_port_name in inports and inports[
-                        out_port_name].get(dy, False):
+                out_port_names.append(out_port_name)
+                to_port_names.append(to_port_name)
+                from_port_names.append(from_port_name)
+                meta_data_list.append(meta_data)
+        if len(out_port_names) > 0:
+            dy = PortsSpecSchema.dynamic
+            if hasattr(self, 'ports_setup_cache'):
+                ports = self.ports_setup_cache
+            else:
+                ports = self.ports_setup()
+            inports = ports.inports
+            for out_port_name, to_port_name, from_port_name, meta_data in zip(
+                    out_port_names, to_port_names, from_port_names,
+                    meta_data_list):
+                if out_port_name in inports and inports[out_port_name].get(
+                        dy, False):
                     output[out_port_name] = meta_data.outports[from_port_name]
                 else:
                     output[to_port_name] = meta_data.outports[from_port_name]

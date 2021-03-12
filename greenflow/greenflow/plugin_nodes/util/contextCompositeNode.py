@@ -47,7 +47,6 @@ class ContextCompositeNode(CompositeNode):
         # import pdb
         # pdb.set_trace()
         task_graph = self.task_graph
-        replacementObj = self.replacementObj
         # cache_key, task_graph, replacementObj = self._compute_hash_key()
         # if cache_key in CACHE_SCHEMA:
         #     return CACHE_SCHEMA[cache_key]
@@ -104,7 +103,7 @@ class ContextCompositeNode(CompositeNode):
                 }
             # import pdb
             # pdb.set_trace()
-            all_fields = parse_config(replacementObj)
+            all_fields = parse_config(self.replacementObj)
             types = list(all_fields.keys())
             addional = json['properties']['context']['additionalProperties']
             addional['properties']['type']['enum'] = types
@@ -176,7 +175,6 @@ class ContextCompositeNode(CompositeNode):
             typelist.append(obj_temp)
 
         if 'taskgraph' in self.conf:
-            task_graph._build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 pass

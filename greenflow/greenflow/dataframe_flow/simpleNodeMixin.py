@@ -267,6 +267,8 @@ class SimpleNodeMixin(object):
         return groups
 
     def ports_setup(self):
+        if hasattr(self, 'ports_setup_cache'):
+            return self.ports_setup_cache
         port_type = PortsSpecSchema.port_type
         dy = PortsSpecSchema.dynamic
         if hasattr(self, 'input_connections'):
@@ -350,6 +352,8 @@ class SimpleNodeMixin(object):
         return clsobj
 
     def meta_setup(self, required={}):
+        if hasattr(self, 'meta_data_cache'):
+            return self.meta_data_cache
         if hasattr(self, 'input_meta'):
             input_meta = self.input_meta
         else:
