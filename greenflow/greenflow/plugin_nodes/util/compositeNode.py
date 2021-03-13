@@ -50,6 +50,7 @@ class CompositeNode(SimpleNodeMixin, Node):
 
     def update(self):
         SimpleNodeMixin.update(self)
+        self.conf_update()  # update the conf
         task_graph = ""
         replacementObj = {}
         task_graph_obj = None
@@ -134,7 +135,6 @@ class CompositeNode(SimpleNodeMixin, Node):
             # update all the nodes and cache it
             self.task_graph.breadth_first_update(extra_roots=extra_roots,
                                                  extra_updated=extra_updated)
-        self.conf_update()  # update the conf
 
     def conf_update(self):
         """

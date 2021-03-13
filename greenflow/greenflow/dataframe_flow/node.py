@@ -189,12 +189,17 @@ class Node(_PortsMixin, _Node):
         """
         pass
 
-    def get_input_meta(self) -> dict:
+    def get_input_meta(self, port_name=None):
         """
         Get the input meta information. It is usually used by individual
          node to compute the output meta information
+        if port_name is None
         returns
             dict, key is the node input port name, value is the metadata dict
+        if port_name is provided
+        returns
+            the meta data send to the input port with name `port_name`. If it
+            is not connected, return None
         """
         # this method will be implemented by NodeTaskGraphMixin
         return {}

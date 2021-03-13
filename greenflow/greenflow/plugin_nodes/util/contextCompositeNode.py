@@ -204,10 +204,9 @@ class ContextCompositeNode(CompositeNode):
         return out_schema
 
     def conf_update(self):
-        input_meta = self.get_input_meta()
-        if self.INPUT_CONFIG in input_meta:
-            if input_meta[self.INPUT_CONFIG]:
-                self.conf.update(input_meta[self.INPUT_CONFIG])
+        input_conf = self.get_input_meta(self.INPUT_CONFIG)
+        if input_conf is not None:
+            self.conf.update(input_conf)
 
     def update_replace(self, replaceObj, task_graph):
         # find the other replacment conf

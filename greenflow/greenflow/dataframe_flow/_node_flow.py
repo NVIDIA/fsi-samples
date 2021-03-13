@@ -136,6 +136,7 @@ class NodeTaskGraphMixin(object):
             if not hasattr(icls, 'update'):
                 continue
             icls.update(self)
+            break
         else:
             pass
         # cache it after update
@@ -145,6 +146,7 @@ class NodeTaskGraphMixin(object):
             if not hasattr(icls, 'conf_schema'):
                 continue
             self.conf_schema_cache = self.conf_schema()
+            break
         else:
             pass
 
@@ -297,12 +299,14 @@ class NodeTaskGraphMixin(object):
     def __get_input_df(self):
         return self.input_df
 
-    def get_input_meta(self):
+    def get_input_meta(self, port_name=None):
         """
-        get all the connected input metas information
+        if port_name is None, get all the connected input metas information
         returns
             dict, key is the current node input port name, value is the column
             name and types
+        if port_name is not None, get meta data for the input port_name. If it
+        doesn't exist, return None
         """
         output = {}
         if not hasattr(self, 'inputs'):
@@ -319,6 +323,8 @@ class NodeTaskGraphMixin(object):
                 meta_data = copy.deepcopy(from_node.meta_setup())
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
+            if port_name is not None and port_name == to_port_name:
+                return meta_data.outports[from_port_name]
             if from_port_name not in meta_data.outports:
                 nodetype_list = _get_nodetype(self)
                 nodetype_names = [inodet.__name__ for inodet in nodetype_list]
@@ -338,6 +344,8 @@ class NodeTaskGraphMixin(object):
                 to_port_names.append(to_port_name)
                 from_port_names.append(from_port_name)
                 meta_data_list.append(meta_data)
+        if port_name is not None:
+            return None
         if len(out_port_names) > 0:
             dy = PortsSpecSchema.dynamic
             if hasattr(self, 'ports_setup_cache'):
