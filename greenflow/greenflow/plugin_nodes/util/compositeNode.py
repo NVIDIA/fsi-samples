@@ -310,7 +310,7 @@ class CompositeNode(SimpleNodeMixin, Node):
         out_schema = ConfSchema(json=json, ui=ui)
         return out_schema
 
-    def update_replace(self, replaceObj, task_graph=None):
+    def update_replace(self, replaceObj, task_graph=None, **kwargs):
         # find the other replacment conf
         if 'subnodes_conf' in self.conf:
             for key in self.conf['subnodes_conf'].keys():
@@ -323,7 +323,7 @@ class CompositeNode(SimpleNodeMixin, Node):
                     replaceObj[newid].update(self.conf[
                         'subnodes_conf'][key])
 
-    def process(self, inputs):
+    def process(self, inputs, **kwargs):
         """
         Composite computation
 
@@ -407,7 +407,7 @@ class CompositeNode(SimpleNodeMixin, Node):
                                             inputNode_fun, outNode_fun)
 
             task_graph.extend(input_feeders)
-            self.update_replace(replaceObj, task_graph)
+            self.update_replace(replaceObj, task_graph, **kwargs)
             result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():

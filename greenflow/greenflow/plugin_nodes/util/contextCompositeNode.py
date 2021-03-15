@@ -208,7 +208,11 @@ class ContextCompositeNode(CompositeNode):
         if input_conf is not None:
             self.conf.update(input_conf)
 
-    def update_replace(self, replaceObj, task_graph):
+    def update_replace(self, replaceObj, task_graph, **kwargs):
+        """
+        called inside the self.process function to get the updated
+        replacement object before taskgraph.run.
+        """
         # find the other replacment conf
         if task_graph:
             for task in task_graph:

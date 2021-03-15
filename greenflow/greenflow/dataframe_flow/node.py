@@ -240,7 +240,7 @@ class Node(_PortsMixin, _Node):
         return MetaData(inports={}, outports={})
 
     @abc.abstractmethod
-    def process(self, inputs) -> dict:
+    def process(self, inputs, **kwargs) -> dict:
         """
         process the input dataframe. Children class is required to override
         this

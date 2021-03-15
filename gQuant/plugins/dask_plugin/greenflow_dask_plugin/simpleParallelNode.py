@@ -1,14 +1,10 @@
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 from greenflow.plugin_nodes import CompositeNode
 from greenflow.plugin_nodes import ContextCompositeNode
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema,
-                                                      MetaData,
                                                       NodePorts)
-from greenflow.dataframe_flow import Node, TaskSpecSchema
 from greenflow.plugin_nodes.util.json_util import parse_config
 from dask.dataframe import DataFrame as DaskDataFrame
-import uuid
 import dask
 from jsonpath_ng import parse
 import dask.distributed
@@ -24,6 +20,19 @@ default_map = {
 
 
 class SimpleParallelNode(CompositeNode):
+    """
+    A SimpleParallelNode that can take a single GPU/CPU workflow, and convert
+    it to output Dask dataframe. Each partition in the Dask dataframe will be
+    computed in parallel in different GPU/CPUs.
+
+    In the SimpleParallelNode configuration, user just need to set the
+    taskgraph, the inputs and outputs of the taskgraph, 
+    the context parameters for the taskgraph. Most importantly, 
+    it can map the iteration id (or the Dask Dataframe partition id) to any
+     number typed configuration item of the taskgraph.
+     E.g. it can be used to set the randomn seed number for each of the
+     iteration runs.
+    """
 
     def init(self):
         super().init()
@@ -195,41 +204,9 @@ class SimpleParallelNode(CompositeNode):
         """
         pass
 
-    def update_replace(self, replaceObj, task_graph):
+    def update_replace(self, replaceObj, task_graph, **kwargs):
         """
-        this method is called each time the ports_setup, meta_setup,
-        conf_schema are called.
-
-        @para replaceObj is a dictionary of the configuration
-        @para task_graph is the task_graph loaded for this composite node
-
-        It is intented to construct a new python dictionary to pass to the
-        task_graph.run replace argument. So the composite taskgraph can run
-         with different configurations.
-        """
-        # find the other replacment conf
-        if task_graph:
-            for task in task_graph:
-                key = task.get('id')
-                newid = key
-                conf = task.get('conf')
-                if newid in replaceObj:
-                    replaceObj[newid].update({'conf': conf})
-                else:
-                    replaceObj[newid] = {}
-                    replaceObj[newid].update({'conf': conf})
-        # replace the numbers from the context
-        if 'context' in self.conf:
-            for key in self.conf['context'].keys():
-                val = self.conf['context'][key]['value']
-                for map_obj in self.conf['context'][key]['map']:
-                    xpath = map_obj['xpath']
-                    expr = parse(xpath)
-                    expr.update(replaceObj, val)
-
-    def update_value(self, replaceObj, task_graph, iternum):
-        """
-        this method is called from process before each iteration run
+        this method is called in the update
 
         @para replaceObj is a dictionary of the configuration
         @para task_graph is the task_graph loaded for this composite node
@@ -239,116 +216,25 @@ class SimpleParallelNode(CompositeNode):
         task_graph.run replace argument. So the composite taskgraph can run
          with different configurations.
         """
-        self.update_replace(replaceObj, task_graph)
+        ContextCompositeNode.update_replace(self, replaceObj, task_graph,
+                                            **kwargs)
         # replace the numbers from the context
-        if 'map' in self.conf:
+        if 'map' in self.conf and 'iternum' in kwargs:
             for i in range(len(self.conf['map'])):
-                val = iternum
+                val = kwargs['iternum']
                 map_obj = self.conf['map'][i]
                 xpath = map_obj['xpath']
                 expr = parse(xpath)
                 expr.update(replaceObj, val)
 
-    def _process(self, inputs, iternum):
-        """
-        Composite computation
-
-        Arguments
-        -------
-         inputs: list
-            list of input dataframes.
-        Returns
-        -------
-        dataframe
-        """
-        if 'taskgraph' in self.conf:
-            task_graph = self.task_graph
-
-            outputLists = []
-            replaceObj = {}
-            input_feeders = []
-
-            def inputNode_fun(inputNode, in_ports):
-                inports = inputNode.ports_setup().inports
-
-                class InputFeed(SimpleNodeMixin, Node):
-
-                    def meta_setup(self):
-                        output = {}
-                        for inp in inputNode.inputs:
-                            output[inp['to_port']] = inp[
-                                'from_node'].meta_setup().outports[
-                                    inp['from_port']]
-                        # it will be something like { input_port: columns }
-                        return MetaData(inports={}, outports=output)
-
-                    def update(self):
-                        SimpleNodeMixin.update(self)
-
-                    def ports_setup(self):
-                        # it will be something like { input_port: types }
-                        return NodePorts(inports={}, outports=inports)
-
-                    def conf_schema(self):
-                        return ConfSchema()
-
-                    def process(self, empty):
-                        output = {}
-                        for key in inports.keys():
-                            if inputNode.uid+'@'+key in inputs:
-                                output[key] = inputs[inputNode.uid+'@'+key]
-                        return output
-
-                uni_id = str(uuid.uuid1())
-                obj = {
-                    TaskSpecSchema.task_id: uni_id,
-                    TaskSpecSchema.conf: {},
-                    TaskSpecSchema.node_type: InputFeed,
-                    TaskSpecSchema.inputs: []
-                }
-                input_feeders.append(obj)
-                newInputs = {}
-                for key in inports.keys():
-                    if inputNode.uid+'@'+key in inputs:
-                        newInputs[key] = uni_id+'.'+key
-                for inp in inputNode.inputs:
-                    if inp['to_port'] not in in_ports:
-                        # need to keep the old connections
-                        newInputs[inp['to_port']] = (inp['from_node'].uid
-                                                     + '.' + inp['from_port'])
-                replaceObj.update({inputNode.uid: {
-                    TaskSpecSchema.inputs: newInputs}
-                })
-
-            def outNode_fun(outNode, out_ports):
-                out_ports = outNode.ports_setup().outports
-                # fixed_outports = fix_port_name(out_ports, outNode.uid)
-                for key in out_ports.keys():
-                    if self.outport_connected(outNode.uid+'@'+key):
-                        outputLists.append(outNode.uid+'.'+key)
-                        # outputLists.append(outNode.uid+'.'+key)
-
-            self._make_sub_graph_connection(task_graph,
-                                            inputNode_fun, outNode_fun)
-
-            task_graph.extend(input_feeders)
-            self.update_value(replaceObj, task_graph, iternum)
-            result = task_graph.run(outputLists, replace=replaceObj)
-            output = {}
-            for key in result.get_keys():
-                splits = key.split('.')
-                output['@'.join(splits)] = result[key]
-            return output
-        else:
-            return {}
-
-    def process(self, inputs):
+    def process(self, inputs, **kwargs):
         output = {}
         # more_output = self._process(inputs)
         # output.update(more_output)
         iterations = self.conf['iterations']
         out_dfs = [
-            dask.delayed(self._process)(inputs, i) for i in range(iterations)
+            dask.delayed(CompositeNode.process)(self, inputs, iternum=i)
+            for i in range(iterations)
         ]
         client = dask.distributed.client.default_client()
         out_dfs = client.persist(out_dfs)
