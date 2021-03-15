@@ -11,13 +11,6 @@ import dask.distributed
 
 __all__ = ["SimpleParallelNode"]
 
-default_map = {
-    "boolean": False,
-    "number": 0.0,
-    "string": "a string",
-    "array": []
-}
-
 
 class SimpleParallelNode(CompositeNode):
     """
@@ -26,8 +19,8 @@ class SimpleParallelNode(CompositeNode):
     computed in parallel in different GPU/CPUs.
 
     In the SimpleParallelNode configuration, user just need to set the
-    taskgraph, the inputs and outputs of the taskgraph, 
-    the context parameters for the taskgraph. Most importantly, 
+    taskgraph, the inputs and outputs of the taskgraph,
+    the context parameters for the taskgraph. Most importantly,
     it can map the iteration id (or the Dask Dataframe partition id) to any
      number typed configuration item of the taskgraph.
      E.g. it can be used to set the randomn seed number for each of the
