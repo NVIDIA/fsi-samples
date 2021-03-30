@@ -1,20 +1,32 @@
 import numpy as np
 import pandas as pd
-from greenflow.dataframe_flow import Node, MetaData
-from greenflow.dataframe_flow import NodePorts, PortsSpecSchema
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import PortsSpecSchema
 from greenflow.dataframe_flow import ConfSchema
+from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 
 
-class PointNode(Node):
+class PointNode(SimpleNodeMixin, Node):
 
-    def ports_setup(self):
-        input_ports = {}
-        output_ports = {
-            'points_df_out': {
-                PortsSpecSchema.port_type: pd.DataFrame
+    def init(self):
+        SimpleNodeMixin.init(self)
+        self.OUTPUT_PORT_NAME = 'points_df_out'
+        self.port_inports = {}
+        self.port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                PortsSpecSchema.port_type: ["pandas.DataFrame"]
             }
         }
-        return NodePorts(inports=input_ports, outports=output_ports)
+        self.meta_inports = {}
+        self.meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                self.META_OP: self.META_OP_RETENTION,
+                self.META_DATA: {
+                    'x': 'float64',
+                    'y': 'float64'
+                }
+            }
+        }
 
     def conf_schema(self):
         json = {
@@ -35,24 +47,12 @@ class PointNode(Node):
         }
         return ConfSchema(json=json, ui=ui)
 
-    def init(self):
-        pass
-
-    def meta_setup(self):
-        columns_out = {
-            'points_df_out': {
-                'x': 'float64',
-                'y': 'float64'
-            },
-        }
-        return MetaData(inports={}, outports=columns_out)
-
     def process(self, inputs):
         npts = self.conf['npts']
         df = pd.DataFrame()
         df['x'] = np.random.rand(npts)
         df['y'] = np.random.rand(npts)
         output = {}
-        if self.outport_connected('points_df_out'):
-            output.update({'points_df_out': df})
+        if self.outport_connected(self.OUTPUT_PORT_NAME):
+            output.update({self.OUTPUT_PORT_NAME: df})
         return output
