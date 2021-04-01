@@ -33,107 +33,80 @@ unittest.defaultTestLoader.sortTestMethodsUsing = compare
 
 
 class TestPerformance(unittest.TestCase):
+    '''Profile calls to ports_setup and meta_setup.'''
 
     def setUp(self):
         warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
-        os.environ['MODULEPATH'] = 'modules'
+        dirnamefn = os.path.dirname
+        topdir = dirnamefn(dirnamefn(dirnamefn(os.path.realpath(__file__))))
+        os.environ['MODULEPATH'] = str(topdir) + '/modules'
+        os.environ['GREENFLOW_CONFIG'] = str(topdir) + '/greenflowrc'
+
         self.ports_setup_ref = {
-            'ports_setup.datetimeFilterNode.py': 2,
-            'ports_setup.minNode.py': 1,
-            'ports_setup.maxNode.py': 1,
-            'ports_setup.valueFilterNode.py': 1,
-            'ports_setup.renameNode.py': 6,
-            'ports_setup.assetIndicatorNode.py': 1,
-            'ports_setup.dropNode.py': 3,
-            'ports_setup.indicatorNode.py': 1,
-            'ports_setup.normalizationNode.py': 2,
-            'ports_setup.addSignIndicator.py': 3,
-            'ports_setup.onehotEncoding.py': 1,
-            'ports_setup.persistNode.py': 2,
-            'ports_setup.xgboostStrategyNode.py': 2,
-            'ports_setup.averageNode.py': 1,
-            'ports_setup.leftMergeNode.py': 6,
-            'ports_setup.returnFeatureNode.py': 1,
-            'ports_setup.sortNode.py': 2,
-            'ports_setup.simpleAveragePortOpt.py': 2,
             'ports_setup.compositeNode.py': 4,
-            'ports_setup.splitDataNode.py': 2,
-            'ports_setup.xgboostNode.py': 8,
             'ports_setup.classificationGenerator.py': 2,
-            'ports_setup.simpleBackTest.py': 2,
             'ports_setup.csvStockLoader.py': 3,
-            'ports_setup.importanceCurve.py': 1,
-            'ports_setup.rocCurveNode.py': 2,
-            'ports_setup.sharpeRatioNode.py': 2,
-            'ports_setup.cumReturnNode.py': 2,
             'ports_setup.taskGraph.py': 5,
-            'ports_setup._node_flow.py': 123,
-            'ports_setup.simpleNodeMixin.py': 61
+            'ports_setup._node_flow.py': 304,
+            'ports_setup.template_node_mixin.py': 61,
+            'ports_setup_ext._node_taskgraph_extension_mixin.py': 61
         }
+
         self.meta_setup_ref = {
-            'meta_setup.datetimeFilterNode.py': 2,
-            'meta_setup.minNode.py': 1,
-            'meta_setup.maxNode.py': 1,
-            'meta_setup.valueFilterNode.py': 1,
-            'meta_setup.renameNode.py': 3,
-            'meta_setup.assetIndicatorNode.py': 1,
-            'meta_setup.dropNode.py': 3,
-            'meta_setup.indicatorNode.py': 1,
             'meta_setup.normalizationNode.py': 2,
-            'meta_setup.addSignIndicator.py': 3,
-            'meta_setup.onehotEncoding.py': 1,
-            'meta_setup.persistNode.py': 2,
-            'meta_setup.xgboostStrategyNode.py': 2,
-            'meta_setup.averageNode.py': 1,
-            'meta_setup.leftMergeNode.py': 3,
-            'meta_setup.returnFeatureNode.py': 1,
-            'meta_setup.sortNode.py': 2,
-            'meta_setup.simpleAveragePortOpt.py': 2,
             'meta_setup.compositeNode.py': 4,
-            'meta_setup.splitDataNode.py': 2,
-            'meta_setup.xgboostNode.py': 4,
             'meta_setup.classificationGenerator.py': 2,
             'meta_setup.simpleBackTest.py': 2,
             'meta_setup.csvStockLoader.py': 3,
-            'meta_setup.importanceCurve.py': 1,
-            'meta_setup.rocCurveNode.py': 2,
-            'meta_setup.sharpeRatioNode.py': 2,
-            'meta_setup.cumReturnNode.py': 2,
             'meta_setup.taskGraph.py': 5,
             'meta_setup.node.py': 5,
-            'meta_setup._node_flow.py': 63,
-            'meta_setup.simpleNodeMixin.py': 47
+            'meta_setup._node_flow.py': 158,
+            'meta_setup.template_node_mixin.py': 47,
+            'meta_setup_ext._node_taskgraph_extension_mixin.py': 47,
         }
+
+        tgraphpath = str(topdir) + \
+            '/taskgraphs/xgboost_example/xgboost_stock.gq.yaml'
+        profiler = cProfile.Profile()
+        profiler.enable()
+        graph = TaskGraph.load_taskgraph(tgraphpath)
+        graph.build()
+        profiler.disable()
+        stats = pstats.Stats(profiler).sort_stats('ncalls')
+
+        self.stats = stats
 
     def tearDown(self):
         pass
 
     @ordered
-    def test_performance(self):
-        '''Test frac diff method'''
-        profiler = cProfile.Profile()
-        profiler.enable()
-        graph = TaskGraph.load_taskgraph(
-            'taskgraphs/xgboost_example/xgboost_stock.gq.yaml')
-        graph.build()
-        profiler.disable()
-        stats = pstats.Stats(profiler).sort_stats('ncalls')
-        keys = [k for k in stats.stats.keys() if k[-1] == 'ports_setup']
+    def test_ports_setup_performance(self):
+        stats = self.stats
+        statkeys = self.stats.stats.keys()
+        keys = [k for k in statkeys if k[-1] in ('ports_setup',)] + \
+            [k for k in statkeys if k[-1] in ('ports_setup_ext',)]
         for key in keys:
             dict_key = key[-1]+'.'+key[0].split('/')[-1]
-            print("{}.{}\tis called {}({}) times.".format(
+            msg = "{}.{} is called {} (expected {}) times.".format(
                 key[0].split('/')[-1].split('.')[0], key[-1],
-                stats.stats[key][0], self.ports_setup_ref[dict_key]))
-            self.assertTrue(stats.stats[key][0],
-                            self.ports_setup_ref[dict_key])
-        keys = [k for k in stats.stats.keys() if k[-1] == 'meta_setup']
-        print()
+                stats.stats[key][0], self.ports_setup_ref[dict_key])
+            self.assertTrue(
+                stats.stats[key][0] == self.ports_setup_ref[dict_key], msg)
+
+    @ordered
+    def test_meta_setup_performance(self):
+        stats = self.stats
+        statkeys = self.stats.stats.keys()
+
+        keys = [k for k in statkeys if k[-1] in ('meta_setup',)] + \
+            [k for k in statkeys if k[-1] in ('meta_setup_ext',)]
         for key in keys:
-            dict_key = key[-1]+'.'+key[0].split('/')[-1]
-            print("{}.{}\tis called {}({}) times.".format(
+            dict_key = key[-1] + '.' + key[0].split('/')[-1]
+            msg = "{}.{} is called {} (expected {}) times.".format(
                 key[0].split('/')[-1].split('.')[0], key[-1],
-                stats.stats[key][0], self.meta_setup_ref[dict_key]))
-            self.assertTrue(stats.stats[key][0], self.meta_setup_ref[dict_key])
+                stats.stats[key][0], self.meta_setup_ref[dict_key])
+            self.assertTrue(
+                stats.stats[key][0] == self.meta_setup_ref[dict_key], msg)
 
 
 if __name__ == '__main__':

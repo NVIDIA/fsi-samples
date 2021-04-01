@@ -1,18 +1,19 @@
+from cuml import ForestInference
 from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema)
-from cuml import ForestInference
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
 from greenflow.dataframe_flow.util import get_file_path
-
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ['ForestInferenceNode']
 
 
-class ForestInferenceNode(_PortTypesMixin, Node):
+class ForestInferenceNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.delayed_process = True
         self.INPUT_PORT_NAME = 'data_in'
         self.INPUT_PORT_MODEL_NAME = 'model_file'
@@ -42,16 +43,14 @@ class ForestInferenceNode(_PortTypesMixin, Node):
         predict = self.conf.get('prediction', 'predict')
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: {
-                    predict: None
-                }
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: {predict: None}
             }
         }
 
     def update(self):
-        _PortTypesMixin.update(self)
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_MODEL_NAME in input_meta:
             if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
@@ -77,12 +76,6 @@ class ForestInferenceNode(_PortTypesMixin, Node):
                             self.INPUT_PORT_NAME][col] = col_from_inport[col]
                     else:
                         self.meta_inports[self.INPUT_PORT_NAME][col] = None
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

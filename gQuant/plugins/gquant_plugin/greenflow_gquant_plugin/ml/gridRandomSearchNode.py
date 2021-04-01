@@ -1,15 +1,3 @@
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
-from greenflow.plugin_nodes.util.contextCompositeNode import \
-    ContextCompositeNode
-from greenflow.plugin_nodes.util.compositeNode import (group_ports, _get_node,
-                                                       _get_port)
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                      PortsSpecSchema,
-                                                      NodePorts)
-from greenflow.dataframe_flow import TaskGraph
-from greenflow.dataframe_flow import Node
-from greenflow.dataframe_flow.util import get_file_path
-from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from jsonpath_ng import parse
 import uuid
 import cudf
@@ -17,6 +5,19 @@ import pandas
 from copy import deepcopy
 import ray
 from ray import tune
+
+from greenflow.plugin_nodes.util.contextCompositeNode import \
+    ContextCompositeNode
+from greenflow.plugin_nodes.util.compositeNode import (group_ports, _get_node,
+                                                       _get_port)
+from greenflow.dataframe_flow.portsSpecSchema import (
+    ConfSchema, PortsSpecSchema, NodePorts)
+from greenflow.dataframe_flow.metaSpec import MetaData
+from greenflow.dataframe_flow import TaskGraph
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.util import get_file_path
+from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
 
 __all__ = ["GridRandomSearchNode"]
 
@@ -404,7 +405,7 @@ def get_search_fun(data_store, conf, inputs):
         def inputNode_fun(inputNode, in_ports):
             inports = inputNode.ports_setup().inports
 
-            class InputFeed(SimpleNodeMixin, Node):
+            class InputFeed(TemplateNodeMixin, Node):
 
                 def meta_setup(self):
                     output = {}
@@ -426,7 +427,7 @@ def get_search_fun(data_store, conf, inputs):
                     return ConfSchema()
 
                 def update(self):
-                    SimpleNodeMixin.update(self)
+                    TemplateNodeMixin.update(self)
 
                 def process(self, empty):
                     output = {}

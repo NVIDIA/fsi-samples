@@ -1,13 +1,17 @@
 from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ["AssetFilterNode"]
 
 
-class AssetFilterNode(_PortTypesMixin, Node):
+class AssetFilterNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         self.INPUT_MAP_NAME = 'name_map'
@@ -42,28 +46,22 @@ class AssetFilterNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: {}
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: {}
             },
             self.OUTPUT_ASSET_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: {}
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
             }
         }
 
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
     def update(self):
-        _PortTypesMixin.update(self)
+        TemplateNodeMixin.update(self)
         name = self._find_asset_name()
         asset_retension = {"asset_name": name}
         self.meta_outports[self.OUTPUT_ASSET_NAME][
-            self.META_DATA] = asset_retension
+            MetaDataSchema.META_DATA] = asset_retension
 
     def _find_asset_name(self):
         name = ""

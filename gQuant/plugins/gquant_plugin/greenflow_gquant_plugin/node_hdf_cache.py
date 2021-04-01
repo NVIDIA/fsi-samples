@@ -1,13 +1,14 @@
-from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema)
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 import cudf
 import os
 import warnings
 import pandas as pd
 
+from greenflow.dataframe_flow.portsSpecSchema import PortsSpecSchema
 
-class _PortTypesMixin(SimpleNodeMixin):
+__all__ = ['NodeHDFCacheMixin']
 
+
+class NodeHDFCacheMixin:
     def load_cache(self, filename=None) -> dict:
         """
         Defines the behavior of how to load the cache file from the `filename`.

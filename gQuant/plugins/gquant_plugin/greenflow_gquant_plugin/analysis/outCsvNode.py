@@ -2,13 +2,15 @@ from greenflow.dataframe_flow import Node, PortsSpecSchema
 import dask_cudf
 from greenflow.dataframe_flow.util import get_file_path
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
-class OutCsvNode(_PortTypesMixin, Node):
+class OutCsvNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
         port_type = PortsSpecSchema.port_type
@@ -32,17 +34,11 @@ class OutCsvNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: addition
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
             }
         }
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         input_meta = self.get_input_meta()

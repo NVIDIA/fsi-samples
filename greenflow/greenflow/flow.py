@@ -11,7 +11,7 @@ def main():
     import pudb
     pudb.set_trace()
 
-    task_graph = TaskGraph.load_workflow(args.task)
+    task_graph = TaskGraph.load_taskgraph(args.task)
     print('output nodes:', args.output)
     task_graph.run(args.output)
 

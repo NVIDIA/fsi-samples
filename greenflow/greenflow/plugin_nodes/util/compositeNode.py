@@ -1,9 +1,10 @@
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
+from greenflow.dataframe_flow.portsSpecSchema import NodePorts
+from greenflow.dataframe_flow.metaSpec import MetaData
 import os
 from greenflow.dataframe_flow.util import get_file_path
 import uuid
@@ -46,10 +47,14 @@ def group_ports(input_list):
     return nodes_group
 
 
-class CompositeNode(SimpleNodeMixin, Node):
+class CompositeNode(TemplateNodeMixin, Node):
+
+    def init(self):
+        TemplateNodeMixin.init(self)
+        self.task_graph = None
 
     def update(self):
-        SimpleNodeMixin.update(self)
+        TemplateNodeMixin.update(self)
         self.conf_update()  # update the conf
         task_graph = ""
         replacementObj = {}
@@ -214,6 +219,7 @@ class CompositeNode(SimpleNodeMixin, Node):
 
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
+
         metadata = MetaData(inports=required, outports=out_meta)
         return metadata
 
@@ -347,7 +353,7 @@ class CompositeNode(SimpleNodeMixin, Node):
             def inputNode_fun(inputNode, in_ports):
                 inports = inputNode.ports_setup().inports
 
-                class InputFeed(SimpleNodeMixin, Node):
+                class InputFeed(TemplateNodeMixin, Node):
 
                     def meta_setup(self):
                         output = {}
@@ -363,7 +369,7 @@ class CompositeNode(SimpleNodeMixin, Node):
                         return NodePorts(inports={}, outports=inports)
 
                     def update(self):
-                        SimpleNodeMixin.update(self)
+                        TemplateNodeMixin.update(self)
 
                     def conf_schema(self):
                         return ConfSchema()

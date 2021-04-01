@@ -1,18 +1,19 @@
 from greenflow.dataframe_flow import Node
 import cudf
-from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                      NodePorts, MetaData,
-                                                      ConfSchema)
+from greenflow.dataframe_flow.portsSpecSchema import (
+    PortsSpecSchema, NodePorts, ConfSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
 from ..cache import CACHE_NAME
 from greenflow.dataframe_flow.util import get_file_path
 
 from .stockMap import StockMap
-from .._port_type_node import _PortTypesMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
 STOCK_NAME_PORT_NAME = 'stock_name'
 STOCK_MAP_PORT_NAME = 'map_data'
 
 
-class StockNameLoader(_PortTypesMixin, Node):
+class StockNameLoader(NodeHDFCacheMixin, Node):
 
     def _compute_hash_key(self):
         return hash((self.uid, self.conf['file']))
@@ -28,9 +29,6 @@ class StockNameLoader(_PortTypesMixin, Node):
             }
         }
         return NodePorts(inports=input_ports, outports=output_ports)
-
-    def init(self):
-        pass
 
     def meta_setup(self):
         required = {}

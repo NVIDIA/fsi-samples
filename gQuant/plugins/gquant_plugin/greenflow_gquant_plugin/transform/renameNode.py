@@ -1,12 +1,17 @@
-from greenflow.dataframe_flow import Node, PortsSpecSchema
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
+                                                      ConfSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['RenameNode']
 
 
-class RenameNode(_PortTypesMixin, Node):
+class RenameNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
         port_type = PortsSpecSchema.port_type
@@ -29,13 +34,13 @@ class RenameNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: {}
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
             }
         }
 
     def update(self):
-        _PortTypesMixin.update(self)
+        TemplateNodeMixin.update(self)
         retention = {}
         if 'new' in self.conf and 'old' in self.conf:
             input_meta = self.get_input_meta()
@@ -47,13 +52,8 @@ class RenameNode(_PortTypesMixin, Node):
                 del col_from_inport[self.conf['old']]
                 col_from_inport[self.conf['new']] = oldType
                 retention = col_from_inport
-        self.meta_outports[self.OUTPUT_PORT_NAME][self.META_DATA] = retention
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+        self.meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
+            retention
 
     def conf_schema(self):
         json = {

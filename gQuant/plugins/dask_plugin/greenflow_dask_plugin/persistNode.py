@@ -1,14 +1,14 @@
 from greenflow.dataframe_flow import (ConfSchema, PortsSpecSchema)
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
 from greenflow.dataframe_flow import Node
 from dask.dataframe import DataFrame as DaskDataFrame
 import dask.distributed
 
 
-class PersistNode(SimpleNodeMixin, Node):
+class PersistNode(TemplateNodeMixin, Node):
 
     def init(self):
-        SimpleNodeMixin.init(self)
+        TemplateNodeMixin.init(self)
         port_type = PortsSpecSchema.port_type
         dy = PortsSpecSchema.dynamic
         self.INPUT_PORT_NAME = 'in'
@@ -19,16 +19,10 @@ class PersistNode(SimpleNodeMixin, Node):
                     "builtins.object"
                 ],
                 dy: {
-                    self.DYN_MATCH: True
+                    PortsSpecSchema.DYN_MATCH: True
                 }
             },
         }
-
-    def ports_setup(self):
-        return SimpleNodeMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return SimpleNodeMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {
@@ -38,8 +32,7 @@ class PersistNode(SimpleNodeMixin, Node):
             },
         }
 
-        ui = {
-        }
+        ui = {}
         return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):

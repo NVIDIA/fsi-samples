@@ -1,12 +1,13 @@
-from greenflow.dataframe_flow import Node, PortsSpecSchema
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow import (
+    Node, PortsSpecSchema, ConfSchema, MetaDataSchema)
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
-class SimpleBackTestNode(_PortTypesMixin, Node):
+class SimpleBackTestNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'bardata_in'
         self.OUTPUT_PORT_NAME = 'backtest_out'
         port_type = PortsSpecSchema.port_type
@@ -31,17 +32,11 @@ class SimpleBackTestNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: addition
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
             }
         }
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

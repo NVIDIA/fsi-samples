@@ -5,13 +5,17 @@ import dask_cudf
 import io
 import cudf
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['BarPlotNode']
 
 
-class BarPlotNode(_PortTypesMixin, Node):
+class BarPlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'barplot'
         port_type = PortsSpecSchema.port_type
@@ -40,16 +44,10 @@ class BarPlotNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: retension
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
             }
         }
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {
@@ -71,8 +69,7 @@ class BarPlotNode(_PortTypesMixin, Node):
             },
             "required": ["points"],
         }
-        ui = {
-        }
+        ui = {}
         return ConfSchema(json=json, ui=ui)
 
     def process(self, inputs):
