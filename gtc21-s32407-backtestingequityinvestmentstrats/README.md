@@ -2,7 +2,7 @@
 High performance computing is important in investment back-testing when the number of scenarios is large. We'll introduce the Sharpe Ratio as a measure of investment success as well as bootstrapping, a statistical technique, to gain a robust number of potential market scenarios. For both, we will learn how to GPU-accelerate Python market simulation code using special packages like RAPIDS for data frames and Numba for numeric calculations. You'll benefit from this talk if you're not already familiar with how GPUs can be applied to HPC finance simulations.
 
 ## Features
-1. The Python Jupyter Notebook code (Part1.2021.ipynb and Part2.2021.ipynb) and Dockerfile (which will access R and Python scripts for downloading datasets needed for GTC21 session) and requirements file are all contained in the docker.zip file<br>
+1. The Python Jupyter Notebook code (Part1.2021.ipynb and Part2.2021.ipynb) and Dockerfile (which will access R and Python scripts for downloading datasets needed for GTC21 session) and requirements file are all contained here.<br>
 
 ## Build
 docker build --network host --file docker/Dockerfile --tag beis:nvidia .
