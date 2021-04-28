@@ -1,13 +1,17 @@
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
 from greenflow.dataframe_flow.portsSpecSchema import PortsSpecSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['LeftMergeNode']
 
 
-class LeftMergeNode(_PortTypesMixin, Node):
+class LeftMergeNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_LEFT_NAME = 'left'
         self.INPUT_PORT_RIGHT_NAME = 'right'
         self.OUTPUT_PORT_NAME = 'merged'
@@ -38,13 +42,13 @@ class LeftMergeNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: {}
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
             }
         }
 
     def update(self):
-        _PortTypesMixin.update(self)
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
         output_cols = {}
         if (self.INPUT_PORT_LEFT_NAME in input_meta
@@ -59,13 +63,9 @@ class LeftMergeNode(_PortTypesMixin, Node):
         elif self.INPUT_PORT_RIGHT_NAME in input_meta:
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             output_cols = col_from_right_inport
-        self.meta_outports[self.OUTPUT_PORT_NAME][self.META_DATA] = output_cols
 
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
+        self.meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
+            output_cols
 
     def conf_schema(self):
         json = {

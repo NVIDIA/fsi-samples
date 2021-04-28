@@ -1,12 +1,16 @@
 from greenflow.dataframe_flow import Node, PortsSpecSchema
-from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['DropNode']
 
 
-class DropNode(_PortTypesMixin, Node):
+class DropNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
@@ -31,17 +35,11 @@ class DropNode(_PortTypesMixin, Node):
             dropped[k] = None
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_DELETION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: dropped
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_DELETION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: dropped
             }
         }
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

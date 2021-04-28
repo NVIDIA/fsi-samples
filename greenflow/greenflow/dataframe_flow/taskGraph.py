@@ -1,17 +1,19 @@
-from collections import OrderedDict
-import ruamel.yaml
-from .node import Node
-from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
-from .task import Task
-from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import NodePorts, ConfSchema, PortsSpecSchema
 import warnings
 import copy
 import traceback
 import cloudpickle
 import base64
 from types import ModuleType
+from collections import OrderedDict
+import ruamel.yaml
+
+from .node import Node
+from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
+from .task import Task
+from .taskSpecSchema import TaskSpecSchema
+from .portsSpecSchema import NodePorts, ConfSchema, PortsSpecSchema
 from .util import get_encoded_class
+from .config_nodes_modules import get_node_obj
 
 __all__ = ['TaskGraph', 'OutputCollector']
 
@@ -351,7 +353,7 @@ class TaskGraph(object):
 
                 if (to_type == OUTPUT_TYPE):
                     continue
-                task_node = itask.get_node_obj()
+                task_node = get_node_obj(itask)
                 # task_outputs = itask.get(TaskSpecSchema.outputs, [])
                 for pout in task_node._get_output_ports():
                     out_tip = '{}.{}'.format(
@@ -395,10 +397,10 @@ class TaskGraph(object):
                     TaskSpecSchema.node_type: OutputCollector,
                     TaskSpecSchema.inputs: task[TaskSpecSchema.inputs]
                 })
-                node = output_task.get_node_obj(tgraph_mixin=True)
+                node = get_node_obj(output_task, tgraph_mixin=True)
             else:
-                node = task.get_node_obj(replace.get(task_id), profile,
-                                         tgraph_mixin=True)
+                node = get_node_obj(task, replace.get(task_id), profile,
+                                    tgraph_mixin=True)
             self.__node_dict[task_id] = node
 
         # build the graph
@@ -543,8 +545,8 @@ class TaskGraph(object):
                 TaskSpecSchema.inputs: []
             })
 
-            outputs_collector_node = output_task.get_node_obj(
-                tgraph_mixin=True)
+            outputs_collector_node = get_node_obj(output_task,
+                                                  tgraph_mixin=True)
 
         outputs_collector_node.clear_input = False
         if not found_output_node or outputs is not None:
@@ -641,17 +643,6 @@ class TaskGraph(object):
         # this is for nemo work around, to clean up the nemo graph
         self.run_cleanup()
 
-        # # clear the cache
-        # for k in self.__node_dict.keys():
-        #     if hasattr(self.__node_dict[k], 'input_connections'):
-        #         delattr(self.__node_dict[k], 'input_connections')
-        #     if hasattr(self.__node_dict[k], 'input_meta'):
-        #         delattr(self.__node_dict[k], 'input_meta')
-        #     if hasattr(self.__node_dict[k], 'ports_setup_cache'):
-        #         delattr(self.__node_dict[k], 'ports_setup_cache')
-        #     if hasattr(self.__node_dict[k], 'meta_data_cache'):
-        #         delattr(self.__node_dict[k], 'meta_data_cache')
-        ####
         if formated:
             return formated_result(result)
         else:

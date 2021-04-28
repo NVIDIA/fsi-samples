@@ -2,13 +2,14 @@ import numpy as np
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow import PortsSpecSchema
 from greenflow.dataframe_flow import ConfSchema
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
 
 
-class DistanceNode(SimpleNodeMixin, Node):
+class DistanceNode(TemplateNodeMixin, Node):
 
     def init(self):
-        SimpleNodeMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.delayed_process = True
         port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = "points_df_in"
@@ -36,16 +37,16 @@ class DistanceNode(SimpleNodeMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: {
                     'distance_cudf': 'float64',
                 }
             },
             self.ABS_OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_ADDITION,
-                self.META_REF_INPUT: self.INPUT_PORT_NAME,
-                self.META_DATA: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: {
                     'distance_abs_cudf': 'float64',
                 }
             }

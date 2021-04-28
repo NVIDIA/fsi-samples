@@ -29,7 +29,7 @@ import warnings
 import unittest
 import pandas as pd
 from greenflow.dataframe_flow import (TaskSpecSchema, TaskGraph)
-from greenflow.dataframe_flow.task import DEFAULT_MODULE  # noqa: F401
+from greenflow.dataframe_flow.config_nodes_modules import DEFAULT_MODULE
 from greenflow.dataframe_flow import Node
 
 from .utils import make_orderer
@@ -85,7 +85,8 @@ class TestTaskGraphAPI(unittest.TestCase):
 
         # Create a temporary directory
         self._test_dir = tempfile.mkdtemp()
-        os.environ['GREENFLOW_CACHE_DIR'] = os.path.join(self._test_dir, '.cache')
+        os.environ['GREENFLOW_CACHE_DIR'] = os.path.join(self._test_dir,
+                                                         '.cache')
 
     def tearDown(self):
         global DEFAULT_MODULE

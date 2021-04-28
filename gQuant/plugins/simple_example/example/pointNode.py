@@ -3,13 +3,14 @@ import pandas as pd
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow import PortsSpecSchema
 from greenflow.dataframe_flow import ConfSchema
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
 
 
-class PointNode(SimpleNodeMixin, Node):
+class PointNode(TemplateNodeMixin, Node):
 
     def init(self):
-        SimpleNodeMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.OUTPUT_PORT_NAME = 'points_df_out'
         self.port_inports = {}
         self.port_outports = {
@@ -20,8 +21,8 @@ class PointNode(SimpleNodeMixin, Node):
         self.meta_inports = {}
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {
                     'x': 'float64',
                     'y': 'float64'
                 }

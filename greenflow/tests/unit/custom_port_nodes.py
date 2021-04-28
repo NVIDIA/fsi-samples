@@ -1,6 +1,4 @@
-import math
 import numpy as np
-import dask
 import pandas as pd
 from greenflow.dataframe_flow import Node, MetaData
 from greenflow.dataframe_flow import NodePorts, PortsSpecSchema
@@ -9,7 +7,7 @@ import os
 import warnings
 
 
-class _PortTypesMixin(object):
+class NodeHDFCacheMixin(object):
 
     def load_cache(self, filename=None) -> dict:
         """
@@ -83,7 +81,7 @@ class _PortTypesMixin(object):
                 odf.to_hdf(hf, key, format='table', data_columns=True)
 
 
-class PointNode(_PortTypesMixin, Node):
+class PointNode(NodeHDFCacheMixin, Node):
 
     def ports_setup(self):
         input_ports = {}
@@ -143,7 +141,7 @@ class PointNode(_PortTypesMixin, Node):
         return output
 
 
-class DistanceNode(_PortTypesMixin, Node):
+class DistanceNode(NodeHDFCacheMixin, Node):
 
     def ports_setup(self):
         port_type = PortsSpecSchema.port_type

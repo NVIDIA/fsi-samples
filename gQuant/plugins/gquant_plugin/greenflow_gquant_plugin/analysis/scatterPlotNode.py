@@ -4,7 +4,9 @@ from bqplot import (Axis, LinearScale,  Figure,
 import dask_cudf
 import cudf
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ["ScatterPlotNode"]
 
@@ -15,10 +17,10 @@ scaleMap = {
 }
 
 
-class ScatterPlotNode(_PortTypesMixin, Node):
+class ScatterPlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'scatter_plot'
         port_type = PortsSpecSchema.port_type
@@ -48,16 +50,10 @@ class ScatterPlotNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: retension
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
             }
         }
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {
@@ -101,8 +97,7 @@ class ScatterPlotNode(_PortTypesMixin, Node):
             },
             "required": ["points", "title", "col_x", "col_y"],
         }
-        ui = {
-        }
+        ui = {}
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]

@@ -23,6 +23,8 @@ import warnings
 import unittest
 import cudf
 import greenflow_gquant_plugin.cuindicator as gi
+from greenflow.dataframe_flow.config_nodes_modules import \
+    get_node_tgraphmixin_instance
 from greenflow_gquant_plugin.transform.indicatorNode import IndicatorNode
 from greenflow.dataframe_flow.task import Task
 from .utils import make_orderer
@@ -85,8 +87,10 @@ class TestIndicatorNode(unittest.TestCase):
                     "type": "IndicatorNode",
                     "conf": self.conf,
                     "inputs": {}}
+
         task = Task(node_obj)
-        inN = IndicatorNode(task)
+        inN = get_node_tgraphmixin_instance(IndicatorNode, task)
+        # inN = IndicatorNode(task)
         out_cols = inN.meta_setup().outports
 
         col = "indicator"

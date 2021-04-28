@@ -5,18 +5,20 @@ import xgboost as xgb
 import dask
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
                                                       PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
 import copy
 from collections import OrderedDict
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
 __all__ = ['TrainXGBoostNode', 'InferXGBoostNode']
 
 
-class TrainXGBoostNode(_PortTypesMixin, Node):
+class TrainXGBoostNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'model_out'
         port_type = PortsSpecSchema.port_type
@@ -44,19 +46,13 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: {}
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
             }
         }
 
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
     def update(self):
-        _PortTypesMixin.update(self)
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
@@ -91,7 +87,7 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                         self.conf['target']] = None
                 self.meta_inports[self.INPUT_PORT_NAME] = cols_required
             self.meta_outports[self.OUTPUT_PORT_NAME][
-                self.META_DATA] = cols_output
+                MetaDataSchema.META_DATA] = cols_output
 
     def conf_schema(self):
         json = {
@@ -328,10 +324,10 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         return {self.OUTPUT_PORT_NAME: bst}
 
 
-class InferXGBoostNode(_PortTypesMixin, Node):
+class InferXGBoostNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'data_in'
         self.INPUT_PORT_MODEL_NAME = 'model_in'
         self.OUTPUT_PORT_NAME = 'out'
@@ -361,19 +357,13 @@ class InferXGBoostNode(_PortTypesMixin, Node):
         out_cols = {predict: None}
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: out_cols
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: out_cols
             }
         }
 
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
-
     def update(self):
-        _PortTypesMixin.update(self)
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
         predict = self.conf.get('prediction', 'predict')
         pred_contribs: bool = self.conf.get('pred_contribs', False)
@@ -393,7 +383,7 @@ class InferXGBoostNode(_PortTypesMixin, Node):
                     col_from_inport[i] = None
             self.meta_inports[self.INPUT_PORT_NAME] = required_cols
             self.meta_outports[self.OUTPUT_PORT_NAME][
-                self.META_DATA] = col_from_inport
+                MetaDataSchema.META_DATA] = col_from_inport
         elif (self.INPUT_PORT_NAME not in input_meta and
               self.INPUT_PORT_MODEL_NAME in input_meta):
             if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
@@ -410,14 +400,14 @@ class InferXGBoostNode(_PortTypesMixin, Node):
                     col_from_inport[i] = None
             self.meta_inports[self.INPUT_PORT_NAME] = required_cols
             self.meta_outports[self.OUTPUT_PORT_NAME][
-                self.META_DATA] = col_from_inport
+                MetaDataSchema.META_DATA] = col_from_inport
         elif (self.INPUT_PORT_NAME in input_meta and
               self.INPUT_PORT_MODEL_NAME not in input_meta):
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
             self.meta_outports[self.OUTPUT_PORT_NAME][
-                self.META_DATA] = col_from_inport
+                MetaDataSchema.META_DATA] = col_from_inport
 
     def conf_schema(self):
         json = {

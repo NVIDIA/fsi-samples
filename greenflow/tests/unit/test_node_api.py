@@ -27,6 +27,7 @@ from greenflow.dataframe_flow.task import Task
 from greenflow.dataframe_flow._node import _Node
 from greenflow.dataframe_flow.node import (Node, _PortsMixin)
 from greenflow.dataframe_flow._node_flow import NodeTaskGraphMixin
+from greenflow.dataframe_flow.config_nodes_modules import get_node_obj
 
 from .utils import make_orderer
 
@@ -37,6 +38,7 @@ unittest.defaultTestLoader.sortTestMethodsUsing = compare
 class TestNodeAPI(unittest.TestCase):
 
     def setUp(self):
+        os.environ['GREENFLOW_CONFIG'] = ''
         custom_module = '{}/custom_port_nodes.py'.format(
             os.path.dirname(os.path.realpath(__file__)))
 
@@ -85,16 +87,16 @@ class TestNodeAPI(unittest.TestCase):
         self.assertEqual(
             err_msg,
             "Can't instantiate abstract class Node with abstract methods "
-            "meta_setup, process")
+            "meta_setup, ports_setup, process")
 
-        points_node = points_task.get_node_obj()
+        points_node = get_node_obj(points_task)
 
         self.assertIsInstance(points_node, _Node)
         self.assertIsInstance(points_node, Node)
         self.assertIsInstance(points_node, _PortsMixin)
         self.assertNotIsInstance(points_node, NodeTaskGraphMixin)
 
-        points_node = points_task.get_node_obj(tgraph_mixin=True)
+        points_node = get_node_obj(points_task, tgraph_mixin=True)
         self.assertIsInstance(points_node, NodeTaskGraphMixin)
 
     @ordered
@@ -103,7 +105,7 @@ class TestNodeAPI(unittest.TestCase):
         and output ports.
         '''
 
-        distance_node = self.distance_task.get_node_obj()
+        distance_node = get_node_obj(self.distance_task)
         iports = distance_node._get_input_ports()
         oports = distance_node._get_output_ports()
 

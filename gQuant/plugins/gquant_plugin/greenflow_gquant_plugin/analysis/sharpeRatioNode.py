@@ -2,13 +2,15 @@ from greenflow.dataframe_flow import Node, PortsSpecSchema
 import math
 import dask_cudf
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
-class SharpeRatioNode(_PortTypesMixin, Node):
+class SharpeRatioNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'sharpe_out'
         port_type = PortsSpecSchema.port_type
@@ -32,16 +34,10 @@ class SharpeRatioNode(_PortTypesMixin, Node):
         }
         self.meta_outports = {
             self.OUTPUT_PORT_NAME: {
-                self.META_OP: self.META_OP_RETENTION,
-                self.META_DATA: retension
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
             }
         }
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
-
-    def meta_setup(self):
-        return _PortTypesMixin.meta_setup(self)
 
     def conf_schema(self):
         json = {

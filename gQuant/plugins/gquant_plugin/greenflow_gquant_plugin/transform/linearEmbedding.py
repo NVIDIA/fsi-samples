@@ -1,22 +1,25 @@
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                      PortsSpecSchema,
-                                                      MetaData)
-from .data_obj import ProjectionData
 import cupy as cp
 import copy
 from collections import OrderedDict
+
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+from .data_obj import ProjectionData
 
 __all__ = ['LinearEmbeddingNode']
 
 SPECIAL_OUTPUT_DIM_COL = 'OUTPUT_DIM_23b1c5ce-e0bf-11ea-afcf-80e82cc76d44'
 
 
-class LinearEmbeddingNode(_PortTypesMixin, Node):
+class LinearEmbeddingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
         self.INPUT_PROJ_NAME = 'proj_data_in'
@@ -45,9 +48,6 @@ class LinearEmbeddingNode(_PortTypesMixin, Node):
                 ]
             },
         }
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def meta_setup(self):
         required = {

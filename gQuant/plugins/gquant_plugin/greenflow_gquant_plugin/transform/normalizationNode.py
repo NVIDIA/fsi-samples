@@ -1,15 +1,19 @@
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                      PortsSpecSchema)
-from .data_obj import NormalizationData
 from collections import OrderedDict
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+from .data_obj import NormalizationData
+
+__all__ = ['NormalizationNode']
 
 
-class NormalizationNode(_PortTypesMixin, Node):
+class NormalizationNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
         self.INPUT_NORM_MODEL_NAME = 'norm_data_in'
@@ -38,9 +42,6 @@ class NormalizationNode(_PortTypesMixin, Node):
                 ]
             },
         }
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def meta_setup(self):
         cols_required = {}

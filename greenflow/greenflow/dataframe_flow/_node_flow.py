@@ -1,5 +1,4 @@
 from collections.abc import Iterable
-from greenflow.dataframe_flow.simpleNodeMixin import SimpleNodeMixin
 import warnings
 import dask
 from dask.dataframe import DataFrame as DaskDataFrame
@@ -10,7 +9,9 @@ from dask.distributed import Future
 
 from .portsSpecSchema import PortsSpecSchema
 from .taskSpecSchema import TaskSpecSchema
+from .metaSpec import MetaData
 from ._node import _Node
+from ._node_taskgraph_extension_mixin import NodeTaskGraphExtensionMixin
 
 # OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
 OUTPUT_ID = 'collector_id_fd9567b6'
@@ -50,6 +51,7 @@ def _get_nodetype(node):
         # Using nodet.__name__ != 'Node' to avoid cyclic dependencies.
         if issubclass(nodet, _Node) and \
                 not issubclass(nodet, NodeTaskGraphMixin) and \
+                not issubclass(nodet, NodeTaskGraphExtensionMixin) and \
                 nodet is not _Node and \
                 nodet.__name__ != 'Node':
             keeptypes.append(nodet)
@@ -75,7 +77,7 @@ def register_cleanup(name: str,
     _CLEANUP[name] = fun
 
 
-class NodeTaskGraphMixin(object):
+class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
     '''Relies on mixing in with a Node class that has the following attributes
     and methods:
         ATTRIBUTES
@@ -128,19 +130,23 @@ class NodeTaskGraphMixin(object):
 
     def update(self):
         """
-        overwrite the super class ports_setup so it can cache
+        Within a task graph context override a Node's update to cache: ports,
+        metadata, input connections, and input metadata.
         """
+
         # this will filter out the primary class with ports_setup
         nodecls_list = _get_nodetype(self)
         for icls in nodecls_list:
             if not hasattr(icls, 'update'):
                 continue
+            # Within update resolve ports and meta via class NodeExtensionMixin
+            # methods _resolve_ports and _resolve_meta.
             icls.update(self)
             break
-        else:
-            pass
+
         # cache it after update
-        SimpleNodeMixin.cache_update_result(self)
+        NodeTaskGraphExtensionMixin.cache_update_result(self)
+
         # cache the conf_schema too
         for icls in nodecls_list:
             if not hasattr(icls, 'conf_schema'):
@@ -162,11 +168,17 @@ class NodeTaskGraphMixin(object):
     def meta_setup(self):
         if hasattr(self, 'meta_data_cache'):
             return self.meta_data_cache
+
         nodecls_list = _get_nodetype(self)
+        meta = MetaData()
         for icls in nodecls_list:
             if not hasattr(icls, 'meta_setup'):
                 continue
-            return icls.meta_setup(self)
+
+            meta = icls.meta_setup(self)
+            break
+
+        return meta
 
     def ports_setup(self):
         """
@@ -176,18 +188,20 @@ class NodeTaskGraphMixin(object):
         :return: Node ports
         :rtype: NodePorts
         """
-        # this will filter out the primary class with ports_setup
-        nodecls_list = _get_nodetype(self)
-        for icls in nodecls_list:
-            if not hasattr(icls, 'ports_setup'):
-                continue
-            if hasattr(self, 'ports_setup_cache'):
-                ports = self.ports_setup_cache
-            else:
-                ports = icls.ports_setup(self)
-            break
+        if hasattr(self, 'ports_setup_cache'):
+            ports = self.ports_setup_cache
         else:
-            raise Exception('ports_setup method missing')
+            # this will filter out the primary class with ports_setup
+            nodecls_list = _get_nodetype(self)
+            for icls in nodecls_list:
+                if not hasattr(icls, 'ports_setup'):
+                    continue
+
+                ports = icls.ports_setup(self)
+                break
+            else:
+                raise Exception('ports_setup method missing')
+
         # note, currently can only handle one dynamic port per node
         port_type = PortsSpecSchema.port_type
         inports = ports.inports
@@ -198,21 +212,19 @@ class NodeTaskGraphMixin(object):
                 break
         else:
             return ports
+
         if hasattr(self, 'inputs'):
             has_dynamic = False
             for inp in self.inputs:
                 to_port = inp['to_port']
-                if to_port in inports and (not inports[to_port].get(dy,
-                                                                    False)):
+                if to_port in inports and not inports[to_port].get(dy, False):
                     # skip connected non dynamic ports
                     continue
                 else:
                     has_dynamic = True
+
             if has_dynamic:
-                if hasattr(self, 'input_connections'):
-                    connected_inports = self.input_connections
-                else:
-                    connected_inports = self.get_connected_inports()
+                connected_inports = self.get_connected_inports()
                 for inp in self.inputs:
                     to_port = inp['to_port']
                     if to_port in inports and (not inports[to_port].get(
@@ -224,13 +236,12 @@ class NodeTaskGraphMixin(object):
                             types = connected_inports[to_port]
                         inports[inp['from_node'].uid+'@'+inp['from_port']] = {
                             port_type: types, dy: True}
+
         return ports
 
-    def __valide(self, node_output: dict):
-        if hasattr(self, "meta_data_cache"):
-            output_meta = self.meta_data_cache.outports
-        else:
-            output_meta = self.meta_setup().outports
+    def __validate_output(self, node_output: dict):
+        output_meta = self.meta_setup().outports
+
         # Validate each port
         out_ports = self._get_output_ports(full_port_spec=True)
         for pname, pspec in out_ports.items():
@@ -308,28 +319,40 @@ class NodeTaskGraphMixin(object):
         if port_name is not None, get meta data for the input port_name. If it
         doesn't exist, return None
         """
+        if hasattr(self, 'input_meta_cache'):
+            if port_name is None:
+                return self.input_meta_cache
+            elif port_name in self.input_meta_cache:
+                return self.input_meta_cache[port_name]
+            else:
+                # Run the logic below to find the port
+                # Warning: Something might not be right if this happens.
+                #     Perhaps the cache needs to be reset.
+                pass
+
         output = {}
         if not hasattr(self, 'inputs'):
             return output
+
         out_port_names = []
         to_port_names = []
         from_port_names = []
         meta_data_list = []
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            if hasattr(from_node, "meta_data_cache"):
-                meta_data = copy.deepcopy(from_node.meta_data_cache)
-            else:
-                meta_data = copy.deepcopy(from_node.meta_setup())
+            meta_data = copy.deepcopy(from_node.meta_setup())
+
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if port_name is not None and port_name == to_port_name:
                 return meta_data.outports[from_port_name]
+
             if from_port_name not in meta_data.outports:
                 nodetype_list = _get_nodetype(self)
                 nodetype_names = [inodet.__name__ for inodet in nodetype_list]
                 if 'OutputCollector' in nodetype_names:
                     continue
+
                 warnings.warn(
                     'node "{}" node-type "{}" to port "{}", from node "{}" '
                     'node-type "{}" oport "{}" missing oport in metadata for '
@@ -344,14 +367,14 @@ class NodeTaskGraphMixin(object):
                 to_port_names.append(to_port_name)
                 from_port_names.append(from_port_name)
                 meta_data_list.append(meta_data)
+
         if port_name is not None:
             return None
+
         if len(out_port_names) > 0:
             dy = PortsSpecSchema.dynamic
-            if hasattr(self, 'ports_setup_cache'):
-                ports = self.ports_setup_cache
-            else:
-                ports = self.ports_setup()
+            ports = self.ports_setup()
+
             inports = ports.inports
             for out_port_name, to_port_name, from_port_name, meta_data in zip(
                     out_port_names, to_port_names, from_port_names,
@@ -361,6 +384,7 @@ class NodeTaskGraphMixin(object):
                     output[out_port_name] = meta_data.outports[from_port_name]
                 else:
                     output[to_port_name] = meta_data.outports[from_port_name]
+
         return output
 
     def __set_input_df(self, to_port, df):
@@ -587,10 +611,7 @@ class NodeTaskGraphMixin(object):
                 if self.infer_meta:
                     output_df[oport] = from_delayed(outputs_dly[oport])
                 else:
-                    if hasattr(self, "meta_data_cache"):
-                        meta_data = self.meta_data_cache.outports
-                    else:
-                        meta_data = self.meta_setup().outports
+                    meta_data = self.meta_setup().outports
                     output_df[oport] = from_delayed(outputs_dly[oport],
                                                     meta=meta_data[oport])
             else:
@@ -628,20 +649,21 @@ class NodeTaskGraphMixin(object):
             type passed from parent
         """
 
+        if hasattr(self, 'input_connections_cache'):
+            return self.input_connections_cache
+
         def get_type(type_def):
             if isinstance(type_def, list):
                 return type_def
             else:
                 return [type_def]
+
         output = {}
         if not hasattr(self, 'inputs'):
             return output
         for node_input in self.inputs:
             from_node = node_input['from_node']
-            if hasattr(from_node, 'ports_setup_cache'):
-                ports = from_node.ports_setup_cache
-            else:
-                ports = from_node.ports_setup()
+            ports = from_node.ports_setup()
             from_port_name = node_input['from_port']
             to_port_name = node_input['to_port']
             if from_port_name in ports.outports:
@@ -650,6 +672,7 @@ class NodeTaskGraphMixin(object):
                 output[to_port_name] = oport_types
             else:
                 continue
+
         return output
 
     def decorate_process(self):
@@ -688,7 +711,7 @@ class NodeTaskGraphMixin(object):
         if self.uid != OUTPUT_ID and output_df is None:
             raise Exception("None output")
         else:
-            self.__valide(output_df)
+            self.__validate_output(output_df)
 
         if self.save:
             self.save_cache(output_df)
@@ -708,10 +731,7 @@ class NodeTaskGraphMixin(object):
         msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
             'type(s) "{ioport_types}"'
 
-        if hasattr(self, 'input_connections'):
-            iports_connected = self.input_connections
-        else:
-            iports_connected = self.get_connected_inports()
+        iports_connected = self.get_connected_inports()
         iports_spec = self._get_input_ports(full_port_spec=True)
         for iport in iports_connected.keys():
             iport_spec = iports_spec[iport]
@@ -770,10 +790,7 @@ class NodeTaskGraphMixin(object):
         Validate the connected metadata match the requirements.
         metadata.inports specify the required metadata.
         """
-        if hasattr(self, "meta_data_cache"):
-            metadata = self.meta_data_cache
-        else:
-            metadata = self.meta_setup()
+        metadata = self.meta_setup()
 
         # as current behavior of matching in the validate_required
         def validate_required(iport, kcol, kval, ientnode, icols):
@@ -824,14 +841,12 @@ class NodeTaskGraphMixin(object):
                     out_err = '{}\n{}'.format(info_msg, err_msg)
                     raise LookupError(out_err)
 
-        if hasattr(self, 'input_meta'):
-            inputs_meta = self.input_meta
-        else:
-            inputs_meta = self.get_input_meta()
+        inputs_meta = self.get_input_meta()
         required = metadata.inports
 
         if not required:
             return
+
         inports = self._get_input_ports(full_port_spec=True)
         for iport in inports:
             if iport not in required:
