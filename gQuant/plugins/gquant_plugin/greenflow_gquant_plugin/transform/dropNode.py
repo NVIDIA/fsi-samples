@@ -14,7 +14,7 @@ class DropNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -22,24 +22,32 @@ class DropNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:in}"
             }
         }
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: {}
         }
         dropped = {}
         for k in self.conf.get('columns', {}):
             dropped[k] = None
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_DELETION,
                 MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
                 MetaDataSchema.META_DATA: dropped
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

@@ -118,6 +118,17 @@ class NodeTaskGraphExtensionMixin:
         return NodePorts(inports=inports, outports=outports)
 
     def meta_setup_ext(self, meta):
+        '''
+        1. Based on meta operators, calculate the output meta
+        2. Adjust meta data element orders based on specified order
+        3. Pass the meta data for dynamically added output ports
+
+        :param meta: the meta information that needs to be calculated.
+        :type MetaData:  MetaData
+
+        :return: MetaData
+        :rtype: MetaData
+        '''
         input_meta = self.get_input_meta()
 
         inports = meta.inports.copy()

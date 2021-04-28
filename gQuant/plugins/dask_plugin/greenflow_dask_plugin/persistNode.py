@@ -12,7 +12,7 @@ class PersistNode(TemplateNodeMixin, Node):
         port_type = PortsSpecSchema.port_type
         dy = PortsSpecSchema.dynamic
         self.INPUT_PORT_NAME = 'in'
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "dask_cudf.DataFrame", "dask.dataframe.DataFrame",
@@ -23,6 +23,10 @@ class PersistNode(TemplateNodeMixin, Node):
                 }
             },
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=None
+        )
 
     def conf_schema(self):
         json = {

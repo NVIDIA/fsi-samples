@@ -16,7 +16,7 @@ class LinePlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'lineplot'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -24,22 +24,30 @@ class LinePlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: ["matplotlib.figure.Figure"]
             }
         }
         cols_required = {"datetime": "datetime64[ns]"}
         retension = {}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
                 MetaDataSchema.META_DATA: retension
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         color_strings = ['black', 'yellow', 'blue',

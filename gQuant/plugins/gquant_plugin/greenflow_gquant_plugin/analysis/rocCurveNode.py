@@ -20,7 +20,7 @@ class RocCurveNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.OUTPUT_PORT_NAME = 'roc_curve'
         self.OUTPUT_VALUE_NAME = 'value'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -28,7 +28,7 @@ class RocCurveNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: ["matplotlib.figure.Figure"]
             },
@@ -45,10 +45,10 @@ class RocCurveNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         if 'prediction' in self.conf:
             cols_required[self.conf['prediction']] = None
         retension = {}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
                 MetaDataSchema.META_DATA: retension
@@ -58,6 +58,14 @@ class RocCurveNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 MetaDataSchema.META_DATA: retension
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

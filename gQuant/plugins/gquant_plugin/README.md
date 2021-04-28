@@ -46,7 +46,7 @@ pip install .
 ### Install the external example plugin
 Install RAPIDS:
 ```bash
-conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.18
+conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.19
 ```
 To install the external plugin, in the plugin diretory, run following command
 ```bash

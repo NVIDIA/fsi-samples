@@ -19,7 +19,7 @@ class NormalizationNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_NORM_MODEL_NAME = 'norm_data_in'
         self.OUTPUT_NORM_MODEL_NAME = 'norm_data_out'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -32,7 +32,7 @@ class NormalizationNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             }
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:df_in}"
             },
@@ -42,6 +42,10 @@ class NormalizationNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
 
     def meta_setup(self):
         cols_required = {}

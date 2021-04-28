@@ -12,14 +12,14 @@ class PointNode(TemplateNodeMixin, Node):
     def init(self):
         TemplateNodeMixin.init(self)
         self.OUTPUT_PORT_NAME = 'points_df_out'
-        self.port_inports = {}
-        self.port_outports = {
+        port_inports = {}
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 PortsSpecSchema.port_type: ["pandas.DataFrame"]
             }
         }
-        self.meta_inports = {}
-        self.meta_outports = {
+        meta_inports = {}
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
                 MetaDataSchema.META_DATA: {
@@ -28,6 +28,14 @@ class PointNode(TemplateNodeMixin, Node):
                 }
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

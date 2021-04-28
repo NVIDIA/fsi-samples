@@ -15,7 +15,7 @@ class RenameNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -23,21 +23,29 @@ class RenameNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:in}"
             }
         }
         cols_required = {}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
                 MetaDataSchema.META_DATA: {}
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def update(self):
         TemplateNodeMixin.update(self)
@@ -52,8 +60,10 @@ class RenameNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 del col_from_inport[self.conf['old']]
                 col_from_inport[self.conf['new']] = oldType
                 retention = col_from_inport
-        self.meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
+        meta_outports = self.template_meta_setup().outports
+        meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
             retention
+        self.template_meta_setup(in_ports=None, out_ports=meta_outports)
 
     def conf_schema(self):
         json = {

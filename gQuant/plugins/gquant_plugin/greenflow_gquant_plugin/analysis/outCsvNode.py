@@ -14,7 +14,7 @@ class OutCsvNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -22,23 +22,31 @@ class OutCsvNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:df_in}"
             }
         }
         cols_required = {}
         addition = {}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
                 MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
                 MetaDataSchema.META_DATA: addition
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         input_meta = self.get_input_meta()

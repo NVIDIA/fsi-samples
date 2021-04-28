@@ -29,10 +29,10 @@ class TemplateNodeMixin:
         self.get_connected_inports() and self.get_input_meta(),
         please define it in update() function.
 
-        Define the ports setup in self.port_inports and self.port_outputs
+        Define the template ports setup by self.template_ports_setup
         E.g.
 
-        self.port_inports = {
+        port_inports = {
             "port0_name": {
                 PortsSpecSchema.port_type: ["type0", "type1"]
             },
@@ -51,7 +51,7 @@ class TemplateNodeMixin:
             },
             ...
         }
-        self.port_outports = {
+        port_outports = {
             "port0_name": {
                 PortsSpecSchema.port_type: ["type0", "type1"]
             },
@@ -60,12 +60,13 @@ class TemplateNodeMixin:
             },
             ...
         }
+        self.template_ports_setup(in_ports=port_inports, 
+                                  out_ports=port_outports)
 
-        Define the meta data setup in self.meta_inports and
-        self.meta_outports.
+        Define the template meta data setup by self.template_meta_setup.
         E.g.
 
-        self.meta_inports = {
+        meta_inports = {
             "port0_name": {
                 "name0": "type0",
                 "name1": "type1",
@@ -78,7 +79,7 @@ class TemplateNodeMixin:
             },
             ...
         }
-        self.meta_outports = {
+        meta_outports = {
             "port0_name": {
                 MetaDataSchema.META_REF_INPUT: "port0_name",
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
@@ -107,42 +108,62 @@ class TemplateNodeMixin:
             },
             ...
         }
-
+        self.template_meta_setup(in_ports=meta_inports,
+                                 out_ports=meta_outports)
         """
-        if not hasattr(self, 'port_inports'):
-            self.port_inports = {}
+        if not hasattr(self, '__port_inports'):
+            self.__port_inports = {}
 
-        if not hasattr(self, 'port_outports'):
-            self.port_outports = {}
+        if not hasattr(self, '__port_outports'):
+            self.__port_outports = {}
 
-        if not hasattr(self, 'meta_inports'):
-            self.meta_inports = {}
+        if not hasattr(self, '__meta_inports'):
+            self.__meta_inports = {}
 
-        if not hasattr(self, 'meta_outports'):
-            self.meta_outports = {}
+        if not hasattr(self, '__meta_outports'):
+            self.__meta_outports = {}
+
+    def template_ports_setup(self, in_ports=None, out_ports=None):
+        if in_ports is not None:
+            self.__port_inports = in_ports
+        if out_ports is not None:
+            self.__port_outports = out_ports
+        return NodePorts(inports=self.__port_inports,
+                         outports=self.__port_outports)
+
+    def template_meta_setup(self, in_ports=None, out_ports=None):
+        if in_ports is not None:
+            self.__meta_inports = in_ports
+        if out_ports is not None:
+            self.__meta_outports = out_ports
+        return MetaData(inports=self.__meta_inports,
+                        outports=self.__meta_outports)
 
     def update(self):
         '''Updates state of a Node with resolved ports and meta.
         '''
         ports_template = \
-            NodePorts(inports=self.port_inports, outports=self.port_outports)
+            NodePorts(inports=self.__port_inports,
+                      outports=self.__port_outports)
         ports = self._resolve_ports(ports_template)
         port_inports = ports.inports
         meta_template = \
-            MetaData(inports=self.meta_inports, outports=self.meta_outports)
+            MetaData(inports=self.__meta_inports,
+                     outports=self.__meta_outports)
         meta = self._resolve_meta(meta_template, port_inports)
 
-        self.port_inports = ports.inports
-        self.port_outports = ports.outports
+        self.__port_inports = ports.inports
+        self.__port_outports = ports.outports
 
-        self.meta_inports = meta.inports
-        self.meta_outports = meta.outports
+        self.__meta_inports = meta.inports
+        self.__meta_outports = meta.outports
 
     def ports_setup(self):
-        ports = NodePorts(inports=self.port_inports,
-                          outports=self.port_outports)
+        ports = NodePorts(inports=self.__port_inports,
+                          outports=self.__port_outports)
         return self.ports_setup_ext(ports)
 
     def meta_setup(self):
-        meta = MetaData(inports=self.meta_inports, outports=self.meta_outports)
+        meta = MetaData(inports=self.__meta_inports,
+                        outports=self.__meta_outports)
         return self.meta_setup_ext(meta)

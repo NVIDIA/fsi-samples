@@ -11,7 +11,7 @@ class SimpleBackTestNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_PORT_NAME = 'bardata_in'
         self.OUTPUT_PORT_NAME = 'backtest_out'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -19,7 +19,7 @@ class SimpleBackTestNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:bardata_in}"
             }
@@ -27,16 +27,24 @@ class SimpleBackTestNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         cols_required = {"signal": "float64",
                          "returns": "float64"}
         addition = {"strategy_returns": "float64"}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
                 MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
                 MetaDataSchema.META_DATA: addition
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

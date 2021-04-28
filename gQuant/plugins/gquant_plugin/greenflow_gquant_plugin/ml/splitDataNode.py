@@ -19,7 +19,7 @@ class DataSplittingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME_TRAIN = 'train'
         self.OUTPUT_PORT_NAME_TEST = 'test'
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -27,7 +27,7 @@ class DataSplittingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME_TRAIN: {
                 port_type: "${port:in}"
             },
@@ -35,10 +35,10 @@ class DataSplittingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 port_type: "${port:in}"
             }
         }
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: {}
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME_TRAIN: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_DELETION,
                 MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
@@ -52,19 +52,27 @@ class DataSplittingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         }
         if 'target' in self.conf:
             target_col = self.conf['target']
-            self.meta_inports = {
+            meta_inports = {
                 self.INPUT_PORT_NAME: {
                     target_col: None
                 }
             }
-            self.meta_outports[self.OUTPUT_PORT_NAME_TEST][
+            meta_outports[self.OUTPUT_PORT_NAME_TEST][
                 MetaDataSchema.META_ORDER] = {
                 target_col: -1
             }
-            self.meta_outports[self.OUTPUT_PORT_NAME_TRAIN][
+            meta_outports[self.OUTPUT_PORT_NAME_TRAIN][
                 MetaDataSchema.META_ORDER] = {
                     target_col: -1,
                 }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

@@ -18,7 +18,7 @@ class AssetFilterNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.OUTPUT_ASSET_NAME = 'stock_name'
 
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -31,7 +31,7 @@ class AssetFilterNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             }
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:stock_in}"
             },
@@ -40,11 +40,11 @@ class AssetFilterNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
             }
         }
         cols_required = {"asset": "int64"}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required,
             self.INPUT_MAP_NAME: {}
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
                 MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
@@ -55,13 +55,26 @@ class AssetFilterNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 MetaDataSchema.META_DATA: {}
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def update(self):
         TemplateNodeMixin.update(self)
         name = self._find_asset_name()
         asset_retension = {"asset_name": name}
-        self.meta_outports[self.OUTPUT_ASSET_NAME][
+        meta_outports = self.template_meta_setup().outports
+        meta_outports[self.OUTPUT_ASSET_NAME][
             MetaDataSchema.META_DATA] = asset_retension
+        self.template_meta_setup(
+            in_ports=None,
+            out_ports=meta_outports
+        )
 
     def _find_asset_name(self):
         name = ""

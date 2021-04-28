@@ -16,7 +16,7 @@ class LeftMergeNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         self.INPUT_PORT_RIGHT_NAME = 'right'
         self.OUTPUT_PORT_NAME = 'merged'
         port_type = PortsSpecSchema.port_type
-        self.port_inports = {
+        port_inports = {
             self.INPUT_PORT_LEFT_NAME: {
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
@@ -30,22 +30,30 @@ class LeftMergeNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 ]
             },
         }
-        self.port_outports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
                 port_type: "${port:left}"
             }
         }
         cols_required = {}
-        self.meta_inports = {
+        meta_inports = {
             self.INPUT_PORT_LEFT_NAME: cols_required,
             self.INPUT_PORT_RIGHT_NAME: cols_required
         }
-        self.meta_outports = {
+        meta_outports = {
             self.OUTPUT_PORT_NAME: {
                 MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
                 MetaDataSchema.META_DATA: {}
             }
         }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def update(self):
         TemplateNodeMixin.update(self)
@@ -63,9 +71,13 @@ class LeftMergeNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         elif self.INPUT_PORT_RIGHT_NAME in input_meta:
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             output_cols = col_from_right_inport
-
-        self.meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
+        meta_outports = self.template_meta_setup().outports
+        meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
             output_cols
+        self.template_meta_setup(
+            in_ports=None,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
