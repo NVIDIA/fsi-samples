@@ -93,7 +93,7 @@ acquirePrices <- function(prices,lab,len,D,D1,D2,dir,
       usingCacheThisFileName <- FALSE
       tryCatch( {
         #print(start);print(end)
-        Sys.sleep(1)
+        Sys.sleep(0)
         pricesForStock <- get.hist.quote(lab[d],quote="Adj",
                                          start=start,end=end)
         if(!is.na(pricesForStock[1]))
