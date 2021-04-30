@@ -1,10 +1,24 @@
+#////////////////////////////////////////////////////////////////////////////
+#//
+#// Copyright (C) NVIDIA Corporation.  All rights reserved.
+#//
+#// NVIDIA Sample Code
+#//
+#// Please refer to the NVIDIA end user license agreement (EULA) associated
+#// with this source code for terms and conditions that govern your use of
+#// this software. Any use, reproduction, disclosure, or distribution of
+#// this software and related documentation outside the terms of the EULA
+#// is strictly prohibited.
+#//
+#////////////////////////////////////////////////////////////////////////////
+
 import csv
 import os
 import sys
 
 if len(sys.argv)==1:
-    dir = '/home/mark/FinAnalytics/MVO3.2021.02/NYSE/'
-    dir = '/home/mark/FinAnalytics/MVO3.2021.02/NASDAQ/'
+    dir = 'data/MVO3.2021.02/NYSE/'
+    dir = 'data/MVO3.2021.02/NASDAQ/'
 elif len(sys.argv)==2:
     dir = sys.argv[1]
     print(dir)
