@@ -1,20 +1,57 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ["OneHotEncodingNode"]
 
 
-class OneHotEncodingNode(_PortTypesMixin, Node):
+class OneHotEncodingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
         self.delayed_process = True
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        cols_required = {}
+        addition = {}
+        for col in self.conf:
+            for cat in col['cats']:
+                name = col.get('prefix')+col.get('prefix_sep', '_')+str(cat)
+                addition.update({name: col.get('dtype', 'float64')})
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -82,14 +119,3 @@ class OneHotEncodingNode(_PortTypesMixin, Node):
         for col in self.conf:
             input_df = input_df.one_hot_encoding(**col)
         return {self.OUTPUT_PORT_NAME: input_df}
-
-    def meta_setup(self):
-        cols_required = {}
-        addition = {}
-        for col in self.conf:
-            for cat in col['cats']:
-                name = col.get('prefix')+col.get('prefix_sep', '_')+str(cat)
-                addition.update({name: col.get('dtype', 'float64')})
-        return _PortTypesMixin.addition_meta_setup(self,
-                                                   addition,
-                                                   required=cols_required)

@@ -1,12 +1,13 @@
 from .. import cuindicator as ci
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from numba import cuda
 import math
 import numpy as np
 import cudf
-import dask_cudf
-from .._port_type_node import _PortTypesMixin
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
 @cuda.jit
@@ -42,27 +43,49 @@ def moving_average_signal(stock_df, n_fast, n_slow):
     return out_arr, ma_slow, ma_fast
 
 
-class MovingAverageStrategyNode(_PortTypesMixin, Node):
+class MovingAverageStrategyNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
         self.delayed_process = True
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:stock_in}"
+            }
+        }
         cols_required = {"close": "float64"}
         addition = {"signal": "float64",
                     "ma_slow": "float64",
                     "ma_fast": "float64"}
-        return _PortTypesMixin.addition_meta_setup(self,
-                                                   addition,
-                                                   required=cols_required)
-
-    def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
-        return _PortTypesMixin.ports_setup_from_types(self, types)
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

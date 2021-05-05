@@ -1,85 +1,78 @@
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                   NodePorts, PortsSpecSchema)
-from greenflow.dataframe_flow import Node
-import cudf
-import dask_cudf
 import cuml
 import copy
-
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ['DataSplittingNode']
 
 
-class DataSplittingNode(_PortTypesMixin, Node):
+class DataSplittingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.delayed_process = True
+        port_type = PortsSpecSchema.port_type
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME_TRAIN = 'train'
         self.OUTPUT_PORT_NAME_TEST = 'test'
-
-    def ports_setup_from_types(self, types):
-        port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
-            }
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
         }
-
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME_TRAIN: {
-                port_type: types
+                port_type: "${port:in}"
             },
             self.OUTPUT_PORT_NAME_TEST: {
-                port_type: types
+                port_type: "${port:in}"
             }
         }
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            # connected
-            return NodePorts(inports={self.INPUT_PORT_NAME: {
-                port_type: determined_type}},
-                outports={self.OUTPUT_PORT_NAME_TEST: {
-                    port_type: determined_type},
-                    self.OUTPUT_PORT_NAME_TRAIN: {
-                    port_type: determined_type}
-            })
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
-
-    def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
-        return self.ports_setup_from_types(types)
-
-    def meta_setup(self):
-        cols_required = {}
-        col_from_inport = {}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
+        meta_inports = {
+            self.INPUT_PORT_NAME: {}
         }
-        input_meta = self.get_input_meta()
-        if self.INPUT_PORT_NAME in input_meta:
-            col_inport = input_meta[self.INPUT_PORT_NAME]
-            if 'target' in self.conf:
-                target_col = self.conf['target']
-                for i in sorted(col_inport.keys()):
-                    if i != target_col:
-                        col_from_inport[i] = col_inport[i]
-                col_from_inport[target_col] = col_inport[target_col]
-                if target_col in col_inport:
-                    required[self.INPUT_PORT_NAME][target_col] = \
-                        col_inport[target_col]
-        else:
-            col_from_inport = required[self.INPUT_PORT_NAME]
-        output_cols = {
-            self.OUTPUT_PORT_NAME_TRAIN: col_from_inport,
-            self.OUTPUT_PORT_NAME_TEST: col_from_inport
+        meta_outports = {
+            self.OUTPUT_PORT_NAME_TRAIN: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_DELETION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: {}
+            },
+            self.OUTPUT_PORT_NAME_TEST: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_DELETION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: {}
+            }
         }
-        metadata = MetaData(inports=required, outports=output_cols)
-        return metadata
+        if 'target' in self.conf:
+            target_col = self.conf['target']
+            meta_inports = {
+                self.INPUT_PORT_NAME: {
+                    target_col: None
+                }
+            }
+            meta_outports[self.OUTPUT_PORT_NAME_TEST][
+                MetaDataSchema.META_ORDER] = {
+                target_col: -1
+            }
+            meta_outports[self.OUTPUT_PORT_NAME_TRAIN][
+                MetaDataSchema.META_ORDER] = {
+                    target_col: -1,
+                }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -129,7 +122,9 @@ class DataSplittingNode(_PortTypesMixin, Node):
         """
         input_df = inputs[self.INPUT_PORT_NAME]
         target_col = self.conf['target']
-        train_cols = input_df.columns.difference([target_col])
+        train_cols = list(input_df.columns)
+        if target_col in train_cols:
+            train_cols.remove(target_col)
         conf = copy.copy(self.conf)
         del conf['target']
         r = cuml.preprocessing.model_selection.train_test_split(

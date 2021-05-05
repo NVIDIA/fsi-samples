@@ -24,9 +24,9 @@
   conf: {}
   inputs:
     in1: model_export.filename
-    in2: test_data.out
-    in3: test_infer.out
-    in4: xgboost_infer.out
+    in2: compute.xgboost_model@test_infer@out
+    in3: compute.xgboost_model@test_norm@df_out
+    in4: compute.tree_inference@out
 - id: data_generator
   type: CompositeNode
   conf:
@@ -104,28 +104,18 @@
     data_in: xgboost_model.test_norm@df_out
     model_file: model_export.filename
   module: greenflow_gquant_plugin.ml
-- id: test_data
+- id: compute
   type: DaskComputeNode
   conf: {}
   inputs:
-    in: xgboost_model.test_norm@df_out
-  module: greenflow_gquant_plugin.transform
-- id: test_infer
-  type: DaskComputeNode
-  conf: {}
-  inputs:
-    in: tree_inference.out
-  module: greenflow_gquant_plugin.transform
-- id: xgboost_infer
-  type: DaskComputeNode
-  conf: {}
-  inputs:
-    in: xgboost_model.test_infer@out
-  module: greenflow_gquant_plugin.transform
+    xgboost_model@test_infer@out: xgboost_model.test_infer@out
+    xgboost_model@test_norm@df_out: xgboost_model.test_norm@df_out
+    tree_inference@out: tree_inference.out
+  module: greenflow_dask_plugin
 - id: persist
   type: PersistNode
   conf: {}
   inputs:
     data_splitter@test: data_splitter.test
     data_splitter@train: data_splitter.train
-  module: greenflow_gquant_plugin.transform
+  module: greenflow_dask_plugin

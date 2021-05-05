@@ -1,63 +1,57 @@
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                      PortsSpecSchema,
-                                                      NodePorts, MetaData)
-from .data_obj import ProjectionData
 import cupy as cp
 import copy
 from collections import OrderedDict
+
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+from .data_obj import ProjectionData
 
 __all__ = ['LinearEmbeddingNode']
 
 SPECIAL_OUTPUT_DIM_COL = 'OUTPUT_DIM_23b1c5ce-e0bf-11ea-afcf-80e82cc76d44'
 
 
-class LinearEmbeddingNode(_PortTypesMixin, Node):
+class LinearEmbeddingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
         self.INPUT_PROJ_NAME = 'proj_data_in'
         self.OUTPUT_PROJ_NAME = 'proj_data_out'
-
-    def ports_setup_from_types(self, types):
-        """
-        overwrite the _PortTypesMixin.ports_setup_from_types
-        method, which is invoked by the _PortTypesMixin.ports_setup
-        """
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             },
             self.INPUT_PROJ_NAME: {
-                port_type: ProjectionData
+                port_type: [
+                    "greenflow_gquant_plugin.transform.data_obj.ProjectionData"
+                ]
             }
         }
-
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: types
+                port_type: "${port:df_in}"
             },
             self.OUTPUT_PROJ_NAME: {
-                port_type: ProjectionData
-            }
+                port_type: [
+                    "greenflow_gquant_plugin.transform.data_obj.ProjectionData"
+                ]
+            },
         }
-
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            output_ports.update({self.OUTPUT_PORT_NAME: {
-                                 port_type: determined_type}})
-            # connected
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
 
     def meta_setup(self):
         required = {
@@ -152,9 +146,6 @@ class LinearEmbeddingNode(_PortTypesMixin, Node):
             return metadata
         metadata = MetaData(inports=required, outports=output_cols)
         return metadata
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

@@ -1,17 +1,69 @@
 from greenflow.dataframe_flow import Node
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
+                                                      ConfSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['RenameNode']
 
 
-class RenameNode(_PortTypesMixin, Node):
+class RenameNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        cols_required = {}
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+    def update(self):
+        TemplateNodeMixin.update(self)
+        retention = {}
+        if 'new' in self.conf and 'old' in self.conf:
+            input_meta = self.get_input_meta()
+            if self.INPUT_PORT_NAME not in input_meta:
+                retention = {}
+            else:
+                col_from_inport = input_meta[self.INPUT_PORT_NAME]
+                oldType = col_from_inport[self.conf['old']]
+                del col_from_inport[self.conf['old']]
+                col_from_inport[self.conf['new']] = oldType
+                retention = col_from_inport
+        meta_outports = self.template_meta_setup().outports
+        meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
+            retention
+        self.template_meta_setup(in_ports=None, out_ports=meta_outports)
 
     def conf_schema(self):
         json = {
@@ -61,24 +113,3 @@ class RenameNode(_PortTypesMixin, Node):
         old_column = self.conf['old']
         return {self.OUTPUT_PORT_NAME: input_df.rename(columns={
             old_column: new_column})}
-
-    def meta_setup(self):
-        empty = {}
-        if 'new' in self.conf and 'old' in self.conf:
-            input_meta = self.get_input_meta()
-            if self.INPUT_PORT_NAME not in input_meta:
-                return _PortTypesMixin.retention_meta_setup(self,
-                                                            {},
-                                                            required=empty)
-            else:
-                col_from_inport = input_meta[self.INPUT_PORT_NAME]
-                oldType = col_from_inport[self.conf['old']]
-                del col_from_inport[self.conf['old']]
-                col_from_inport[self.conf['new']] = oldType
-                return _PortTypesMixin.retention_meta_setup(self,
-                                                            col_from_inport,
-                                                            required=empty)
-        else:
-            return _PortTypesMixin.retention_meta_setup(self,
-                                                        {},
-                                                        required=empty)

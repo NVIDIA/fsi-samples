@@ -21,18 +21,6 @@ for the server extension and a NPM package named `greenflowlab`
 for the frontend extension.
 
 
-## Build the dev container
-
-In the greenflow root direction
-```bash
-bash docker/build.sh
-```
-Launch your development container, make sure mounting your greenflow directory
-to the container and open `8888` ports.
-
-Set the greenflow path as the folder to start the development or you can open the 
-`workspace.code-workspace` file.
-
 ## Requirements
 
 * JupyterLab >= 3.0

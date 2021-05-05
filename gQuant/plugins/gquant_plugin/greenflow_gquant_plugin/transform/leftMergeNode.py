@@ -1,97 +1,83 @@
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   MetaData,
-                                                   NodePorts)
-import cudf
-import dask_cudf
-import pandas as pd
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.portsSpecSchema import PortsSpecSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['LeftMergeNode']
 
 
-class LeftMergeNode(_PortTypesMixin, Node):
+class LeftMergeNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_LEFT_NAME = 'left'
         self.INPUT_PORT_RIGHT_NAME = 'right'
         self.OUTPUT_PORT_NAME = 'merged'
-
-    def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_LEFT_NAME: {
-                port_type: types
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             },
             self.INPUT_PORT_RIGHT_NAME: {
-                port_type: types
-            }
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
         }
-
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: types
+                port_type: "${port:left}"
             }
         }
-
-        input_connections = self.get_connected_inports()
-        if (self.INPUT_PORT_LEFT_NAME in input_connections and
-                self.INPUT_PORT_RIGHT_NAME in input_connections):
-            determined_type1 = input_connections[self.INPUT_PORT_LEFT_NAME]
-            determined_type2 = input_connections[self.INPUT_PORT_RIGHT_NAME]
-            if (determined_type1 == determined_type2):
-                # connected
-                return NodePorts(inports={self.INPUT_PORT_LEFT_NAME: {
-                    port_type: determined_type1},
-                    self.INPUT_PORT_RIGHT_NAME: {
-                    port_type: determined_type1}},
-                    outports={self.OUTPUT_PORT_NAME: {
-                        port_type: determined_type1}})
-            else:
-                return NodePorts(inports=input_ports, outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
-
-    def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame,
-                 pd.DataFrame]
-        return self.ports_setup_from_types(types)
-
-    def meta_setup(self):
         cols_required = {}
-        required = {
+        meta_inports = {
             self.INPUT_PORT_LEFT_NAME: cols_required,
             self.INPUT_PORT_RIGHT_NAME: cols_required
         }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
+
+    def update(self):
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
+        output_cols = {}
         if (self.INPUT_PORT_LEFT_NAME in input_meta
                 and self.INPUT_PORT_RIGHT_NAME in input_meta):
             col_from_left_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             col_from_left_inport.update(col_from_right_inport)
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_left_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
+            output_cols = col_from_left_inport
         elif self.INPUT_PORT_LEFT_NAME in input_meta:
             col_from_left_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_left_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
+            output_cols = col_from_left_inport
         elif self.INPUT_PORT_RIGHT_NAME in input_meta:
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_right_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-        else:
-            metadata = MetaData(inports=required,
-                                outports={self.OUTPUT_PORT_NAME: {}})
-            return metadata
+            output_cols = col_from_right_inport
+        meta_outports = self.template_meta_setup().outports
+        meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
+            output_cols
+        self.template_meta_setup(
+            in_ports=None,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

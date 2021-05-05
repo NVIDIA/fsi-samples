@@ -1,17 +1,19 @@
-from collections import OrderedDict
-import ruamel.yaml
-from .node import Node
-from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
-from .task import Task
-from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import NodePorts, ConfSchema
 import warnings
 import copy
 import traceback
 import cloudpickle
 import base64
 from types import ModuleType
+from collections import OrderedDict
+import ruamel.yaml
+
+from .node import Node
+from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
+from .task import Task
+from .taskSpecSchema import TaskSpecSchema
+from .portsSpecSchema import NodePorts, ConfSchema, PortsSpecSchema
 from .util import get_encoded_class
+from .config_nodes_modules import get_node_obj
 
 __all__ = ['TaskGraph', 'OutputCollector']
 
@@ -236,8 +238,8 @@ class TaskGraph(object):
               will automatically construct the hierachical menus based on '.'
 
         class_obj: Node
-            The node class that is the subclass of greenflow 'Node'. It is usually
-            defined dynamically so it can be registered.
+            The node class that is the subclass of greenflow 'Node'. It is
+             usually defined dynamically so it can be registered.
 
         Returns
         -----
@@ -351,7 +353,7 @@ class TaskGraph(object):
 
                 if (to_type == OUTPUT_TYPE):
                     continue
-                task_node = itask.get_node_obj()
+                task_node = get_node_obj(itask)
                 # task_outputs = itask.get(TaskSpecSchema.outputs, [])
                 for pout in task_node._get_output_ports():
                     out_tip = '{}.{}'.format(
@@ -363,7 +365,7 @@ class TaskGraph(object):
                         'shape': 'point'})
         return G
 
-    def build(self, replace=None, profile=False):
+    def _build(self, replace=None, profile=False):
         """
         compute the graph structure of the nodes. It will set the input and
         output nodes for each of the node
@@ -395,10 +397,10 @@ class TaskGraph(object):
                     TaskSpecSchema.node_type: OutputCollector,
                     TaskSpecSchema.inputs: task[TaskSpecSchema.inputs]
                 })
-                node = output_task.get_node_obj(tgraph_mixin=True)
+                node = get_node_obj(output_task, tgraph_mixin=True)
             else:
-                node = task.get_node_obj(replace.get(task_id), profile,
-                                         tgraph_mixin=True)
+                node = get_node_obj(task, replace.get(task_id), profile,
+                                    tgraph_mixin=True)
             self.__node_dict[task_id] = node
 
         # build the graph
@@ -434,13 +436,56 @@ class TaskGraph(object):
                     'from_port': src_port
                 })
 
+    def build(self, replace=None, profile=False):
+        """
+        compute the graph structure of the nodes. It will set the input and
+        output nodes for each of the node
+
+        Arguments
+        -------
+        replace: dict
+            conf parameters replacement
+        """
+        # make connection only
+        self._build(replace=replace, profile=profile)
+
         # Columns type checking is done in the :meth:`TaskGraph._run` after the
         # outputs are specified and participating tasks are determined.
 
         # this part is to update each of the node so dynamic inputs can be
         # processed
+        self.breadth_first_update()
+
+    def breadth_first_update(self, extra_roots=[], extra_updated=set()):
+        """
+        Do a breadth first graph traversal and update nodes.
+
+        Update each note following the causal order. The children notes are
+        only added to the queue if all the parents are updated.
+
+        Each node is only updated once.
+
+        extra_roots and extra_updated should be empty for normal graph. It
+        is used for composite node when the graph is connected to other
+        graph.
+        """
+        queue = []
+        updated = extra_updated
         for k in self.__node_dict.keys():
-            self.__node_dict[k].update()
+            if len(self.__node_dict[k].inputs) == 0:
+                queue.append(self.__node_dict[k])
+        queue.extend(extra_roots)
+        while (len(queue) != 0):
+            node_to_update = queue.pop(0)
+            # print('update {}'.format(node_to_update.uid))
+            if node_to_update not in updated:
+                node_to_update.update()
+            updated.add(node_to_update)
+            for element in node_to_update.outputs:
+                child = element['to_node']
+                if all([i['from_node'] in updated for i in child.inputs]):
+                    queue.append(child)
+        # print('----done----')
 
     def __getitem__(self, key):
         return self.__node_dict[key]
@@ -500,8 +545,8 @@ class TaskGraph(object):
                 TaskSpecSchema.inputs: []
             })
 
-            outputs_collector_node = output_task.get_node_obj(
-                tgraph_mixin=True)
+            outputs_collector_node = get_node_obj(output_task,
+                                                  tgraph_mixin=True)
 
         outputs_collector_node.clear_input = False
         if not found_output_node or outputs is not None:
@@ -546,6 +591,7 @@ class TaskGraph(object):
                 continue
 
             # Run ports validation.
+            PortsSpecSchema.validate_ports(node.ports_setup())
             node.validate_connected_ports()
 
             # Run meta setup in case the required meta are calculated
@@ -596,7 +642,7 @@ class TaskGraph(object):
         ####
         # this is for nemo work around, to clean up the nemo graph
         self.run_cleanup()
-        ####
+
         if formated:
             return formated_result(result)
         else:

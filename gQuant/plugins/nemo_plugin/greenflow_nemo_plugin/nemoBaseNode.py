@@ -1,5 +1,5 @@
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, PortsSpecSchema
-from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
+from greenflow.dataframe_flow import (
+    ConfSchema, PortsSpecSchema, NodePorts, MetaData)
 
 from nemo.core.neural_types import NmTensor
 import inspect

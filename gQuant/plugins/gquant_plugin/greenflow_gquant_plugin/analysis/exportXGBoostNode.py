@@ -1,42 +1,49 @@
 from greenflow.dataframe_flow import Node
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                   NodePorts, PortsSpecSchema)
-from xgboost import Booster
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
 from greenflow.dataframe_flow.util import get_file_path
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
-class XGBoostExportNode(Node):
+class XGBoostExportNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'model_in'
         self.OUTPUT_PORT_NAME = 'filename'
-
-    def meta_setup(self):
-        required = {self.INPUT_PORT_NAME: {}}
-        input_meta = self.get_input_meta()
-        output_cols = {
-            self.OUTPUT_PORT_NAME: {}
-        }
-        if (self.INPUT_PORT_NAME in input_meta):
-            output_cols = {
-                self.OUTPUT_PORT_NAME: input_meta[self.INPUT_PORT_NAME]
-            }
-        metadata = MetaData(inports=required, outports=output_cols)
-        return metadata
-
-    def ports_setup(self):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: [Booster, dict]
+                port_type: ["xgboost.Booster", "builtins.dict"]
             }
         }
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: str
+                port_type: ["builtins.str"]
             }
         }
-        return NodePorts(inports=input_ports, outports=output_ports)
+        cols_required = {}
+        addition = {}
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -45,9 +52,11 @@ class XGBoostExportNode(Node):
             "description": """Export the xgboost model to a file
             """,
             "properties": {
-                "path":  {
+                "path": {
                     "type": "string",
-                    "description": """The output filepath for the xgboost model"""
+                    "description":
+                    """The output filepath for the xgboost
+                     model"""
                 }
             },
             "required": ["path"],

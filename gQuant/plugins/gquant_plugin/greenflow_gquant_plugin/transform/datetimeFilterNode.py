@@ -1,13 +1,14 @@
 import datetime
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ['DatetimeFilterNode']
 
 
-class DatetimeFilterNode(_PortTypesMixin, Node):
+class DatetimeFilterNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
     """
     A node that is used to select datapoints based on range of time.
     conf["beg"] defines the beginning of the date inclusively and
@@ -17,17 +18,43 @@ class DatetimeFilterNode(_PortTypesMixin, Node):
     """
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'stock_out'
-
-    def meta_setup(self):
-        cols_required = {"datetime": "date"}
-        return _PortTypesMixin.meta_setup(self,
-                                          required=cols_required)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:stock_in}"
+            }
+        }
+        addition = {}
+        cols_required = {"datetime": "datetime64[ns]"}
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -78,11 +105,13 @@ class DatetimeFilterNode(_PortTypesMixin, Node):
         dataframe
         """
         df = inputs[self.INPUT_PORT_NAME]
-        beg_date = \
-            datetime.datetime.strptime(self.conf['beg'], '%Y-%m-%d')
-        end_date = \
-            datetime.datetime.strptime(self.conf['end'], '%Y-%m-%d')
+        beg_date = datetime.datetime.strptime(self.conf['beg'],
+                                              '%Y-%m-%dT%H:%M:%S.%fZ')
+        end_date = datetime.datetime.strptime(self.conf['end'],
+                                              '%Y-%m-%dT%H:%M:%S.%fZ')
         df = df.query('datetime<@end_date and datetime>=@beg_date',
-                      local_dict={'beg_date': beg_date,
-                                  'end_date': end_date})
+                      local_dict={
+                          'beg_date': beg_date,
+                          'end_date': end_date
+                      })
         return {self.OUTPUT_PORT_NAME: df}

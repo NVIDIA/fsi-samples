@@ -3,7 +3,7 @@ from bqplot.colorschemes import CATEGORY20
 from bqplot import Lines
 import math
 import os
-from greenflow.dataframe_flow.task import load_modules
+from greenflow.dataframe_flow.config_nodes_modules import load_modules
 load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
 from rapids_modules.cuindicator import moving_average as indicator_fun  # noqa #F401
 
