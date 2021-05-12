@@ -145,7 +145,7 @@ ADD --chown=$USERID:$USERGID ./build/plugins /home/quant/plugins
 RUN cd /home/quant/plugins/gquant_plugin && pip install .
 RUN cd /home/quant/plugins/dask_plugin && pip install .
 
-WORKDIR /home/quant
+WORKDIR /home/quant/plugins/gquant_plugin
 ENTRYPOINT MODULEPATH=\$HOME/plugins/gquant_plugin/modules jupyter-lab \
   --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token='' \
   --ContentsManager.allow_hidden=True
