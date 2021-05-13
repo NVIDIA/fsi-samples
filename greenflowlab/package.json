@@ -1,6 +1,6 @@
 {
   "name": "greenflowlab",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "greenflow Jupyterlab extension",
   "keywords": [
     "jupyter",

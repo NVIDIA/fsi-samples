@@ -1,11 +1,37 @@
 # Changelog
 
-## [v1.0.3](https://github.com/NVIDIA/fsi-samples/tree/v1.0.3) (2021-02-13)
+## [v1.0.4](https://github.com/NVIDIA/fsi-samples/tree/v1.0.4) (2021-05-13)
 
-[Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.2...v1.0.3)
+[Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.3...v1.0.4)
+
+**Closed issues:**
+
+- \[FEA\] factor out the translate\_column logic to let user define customized column setup [\#69](https://github.com/NVIDIA/fsi-samples/issues/69)
+- \[FEA\] Remove mentions to 'framework' from gQuant project [\#25](https://github.com/NVIDIA/fsi-samples/issues/25)
 
 **Merged pull requests:**
 
+- \[REVIEW\] Update build script. [\#136](https://github.com/NVIDIA/fsi-samples/pull/136) ([avolkov1](https://github.com/avolkov1))
+- add nvidia headers [\#135](https://github.com/NVIDIA/fsi-samples/pull/135) ([MarkJosephBennett](https://github.com/MarkJosephBennett))
+- \[Review\]Sync up main branch back to develop [\#134](https://github.com/NVIDIA/fsi-samples/pull/134) ([yidong72](https://github.com/yidong72))
+- Update Dockerfile [\#127](https://github.com/NVIDIA/fsi-samples/pull/127) ([MarkJosephBennett](https://github.com/MarkJosephBennett))
+- Update acquirePrices.R [\#126](https://github.com/NVIDIA/fsi-samples/pull/126) ([MarkJosephBennett](https://github.com/MarkJosephBennett))
+- Update README.md [\#125](https://github.com/NVIDIA/fsi-samples/pull/125) ([MarkJosephBennett](https://github.com/MarkJosephBennett))
+- GTC21 S32407 Content; Initial Release [\#124](https://github.com/NVIDIA/fsi-samples/pull/124) ([kenhester](https://github.com/kenhester))
+- \[review\] Dask performance tuning + Dask plugin + Smart Cache handling + Composite Node performance tuning + Template Node [\#123](https://github.com/NVIDIA/fsi-samples/pull/123) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\]fixed a bug in the split node [\#122](https://github.com/NVIDIA/fsi-samples/pull/122) ([yidong72](https://github.com/yidong72))
+
+## [v1.0.3](https://github.com/NVIDIA/fsi-samples/tree/v1.0.3) (2021-02-22)
+
+[Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.2...v1.0.3)
+
+**Closed issues:**
+
+- Error displaying widget: model not found trying 02\_single\_stock\_trade.ipnyb example [\#121](https://github.com/NVIDIA/fsi-samples/issues/121)
+
+**Merged pull requests:**
+
+- \[REVIEW\] gquant rename to greenflow [\#120](https://github.com/NVIDIA/fsi-samples/pull/120) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\]Change "gquant" to "greenflow" [\#119](https://github.com/NVIDIA/fsi-samples/pull/119) ([yidong72](https://github.com/yidong72))
 
 ## [v1.0.2](https://github.com/NVIDIA/fsi-samples/tree/v1.0.2) (2021-02-12)
@@ -130,6 +156,7 @@
 - \[REVIEW\] change the text for notebook 05 [\#55](https://github.com/NVIDIA/fsi-samples/pull/55) ([yidong72](https://github.com/yidong72))
 - Fix \#50b - Rename notebook folder to notebooks [\#52](https://github.com/NVIDIA/fsi-samples/pull/52) ([miguelusque](https://github.com/miguelusque))
 - Fix \#50 - Rename notebook folder to notebooks [\#51](https://github.com/NVIDIA/fsi-samples/pull/51) ([miguelusque](https://github.com/miguelusque))
+- Fix \#39 - Refactor 04\_portfolio\_trade.ipynb notebook [\#44](https://github.com/NVIDIA/fsi-samples/pull/44) ([miguelusque](https://github.com/miguelusque))
 
 ## [v0.2](https://github.com/NVIDIA/fsi-samples/tree/v0.2) (2019-08-16)
 
@@ -151,7 +178,6 @@
 **Merged pull requests:**
 
 - Fix \#17 - cuIndicator notebook plot widget is too complicated \(WIP\) [\#45](https://github.com/NVIDIA/fsi-samples/pull/45) ([miguelusque](https://github.com/miguelusque))
-- Fix \#39 - Refactor 04\_portfolio\_trade.ipynb notebook [\#44](https://github.com/NVIDIA/fsi-samples/pull/44) ([miguelusque](https://github.com/miguelusque))
 - Merge develop to master [\#43](https://github.com/NVIDIA/fsi-samples/pull/43) ([yidong72](https://github.com/yidong72))
 - Fix \#40 - Remove debug info [\#41](https://github.com/NVIDIA/fsi-samples/pull/41) ([miguelusque](https://github.com/miguelusque))
 - Update mortgage example using TaskGraph API. [\#38](https://github.com/NVIDIA/fsi-samples/pull/38) ([avolkov1](https://github.com/avolkov1))
