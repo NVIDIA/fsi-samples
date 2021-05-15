@@ -1,20 +1,19 @@
 from greenflow.dataframe_flow import Node
-from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   NodePorts,
-                                                   MetaData,
-                                                   ConfSchema)
+from greenflow.dataframe_flow.portsSpecSchema import (
+    PortsSpecSchema, NodePorts, ConfSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
 import cudf
 import dask_cudf
 import pandas as pd
 from greenflow.dataframe_flow.util import get_file_path
-from .._port_type_node import _PortTypesMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 CUDF_PORT_NAME = 'cudf_out'
 DASK_CUDF_PORT_NAME = 'dask_cudf_out'
 PANDAS_PORT_NAME = 'pandas_out'
 
 
-class CsvStockLoader(_PortTypesMixin, Node):
+class CsvStockLoader(NodeHDFCacheMixin, Node):
 
     def ports_setup(self):
         input_ports = {}
@@ -31,17 +30,16 @@ class CsvStockLoader(_PortTypesMixin, Node):
         }
         return NodePorts(inports=input_ports, outports=output_ports)
 
-    def init(self):
-        pass
-
     def meta_setup(self):
-        column_types = {"datetime": "date",
-                        "asset": "int64",
-                        "volume": "float64",
-                        "close": "float64",
-                        "open": "float64",
-                        "high": "float64",
-                        "low": "float64"}
+        column_types = {
+            "datetime": "datetime64[ns]",
+            "open": "float64",
+            "close": "float64",
+            "high": "float64",
+            "low": "float64",
+            "asset": "int64",
+            "volume": "float64"
+        }
         out_cols = {
             CUDF_PORT_NAME: column_types,
             DASK_CUDF_PORT_NAME: column_types,
@@ -96,7 +94,7 @@ class CsvStockLoader(_PortTypesMixin, Node):
             # construct the standard datetime str
             df['DTE'] = ymd[0].str.cat(
                 ymd[1],
-                '-').str.cat(ymd[2], '-').astype('datetime64[ms]')
+                '-').str.cat(ymd[2], '-').astype('datetime64[ns]')
             df = df[['DTE', 'OPEN', 'CLOSE', 'HIGH', 'LOW', 'SM_ID', 'VOLUME']]
             df['VOLUME'] /= 1000
             # change the names

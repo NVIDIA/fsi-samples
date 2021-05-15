@@ -33,11 +33,12 @@ def _validate_df(df_to_val, ref_cols, obj):
 
     i_cols = df_to_val.columns
     if len(i_cols) != len(ref_cols):
-        print("expect %d columns, only see %d columns"
-              % (len(ref_cols), len(i_cols)))
-        print("ref:", ref_cols)
-        print("columns", i_cols)
-        raise Exception("not valid for node %s" % (obj.uid))
+        errmsg = 'Invalid for node "{:s}"\n'\
+            'Expect {:d} columns, only see {:d} columns\n'\
+            'Ref: {}\n'\
+            'Columns: {}'\
+            .format(obj.uid, len(ref_cols), len(i_cols), ref_cols, i_cols)
+        raise Exception(errmsg)
 
     for col in ref_cols.keys():
         if col not in i_cols:
@@ -72,6 +73,7 @@ def _validate_df(df_to_val, ref_cols, obj):
             # Maybe raise an exception here and have the caller
             # try/except the validation routine.
             return False
+
     return True
 
 

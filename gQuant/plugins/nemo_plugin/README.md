@@ -7,20 +7,10 @@ This is an example to show how to write an external greenflow plugin. greenflow 
 conda create -n test python=3.8
 ```
 
-### Install the greenflow 
-To install the greenflow graph computation library, run:
-```bash
-pip install greenflow
-```
-Or install `greenflow` at the greenflow directory:
-```bash
-pip install .
-```
-
 ### Install the greenflowlab JupyterLab plugin
 To install `greenflowlab` JupyterLab plugin, make sure `nodejs` of version [12^14^15] is installed. E.g:
 ```bash
-conda install -c conda-forge nodejs=12.4.0
+conda install -c conda-forge python-graphviz nodejs=12.4.0 pydot
 ```
 Then install the `greenflowlab`:
 ```bash

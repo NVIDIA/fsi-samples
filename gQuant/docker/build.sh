@@ -1,5 +1,15 @@
 #!/bin/bash
 
+_basedir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+BUILDDIR="${_basedir}/build"
+TOPDIR="$(dirname $(dirname ${_basedir}))"
+
+GREENFLOWDIR="${TOPDIR}/greenflow"
+GREENFLOWLABDIR="${TOPDIR}/greenflowlab"
+PLUGINSDIR="${TOPDIR}/gQuant/plugins"
+
+
 main() {
 
 USERID=$(id -u)
@@ -39,7 +49,7 @@ echo -e "\nPlease, select your CUDA version:\n" \
 
 read -p "Enter your option and hit return [1]-3: " CUDA_VERSION
 
-RAPIDS_VERSION="0.17.0"
+RAPIDS_VERSION="0.19.0"
 
 CUDA_VERSION=${CUDA_VERSION:-1}
 case $CUDA_VERSION in
@@ -61,54 +71,96 @@ case $CUDA_VERSION in
         ;;
 esac
 
+mkdir -p ${BUILDDIR}
+cp -r ${GREENFLOWDIR} ${BUILDDIR}
+rsync -av --progress ${GREENFLOWLABDIR} ${BUILDDIR} --exclude node_modules 
+# cp ${TOPDIR}/gQuant/greenflowrc ${BUILDDIR}
+cp ${TOPDIR}/gQuant/README.md ${BUILDDIR}
+
+# cp -r ${PLUGINSDIR} ${BUILDDIR}
+mkdir -p "${BUILDDIR}/plugins"
+rsync -av --progress "${PLUGINSDIR}/gquant_plugin" "${BUILDDIR}/plugins" \
+  --exclude data \
+  --exclude .cache \
+  --exclude many-small \
+  --exclude storage \
+  --exclude dask-worker-space \
+  --exclude __pycache__
+
+rsync -av --progress "${PLUGINSDIR}/dask_plugin" "${BUILDDIR}/plugins" \
+  --exclude data \
+  --exclude .cache \
+  --exclude many-small \
+  --exclude storage \
+  --exclude dask-worker-space \
+  --exclude __pycache__
+
+rsync -av --progress "${PLUGINSDIR}/simple_example" "${BUILDDIR}/plugins" \
+  --exclude data \
+  --exclude .cache \
+  --exclude many-small \
+  --exclude storage \
+  --exclude dask-worker-space \
+  --exclude __pycache__
+
+rsync -av --progress "${PLUGINSDIR}/nemo_plugin" "${BUILDDIR}/plugins" \
+  --exclude data \
+  --exclude .cache \
+  --exclude many-small \
+  --exclude storage \
+  --exclude dask-worker-space \
+  --exclude __pycache__
 
 read -p "Enable dev model [y/n]:" DEV_MODE
 case $DEV_MODE in
     y)
-	echo "Dev mode"
+    echo "Dev mode"
     read -r -d '' INSTALL_GREENFLOW<< EOM
 ## copy greenflowlab extension
-ADD --chown=$USERID:$USERGID ./greenflow /home/quant/greenflow
+ADD --chown=$USERID:$USERGID ./build /home/quant/greenflow
 WORKDIR /home/quant/greenflow
 EOM
     MODE_STR="dev"
-	;;
+    ;;
     *)
-	echo "Production mode"
+    echo "Production mode"
     read -r -d '' INSTALL_GREENFLOW<< EOM
+
+WORKDIR /home/quant
+
+ADD --chown=$USERID:$USERGID ./build/README.md /home/quant/README.md
+
+## install greenflow
+ADD --chown=$USERID:$USERGID ./build/greenflow /home/quant/greenflow
+RUN cd /home/quant/greenflow && pip install .
+
 ## install greenflowlab extension
-ADD --chown=$USERID:$USERGID ./greenflow /home/quant/greenflow
-RUN pip install .
-WORKDIR /home/quant/greenflow/greenflowlab
-RUN pip install .
+ADD --chown=$USERID:$USERGID ./build/greenflowlab /home/quant/greenflowlab
+RUN cd /home/quant/greenflowlab && pip install .
+
 RUN jupyter lab build
-WORKDIR /home/quant/greenflow
-ENTRYPOINT MODULEPATH=\$HOME/greenflow/modules jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
+
+## install greenflow plugins
+ADD --chown=$USERID:$USERGID ./build/plugins /home/quant/plugins
+RUN cd /home/quant/plugins/gquant_plugin && pip install .
+RUN cd /home/quant/plugins/dask_plugin && pip install .
+
+WORKDIR /home/quant/plugins/gquant_plugin
+ENTRYPOINT MODULEPATH=\$HOME/plugins/gquant_plugin/modules jupyter-lab \
+  --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token='' \
+  --ContentsManager.allow_hidden=True
+
 EOM
     MODE_STR="prod"
-	;;
+    ;;
 esac
 
-mkdir -p greenflow
-cp -r ../greenflow ./greenflow
-cp -r ../modules ./greenflow
-cp -r ../taskgraphs ./greenflow
-cp ../setup.cfg ./greenflow
-cp ../setup.py ./greenflow
-cp ../LICENSE ./greenflow
-cp ../download_data.sh ./greenflow
-cp ../greenflowrc ./greenflow
-cp ../README.md ./greenflow
-rsync -av --progress ../notebooks ./greenflow --exclude data --exclude .cache --exclude many-small --exclude storage --exclude dask-worker-space --exclude __pycache__
-rsync -av --progress ../greenflowlab ./greenflow --exclude node_modules 
-
-greenflow_ver=$(grep version greenflow/setup.py | sed "s/^.*version='\([^;]*\)'.*/\1/")
+greenflow_ver=$(grep version "${GREENFLOWDIR}/setup.py" | sed "s/^.*version='\([^;]*\)'.*/\1/")
 CONTAINER="nvidia/cuda:${CUDA_STR}-runtime-${OS_STR}"
-D_CONT=${D_CONT:="greenflow/greenflow:${greenflow_ver}-${CUDA_STR}_${OS_STR}_${RAPIDS_VERSION}_${MODE_STR}"}
+D_CONT=${D_CONT:="greenflow/greenflow:${greenflow_ver}-Cuda${CUDA_STR}_${OS_STR}_Rapids${RAPIDS_VERSION}_${MODE_STR}"}
 
 
-gen_nemo_patches
-
+pushd ${_basedir}
 
 cat > $D_FILE <<EOF
 FROM $CONTAINER
@@ -130,9 +182,13 @@ ARG USERNAME=quant
 ARG USER_UID=$USERID
 ARG USER_GID=$USERGID
 
-
 # Create the user
-RUN groupadd --gid \$USER_GID \$USERNAME     && useradd --uid \$USER_UID --gid \$USER_GID -m \$USERNAME     && apt-get update     && apt-get install -y sudo     && echo \$USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/\$USERNAME     && chmod 0440 /etc/sudoers.d/\$USERNAME
+RUN groupadd --gid \$USER_GID \$USERNAME && \
+    useradd --uid \$USER_UID --gid \$USER_GID -m \$USERNAME && \
+    apt-get update && \
+    apt-get install -y sudo && \
+    echo \$USERNAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/\$USERNAME && \
+    chmod 0440 /etc/sudoers.d/\$USERNAME
 
 ############ here is done for user greenflow #########
 USER \$USERNAME
@@ -143,175 +199,50 @@ ARG PATH="/home/quant/miniconda3/bin:\${PATH}"
 
 WORKDIR /home/quant
 
-RUN wget \
-    https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-    && bash Miniconda3-latest-Linux-x86_64.sh -b \
-    && rm -f Miniconda3-latest-Linux-x86_64.sh \
-    && conda init
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+    bash Miniconda3-latest-Linux-x86_64.sh -b && \
+    rm -f Miniconda3-latest-Linux-x86_64.sh && \
+    conda init && \
+    pip config set global.cache-dir false
 
-RUN conda install -y -c rapidsai -c nvidia -c conda-forge \
-    -c defaults rapids=$RAPIDS_VERSION cudatoolkit=$CUDA_STR python=3.7
+RUN conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults \
+      rapids=$RAPIDS_VERSION cudatoolkit=$CUDA_STR python=3.8 && \
+    conda clean --all -y
 
-RUN conda install -y -c conda-forge jupyterlab
+RUN conda install -y -c conda-forge -c defaults \
+      jupyterlab'>=3.0.0' jupyter-packaging'>=0.9.2' \
+      nodejs=12.4.0 python-graphviz pydot ruamel.yaml && \
+    conda clean --all -y && \
+    jlpm cache clean && \
+    jupyter lab clean
 
-RUN conda install -y -c conda-forge python-graphviz bqplot nodejs ipywidgets \
-    pytables mkl numexpr pydot flask pylint flake8 autopep8
-
-RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager --no-build  
-RUN jupyter labextension install bqplot --no-build  
-#RUN jupyter labextension install jupyterlab-nvdashboard --no-build  
-RUN jupyter lab build && jupyter lab clean
-RUN conda init
+RUN pip install bqplot==0.12.21 && \
+    jlpm cache clean && \
+    jupyter lab clean
 
 ## install the nvdashboard
-RUN pip install jupyterlab-nvdashboard
-RUN jupyter labextension install jupyterlab-nvdashboard
+# RUN pip install jupyterlab-nvdashboard
+RUN pip install --upgrade pip && \
+    pip install git+https://github.com/rapidsai/jupyterlab-nvdashboard.git@branch-0.6 && \
+    jlpm cache clean && \
+    jupyter lab clean
 
 ## install the dask extension
-RUN pip install dask_labextension
-RUN jupyter labextension install dask-labextension
-RUN jupyter serverextension enable dask_labextension
-
-## install the jsonpath lib
-RUN pip install jsonpath-ng ray[tune] Cython
-
-## install the NemO
-WORKDIR /home/quant/
-RUN git clone -b v0.11.1 https://github.com/NVIDIA/NeMo.git 
-WORKDIR /home/quant/NeMo
-COPY nemo.patch /home/quant/NeMo/
-RUN git apply nemo.patch && \
-    bash reinstall.sh
-
-RUN conda install -y ruamel.yaml
-RUN conda install -c conda-forge -y cloudpickle
-
-RUN mkdir -p /home/quant/greenflow
-WORKDIR /home/quant/greenflow
-
-RUN pip install streamz && \
-    pip uninstall -y dataclasses
+RUN pip install "dask_labextension>=5.0.0" && \
+    jlpm cache clean && \
+    jupyter lab clean
 
 $INSTALL_GREENFLOW
 
-
 EOF
-docker build --network=host -f $D_FILE -t $D_CONT .
 
-if [ -f "nemo.patch" ] ; then
-    rm nemo.patch
-fi
+docker build --network=host -f $D_FILE -t $D_CONT .
 
 } # end-of-main
 
-gen_nemo_patches() {
-
-cat << 'EOF' > nemo.patch
-diff --git a/nemo/collections/nlp/metrics/sacrebleu.py b/nemo/collections/nlp/metrics/sacrebleu.py
-index 5130dd96..3b223ac6 100755
---- a/nemo/collections/nlp/metrics/sacrebleu.py
-+++ b/nemo/collections/nlp/metrics/sacrebleu.py
-@@ -61,13 +61,16 @@ from nemo.collections.nlp.data.tokenizers.fairseq_tokenizer import tokenize_en
- VERSION = '1.3.5'
- 
- try:
-+    import threading
-     # SIGPIPE is not available on Windows machines, throwing an exception.
-     from signal import SIGPIPE
- 
-     # If SIGPIPE is available, change behaviour to default instead of ignore.
-     from signal import signal, SIG_DFL
- 
--    signal(SIGPIPE, SIG_DFL)
-+
-+    if threading.current_thread() == threading.main_thread():
-+        signal(SIGPIPE, SIG_DFL)
- 
- except ImportError:
-     logging.warning('Could not import signal.SIGPIPE (this is expected on Windows machines)')
-diff --git a/nemo/backends/pytorch/common/rnn.py b/nemo/backends/pytorch/common/rnn.py
-index c1c62ac0..b9936fe3 100644
---- a/nemo/backends/pytorch/common/rnn.py
-+++ b/nemo/backends/pytorch/common/rnn.py
-@@ -235,7 +235,7 @@ class EncoderRNN(TrainableNM):
-         embedded = self.embedding(inputs)
-         embedded = self.dropout(embedded)
-         if input_lens is not None:
--            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens, batch_first=True)
-+            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens.cpu(), batch_first=True)
- 
-         outputs, hidden = self.rnn(embedded)
-         # outputs of shape (seq_len, batch, num_directions * hidden_size)
-diff --git a/nemo/backends/pytorch/tutorials/chatbot/modules.py b/nemo/backends/pytorch/tutorials/chatbot/modules.py
-index 2459afa1..59b88d28 100644
---- a/nemo/backends/pytorch/tutorials/chatbot/modules.py
-+++ b/nemo/backends/pytorch/tutorials/chatbot/modules.py
-@@ -122,7 +122,7 @@ class EncoderRNN(TrainableNM):
-         embedded = self.embedding(input_seq)
-         embedded = self.embedding_dropout(embedded)
-         # Pack padded batch of sequences for RNN module
--        packed = t.nn.utils.rnn.pack_padded_sequence(embedded, input_lengths)
-+        packed = t.nn.utils.rnn.pack_padded_sequence(embedded, input_lengths.cpu())
-         # Forward pass through GRU
-         outputs, hidden = self.gru(packed, hidden)
-         # Unpack padding
-diff --git a/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py b/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
-index 2fc2ff0a..9ec7acc4 100644
---- a/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
-+++ b/nemo/collections/nlp/nm/trainables/common/encoder_rnn.py
-@@ -64,7 +64,7 @@ class EncoderRNN(TrainableNM):
-         embedded = self.embedding(inputs)
-         embedded = self.dropout(embedded)
-         if input_lens is not None:
--            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens, batch_first=True)
-+            embedded = nn.utils.rnn.pack_padded_sequence(embedded, input_lens.cpu(), batch_first=True)
- 
-         outputs, hidden = self.rnn(embedded)
-         # outputs of shape (seq_len, batch, num_directions * hidden_size)
-diff --git a/nemo/collections/tts/parts/tacotron2.py b/nemo/collections/tts/parts/tacotron2.py
-index 925251f1..5f81647e 100644
---- a/nemo/collections/tts/parts/tacotron2.py
-+++ b/nemo/collections/tts/parts/tacotron2.py
-@@ -221,7 +221,7 @@ class Encoder(nn.Module):
- 
-         # pytorch tensor are not reversible, hence the conversion
-         input_lengths = input_lengths.cpu().numpy()
--        x = nn.utils.rnn.pack_padded_sequence(x, input_lengths, batch_first=True, enforce_sorted=False)
-+        x = nn.utils.rnn.pack_padded_sequence(x, input_lengths.cpu(), batch_first=True, enforce_sorted=False)
- 
-         self.lstm.flatten_parameters()
-         outputs, _ = self.lstm(x)
-diff --git a/requirements/requirements_asr.txt b/requirements/requirements_asr.txt
-index 901a79af..4eb76f95 100644
---- a/requirements/requirements_asr.txt
-+++ b/requirements/requirements_asr.txt
-@@ -14,4 +14,4 @@ unidecode
- webdataset
- kaldi-python-io
--librosa<=0.7.2
-+librosa<=0.8.0
--numba<=0.48
-+numba==0.52.0
-diff --git a/requirements/requirements_nlp.txt b/requirements/requirements_nlp.txt
-index 885adf3e..0e4e44e2 100644
---- a/requirements/requirements_nlp.txt
-+++ b/requirements/requirements_nlp.txt
-@@ -3,7 +3,7 @@ h5py
- matplotlib
- sentencepiece
- torchtext
--transformers>=2.11.0
-+transformers>=2.11.0,<=3.5.1
- unidecode
- youtokentome
- numpy
-
-
-EOF
-
-}
-
 
 main "$@"
+
+popd
 
 exit

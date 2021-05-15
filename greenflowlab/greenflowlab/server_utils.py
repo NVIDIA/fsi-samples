@@ -1,12 +1,14 @@
+import inspect
+import uuid
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.task import Task
 from greenflow.dataframe_flow._node_flow import OUTPUT_TYPE, OUTPUT_ID
-from greenflow.dataframe_flow import TaskSpecSchema
-from greenflow.dataframe_flow.task import load_modules, get_greenflow_config_modules
+from greenflow.dataframe_flow import (TaskSpecSchema, PortsSpecSchema)
+from greenflow.dataframe_flow.config_nodes_modules import (
+    load_modules, get_greenflow_config_modules, get_node_tgraphmixin_instance)
 import greenflow.plugin_nodes as plugin_nodes
-import inspect
-import uuid
+
 try:
     # For python 3.8 and later
     import importlib.metadata as importlib_metadata
@@ -15,15 +17,18 @@ except ImportError:
     import importlib_metadata
 from pathlib import Path
 
-dynamic_modules = {}
+DYNAMIC_MODULES = {}
 
 
 def register_node(module, classObj):
-    if module not in dynamic_modules:
+    if module not in DYNAMIC_MODULES:
         container = {}
-        dynamic_modules[module] = container
+        DYNAMIC_MODULES[module] = container
     else:
-        container = dynamic_modules[module]
+        container = DYNAMIC_MODULES[module]
+
+    # Snippet below is important so that dynamic modules appear under the
+    # "Add Nodes" menu.
     key = classObj.__name__
     container[key] = classObj
 
@@ -41,13 +46,17 @@ def _format_port(port):
     list
         a list of ports with name and type
     """
+    dynamic = PortsSpecSchema.dynamic
+
     all_ports = []
     for key in port:
         one_port = {}
         one_port['name'] = key
-        if 'dynamic' in port[key]:
-            one_port['dynamic'] = port[key]['dynamic']
-        port_type = port[key]['type']
+
+        if dynamic in port[key]:
+            one_port[dynamic] = port[key][dynamic]
+
+        port_type = port[key][PortsSpecSchema.port_type]
         if isinstance(port_type, list):
             types = []
             for t in port_type:
@@ -95,9 +104,8 @@ def get_nodes(task_graph):
     nodes = []
     edges = []
     for task in task_graph:
-        # node = task.get_node_obj()
         node = task_graph[task[TaskSpecSchema.task_id]]
-        out_node = get_node_obj(node)
+        out_node = get_labnode_obj(node)
         connection_inputs = task.get('inputs')
         nodes.append(out_node)
         # out_node['output_meta'] = task_graph[node.uid].output_meta
@@ -113,11 +121,19 @@ def get_nodes(task_graph):
                 num = max(int(port[2:]), num)
             inputs.append({'name': 'in'+str(num+1), "type": [["any"]]})
             out_node['inputs'] = inputs
+
     task_graph.run_cleanup()
+
     return {'nodes': nodes, 'edges': edges}
 
 
-def get_node_obj(node, count_id=True):
+def init_get_labnode_obj(node, count_id=True):
+    node.init()
+    node.update()
+    return get_labnode_obj(node, count_id=count_id)
+
+
+def get_labnode_obj(node, count_id=True):
     """
     It is a private function to convert a Node instance into a dictionary for
     client to consume.
@@ -144,6 +160,7 @@ def get_node_obj(node, count_id=True):
             width = max(max(len(node.uid), len(typeName)) * 10, 100)
         else:
             width = max(len(typeName) * 10, 100)
+
     conf = node._task_obj.get('conf')
     out_node = {'width': width,
                 'id': node.uid,
@@ -154,10 +171,13 @@ def get_node_obj(node, count_id=True):
                 'inputs': _format_port(ports.inports),
                 'outputs': _format_port(ports.outports)}
     out_node['output_meta'] = metadata.outports
+
     if node._task_obj.get('filepath'):
         out_node['filepath'] = node._task_obj.get('filepath')
+
     if node._task_obj.get('module'):
         out_node['module'] = node._task_obj.get('module')
+
     out_node['required'] = metadata.inports
     return out_node
 
@@ -208,12 +228,12 @@ def add_nodes():
     """
     loaded_node_classes = []
     all_modules = get_greenflow_config_modules()
-    print(all_modules)
+    # print('Greenflow config modules: {}\n'.format(all_modules))
     all_nodes = {}
     # not implemented yet for greenflow
     for item in inspect.getmembers(plugin_nodes):
         if inspect.ismodule(item[1]):
-            print(item)
+            # print('Greenflow builtin plugin: {}'.format(item))
             labmod_pkg = 'greenflow.{}'.format(item[0])
             all_nodes[labmod_pkg] = []
             for node in inspect.getmembers(item[1]):
@@ -229,9 +249,9 @@ def add_nodes():
                         'type': node[0],
                         'conf': {},
                         'inputs': []}
-                t = Task(task)
-                n = nodecls(t)
-                nodeObj = get_node_obj(n, False)
+                task_inst = Task(task)
+                node_inst = get_node_tgraphmixin_instance(nodecls, task_inst)
+                nodeObj = init_get_labnode_obj(node_inst, False)
                 all_nodes[labmod_pkg].append(nodeObj)
                 loaded_node_classes.append(nodecls)
 
@@ -261,9 +281,9 @@ def add_nodes():
                     'inputs': [],
                     'module': module
                     }
-            t = Task(task)
-            n = nodecls(t)
-            nodeObj = get_node_obj(n, False)
+            task_inst = Task(task)
+            node_inst = get_node_tgraphmixin_instance(nodecls, task_inst)
+            nodeObj = init_get_labnode_obj(node_inst, False)
             if module_file_or_path.is_dir():
                 # submod = nodecls.__module__.split('.')[1:]
                 # flatten out the namespace hierarchy
@@ -275,27 +295,34 @@ def add_nodes():
                 all_nodes.setdefault(modulename, []).append(nodeObj)
 
             loaded_node_classes.append(nodecls)
-    for module in dynamic_modules.keys():
+
+    for module in DYNAMIC_MODULES.keys():
         modulename = module
-        node_lists = []
-        all_nodes[modulename] = node_lists
-        for class_name in dynamic_modules[module].keys():
-            classObj = dynamic_modules[module][class_name]
-            if issubclass(classObj, Node):
-                task = {'id': 'node_'+str(uuid.uuid4()),
-                        'type': classObj.__name__,
-                        'conf': {},
-                        'inputs': [],
-                        'module': module
-                        }
-                t = Task(task)
-                n = classObj(t)
-                nodeObj = get_node_obj(n, False)
-                node_lists.append(nodeObj)
+        all_nodes[modulename] = []
+        for class_name in DYNAMIC_MODULES[module].keys():
+            nodecls = DYNAMIC_MODULES[module][class_name]
+
+            if not issubclass(nodecls, Node):
+                continue
+
+            if nodecls in loaded_node_classes:
+                continue
+
+            task = {'id': 'node_'+str(uuid.uuid4()),
+                    'type': nodecls.__name__,
+                    'conf': {},
+                    'inputs': [],
+                    'module': module
+                    }
+            task_inst = Task(task)
+            node_inst = get_node_tgraphmixin_instance(nodecls, task_inst)
+            nodeObj = init_get_labnode_obj(node_inst, False)
+            all_nodes.setdefault(modulename, []).append(nodeObj)
+            loaded_node_classes.append(nodecls)
 
     # load all the plugins from entry points
-    for entry_point in importlib_metadata.entry_points().get('greenflow.plugin',
-                                                             ()):
+    for entry_point in importlib_metadata.entry_points().get(
+            'greenflow.plugin', ()):
         mod = entry_point.load()
         modulename = entry_point.name
 
@@ -318,9 +345,9 @@ def add_nodes():
                     'inputs': [],
                     'module': modulename
                     }
-            t = Task(task)
-            n = nodecls(t)
-            nodeObj = get_node_obj(n, False)
+            task_inst = Task(task)
+            node_inst = get_node_tgraphmixin_instance(nodecls, task_inst)
+            nodeObj = init_get_labnode_obj(node_inst, False)
             all_nodes.setdefault(modulename, []).append(nodeObj)
             loaded_node_classes.append(nodecls)
 

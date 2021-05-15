@@ -1,27 +1,53 @@
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['DropNode']
 
 
-class DropNode(_PortTypesMixin, Node):
+class DropNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
-
-    def meta_setup(self):
-        cols_required = {}
-        if 'columns' in self.conf:
-            dropped = {}
-            for k in self.conf['columns']:
-                dropped[k] = None
-            return _PortTypesMixin.deletion_meta_setup(self,
-                                                       dropped,
-                                                       required=cols_required)
-        else:
-            return _PortTypesMixin.meta_setup(self, required=cols_required)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+        TemplateNodeMixin.init(self)
+        port_type = PortsSpecSchema.port_type
+        self.INPUT_PORT_NAME = 'in'
+        self.OUTPUT_PORT_NAME = 'out'
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        meta_inports = {
+            self.INPUT_PORT_NAME: {}
+        }
+        dropped = {}
+        for k in self.conf.get('columns', {}):
+            dropped[k] = None
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_DELETION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: dropped
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

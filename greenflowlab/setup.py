@@ -73,6 +73,7 @@ setup_args = dict(
     install_requires=[
         "jupyterlab>=3.0.0rc13,==3.*",
         "ipywidgets",
+        "greenflow"
     ],
     zip_safe=False,
     include_package_data=True,
@@ -81,7 +82,6 @@ setup_args = dict(
     platforms="Linux, Mac OS X, Windows",
     keywords=["Jupyter", "JupyterLab", "JupyterLab3"],
     classifiers=[
-        "License :: OSI Approved :: Apache",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.6",

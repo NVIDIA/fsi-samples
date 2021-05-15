@@ -1,73 +1,74 @@
-- conf:
-    class_sep: 1
-    dtype: float64
-    flip_y: 0.01
-    hypercube: true
-    n_classes: 2
-    n_clusters_per_class: 2
+- id: data_gen
+  type: ClassificationData
+  conf:
+    n_samples: 10000
     n_features: 10
     n_informative: 4
-    n_parts: 4
     n_redundant: 0
     n_repeated: 0
-    n_samples: 10000
-    order: F
-    scale: 1
+    n_classes: 2
+    n_clusters_per_class: 2
+    flip_y: 0.01
+    class_sep: 1
+    hypercube: true
     shift: 0
+    scale: 1
     shuffle: true
-  id: data_gen
+    order: F
+    dtype: float64
+    n_parts: 4
+    random_state: 0
   inputs: {}
   module: greenflow_gquant_plugin.dataloader
-  type: ClassificationData
-- conf: {}
-  id: ''
+- id: ''
+  type: Output_Collector
+  conf: {}
   inputs:
     in1: drop_x2_x3.out
-  type: Output_Collector
-- conf:
+- id: x2_to_sign
+  type: AddSignIndicatorNode
+  conf:
     column: x2
     sign: x2_sign
-  id: x2_to_sign
   inputs:
     in: data_gen.cudf_out
   module: greenflow_gquant_plugin.transform
+- id: x3_to_sign
   type: AddSignIndicatorNode
-- conf:
+  conf:
     column: x3
     sign: x3_sign
-  id: x3_to_sign
   inputs:
     in: x2_to_sign.out
   module: greenflow_gquant_plugin.transform
-  type: AddSignIndicatorNode
-- conf:
+- id: drop_x2_x3
+  type: DropNode
+  conf:
     columns:
-    - x2
-    - x3
-    - x3_sign
-    - x2_sign
-  id: drop_x2_x3
+      - x2
+      - x3
+      - x3_sign
+      - x2_sign
   inputs:
     in: one_hot_encoding.out
   module: greenflow_gquant_plugin.transform
-  type: DropNode
-- conf:
-  - cats:
-    - 0
-    - 1
-    column: x3_sign
-    dtype: float64
-    prefix: x3
-    prefix_sep: _
-  - cats:
-    - 0
-    - 1
-    column: x2_sign
-    dtype: float64
-    prefix: x2
-    prefix_sep: _
-  id: one_hot_encoding
+- id: one_hot_encoding
+  type: OneHotEncodingNode
+  conf:
+    - cats:
+        - 0
+        - 1
+      column: x3_sign
+      dtype: float64
+      prefix: x3
+      prefix_sep: _
+    - cats:
+        - 0
+        - 1
+      column: x2_sign
+      dtype: float64
+      prefix: x2
+      prefix_sep: _
   inputs:
     in: x3_to_sign.out
   module: greenflow_gquant_plugin.transform
-  type: OneHotEncodingNode

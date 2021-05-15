@@ -21,7 +21,8 @@ import unittest
 import copy
 import warnings
 
-from greenflow.dataframe_flow import (Node, PortsSpecSchema, NodePorts, MetaData)
+from greenflow.dataframe_flow import (
+    Node, PortsSpecSchema, NodePorts, MetaData)
 from greenflow.dataframe_flow import (TaskSpecSchema, TaskGraph)
 
 from .utils import make_orderer
@@ -89,14 +90,14 @@ class TestNodeTaskGraphTypechecking(unittest.TestCase):
     def setUp(self):
         warnings.simplefilter('ignore', category=DeprecationWarning)
 
-        numgen_spec = {
+        self.numgen_spec = {
             TaskSpecSchema.task_id: 'numgen',
             TaskSpecSchema.node_type: NodeNumGen,
             TaskSpecSchema.conf: {},
             TaskSpecSchema.inputs: {}
         }
 
-        numproc_spec = {
+        self.numproc_spec = {
             TaskSpecSchema.task_id: 'numproc',
             TaskSpecSchema.node_type: NodeNumProc,
             TaskSpecSchema.conf: {},
@@ -104,9 +105,6 @@ class TestNodeTaskGraphTypechecking(unittest.TestCase):
                 'inlist': 'numgen.numlist'
             }
         }
-
-        self.numgen_spec = numgen_spec
-        self.numproc_spec = numproc_spec
 
     def tearDown(self):
         pass

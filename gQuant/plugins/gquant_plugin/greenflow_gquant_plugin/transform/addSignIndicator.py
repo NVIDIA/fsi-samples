@@ -1,19 +1,53 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ["AddSignIndicatorNode"]
 
 
-class AddSignIndicatorNode(_PortTypesMixin, Node):
+class AddSignIndicatorNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'out'
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: "${port:in}"
+            }
+        }
+        name = self.conf.get('sign', 'sign')
+        addition = {name: "int64"}
+        cols_required = {}
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_ADDITION,
+                MetaDataSchema.META_REF_INPUT: self.INPUT_PORT_NAME,
+                MetaDataSchema.META_DATA: addition
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -64,11 +98,3 @@ class AddSignIndicatorNode(_PortTypesMixin, Node):
         name = self.conf.get('sign', 'sign')
         input_df[name] = (input_df[self.conf['column']] > 0).astype('int64')
         return {self.OUTPUT_PORT_NAME: input_df}
-
-    def meta_setup(self):
-        name = self.conf.get('sign', 'sign')
-        addition = {name: "int64"}
-        cols_required = {}
-        return _PortTypesMixin.addition_meta_setup(self,
-                                                   addition,
-                                                   required=cols_required)

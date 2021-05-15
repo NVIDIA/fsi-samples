@@ -1,28 +1,51 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 import math
 import dask_cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
-class SharpeRatioNode(Node, _PortTypesMixin):
+class SharpeRatioNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'sharpe_out'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["builtins.float"]
+            }
+        }
         cols_required = {"strategy_returns": "float64"}
-        required = {
+        retension = {}
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 float)
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

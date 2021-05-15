@@ -1,10 +1,12 @@
-from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow import Node, PortsSpecSchema
 from bqplot import (Axis, LinearScale,  Figure,
                     DateScale, ColorScale, ColorAxis, Scatter)
 import dask_cudf
 import cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 __all__ = ["ScatterPlotNode"]
 
@@ -15,13 +17,26 @@ scaleMap = {
 }
 
 
-class ScatterPlotNode(Node, _PortTypesMixin):
+class ScatterPlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'scatter_plot'
-
-    def meta_setup(self):
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["bqplot.Figure"]
+            }
+        }
         cols_required = {}
         if 'col_x' in self.conf:
             cols_required[self.conf['col_x']] = None
@@ -29,16 +44,24 @@ class ScatterPlotNode(Node, _PortTypesMixin):
             cols_required[self.conf['col_y']] = None
         if 'col_color' in self.conf:
             cols_required[self.conf['col_color']] = None
-        required = {
+        retension = {}
+        meta_inports = {
             self.INPUT_PORT_NAME: cols_required
         }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Figure)
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -82,8 +105,7 @@ class ScatterPlotNode(Node, _PortTypesMixin):
             },
             "required": ["points", "title", "col_x", "col_y"],
         }
-        ui = {
-        }
+        ui = {}
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
             col_from_inport = input_meta[self.INPUT_PORT_NAME]

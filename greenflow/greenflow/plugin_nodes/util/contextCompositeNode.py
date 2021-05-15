@@ -1,7 +1,7 @@
 from .compositeNode import CompositeNode
-from greenflow.dataframe_flow.cache import CACHE_SCHEMA
 from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
-                                                   PortsSpecSchema, NodePorts)
+                                                      PortsSpecSchema,
+                                                      NodePorts)
 from .data_obj import ConfData
 from .json_util import parse_config
 from jsonpath_ng import parse
@@ -46,9 +46,10 @@ class ContextCompositeNode(CompositeNode):
     def conf_schema(self):
         # import pdb
         # pdb.set_trace()
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_SCHEMA:
-            return CACHE_SCHEMA[cache_key]
+        task_graph = self.task_graph
+        # cache_key, task_graph, replacementObj = self._compute_hash_key()
+        # if cache_key in CACHE_SCHEMA:
+        #     return CACHE_SCHEMA[cache_key]
         json = {
             "title": "Context Composite Node configure",
             "type": "object",
@@ -102,7 +103,7 @@ class ContextCompositeNode(CompositeNode):
                 }
             # import pdb
             # pdb.set_trace()
-            all_fields = parse_config(replacementObj)
+            all_fields = parse_config(self.replacementObj)
             types = list(all_fields.keys())
             addional = json['properties']['context']['additionalProperties']
             addional['properties']['type']['enum'] = types
@@ -174,7 +175,6 @@ class ContextCompositeNode(CompositeNode):
             typelist.append(obj_temp)
 
         if 'taskgraph' in self.conf:
-            task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -201,16 +201,18 @@ class ContextCompositeNode(CompositeNode):
             json['properties']['input']['items']['enum'] = in_ports
             json['properties']['output']['items']['enum'] = out_ports
         out_schema = ConfSchema(json=json, ui=ui)
-        CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
     def conf_update(self):
-        input_meta = self.get_input_meta()
-        if self.INPUT_CONFIG in input_meta:
-            if input_meta[self.INPUT_CONFIG]:
-                self.conf.update(input_meta[self.INPUT_CONFIG])
+        input_conf = self.get_input_meta(self.INPUT_CONFIG)
+        if input_conf is not None:
+            self.conf.update(input_conf)
 
-    def update_replace(self, replaceObj, task_graph):
+    def update_replace(self, replaceObj, task_graph, **kwargs):
+        """
+        called inside the self.process function to get the updated
+        replacement object before taskgraph.run.
+        """
         # find the other replacment conf
         if task_graph:
             for task in task_graph:

@@ -1,20 +1,19 @@
 from greenflow.dataframe_flow import Node
-from greenflow.dataframe_flow.portsSpecSchema import (PortsSpecSchema,
-                                                   NodePorts,
-                                                   MetaData,
-                                                   ConfSchema)
+from greenflow.dataframe_flow.portsSpecSchema import (
+    PortsSpecSchema, NodePorts, ConfSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
 import cudf
 import dask_cudf
 import cuml
 import copy
 import cuml.dask.datasets.classification
-from .._port_type_node import _PortTypesMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 CUDF_PORT_NAME = 'cudf_out'
 DASK_CUDF_PORT_NAME = 'dask_cudf_out'
 
 
-class ClassificationData(_PortTypesMixin, Node):
+class ClassificationData(NodeHDFCacheMixin, Node):
 
     def ports_setup(self):
         input_ports = {}
@@ -27,9 +26,6 @@ class ClassificationData(_PortTypesMixin, Node):
             }
         }
         return NodePorts(inports=input_ports, outports=output_ports)
-
-    def init(self):
-        pass
 
     def meta_setup(self):
         column_types = {}

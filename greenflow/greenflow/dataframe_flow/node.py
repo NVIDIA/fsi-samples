@@ -1,10 +1,12 @@
+
 import abc
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import PortsSpecSchema, ConfSchema, MetaData, NodePorts
+from .portsSpecSchema import (ConfSchema, NodePorts)
+from .metaSpec import MetaData
 
 from ._node import _Node
-
+from ._node_extension_mixin import NodeExtensionMixin
 
 __all__ = ['Node']
 
@@ -36,11 +38,14 @@ class _PortsMixin(object):
         return self.__get_io_port(io='out', full_port_spec=full_port_spec)
 
 
-class Node(_PortsMixin, _Node):
-    '''Base class for implementing greenflow plugins i.e. nodes. A node processes
-    tasks within a greenflow task graph.
+class Node(NodeExtensionMixin, _PortsMixin, _Node):
+    '''Base class for implementing greenflow plugins i.e. nodes. A node
+    processes tasks within a greenflow task graph.
 
-    must implement the following method:
+    Within the context of a task graph the Node class is mixed in with classes
+    NodeTaskGraphMixin and NodeTaskGraphExtensionMixin.
+
+    Must implement the following method:
 
         :meth: ports_setup
             Defines ports for the node. Refer to ports_setup docstring for
@@ -93,15 +98,21 @@ class Node(_PortsMixin, _Node):
 
         self.delayed_process = False
         # eargerly infer the metadata, costly
-        self.infer_meta = True
+        self.infer_meta = False
         # customized the column setup
         self.init()
         self.profile = False  # by default, do not profile
 
-        PortsSpecSchema.validate_ports(self.ports_setup())
+        # PortsSpecSchema.validate_ports(self.ports_setup())
 
+    @abc.abstractmethod
     def ports_setup(self) -> NodePorts:
         """Virtual method for specifying inputs/outputs ports.
+
+        Note: Within the context of a task graph the
+            NodeTaskGraphMixin.ports_setup is invoked and forwards the call
+            to the Node's implementation class ports_setup that is
+            implementation of this method.
 
         Must return an instance of NodePorts that adheres to PortsSpecSchema.
         Refer to PortsSpecSchema and NodePorts in module:
@@ -157,8 +168,14 @@ class Node(_PortsMixin, _Node):
 
     def update(self):
         """
-        a function is called after init, it used to update dynamic information
-        from parent nodes
+        Use the update method when relying on the dynamic information from
+        the parent nodes.
+
+        Call the self._resolve_ports and self._resolve_meta within update
+        if using ports and meta templates. Refer to class NodeExtensionMixin
+        and corresponding methods _resolve_ports and _resolve_meta.
+        Refer to usage examples of class TemplateNodeMixin.update.
+
         """
         pass
 
@@ -175,8 +192,8 @@ class Node(_PortsMixin, _Node):
 
     def init(self):
         """
-        Initialize the node. Usually it is used to self.delayed_process flag
-         and other special initialzation.
+        Initialize the node. Usually it is used to set self.delayed_process
+        flag and other special initialzation.
 
         The self.delayed_process flag is by default set to False. It can be
         overwritten here to True. For native dataframe API calls, dask cudf
@@ -189,12 +206,17 @@ class Node(_PortsMixin, _Node):
         """
         pass
 
-    def get_input_meta(self) -> dict:
+    def get_input_meta(self, port_name=None):
         """
         Get the input meta information. It is usually used by individual
          node to compute the output meta information
+        if port_name is None
         returns
             dict, key is the node input port name, value is the metadata dict
+        if port_name is provided
+        returns
+            the meta data send to the input port with name `port_name`. If it
+            is not connected, return None
         """
         # this method will be implemented by NodeTaskGraphMixin
         return {}
@@ -224,6 +246,11 @@ class Node(_PortsMixin, _Node):
         All children class should implement this.
         It is used to compute the required input and output meta data.
 
+        Note: Within the context of a task graph the
+            NodeTaskGraphMixin.meta_setup is invoked and forwards the call
+            to the Node's implementation class meta_setup that is
+            implementation of this method.
+
         `inports` defines the required metadata for the node.
         metadata is python dictionaries, which can be serialized into JSON.
         The output metadata are calcuated based on the input meta data. It is
@@ -235,7 +262,7 @@ class Node(_PortsMixin, _Node):
         return MetaData(inports={}, outports={})
 
     @abc.abstractmethod
-    def process(self, inputs) -> dict:
+    def process(self, inputs, **kwargs) -> dict:
         """
         process the input dataframe. Children class is required to override
         this

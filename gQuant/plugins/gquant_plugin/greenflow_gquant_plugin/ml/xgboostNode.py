@@ -3,60 +3,68 @@ import cudf
 import dask_cudf
 import xgboost as xgb
 import dask
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                      PortsSpecSchema,
-                                                      NodePorts)
-from xgboost import Booster
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
 import copy
 from collections import OrderedDict
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
 __all__ = ['TrainXGBoostNode', 'InferXGBoostNode']
 
 
-class TrainXGBoostNode(_PortTypesMixin, Node):
+class TrainXGBoostNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'model_out'
-
-    def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             }
         }
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: [Booster, dict]
+                port_type: ['xgboost.Booster', 'builtins.dict']
             }
         }
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
 
-    def meta_setup(self):
         cols_required = {}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
         if 'columns' in self.conf and self.conf.get('include', True):
             cols_required = {}
             for col in self.conf['columns']:
                 cols_required[col] = None
-            required = {
-                self.INPUT_PORT_NAME: cols_required
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required,
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: {}
             }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
+
+    def update(self):
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
         if self.INPUT_PORT_NAME in input_meta:
+            meta_inports = self.template_meta_setup().inports
+            meta_outports = self.template_meta_setup().outports
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
             enums = [col for col in col_from_inport.keys()]
             cols_output = {}
@@ -87,26 +95,13 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
                     cols_required[self.conf['target']] = None
                     cols_output['label'][
                         self.conf['target']] = None
-                required = {
-                    self.INPUT_PORT_NAME: cols_required,
-                }
-            output_cols = {
-                self.OUTPUT_PORT_NAME: cols_output,
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-        else:
-            col_from_inport = {}
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport,
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-
-    def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
-        return self.ports_setup_from_types(types)
+                meta_inports[self.INPUT_PORT_NAME] = cols_required
+            meta_outports[self.OUTPUT_PORT_NAME][
+                MetaDataSchema.META_DATA] = cols_output
+            self.template_meta_setup(
+                in_ports=meta_inports,
+                out_ports=meta_outports
+            )
 
     def conf_schema(self):
         json = {
@@ -343,50 +338,59 @@ class TrainXGBoostNode(_PortTypesMixin, Node):
         return {self.OUTPUT_PORT_NAME: bst}
 
 
-class InferXGBoostNode(Node):
+class InferXGBoostNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'data_in'
         self.INPUT_PORT_MODEL_NAME = 'model_in'
         self.OUTPUT_PORT_NAME = 'out'
-
-    def ports_setup_from_types(self, types):
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             },
             self.INPUT_PORT_MODEL_NAME: {
-                port_type: [Booster, dict]
-            }
+                port_type: ['xgboost.Booster', 'builtins.dict']
+            },
         }
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: types
+                port_type: "${port:data_in}"
             }
         }
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            output_ports.update({self.OUTPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
 
-    def meta_setup(self):
-        metadata = MetaData()
+        meta_inports = {
+            self.INPUT_PORT_NAME: {},
+            self.INPUT_PORT_MODEL_NAME: {}
+        }
+        predict = self.conf.get('prediction', 'predict')
+        out_cols = {predict: None}
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: out_cols
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
+
+    def update(self):
+        TemplateNodeMixin.update(self)
         input_meta = self.get_input_meta()
-        required = {self.INPUT_PORT_NAME: {},
-                    self.INPUT_PORT_MODEL_NAME: {}}
         predict = self.conf.get('prediction', 'predict')
         pred_contribs: bool = self.conf.get('pred_contribs', False)
-        output_cols = {
-            self.OUTPUT_PORT_NAME: {predict: None}
-        }
+        meta_inports = self.template_meta_setup().inports
+        meta_outports = self.template_meta_setup().outports
         if (self.INPUT_PORT_NAME in input_meta
                 and self.INPUT_PORT_MODEL_NAME in input_meta):
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
@@ -395,20 +399,15 @@ class InferXGBoostNode(Node):
                     self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
-            predict = self.conf.get('prediction', 'predict')
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
             else:
                 col_from_inport = {}
                 for i in range(len(required_cols)+1):
                     col_from_inport[i] = None
-            required = {self.INPUT_PORT_NAME: required_cols,
-                        self.INPUT_PORT_MODEL_NAME: {}}
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport,
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
+            meta_inports[self.INPUT_PORT_NAME] = required_cols
+            meta_outports[self.OUTPUT_PORT_NAME][
+                MetaDataSchema.META_DATA] = col_from_inport
         elif (self.INPUT_PORT_NAME not in input_meta and
               self.INPUT_PORT_MODEL_NAME in input_meta):
             if 'train' in input_meta[self.INPUT_PORT_MODEL_NAME]:
@@ -416,7 +415,6 @@ class InferXGBoostNode(Node):
                     self.INPUT_PORT_MODEL_NAME]['train']
             else:
                 required_cols = {}
-            predict = self.conf.get('prediction', 'predict')
             col_from_inport = copy.copy(required_cols)
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
@@ -424,31 +422,20 @@ class InferXGBoostNode(Node):
                 col_from_inport = {}
                 for i in range(len(required_cols)+1):
                     col_from_inport[i] = None
-            required = {self.INPUT_PORT_NAME: required_cols,
-                        self.INPUT_PORT_MODEL_NAME: {}}
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
+            meta_inports[self.INPUT_PORT_NAME] = required_cols
+            meta_outports[self.OUTPUT_PORT_NAME][
+                MetaDataSchema.META_DATA] = col_from_inport
         elif (self.INPUT_PORT_NAME in input_meta and
               self.INPUT_PORT_MODEL_NAME not in input_meta):
             col_from_inport = input_meta[self.INPUT_PORT_NAME]
-            predict = self.conf.get('prediction', 'predict')
             if not pred_contribs:
                 col_from_inport[predict] = None  # the type is not determined
-            output_cols = {
-                self.OUTPUT_PORT_NAME: col_from_inport
-            }
-            metadata = MetaData(inports=required, outports=output_cols)
-            return metadata
-        metadata = MetaData(inports=required, outports=output_cols)
-        return metadata
-
-    def ports_setup(self):
-        types = [cudf.DataFrame,
-                 dask_cudf.DataFrame]
-        return self.ports_setup_from_types(types)
+            meta_outports[self.OUTPUT_PORT_NAME][
+                MetaDataSchema.META_DATA] = col_from_inport
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {

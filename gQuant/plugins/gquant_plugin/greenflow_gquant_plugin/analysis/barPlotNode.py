@@ -1,17 +1,61 @@
-from greenflow.dataframe_flow import Node
-from bqplot import Axis, LinearScale, DateScale, Figure, OHLC, Bars, Tooltip
-import cupy as cp
-import cudf
+from greenflow.dataframe_flow import Node, PortsSpecSchema
+import mplfinance as mpf
+from ipywidgets import Image
 import dask_cudf
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
-from .._port_type_node import _PortTypesMixin
+import io
+import cudf
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+
+__all__ = ['BarPlotNode']
 
 
-class BarPlotNode(Node):
+class BarPlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'stock_in'
         self.OUTPUT_PORT_NAME = 'barplot'
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["ipywidgets.Image"]
+            }
+        }
+        cols_required = {"datetime": "datetime64[ns]",
+                         "open": "float64",
+                         "close": "float64",
+                         "high": "float64",
+                         "low": "float64",
+                         "volume": "float64"}
+        retension = {}
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         json = {
@@ -33,27 +77,8 @@ class BarPlotNode(Node):
             },
             "required": ["points"],
         }
-        ui = {
-        }
+        ui = {}
         return ConfSchema(json=json, ui=ui)
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Figure)
-
-    def meta_setup(self):
-        cols_required = {"datetime": "date",
-                         "open": "float64",
-                         "close": "float64",
-                         "high": "float64",
-                         "low": "float64",
-                         "volume": "float64"}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
 
     def process(self, inputs):
         """
@@ -71,55 +96,27 @@ class BarPlotNode(Node):
         stock = inputs[self.INPUT_PORT_NAME]
         num_points = self.conf['points']
         stride = max(len(stock) // num_points, 1)
-        label = 'stock'
-        if 'label' in self.conf:
-            label = self.conf['label']
-        sc = LinearScale()
-        sc2 = LinearScale()
-        dt_scale = DateScale()
-        ax_x = Axis(label='Date', scale=dt_scale)
-        ax_y = Axis(label='Price', scale=sc, orientation='vertical',
-                    tick_format='0.0f')
+        buf = io.BytesIO()
         # Construct the marks
-        if (isinstance(stock,
-                       cudf.DataFrame) or isinstance(stock,
-                                                     dask_cudf.DataFrame)):
-            ohlc = OHLC(x=stock['datetime'][::stride].to_array(),
-                        y=cp.asnumpy(stock[['open',
-                                            'high',
-                                            'low',
-                                            'close']].values[::stride, :]),
-                        marker='candle', scales={'x': dt_scale, 'y': sc},
-                        format='ohlc', stroke='blue',
-                        display_legend=True, labels=[label])
-            bar = Bars(x=stock['datetime'][::stride].to_array(),
-                       y=stock['volume'][::stride].to_array(),
-                       scales={'x': dt_scale, 'y': sc2},
-                       padding=0.2)
+        if (isinstance(stock, cudf.DataFrame)
+                or isinstance(stock, dask_cudf.DataFrame)):
+            data_df = stock[[
+                'datetime', 'open', 'high', 'low', 'close', 'volume'
+            ]].iloc[::stride].to_pandas()
         else:
-            ohlc = OHLC(x=stock['datetime'][::stride],
-                        y=stock[['open',
-                                 'high',
-                                 'low', 'close']].values[::stride, :],
-                        marker='candle', scales={'x': dt_scale, 'y': sc},
-                        format='ohlc', stroke='blue',
-                        display_legend=True, labels=[label])
-            bar = Bars(x=stock['datetime'][::stride],
-                       y=stock['volume'][::stride],
-                       scales={'x': dt_scale, 'y': sc2},
-                       padding=0.2)
-        def_tt = Tooltip(fields=['x', 'y'], formats=['%Y-%m-%d', '.2f'])
-        bar.tooltip = def_tt
-        bar.interactions = {
-            'legend_hover': 'highlight_axes',
-            'hover': 'tooltip',
-            'click': 'select',
-         }
-        sc.min = stock['close'].min() - 0.3 * \
-            (stock['close'].max() - stock['close'].min())
-        sc.max = stock['close'].max()
-        sc2.max = stock['volume'].max()*4.0
-        f = Figure(axes=[ax_x, ax_y], marks=[ohlc, bar],
-                   fig_margin={"top": 0, "bottom": 60,
-                               "left": 60, "right": 60})
-        return {self.OUTPUT_PORT_NAME: f}
+            data_df = stock[[
+                'datetime', 'open', 'high', 'low', 'close', 'volume'
+            ]].iloc[::stride]
+        data_df.columns = [
+            'Date', 'Open', 'High', 'Low', 'Close', 'Volume'
+        ]
+        data_df = data_df.set_index('Date')
+        mpf.plot(data_df, type='candle', volume=True, savefig=buf)
+        buf.seek(0)
+        fig = Image(
+            value=buf.read(),
+            format='png',
+            width=600,
+            height=900,
+        )
+        return {self.OUTPUT_PORT_NAME: fig}

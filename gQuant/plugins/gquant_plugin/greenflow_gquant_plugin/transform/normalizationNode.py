@@ -1,56 +1,51 @@
-from greenflow.dataframe_flow import Node
-from .._port_type_node import _PortTypesMixin
-from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema, MetaData,
-                                                   PortsSpecSchema, NodePorts)
-from .data_obj import NormalizationData
 from collections import OrderedDict
+from greenflow.dataframe_flow import Node
+from greenflow.dataframe_flow.portsSpecSchema import (ConfSchema,
+                                                      PortsSpecSchema)
+from greenflow.dataframe_flow.metaSpec import MetaData
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
+from .data_obj import NormalizationData
+
+__all__ = ['NormalizationNode']
 
 
-class NormalizationNode(_PortTypesMixin, Node):
+class NormalizationNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
-        _PortTypesMixin.init(self)
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'df_in'
         self.OUTPUT_PORT_NAME = 'df_out'
         self.INPUT_NORM_MODEL_NAME = 'norm_data_in'
         self.OUTPUT_NORM_MODEL_NAME = 'norm_data_out'
-
-    def ports_setup_from_types(self, types):
-        """
-        overwrite the _PortTypesMixin.ports_setup_from_types
-        method, which is invoked by the _PortTypesMixin.ports_setup
-        """
         port_type = PortsSpecSchema.port_type
-        input_ports = {
+        port_inports = {
             self.INPUT_PORT_NAME: {
-                port_type: types
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
             },
             self.INPUT_NORM_MODEL_NAME: {
-                port_type: NormalizationData
+                port_type: [
+                    "greenflow_gquant_plugin.transform.data_obj.NormalizationData"  # noqa
+                ]
             }
         }
-
-        output_ports = {
+        port_outports = {
             self.OUTPUT_PORT_NAME: {
-                port_type: types
+                port_type: "${port:df_in}"
             },
             self.OUTPUT_NORM_MODEL_NAME: {
-                port_type: NormalizationData
-            }
+                port_type: [
+                    "greenflow_gquant_plugin.transform.data_obj.NormalizationData"  # noqa
+                ]
+            },
         }
-
-        input_connections = self.get_connected_inports()
-        if self.INPUT_PORT_NAME in input_connections:
-            determined_type = input_connections[self.INPUT_PORT_NAME]
-            input_ports.update({self.INPUT_PORT_NAME:
-                                {port_type: determined_type}})
-            output_ports.update({self.OUTPUT_PORT_NAME: {
-                                 port_type: determined_type}})
-            # connected
-            return NodePorts(inports=input_ports,
-                             outports=output_ports)
-        else:
-            return NodePorts(inports=input_ports, outports=output_ports)
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
 
     def meta_setup(self):
         cols_required = {}
@@ -127,9 +122,6 @@ class NormalizationNode(_PortTypesMixin, Node):
         if not isconnected:
             metadata.inports.pop(self.INPUT_NORM_MODEL_NAME, None)
         return metadata
-
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup(self)
 
     def conf_schema(self):
         json = {

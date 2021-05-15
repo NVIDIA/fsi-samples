@@ -1,13 +1,11 @@
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow.taskSpecSchema import TaskSpecSchema
 from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
-from greenflow.dataframe_flow.portsSpecSchema import NodePorts, MetaData
-from greenflow.dataframe_flow.cache import (CACHE_META,
-                                         CACHE_PORTS, CACHE_SCHEMA)
-import json
+from greenflow.dataframe_flow.portsSpecSchema import NodePorts
+from greenflow.dataframe_flow.metaSpec import MetaData
 import os
-import hashlib
 from greenflow.dataframe_flow.util import get_file_path
 import uuid
 
@@ -49,32 +47,17 @@ def group_ports(input_list):
     return nodes_group
 
 
-class CompositeNode(Node):
+class CompositeNode(TemplateNodeMixin, Node):
+
+    def init(self):
+        TemplateNodeMixin.init(self)
+        self.task_graph = None
 
     def update(self):
+        TemplateNodeMixin.update(self)
         self.conf_update()  # update the conf
-
-    def conf_update(self):
-        """
-        This method is used to overwrite the conf from
-        external sources
-        """
-        pass
-
-    def _compute_hash_key(self):
-        """
-        if hash changed, the port_setup, meta_setup
-        and conf_json should be different
-        In very rara case, might have the problem of hash collision,
-        It affects the column, port and conf calculation. It won't
-        change the computation result though.
-        It returns the hash code, the loaded task_graph,
-        the replacement conf obj
-        """
         task_graph = ""
-        inputs = ()
         replacementObj = {}
-        input_node = ""
         task_graph_obj = None
         if 'taskgraph' in self.conf:
             try:
@@ -82,21 +65,88 @@ class CompositeNode(Node):
             except FileNotFoundError:
                 task_graph = None
             if task_graph is not None and os.path.exists(task_graph):
-                with open(task_graph) as f:
-                    task_graph = hashlib.md5(f.read().encode()).hexdigest()
+                # with open(task_graph) as f:
+                #     task_graph = hashlib.md5(f.read().encode()).hexdigest()
                 task_graph_obj = TaskGraph.load_taskgraph(
                     get_file_path(self.conf['taskgraph']))
+        self.all_inputs = []
+        self.all_outputs = []
+        self.task_graph = task_graph_obj
         self.update_replace(replacementObj, task_graph_obj)
-        if 'input' in self.conf:
-            for inp in self.conf['input']:
-                input_node += inp+","
-                if hasattr(self, 'inputs'):
-                    for i in self.inputs:
-                        inputs += (hash(i['from_node']),
-                                   i['to_port'], i['from_port'])
-        return (hash((self.uid, task_graph, inputs, json.dumps(self.conf),
-                      input_node, json.dumps(replacementObj))), task_graph_obj,
-                replacementObj)
+        self.replacementObj = replacementObj
+        extra_updated = set()
+        extra_roots = []
+        if self.task_graph is not None:
+            self.task_graph._build(replace=self.replacementObj)
+            if 'input' in self.conf:
+                # group input ports by node id
+                self.inp_groups = group_ports(self.conf['input'])
+                for inp in self.inp_groups.keys():
+                    if inp in self.task_graph:
+                        inputNode = self.task_graph[inp]
+                        update_inputs = []
+                        replaced_ports = set(self.inp_groups[inp])
+                        for oldInput in inputNode.inputs:
+                            if oldInput['to_port'] in replaced_ports:
+                                # we want to disconnect this old one and
+                                # connect to external node
+                                if hasattr(self, 'inputs'):
+                                    for externalInput in self.inputs:
+                                        if (_get_node(externalInput['to_port'])
+                                                == inputNode.uid and _get_port(
+                                                    externalInput['to_port'])
+                                                == oldInput['to_port']):
+                                            newInput = {}
+                                            newInput['to_port'] = _get_port(
+                                                externalInput['to_port'])
+                                            newInput[
+                                                'from_port'] = externalInput[
+                                                    'from_port']
+                                            newInput[
+                                                'from_node'] = externalInput[
+                                                    'from_node']
+                                            update_inputs.append(newInput)
+                            else:
+                                update_inputs.append(oldInput)
+                        inputNode.inputs = update_inputs
+
+                        # add all the `updated` parents to the set
+                        for i in inputNode.inputs:
+                            if hasattr(i['from_node'], 'ports_setup_cache'):
+                                extra_updated.add(i['from_node'])
+                        # if all the parents are updated, this is
+                        # a new root node
+                        if all([
+                                i['from_node'] in extra_updated
+                                for i in inputNode.inputs
+                        ]):
+                            extra_roots.append(inputNode)
+
+                        self.all_inputs.append((inputNode, inp))
+
+            if 'output' in self.conf:
+                self.oup_groups = group_ports(self.conf['output'])
+                for oup in self.oup_groups.keys():
+                    if oup in self.task_graph:
+                        outNode = self.task_graph[oup]
+                        # we do not disconnect anything here, as we take extra
+                        # outputs for composite node.
+                        # Node, we rely on the fact that taskgraph.run method
+                        # will remove the output collector from taskgraph if
+                        # the outputlist is set
+                        self.all_outputs.append((outNode, oup))
+                        # outNode_fun(outNode, oup_groups[oup])
+
+            # update all the nodes and cache it
+            self.task_graph.breadth_first_update(extra_roots=extra_roots,
+                                                 extra_updated=extra_updated)
+
+    def conf_update(self):
+        """
+        This method is used to overwrite the conf from
+        external sources
+        """
+        pass
 
     def _make_sub_graph_connection(self, task_graph,
                                    inputNode_fun,
@@ -109,62 +159,20 @@ class CompositeNode(Node):
         outputNode_fun has subgraph outputNode and all the outpout ports
         as argument, it processes the outNode logics
         """
-        if 'input' in self.conf:
-            # group input ports by node id
-            inp_groups = group_ports(self.conf['input'])
-            for inp in inp_groups.keys():
-                if inp in task_graph:
-                    inputNode = task_graph[inp]
-                    update_inputs = []
-                    replaced_ports = set(inp_groups[inp])
-                    for oldInput in inputNode.inputs:
-                        if oldInput['to_port'] in replaced_ports:
-                            # we want to disconnect this old one and
-                            # connect to external node
-                            if hasattr(self, 'inputs'):
-                                for externalInput in self.inputs:
-                                    if (_get_node(
-                                        externalInput[
-                                            'to_port']) == inputNode.uid
-                                            and _get_port(
-                                                externalInput[
-                                                    'to_port']) == oldInput[
-                                                        'to_port']):
-                                        newInput = {}
-                                        newInput['to_port'] = _get_port(
-                                            externalInput['to_port'])
-                                        newInput['from_port'] = externalInput[
-                                            'from_port']
-                                        newInput['from_node'] = externalInput[
-                                            'from_node']
-                                        update_inputs.append(newInput)
-                        else:
-                            update_inputs.append(oldInput)
-                    inputNode.inputs = update_inputs
-                    inputNode_fun(inputNode, inp_groups[inp])
-
-        if 'output' in self.conf:
-            oup_groups = group_ports(self.conf['output'])
-            for oup in oup_groups.keys():
-                if oup in task_graph:
-                    outNode = task_graph[oup]
-                    # we do not disconnect anything here, as we take extra
-                    # outputs for composite node.
-                    # Node, we rely on the fact that taskgraph.run method
-                    # will remove the output collector from taskgraph if
-                    # the outputlist is set
-                    outNode_fun(outNode, oup_groups[oup])
+        for innode in self.all_inputs:
+            inputNode_fun(innode[0], self.inp_groups[innode[1]])
+        for outnode in self.all_outputs:
+            # inputNode_fun(innode[0], inp_groups[innode[1]])
+            outNode_fun(outnode[0], self.oup_groups[outnode[1]])
+        # this part is to update each of the node so dynamic inputs can be
+        # processed
+        # task_graph.cache_update_result()
 
     def ports_setup(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_PORTS:
-            # print('cache hit')
-            return CACHE_PORTS[cache_key]
+        task_graph = self.task_graph
         inports = {}
         outports = {}
         if task_graph:
-            task_graph.build(replace=replacementObj)
-
             def inputNode_fun(inputNode, in_ports):
                 inport = {}
                 before_fix = inputNode.ports_setup().inports
@@ -184,19 +192,13 @@ class CompositeNode(Node):
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
         output_port = NodePorts(inports=inports, outports=outports)
-        CACHE_PORTS[cache_key] = output_port
         return output_port
 
     def meta_setup(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_META:
-            # print('cache hit')
-            return CACHE_META[cache_key]
+        task_graph = self.task_graph
         required = {}
         out_meta = {}
         if task_graph:
-            task_graph.build(replace=replacementObj)
-
             def inputNode_fun(inputNode, in_ports):
                 req = {}
                 # do meta_setup so required columns are ready
@@ -217,15 +219,12 @@ class CompositeNode(Node):
 
             self._make_sub_graph_connection(task_graph,
                                             inputNode_fun, outNode_fun)
+
         metadata = MetaData(inports=required, outports=out_meta)
-        CACHE_META[cache_key] = metadata
         return metadata
 
     def conf_schema(self):
-        cache_key, task_graph, replacementObj = self._compute_hash_key()
-        if cache_key in CACHE_SCHEMA:
-            # print('cache hit')
-            return CACHE_SCHEMA[cache_key]
+        task_graph = self.task_graph
         json = {
             "title": "Composite Node configure",
             "type": "object",
@@ -271,7 +270,6 @@ class CompositeNode(Node):
             "subnodes_conf": {}
         }
         if task_graph:
-            task_graph.build(replace=replacementObj)
 
             def inputNode_fun(inputNode, in_ports):
                 pass
@@ -316,10 +314,9 @@ class CompositeNode(Node):
                         }
                     })
         out_schema = ConfSchema(json=json, ui=ui)
-        CACHE_SCHEMA[cache_key] = out_schema
         return out_schema
 
-    def update_replace(self, replaceObj, task_graph=None):
+    def update_replace(self, replaceObj, task_graph=None, **kwargs):
         # find the other replacment conf
         if 'subnodes_conf' in self.conf:
             for key in self.conf['subnodes_conf'].keys():
@@ -332,7 +329,7 @@ class CompositeNode(Node):
                     replaceObj[newid].update(self.conf[
                         'subnodes_conf'][key])
 
-    def process(self, inputs):
+    def process(self, inputs, **kwargs):
         """
         Composite computation
 
@@ -345,10 +342,10 @@ class CompositeNode(Node):
         dataframe
         """
         if 'taskgraph' in self.conf:
-            task_graph = TaskGraph.load_taskgraph(
-                get_file_path(self.conf['taskgraph']))
-            task_graph.build()
-
+            task_graph = self.task_graph
+            # task_graph = TaskGraph.load_taskgraph(
+            #     get_file_path(self.conf['taskgraph']))
+            # task_graph._build()
             outputLists = []
             replaceObj = {}
             input_feeders = []
@@ -356,7 +353,7 @@ class CompositeNode(Node):
             def inputNode_fun(inputNode, in_ports):
                 inports = inputNode.ports_setup().inports
 
-                class InputFeed(Node):
+                class InputFeed(TemplateNodeMixin, Node):
 
                     def meta_setup(self):
                         output = {}
@@ -370,6 +367,9 @@ class CompositeNode(Node):
                     def ports_setup(self):
                         # it will be something like { input_port: types }
                         return NodePorts(inports={}, outports=inports)
+
+                    def update(self):
+                        TemplateNodeMixin.update(self)
 
                     def conf_schema(self):
                         return ConfSchema()
@@ -413,7 +413,7 @@ class CompositeNode(Node):
                                             inputNode_fun, outNode_fun)
 
             task_graph.extend(input_feeders)
-            self.update_replace(replaceObj, task_graph)
+            self.update_replace(replaceObj, task_graph, **kwargs)
             result = task_graph.run(outputLists, replace=replaceObj)
             output = {}
             for key in result.get_keys():

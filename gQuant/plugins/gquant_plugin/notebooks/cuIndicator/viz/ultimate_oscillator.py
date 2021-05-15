@@ -1,7 +1,7 @@
 from bqplot.colorschemes import CATEGORY20
 from bqplot import Axis, Figure, LinearScale, Lines
 import os
-from greenflow.dataframe_flow.task import load_modules
+from greenflow.dataframe_flow.config_nodes_modules import load_modules
 load_modules(os.getenv('MODULEPATH')+'/rapids_modules/')
 from rapids_modules.cuindicator import ultimate_oscillator as indicator_fun  # noqa #F401
 

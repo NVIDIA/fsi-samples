@@ -1,16 +1,53 @@
-from greenflow.dataframe_flow import Node
-from bqplot import Axis, LinearScale, DateScale, Figure, Lines, PanZoom
-from greenflow.dataframe_flow.portsSpecSchema import ConfSchema, MetaData
+from greenflow.dataframe_flow import Node, PortsSpecSchema
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from greenflow.dataframe_flow.portsSpecSchema import ConfSchema
+from greenflow.dataframe_flow.metaSpec import MetaDataSchema
 import cudf
 import dask_cudf
-from .._port_type_node import _PortTypesMixin
+from greenflow.dataframe_flow.template_node_mixin import TemplateNodeMixin
+from ..node_hdf_cache import NodeHDFCacheMixin
 
 
-class LinePlotNode(Node, _PortTypesMixin):
+class LinePlotNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
 
     def init(self):
+        TemplateNodeMixin.init(self)
         self.INPUT_PORT_NAME = 'in'
         self.OUTPUT_PORT_NAME = 'lineplot'
+        port_type = PortsSpecSchema.port_type
+        port_inports = {
+            self.INPUT_PORT_NAME: {
+                port_type: [
+                    "pandas.DataFrame", "cudf.DataFrame",
+                    "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
+                ]
+            },
+        }
+        port_outports = {
+            self.OUTPUT_PORT_NAME: {
+                port_type: ["matplotlib.figure.Figure"]
+            }
+        }
+        cols_required = {"datetime": "datetime64[ns]"}
+        retension = {}
+        meta_inports = {
+            self.INPUT_PORT_NAME: cols_required
+        }
+        meta_outports = {
+            self.OUTPUT_PORT_NAME: {
+                MetaDataSchema.META_OP: MetaDataSchema.META_OP_RETENTION,
+                MetaDataSchema.META_DATA: retension
+            }
+        }
+        self.template_ports_setup(
+            in_ports=port_inports,
+            out_ports=port_outports
+        )
+        self.template_meta_setup(
+            in_ports=meta_inports,
+            out_ports=meta_outports
+        )
 
     def conf_schema(self):
         color_strings = ['black', 'yellow', 'blue',
@@ -63,19 +100,6 @@ class LinePlotNode(Node, _PortTypesMixin):
         else:
             return ConfSchema(json=json, ui=ui)
 
-    def ports_setup(self):
-        return _PortTypesMixin.ports_setup_different_output_type(self,
-                                                                 Figure)
-
-    def meta_setup(self):
-        cols_required = {"datetime": "date"}
-        required = {
-            self.INPUT_PORT_NAME: cols_required
-        }
-        metadata = MetaData(inports=required,
-                            outports={self.OUTPUT_PORT_NAME: {}})
-        return metadata
-
     def process(self, inputs):
         """
         Plot the lines from the input dataframe. The plotted lines are the
@@ -96,12 +120,10 @@ class LinePlotNode(Node, _PortTypesMixin):
 
         num_points = self.conf['points']
         stride = max(len(input_df) // num_points, 1)
-        date_co = DateScale()
-        linear_co = LinearScale()
-        yax = Axis(label='', scale=linear_co, orientation='vertical')
-        xax = Axis(label='Time', scale=date_co, orientation='horizontal')
-        panzoom_main = PanZoom(scales={'x': [date_co]})
-        lines = []
+        backend_ = mpl.get_backend()
+        mpl.use("Agg")  # Prevent showing stuff
+        f = plt.figure()
+
         for line in self.conf['lines']:
             col_name = line['column']
             label_name = line['label']
@@ -109,19 +131,14 @@ class LinePlotNode(Node, _PortTypesMixin):
             if (isinstance(input_df,
                            cudf.DataFrame) or isinstance(input_df,
                                                          dask_cudf.DataFrame)):
-                line = Lines(x=input_df['datetime'][::stride].to_array(),
-                             y=input_df[col_name][::stride].to_array(),
-                             scales={'x': date_co, 'y': linear_co},
-                             colors=[color],
-                             labels=[label_name], display_legend=True)
+                line = plt.plot(input_df['datetime'][::stride].to_array(),
+                                input_df[col_name][::stride].to_array(),
+                                color=color, label=label_name)
             else:
-                line = Lines(x=input_df['datetime'][::stride],
-                             y=input_df[col_name][::stride],
-                             scales={'x': date_co, 'y': linear_co},
-                             colors=[color],
-                             labels=[label_name], display_legend=True)
-
-            lines.append(line)
-        new_fig = Figure(marks=lines, axes=[yax, xax],
-                         title=self.conf['title'], interaction=panzoom_main)
-        return {self.OUTPUT_PORT_NAME: new_fig}
+                line = plt.plot(input_df['datetime'][::stride],
+                                input_df[col_name][::stride],
+                                color=color, label=label_name)
+        plt.grid(True)
+        plt.legend()
+        mpl.use(backend_)
+        return {self.OUTPUT_PORT_NAME: f}
