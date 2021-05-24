@@ -10,6 +10,10 @@ docker build --network host --file docker/Dockerfile --tag beis:nvidia .
 ## Run 
 docker run --network host --runtime=nvidia --gpus all --rm -it beis:nvidia
 
+if there is the error: docker: Error response from daemon: Unknown runtime specified nvidia.
+then refer to this page: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+under where you first see Setting up NVIDIA Container Toolkit and be sure to restart jupyter notebook.
+
 ## Run notebooks: already in Dockerfile
 jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no-browser --NotebookApp.token=''
 
