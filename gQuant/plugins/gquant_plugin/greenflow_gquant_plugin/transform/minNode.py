@@ -62,7 +62,6 @@ class MinNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                 required[col_name] = None
             else:
                 col_from_inport = input_meta[self.INPUT_PORT_NAME]
-                required = {}
                 if col_name in col_from_inport:
                     required[col_name] = col_from_inport[col_name]
                 else:

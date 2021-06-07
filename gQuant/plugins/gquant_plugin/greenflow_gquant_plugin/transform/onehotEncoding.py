@@ -64,10 +64,9 @@ class OneHotEncodingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                     required[col['column']] = None
             else:
                 col_from_inport = input_meta[self.INPUT_PORT_NAME]
-                required = {}
                 for col in self.conf:
                     col_name = col['column']
-                    if col in col_from_inport:
+                    if col_name in col_from_inport:
                         required[col_name] = col_from_inport[col_name]
                     else:
                         required[col_name] = None

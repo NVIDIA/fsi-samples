@@ -60,7 +60,6 @@ class DropNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
                     required[col] = None
             else:
                 col_from_inport = input_meta[self.INPUT_PORT_NAME]
-                required = {}
                 for col in self.conf['columns']:
                     if col in col_from_inport:
                         required[col] = col_from_inport[col]
