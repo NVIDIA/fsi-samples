@@ -71,13 +71,36 @@ class LeftMergeNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
         elif self.INPUT_PORT_RIGHT_NAME in input_meta:
             col_from_right_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
             output_cols = col_from_right_inport
-        meta_outports = self.template_meta_setup().outports
+        meta_data = self.template_meta_setup()
+        meta_outports = meta_data.outports
+        meta_inports = meta_data.inports
+        left_required = meta_inports[self.INPUT_PORT_LEFT_NAME]
+        right_required = meta_inports[self.INPUT_PORT_RIGHT_NAME]
+        if 'column' in self.conf:
+            col_name = self.conf['column']
+            input_meta = self.get_input_meta()
+            if self.INPUT_PORT_LEFT_NAME not in input_meta:
+                left_required[col_name] = None
+            else:
+                col_from_inport = input_meta[self.INPUT_PORT_LEFT_NAME]
+                if col_name in col_from_inport:
+                    left_required[col_name] = col_from_inport[col_name]
+                else:
+                    left_required[col_name] = None
+            if self.INPUT_PORT_RIGHT_NAME not in input_meta:
+                right_required[col_name] = None
+            else:
+                col_from_inport = input_meta[self.INPUT_PORT_RIGHT_NAME]
+                if col_name in col_from_inport:
+                    right_required[col_name] = col_from_inport[col_name]
+                else:
+                    right_required[col_name] = None
+        meta_inports[self.INPUT_PORT_LEFT_NAME] = left_required
+        meta_inports[self.INPUT_PORT_RIGHT_NAME] = right_required
         meta_outports[self.OUTPUT_PORT_NAME][MetaDataSchema.META_DATA] = \
             output_cols
-        self.template_meta_setup(
-            in_ports=None,
-            out_ports=meta_outports
-        )
+        self.template_meta_setup(in_ports=meta_inports,
+                                 out_ports=meta_outports)
 
     def conf_schema(self):
         json = {

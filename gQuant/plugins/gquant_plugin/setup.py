@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='greenflow_gquant_plugin',
-    version='0.0.2',
+    version='0.0.3',
     install_requires=[
         "greenflow", "bqplot", "tables", "ray[tune]", "matplotlib", "ray[default]",
         "mplfinance"
