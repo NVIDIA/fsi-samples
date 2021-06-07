@@ -53,6 +53,25 @@ class AverageNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
             out_ports=meta_outports
         )
 
+    def update(self):
+        TemplateNodeMixin.update(self)
+        meta_inports = self.template_meta_setup().inports
+        required = meta_inports[self.INPUT_PORT_NAME]
+        if 'column' in self.conf:
+            col_name = self.conf['column']
+            input_meta = self.get_input_meta()
+            if self.INPUT_PORT_NAME not in input_meta:
+                required[col_name] = None
+            else:
+                col_from_inport = input_meta[self.INPUT_PORT_NAME]
+                required = {}
+                if col_name in col_from_inport:
+                    required[col_name] = col_from_inport[col_name]
+                else:
+                    required[col_name] = None
+        meta_inports[self.INPUT_PORT_NAME] = required
+        self.template_meta_setup(in_ports=meta_inports, out_ports=None)
+
     def conf_schema(self):
         input_meta = self.get_input_meta()
         json = {
