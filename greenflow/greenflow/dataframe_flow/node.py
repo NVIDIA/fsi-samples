@@ -92,6 +92,9 @@ class Node(NodeExtensionMixin, _PortsMixin, _Node):
         assert isinstance(task, Task)
         self._task_obj = task  # save the task obj
         self.uid = task[TaskSpecSchema.task_id]
+        node_type = task[TaskSpecSchema.node_type]
+        self.node_type_str = node_type if isinstance(node_type, str) else \
+             node_type.__name__
         self.conf = task[TaskSpecSchema.conf]
         self.load = task.get(TaskSpecSchema.load, False)
         self.save = task.get(TaskSpecSchema.save, False)

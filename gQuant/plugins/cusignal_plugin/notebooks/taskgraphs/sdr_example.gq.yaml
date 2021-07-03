@@ -1,0 +1,101 @@
+- id: load_iq_wavfile
+  type: IQwavefileNode
+  conf:
+    duration: 3
+    use_cpu: false
+    wavefile: ./SDRSharp_20161220_142714Z_1692700000Hz_IQ.wav
+  inputs: {}
+  module: greenflow_cusignal_plugin.gensig
+- id: welch_psd
+  type: WelchPSD_Node
+  conf:
+    samplerate: 1
+    window: hann
+    detrend: constant
+    return_onesided: false
+    scaling: density
+    axis: -1
+    average: mean
+    use_cpu: false
+  inputs:
+    signal: load_iq_wavfile.signal
+    samplerate: load_iq_wavfile.framerate
+  module: greenflow_cusignal_plugin.spectral_analysis
+- id: resample1p5
+  type: CusignalResamplePolyNode
+  conf:
+    axis: 0
+    window: flattop
+    gpupath: true
+    use_cpu: false
+    padtype: constant
+    up: 3
+    down: 2
+  inputs:
+    signal: load_iq_wavfile.signal
+    samplerate: load_iq_wavfile.framerate
+  module: greenflow_cusignal_plugin.filtering
+- id: welch_psd_resampled
+  type: WelchPSD_Node
+  conf:
+    samplerate: 1
+    window: hann
+    detrend: constant
+    return_onesided: false
+    scaling: density
+    axis: -1
+    average: mean
+    use_cpu: false
+    nfft: 1024
+  inputs:
+    signal: resample1p5.signal_out
+    samplerate: resample1p5.samplerate_out
+  module: greenflow_cusignal_plugin.spectral_analysis
+- id: custom_demod
+  type: CustomFilterNode
+  conf:
+    pycode: |
+      import numpy as np
+      import cupy as cp
+
+      def custom_filter(signal, conf):
+          use_cpu = conf.get('use_cpu', False)
+          if use_cpu:
+              angle_sig = np.unwrap(np.angle(signal))
+              demod_sig = np.diff(angle_sig)
+          else:
+              angle_sig = cp.unwrap(cp.angle(signal))
+              demod_sig = cp.diff(angle_sig)
+          return demod_sig
+  inputs:
+    signal: resample1p5.signal_out
+  module: greenflow_cusignal_plugin.filtering
+- id: resample_demod
+  type: CusignalResamplePolyNode
+  conf:
+    axis: 0
+    window: flattop
+    gpupath: true
+    use_cpu: false
+    padtype: constant
+    new_samplerate: 48000
+  inputs:
+    signal: custom_demod.signal_out
+    samplerate: resample1p5.samplerate_out
+  module: greenflow_cusignal_plugin.filtering
+- id: welch_psd_demod
+  type: WelchPSD_Node
+  conf:
+    samplerate: 1
+    window: hann
+    detrend: constant
+    return_onesided: false
+    scaling: density
+    axis: -1
+    average: mean
+    use_cpu: false
+    nfft: 1024
+  inputs:
+    signal: resample_demod.signal_out
+    samplerate: resample_demod.samplerate_out
+  module: greenflow_cusignal_plugin.spectral_analysis

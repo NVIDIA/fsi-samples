@@ -95,6 +95,14 @@ rsync -av --progress "${PLUGINSDIR}/dask_plugin" "${BUILDDIR}/plugins" \
   --exclude dask-worker-space \
   --exclude __pycache__
 
+rsync -av --progress "${PLUGINSDIR}/cusignal_plugin" "${BUILDDIR}/plugins" \
+  --exclude data \
+  --exclude .cache \
+  --exclude many-small \
+  --exclude storage \
+  --exclude dask-worker-space \
+  --exclude __pycache__
+
 rsync -av --progress "${PLUGINSDIR}/simple_example" "${BUILDDIR}/plugins" \
   --exclude data \
   --exclude .cache \
@@ -144,11 +152,13 @@ RUN jupyter lab build
 ADD --chown=$USERID:$USERGID ./build/plugins /home/quant/plugins
 RUN cd /home/quant/plugins/gquant_plugin && pip install .
 RUN cd /home/quant/plugins/dask_plugin && pip install .
+RUN cd /home/quant/plugins/cusignal_plugin && pip install .
 
 WORKDIR /home/quant/plugins/gquant_plugin
 ENTRYPOINT MODULEPATH=\$HOME/plugins/gquant_plugin/modules jupyter-lab \
   --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token='' \
-  --ContentsManager.allow_hidden=True
+  --ContentsManager.allow_hidden=True \
+  --ResourceUseDisplay.track_cpu_percent=True \
 
 EOM
     MODE_STR="prod"
@@ -164,15 +174,19 @@ pushd ${_basedir}
 
 cat > $D_FILE <<EOF
 FROM $CONTAINER
+
 EXPOSE 8888
 EXPOSE 8787
 EXPOSE 8786
+
+ENV DEBIAN_FRONTEND=noninteractive
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends software-properties-common && \
     add-apt-repository universe && apt-get update && \
     apt-get install -y --no-install-recommends \
-        curl git net-tools iproute2 vim wget locales-all build-essential \
-        libfontconfig1 libxrender1 rsync libsndfile1 ffmpeg && \
+        curl git less net-tools iproute2 vim wget locales-all build-essential \
+        sshfs libfontconfig1 libxrender1 rsync libsndfile1 ffmpeg && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /.local /.jupyter /.config /.cupy \
@@ -210,7 +224,7 @@ RUN conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults \
     conda clean --all -y
 
 RUN conda install -y -c conda-forge -c defaults \
-      jupyterlab'>=3.0.0' jupyter-packaging'>=0.9.2' \
+      jupyterlab'>=3.0.0' jupyter-packaging'>=0.9.2' jupyterlab-system-monitor \
       nodejs=12.4.0 python-graphviz pydot ruamel.yaml && \
     conda clean --all -y && \
     jlpm cache clean && \

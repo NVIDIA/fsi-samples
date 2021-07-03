@@ -1,7 +1,5 @@
 import copy
 from .taskSpecSchema import TaskSpecSchema
-from ._node_flow import OUTPUT_ID
-
 
 module_cache = {}
 
@@ -26,14 +24,6 @@ class Task(object):
 
     def __getitem__(self, key):
         return self._task_spec[key]
-
-    def set_output(self):
-        """
-        set the uniq output id to task
-        """
-        from .taskGraph import OutputCollector
-        self._task_spec[TaskSpecSchema.task_id] = OUTPUT_ID
-        self._task_spec[TaskSpecSchema.node_type] = OutputCollector
 
     def get(self, key, default=None):
         return self._task_spec.get(key, default)
