@@ -1,0 +1,75 @@
+- id: xgboost_train
+  type: ContextCompositeNode
+  conf:
+    output:
+      - test_rsquared.out
+    context:
+      num_rounds:
+        type: number
+        value: 100
+        map:
+          - node_id: xgboost_train
+            xpath: xgboost_train.conf.num_of_rounds
+      eta:
+        type: number
+        map:
+          - node_id: xgboost_train
+            xpath: xgboost_train.conf.xgboost_parameters.eta
+        value: 0.3
+    taskgraph: notebooks/10assets/parallel_xgboost_performance.gq.yaml
+  inputs: {}
+- id: grid_search
+  type: GridRandomSearchNode
+  conf:
+    parameters:
+      - search:
+          function: grid_search
+          args:
+            - 100
+            - 110
+            - 120
+        name: num_rounds
+      - search:
+          function: uniform
+          args:
+            - 0.1
+            - 0.5
+        name: eta
+    metrics:
+      - train_rsquared.out
+      - test_rsquared.out
+    best:
+      mode: max
+      metric: test_rsquared.out
+    tune:
+      local_dir: ./ray
+      name: exp
+      num_samples: 1
+      resources_per_trial:
+        cpu: 16
+        gpu: 4
+    output:
+      - test_rsquared.out
+    context:
+      num_rounds:
+        type: number
+        value: 100
+        map:
+          - node_id: xgboost_train
+            xpath: xgboost_train.conf.num_of_rounds
+      eta:
+        type: number
+        map:
+          - node_id: xgboost_train
+            xpath: xgboost_train.conf.xgboost_parameters.eta
+        value: 0.3
+    taskgraph: notebooks/10assets/parallel_xgboost_performance.gq.yaml
+  inputs:
+    conf_in: xgboost_train.conf_out
+  module: greenflow_gquant_plugin.ml
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: grid_search.conf_out
+    in2: grid_search.test_rsquared@out

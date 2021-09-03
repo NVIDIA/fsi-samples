@@ -1,0 +1,130 @@
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: notebooks/data/pricing.csv
+    17assets: false
+  inputs: {}
+  module: investment_nodes
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: hrp_nrp_diff.out
+    in2: performance_nrp.ret_df
+    in3: performance_nrp.sd_df
+    in4: performance_nrp.sharpe_df
+    in5: performance_hrp.ret_df
+    in6: performance_hrp.sd_df
+    in7: performance_hrp.sharpe_df
+    in8: performance_hrp.maxdd_df
+    in9: performance_nrp.calmar_df
+    in10: performance_hrp.calmar_df
+    in11: performance_nrp.maxdd_df
+- id: log_return
+  type: LogReturnNode
+  conf: {}
+  inputs:
+    in: bootstrap.out
+  module: investment_nodes
+- id: distance_node
+  type: DistanceNode
+  conf:
+    window: 12
+  inputs:
+    in: log_return.out
+  module: investment_nodes
+- id: assets_order
+  type: HierarchicalClusteringNode
+  conf: {}
+  inputs:
+    in: distance_node.distance_df
+  module: investment_nodes
+- id: hrp_weight
+  type: HRPWeightNode
+  conf: {}
+  inputs:
+    asset_order_df: assets_order.out
+    covariance_df: distance_node.cov_df
+  module: investment_nodes
+- id: portfolio_construct_hrp
+  type: PortfolioNode
+  conf: {}
+  inputs:
+    return_df: log_return.out
+    weight_df: hrp_weight.out
+    transaction_df: hrp_transaction_cost.out
+  module: investment_nodes
+- id: performance_hrp
+  type: PerformanceMetricNode
+  conf: {}
+  inputs:
+    in: leverage_hrp.lev_df
+  module: investment_nodes
+- id: nrp_weight
+  type: NRPWeightNode
+  conf: {}
+  inputs:
+    in: distance_node.cov_df
+  module: investment_nodes
+- id: portfolio_construct_nrp
+  type: PortfolioNode
+  conf: {}
+  inputs:
+    weight_df: nrp_weight.out
+    return_df: log_return.out
+    transaction_df: nrp_transaction_cost.out
+  module: investment_nodes
+- id: performance_nrp
+  type: PerformanceMetricNode
+  conf: {}
+  inputs:
+    in: leverage_nrp.lev_df
+  module: investment_nodes
+- id: hrp_nrp_diff
+  type: DiffNode
+  conf: {}
+  inputs:
+    diff_a: performance_hrp.calmar_df
+    diff_b: performance_nrp.calmar_df
+  module: investment_nodes
+- id: leverage_hrp
+  type: LeverageNode
+  conf:
+    target_vol: 0.05
+    long_window: 59
+    short_window: 19
+  inputs:
+    in: portfolio_construct_hrp.out
+  module: investment_nodes
+- id: leverage_nrp
+  type: LeverageNode
+  conf:
+    target_vol: 0.05
+    long_window: 59
+    short_window: 19
+  inputs:
+    in: portfolio_construct_nrp.out
+  module: investment_nodes
+- id: nrp_transaction_cost
+  type: TransactionCostNode
+  conf:
+    cost: 0.0002
+  inputs:
+    logreturn_df: nrp_weight.out
+  module: investment_nodes
+- id: hrp_transaction_cost
+  type: TransactionCostNode
+  conf:
+    cost: 0.0002
+  inputs:
+    logreturn_df: hrp_weight.out
+  module: investment_nodes
+- id: bootstrap
+  type: BootstrapNode
+  conf:
+    offset: 0
+    samples: 4096
+    partitions: 1
+  inputs:
+    in: load_raw_csv.df_out
+  module: investment_nodes

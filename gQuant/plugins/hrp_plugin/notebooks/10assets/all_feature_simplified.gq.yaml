@@ -1,0 +1,145 @@
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: merge_features.merged
+- id: all_feature_computation
+  type: CompositeNode
+  conf:
+    input:
+      - all_max_raise.logreturn_df
+      - all_max_drawdown.logreturn_df
+      - all_data_distance.in
+    output:
+      - all_corr_feature.out
+      - all_data_distance.cov_df
+      - all_data_distance.distance_df
+    subnode_ids:
+      - all_max_raise
+      - all_max_drawdown
+      - all_data_distance
+      - all_max_drawdown_feature
+      - all_max_raise_feature
+      - all_mean_feature
+      - all_std_feature
+      - all_corr_feature
+    subnodes_conf:
+      all_max_raise:
+        conf:
+          negative: true
+          window: 60
+      all_max_drawdown:
+        conf:
+          negative: false
+          window: 60
+      all_data_distance:
+        conf:
+          window: 60
+      all_max_drawdown_feature:
+        conf:
+          name: all_max_drawdown
+      all_max_raise_feature:
+        conf:
+          name: all_max_raise
+      all_mean_feature:
+        conf:
+          name: all_mean
+      all_std_feature:
+        conf:
+          name: all_std
+      all_corr_feature:
+        conf:
+          name: all_corr
+    taskgraph: notebooks/10assets/feature_computation.gq.yaml
+  inputs:
+    all_max_raise@logreturn_df: log_return.out
+    all_max_drawdown@logreturn_df: log_return.out
+    all_data_distance@in: log_return.out
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: notebooks/data/pricing.csv
+    17assets: false
+  inputs: {}
+  module: investment_nodes
+- id: bootstrap
+  type: BootstrapNode
+  conf:
+    offset: 0
+    samples: 4096
+    partitions: 200
+  inputs:
+    in: load_raw_csv.df_out
+  module: investment_nodes
+- id: log_return
+  type: LogReturnNode
+  conf: {}
+  inputs:
+    in: bootstrap.out
+  module: investment_nodes
+- id: aggregate_time_feature
+  type: AggregateTimeFeatureNode
+  conf: {}
+  inputs:
+    in: time_features.all_corr_feature@out
+  module: investment_nodes
+- id: merge_features
+  type: MergeNode
+  conf:
+    column: sample_id
+  inputs:
+    left: aggregate_time_feature.out
+    right: all_feature_computation.all_corr_feature@out
+  module: investment_nodes
+- id: time_features
+  type: CompositeNode
+  conf:
+    input:
+      - all_max_raise.logreturn_df
+      - all_max_drawdown.logreturn_df
+      - all_data_distance.in
+    output:
+      - all_corr_feature.out
+      - all_data_distance.cov_df
+      - all_data_distance.distance_df
+    subnode_ids:
+      - all_max_raise
+      - all_max_drawdown
+      - all_data_distance
+      - all_max_drawdown_feature
+      - all_max_raise_feature
+      - all_mean_feature
+      - all_std_feature
+      - all_corr_feature
+    subnodes_conf:
+      all_max_raise:
+        conf:
+          negative: true
+          window: 12
+      all_max_drawdown:
+        conf:
+          negative: false
+          window: 12
+      all_data_distance:
+        conf:
+          window: 12
+      all_max_drawdown_feature:
+        conf:
+          name: max_drawdown
+      all_max_raise_feature:
+        conf:
+          name: max_raise
+      all_mean_feature:
+        conf:
+          name: mean
+      all_std_feature:
+        conf:
+          name: std
+      all_corr_feature:
+        conf:
+          name: corr
+    taskgraph: notebooks/10assets/feature_computation.gq.yaml
+  inputs:
+    all_max_raise@logreturn_df: log_return.out
+    all_max_drawdown@logreturn_df: log_return.out
+    all_data_distance@in: log_return.out

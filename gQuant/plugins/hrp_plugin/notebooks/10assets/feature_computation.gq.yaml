@@ -1,0 +1,88 @@
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: data/pricing.csv
+    17assets: false
+  inputs: {}
+  module: investment_nodes
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: all_corr_feature.out
+- id: bootstrap
+  type: BootstrapNode
+  conf:
+    samples: 10
+    partitions: 4
+  inputs:
+    in: load_raw_csv.df_out
+  module: investment_nodes
+- id: log_return
+  type: LogReturnNode
+  conf: {}
+  inputs:
+    in: bootstrap.out
+  module: investment_nodes
+- id: all_data_distance
+  type: DistanceNode
+  conf:
+    window: 60
+  inputs:
+    in: log_return.out
+  module: investment_nodes
+- id: all_max_raise
+  type: MaxDrawdownNode
+  conf:
+    negative: true
+    window: 60
+  inputs:
+    logreturn_df: log_return.out
+  module: investment_nodes
+- id: all_max_drawdown
+  type: MaxDrawdownNode
+  conf:
+    negative: false
+    window: 60
+  inputs:
+    logreturn_df: log_return.out
+  module: investment_nodes
+- id: all_max_drawdown_feature
+  type: FeatureNode
+  conf:
+    name: all_max_drawdown
+  inputs:
+    signal_df: all_max_drawdown.out
+  module: investment_nodes
+- id: all_max_raise_feature
+  type: FeatureNode
+  conf:
+    name: all_max_raise
+  inputs:
+    signal_df: all_max_raise.out
+    feature_df: all_max_drawdown_feature.out
+  module: investment_nodes
+- id: all_mean_feature
+  type: FeatureNode
+  conf:
+    name: all_mean
+  inputs:
+    feature_df: all_max_raise_feature.out
+    signal_df: all_data_distance.mean_df
+  module: investment_nodes
+- id: all_std_feature
+  type: FeatureNode
+  conf:
+    name: all_std
+  inputs:
+    feature_df: all_mean_feature.out
+    signal_df: all_data_distance.std_df
+  module: investment_nodes
+- id: all_corr_feature
+  type: FeatureNode
+  conf:
+    name: all_corr
+  inputs:
+    feature_df: all_std_feature.out
+    signal_df: all_data_distance.corr_df
+  module: investment_nodes

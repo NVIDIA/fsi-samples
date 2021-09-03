@@ -1,0 +1,273 @@
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: train_shap_dot.summary_plot
+    in2: test_shap_dot.summary_plot
+    in3: train_shap_bar.summary_plot
+    in4: test_shap_bar.summary_plot
+- id: performance_diff
+  type: CompositeNode
+  conf:
+    input:
+      - nrp_weight.in
+      - hrp_weight.covariance_df
+      - assets_order.in
+      - portfolio_construct_nrp.return_df
+      - portfolio_construct_hrp.return_df
+    output:
+      - hrp_nrp_diff.out
+    subnodes_conf: {}
+    taskgraph: notebooks/10assets/workflow_bootstrap.gq.yaml
+  inputs:
+    portfolio_construct_nrp@return_df: log_return.out
+    portfolio_construct_hrp@return_df: log_return.out
+    nrp_weight@in: time_features.all_data_distance@cov_df
+    hrp_weight@covariance_df: time_features.all_data_distance@cov_df
+    assets_order@in: time_features.all_data_distance@distance_df
+- id: all_feature_computation
+  type: CompositeNode
+  conf:
+    input:
+      - all_max_raise.logreturn_df
+      - all_max_drawdown.logreturn_df
+      - all_data_distance.in
+    output:
+      - all_corr_feature.out
+      - all_data_distance.cov_df
+      - all_data_distance.distance_df
+    subnode_ids:
+      - all_max_raise
+      - all_max_drawdown
+      - all_data_distance
+      - all_max_drawdown_feature
+      - all_max_raise_feature
+      - all_mean_feature
+      - all_std_feature
+      - all_corr_feature
+    subnodes_conf:
+      all_max_raise:
+        conf:
+          negative: true
+          window: 60
+      all_max_drawdown:
+        conf:
+          negative: false
+          window: 60
+      all_data_distance:
+        conf:
+          window: 60
+      all_max_drawdown_feature:
+        conf:
+          name: all_max_drawdown
+      all_max_raise_feature:
+        conf:
+          name: all_max_raise
+      all_mean_feature:
+        conf:
+          name: all_mean
+      all_std_feature:
+        conf:
+          name: all_std
+      all_corr_feature:
+        conf:
+          name: all_corr
+    taskgraph: notebooks/10assets/feature_computation.gq.yaml
+  inputs:
+    all_max_raise@logreturn_df: log_return.out
+    all_max_drawdown@logreturn_df: log_return.out
+    all_data_distance@in: log_return.out
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: notebooks/data/pricing.csv
+    17assets: false
+  inputs: {}
+  module: investment_nodes
+- id: bootstrap
+  type: BootstrapNode
+  conf:
+    offset: 0
+    samples: 4096
+    partitions: 200
+  inputs:
+    in: load_raw_csv.df_out
+  module: investment_nodes
+- id: log_return
+  type: LogReturnNode
+  conf: {}
+  inputs:
+    in: bootstrap.out
+  module: investment_nodes
+- id: aggregate_time_feature
+  type: AggregateTimeFeatureNode
+  conf: {}
+  inputs:
+    in: time_features.all_corr_feature@out
+  module: investment_nodes
+- id: merge_features
+  type: MergeNode
+  conf:
+    column: sample_id
+  inputs:
+    left: aggregate_time_feature.out
+    right: all_feature_computation.all_corr_feature@out
+  module: investment_nodes
+- id: merge_target
+  type: MergeNode
+  conf:
+    column: sample_id
+  inputs:
+    left: merge_features.merged
+    right: performance_diff.hrp_nrp_diff@out
+  module: investment_nodes
+- id: time_features
+  type: CompositeNode
+  conf:
+    input:
+      - all_max_raise.logreturn_df
+      - all_max_drawdown.logreturn_df
+      - all_data_distance.in
+    output:
+      - all_corr_feature.out
+      - all_data_distance.cov_df
+      - all_data_distance.distance_df
+    subnode_ids:
+      - all_max_raise
+      - all_max_drawdown
+      - all_data_distance
+      - all_max_drawdown_feature
+      - all_max_raise_feature
+      - all_mean_feature
+      - all_std_feature
+      - all_corr_feature
+    subnodes_conf:
+      all_max_raise:
+        conf:
+          negative: true
+          window: 12
+      all_max_drawdown:
+        conf:
+          negative: false
+          window: 12
+      all_data_distance:
+        conf:
+          window: 12
+      all_max_drawdown_feature:
+        conf:
+          name: max_drawdown
+      all_max_raise_feature:
+        conf:
+          name: max_raise
+      all_mean_feature:
+        conf:
+          name: mean
+      all_std_feature:
+        conf:
+          name: std
+      all_corr_feature:
+        conf:
+          name: corr
+    taskgraph: notebooks/10assets/feature_computation.gq.yaml
+  inputs:
+    all_max_raise@logreturn_df: log_return.out
+    all_max_drawdown@logreturn_df: log_return.out
+    all_data_distance@in: log_return.out
+- id: split
+  type: DataSplittingNode
+  conf:
+    train_size: 0.9
+    target: portfolio
+  inputs:
+    in: merge_target.merged
+  module: greenflow_gquant_plugin.ml
+- id: xgboost_train
+  type: TrainXGBoostNode
+  conf:
+    num_of_rounds: 100
+    columns:
+      - month
+      - sample_id
+      - year
+      - portfolio
+    include: false
+    xgboost_parameters:
+      eta: 0.3
+      min_child_weight: 1
+      subsample: 1
+      sampling_method: uniform
+      colsample_bytree: 1
+      colsample_bylevel: 1
+      colsample_bynode: 1
+      max_depth: 8
+      max_leaves: 256
+      grow_policy: depthwise
+      gamma: 0
+      lambda: 1
+      alpha: 0
+      tree_method: gpu_hist
+      single_precision_histogram: false
+      deterministic_histogram: false
+      objective: 'reg:squarederror'
+    target: portfolio
+  inputs:
+    in: split.train
+  module: greenflow_gquant_plugin.ml
+- id: train_infer_shap
+  type: InferXGBoostNode
+  conf:
+    prediction: predict
+    pred_contribs: true
+  inputs:
+    data_in: split.train
+    model_in: xgboost_train.model_out
+  module: greenflow_gquant_plugin.ml
+- id: test_infer_shap
+  type: InferXGBoostNode
+  conf:
+    prediction: predict
+    pred_contribs: true
+  inputs:
+    data_in: split.test
+    model_in: xgboost_train.model_out
+  module: greenflow_gquant_plugin.ml
+- id: train_shap_dot
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: dot
+  inputs:
+    model_in: xgboost_train.model_out
+    data_in: split.train
+    shap_in: train_infer_shap.out
+  module: investment_nodes
+- id: test_shap_dot
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: dot
+  inputs:
+    model_in: xgboost_train.model_out
+    data_in: split.test
+    shap_in: test_infer_shap.out
+  module: investment_nodes
+- id: train_shap_bar
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: bar
+  inputs:
+    model_in: xgboost_train.model_out
+    shap_in: train_infer_shap.out
+    data_in: split.train
+  module: investment_nodes
+- id: test_shap_bar
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: bar
+  inputs:
+    model_in: xgboost_train.model_out
+    shap_in: test_infer_shap.out
+    data_in: split.test
+  module: investment_nodes
