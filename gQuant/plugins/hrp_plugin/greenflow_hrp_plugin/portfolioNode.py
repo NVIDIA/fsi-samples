@@ -158,11 +158,6 @@ class PortfolioNode(TemplateNodeMixin, Node):
 
         return_df['portfolio'] = apply_weight.astype('float64')
         return_df = return_df.dropna()
-        # df = df.drop('datetime', axis=1)
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            output.update({self.OUTPUT_PORT_NAME: return_df})
-        # print(self.uid, apply_weight.mean())
-        # print(self.uid, apply_weight.std())
-        # print(self.uid, apply_weight.mean() / apply_weight.std())
+        output.update({self.OUTPUT_PORT_NAME: return_df})
         return output

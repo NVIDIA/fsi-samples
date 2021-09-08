@@ -3,7 +3,7 @@
 This package includes a set of Greenflow nodes[1] that accelerate the investment workflow in the GPU described in the paper[2]. It has following steps
 
 * Load CSV data
-* Run bootstrap to generate 1million scenarios
+* Run bootstrap to generate 1 million scenarios
 * Compute assets distances to run hierarchical clustering and HRP weights for the assets
 * Compute the weights for the assets based on naïve RP method
 * Compute the Sharpe ratios difference between these two methods (HRP-NRP)
@@ -57,7 +57,7 @@ pip install greenflowlab
 
 #### Install the latest RAPIDS
 ```bash
-conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.17
+conda install -y -c rapidsai -c nvidia -c conda-forge rapids-blazing=21.08 cudatoolkit=11.2
 ```
 
 #### Install the Greenflow RAPIDS plugin

@@ -51,11 +51,10 @@ class TestMaxDrawdown(unittest.TestCase):
 
     def compute_drawdown(self, times):
         cumsum = np.cumsum(times)
-        cumsum = (cumsum + 1.0)
+        cumsum = np.exp(cumsum)
         maxreturn = np.maximum.accumulate(np.concatenate([np.array([1.0]),
                                                           cumsum]))[1:]
         drawdown = cumsum/maxreturn - 1.0
-        # print(drawdown)
         return -drawdown.min()
 
     def test_max_drawdown(self):
@@ -85,11 +84,3 @@ class TestMaxDrawdown(unittest.TestCase):
                             months_start[i]:months_start[i+window]].get())
                     self.assertTrue(cupy.allclose(gpu_drawdown,
                                                   cpu_drawdown))
-
-        # for sample in range(2):
-        #     for num in range(num_months):
-        #         truth = (
-        #             log_return_ma[sample, :, months_start[num]:months_start[
-        #                 num + window]].mean(axis=1))
-        #         compute = means[sample][num]
-        #         self.assertTrue(cupy.allclose(compute, truth))

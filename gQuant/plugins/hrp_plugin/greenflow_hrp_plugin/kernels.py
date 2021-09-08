@@ -589,7 +589,8 @@ def get_drawdown_metric(log_return, total_samples):
     all_dates = all_dates.reset_index(drop=True)
     months_start = _get_month_start_pos(all_dates)
     # log_return_ma = _get_log_return_matrix(total_samples, log_return)
-    port_return_ma = log_return['portfolio'].values.reshape(total_samples, 1, -1)
+    port_return_ma = log_return['portfolio'].values.reshape(
+        total_samples, 1, -1)
     _, assets, timelen = port_return_ma.shape
     number_of_threads = 128
     window = len(months_start)

@@ -123,15 +123,13 @@ class MaxDrawdownNode(TemplateNodeMixin, Node):
         years = mid // 12 + minyear
 
         output = {}
-        # print(num_months, len(mid))
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            df_drawdown = cudf.DataFrame(
-                drawdown.reshape(total_samples*num_months, -1))
-            df_drawdown['year'] = cupy.concatenate(
-                [years]*total_samples).astype(cupy.int16)
-            df_drawdown['month'] = cupy.concatenate(
-                [months]*total_samples).astype(cupy.int16)
-            df_drawdown['sample_id'] = cupy.repeat(cupy.arange(
-                total_samples) + all_sample_ids.min(), len(mid))
-            output.update({self.OUTPUT_PORT_NAME: df_drawdown})
+        df_drawdown = cudf.DataFrame(
+            drawdown.reshape(total_samples*num_months, -1))
+        df_drawdown['year'] = cupy.concatenate(
+            [years]*total_samples).astype(cupy.int16)
+        df_drawdown['month'] = cupy.concatenate(
+            [months]*total_samples).astype(cupy.int16)
+        df_drawdown['sample_id'] = cupy.repeat(cupy.arange(
+            total_samples) + all_sample_ids.min(), len(mid))
+        output.update({self.OUTPUT_PORT_NAME: df_drawdown})
         return output

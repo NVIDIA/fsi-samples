@@ -93,11 +93,10 @@ class RSquaredNode(TemplateNodeMixin, Node):
         df = inputs[self.INPUT_PORT_NAME]
         # df = df.drop('datetime', axis=1)
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            subdf = df[self.conf['columns']]
-            if isinstance(subdf, DaskDataFrame):
-                result = subdf.corr().compute().values[0, 1]**2
-            else:
-                result = subdf.corr().values[0, 1]**2
-            output.update({self.OUTPUT_PORT_NAME: result.item()})
+        subdf = df[self.conf['columns']]
+        if isinstance(subdf, DaskDataFrame):
+            result = subdf.corr().compute().values[0, 1]**2
+        else:
+            result = subdf.corr().values[0, 1]**2
+        output.update({self.OUTPUT_PORT_NAME: result.item()})
         return output

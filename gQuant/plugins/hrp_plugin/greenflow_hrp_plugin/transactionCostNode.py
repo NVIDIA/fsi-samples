@@ -108,6 +108,5 @@ class TransactionCostNode(TemplateNodeMixin, Node):
         cost_df['month'] = df['month']
         cost_df['sample_id'] = df['sample_id']
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            output.update({self.OUTPUT_PORT_NAME: cost_df})
+        output.update({self.OUTPUT_PORT_NAME: cost_df})
         return output

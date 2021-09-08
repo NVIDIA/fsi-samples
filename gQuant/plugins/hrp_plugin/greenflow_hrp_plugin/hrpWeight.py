@@ -108,29 +108,28 @@ class HRPWeightNode(TemplateNodeMixin, Node):
             assets = len(input_meta[self.ORDER_IN]) - 3
 
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            col = list(df_cov.columns)
-            col.remove('sample_id')
-            col.remove('year')
-            col.remove('month')
-            cov = df_cov[col].values
-            cov = cov.reshape(
-                total_samples, -1, assets, assets)
-            _, num_months, _, _ = cov.shape
+        col = list(df_cov.columns)
+        col.remove('sample_id')
+        col.remove('year')
+        col.remove('month')
+        cov = df_cov[col].values
+        cov = cov.reshape(
+            total_samples, -1, assets, assets)
+        _, num_months, _, _ = cov.shape
 
-            col = list(df_order.columns)
-            col.remove('sample_id')
-            col.remove('year')
-            col.remove('month')
-            order = df_order[col].values
-            order = order.reshape(
-                total_samples, -1, assets)
-            weights = get_weights(total_samples, cov,
-                                  order, num_months, assets)
-            weights = weights.reshape(-1, assets)
-            weight_df = cudf.DataFrame(weights)
-            weight_df['month'] = df_order['month']
-            weight_df['year'] = df_order['year']
-            weight_df['sample_id'] = df_order['sample_id']
-            output.update({self.OUTPUT_PORT_NAME: weight_df})
+        col = list(df_order.columns)
+        col.remove('sample_id')
+        col.remove('year')
+        col.remove('month')
+        order = df_order[col].values
+        order = order.reshape(
+            total_samples, -1, assets)
+        weights = get_weights(total_samples, cov,
+                              order, num_months, assets)
+        weights = weights.reshape(-1, assets)
+        weight_df = cudf.DataFrame(weights)
+        weight_df['month'] = df_order['month']
+        weight_df['year'] = df_order['year']
+        weight_df['sample_id'] = df_order['sample_id']
+        output.update({self.OUTPUT_PORT_NAME: weight_df})
         return output

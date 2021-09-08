@@ -9,7 +9,7 @@ RUN wget \
 ENV PATH="/root/miniconda3/bin:${PATH}"
 RUN conda init
 RUN conda install -y -c conda-forge python-graphviz nodejs=12.4.0  pydot
-RUN conda install -y -c rapidsai -c nvidia -c conda-forge -c defaults rapids=0.19
+RUN conda install -y -c rapidsai -c nvidia -c conda-forge rapids-blazing=21.08 cudatoolkit=11.2 python=3.8
 RUN conda install -y -c conda-forge ruamel.yaml
 RUN pip install greenflow
 RUN pip install greenflowlab

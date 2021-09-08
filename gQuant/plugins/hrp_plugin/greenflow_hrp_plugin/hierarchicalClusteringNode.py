@@ -94,20 +94,19 @@ class HierarchicalClusteringNode(TemplateNodeMixin, Node):
         df = inputs[self.INPUT_PORT_NAME]
 
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            col = list(df.columns)
-            col.remove('sample_id')
-            col.remove('year')
-            col.remove('month')
-            distance = df[col].values
-            distance = distance.reshape(
-                total_samples, -1, assets*(assets-1)//2)
-            _, num_months, _ = distance.shape
-            orders = get_orders(total_samples, num_months, assets, distance)
-            orders = orders.reshape(-1, assets)
-            order_df = cudf.DataFrame(orders)
-            order_df['month'] = df['month']
-            order_df['year'] = df['year']
-            order_df['sample_id'] = df['sample_id']
-            output.update({self.OUTPUT_PORT_NAME: order_df})
+        col = list(df.columns)
+        col.remove('sample_id')
+        col.remove('year')
+        col.remove('month')
+        distance = df[col].values
+        distance = distance.reshape(
+            total_samples, -1, assets*(assets-1)//2)
+        _, num_months, _ = distance.shape
+        orders = get_orders(total_samples, num_months, assets, distance)
+        orders = orders.reshape(-1, assets)
+        order_df = cudf.DataFrame(orders)
+        order_df['month'] = df['month']
+        order_df['year'] = df['year']
+        order_df['sample_id'] = df['sample_id']
+        output.update({self.OUTPUT_PORT_NAME: order_df})
         return output

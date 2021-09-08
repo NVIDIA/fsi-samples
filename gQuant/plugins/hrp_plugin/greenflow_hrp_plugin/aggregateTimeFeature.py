@@ -115,21 +115,20 @@ class AggregateTimeFeatureNode(TemplateNodeMixin, Node):
 
     def process(self, inputs):
         df = inputs[self.INPUT_PORT_NAME]
-        # df = df.drop('datetime', axis=1)
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            col = list(df.columns)
-            col.remove('year')
-            col.remove('month')
 
-            mdf = df[col].groupby('sample_id').mean()
-            mdf.columns = [c+"_mean" for c in mdf.columns]
+        col = list(df.columns)
+        col.remove('year')
+        col.remove('month')
 
-            sdf = df[col].groupby('sample_id').std()
-            sdf.columns = [c+"_std" for c in sdf.columns]
+        mdf = df[col].groupby('sample_id').mean()
+        mdf.columns = [c+"_mean" for c in mdf.columns]
 
-            out = cudf.merge(mdf, sdf,
-                             left_index=True,
-                             right_index=True).reset_index()
-            output.update({self.OUTPUT_PORT_NAME: out})
+        sdf = df[col].groupby('sample_id').std()
+        sdf.columns = [c+"_std" for c in sdf.columns]
+
+        out = cudf.merge(mdf, sdf,
+                         left_index=True,
+                         right_index=True).reset_index()
+        output.update({self.OUTPUT_PORT_NAME: out})
         return output

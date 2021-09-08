@@ -93,7 +93,6 @@ class DiffNode(TemplateNodeMixin, Node):
 
         # df = df.drop('datetime', axis=1)
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            diff = df_a - df_b
-            output.update({self.OUTPUT_PORT_NAME: diff.reset_index()})
+        diff = df_a - df_b
+        output.update({self.OUTPUT_PORT_NAME: diff.reset_index()})
         return output

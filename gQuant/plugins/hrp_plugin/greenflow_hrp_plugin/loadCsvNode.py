@@ -106,7 +106,7 @@ class LoadCsvNode(Node):
             from dask_cuda import LocalCUDACluster
             cluster = LocalCUDACluster()
             from dask.distributed import Client
-            client = Client(cluster)
+            client = Client(cluster)  # noqa
             print('start new Cluster')
         filename = get_file_path(self.conf['csvfile'])
         df = cudf.read_csv(filename, parse_dates=[0])

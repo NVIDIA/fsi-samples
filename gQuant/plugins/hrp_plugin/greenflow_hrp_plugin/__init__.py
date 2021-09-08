@@ -38,5 +38,5 @@ __all__ = ["LoadCsvNode", "BootstrapNode", "LogReturnNode",
            "DistanceNode", "HierarchicalClusteringNode", "HRPWeightNode",
            "PortfolioNode", "PerformanceMetricNode", "NRPWeightNode",
            "MaxDrawdownNode", "FeatureNode", "AggregateTimeFeatureNode",
-           "MergeNode", "DiffNode", "RSquaredNode", "ShapSummaryPlotPlotNode", 
+           "MergeNode", "DiffNode", "RSquaredNode", "ShapSummaryPlotPlotNode",
            "LeverageNode", "RawDataNode", "TransactionCostNode"]

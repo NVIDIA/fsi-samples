@@ -115,7 +115,7 @@ class FeatureNode(TemplateNodeMixin, Node):
             col.remove('year')
             col.remove('month')
             mean_val = df[col].values.mean(axis=1)
-            std_val = df[col].values.mean(axis=1)
+            std_val = df[col].values.std(axis=1)
             output_df[name+'_mean'] = mean_val
             output_df[name+'_std'] = std_val
             output.update({self.OUTPUT_PORT_NAME: output_df})

@@ -121,32 +121,25 @@ class LeverageNode(TemplateNodeMixin, Node):
             mid = cupy.array([0])
         months = mid % 12
         years = mid // 12 + minyear
-        # compute_leverage(total_samples,
-        #              log_return,
-        #              long_window=59,
-        #              short_window=19,
-        #              target_vol=0.05)
 
         output = {}
-        # print(num_months, len(mid))
-        if self.outport_connected(self.LEVERAGE_DF):
-            df_lev = cudf.DataFrame(
-                {'leverage': lev.reshape(total_samples * num_months)})
-            df_lev['year'] = cupy.concatenate(
-                [years]*total_samples).astype(cupy.int16)
-            df_lev['month'] = cupy.concatenate(
-                [months]*total_samples).astype(cupy.int16)
-            df_lev['sample_id'] = cupy.repeat(cupy.arange(
-                total_samples) + all_sample_ids.min(), len(mid))
+        df_lev = cudf.DataFrame(
+            {'leverage': lev.reshape(total_samples * num_months)})
+        df_lev['year'] = cupy.concatenate(
+            [years]*total_samples).astype(cupy.int16)
+        df_lev['month'] = cupy.concatenate(
+            [months]*total_samples).astype(cupy.int16)
+        df_lev['sample_id'] = cupy.repeat(cupy.arange(
+            total_samples) + all_sample_ids.min(), len(mid))
 
-            date_df = df[['date', 'sample_id', 'year', 'month', 'portfolio']]
-            expand_table = date_df.reset_index().merge(
-                df_lev, on=['sample_id', 'year', 'month'],
-                how='left').set_index('index')
-            expand_table['portfolio'] = expand_table[
-                'portfolio'] * expand_table['leverage']
-            expand_table = expand_table.dropna()[[
-                'date', 'sample_id', 'year', 'month', 'portfolio'
-            ]]
-            output.update({self.LEVERAGE_DF: expand_table})
+        date_df = df[['date', 'sample_id', 'year', 'month', 'portfolio']]
+        expand_table = date_df.reset_index().merge(
+            df_lev, on=['sample_id', 'year', 'month'],
+            how='left').set_index('index')
+        expand_table['portfolio'] = expand_table[
+            'portfolio'] * expand_table['leverage']
+        expand_table = expand_table.dropna()[[
+            'date', 'sample_id', 'year', 'month', 'portfolio'
+        ]]
+        output.update({self.LEVERAGE_DF: expand_table})
         return output

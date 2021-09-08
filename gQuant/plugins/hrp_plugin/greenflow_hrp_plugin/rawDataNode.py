@@ -95,8 +95,7 @@ class RawDataNode(TemplateNodeMixin, Node):
         df = inputs[self.INPUT_PORT_NAME]
         # df = df.drop('datetime', axis=1)
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            offset = self.conf.get('offset', 0)
-            out_df = self._process(df, offset)
-            output.update({self.OUTPUT_PORT_NAME: out_df})
+        offset = self.conf.get('offset', 0)
+        out_df = self._process(df, offset)
+        output.update({self.OUTPUT_PORT_NAME: out_df})
         return output

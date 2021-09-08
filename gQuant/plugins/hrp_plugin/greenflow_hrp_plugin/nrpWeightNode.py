@@ -93,16 +93,15 @@ class NRPWeightNode(TemplateNodeMixin, Node):
         if self.INPUT_PORT_NAME in input_meta:
             assets = int(math.sqrt(len(input_meta[self.INPUT_PORT_NAME]) - 3))
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            data_ma = df[list(range(assets*assets))].values
-            data_ma = data_ma.reshape(total_samples, -1, assets, assets)
-            diagonzied = cupy.diagonal(data_ma, 0, 2, 3)
-            diagonzied = cupy.sqrt(1.0 / diagonzied)  # inverse variance
-            diagonzied = diagonzied / diagonzied.sum(axis=2, keepdims=True)
-            diagonzied = diagonzied.reshape(-1, assets)
-            weight_df = cudf.DataFrame(diagonzied)
-            weight_df['month'] = df['month']
-            weight_df['year'] = df['year']
-            weight_df['sample_id'] = df['sample_id']
-            output.update({self.OUTPUT_PORT_NAME: weight_df})
+        data_ma = df[list(range(assets*assets))].values
+        data_ma = data_ma.reshape(total_samples, -1, assets, assets)
+        diagonzied = cupy.diagonal(data_ma, 0, 2, 3)
+        diagonzied = cupy.sqrt(1.0 / diagonzied)  # inverse variance
+        diagonzied = diagonzied / diagonzied.sum(axis=2, keepdims=True)
+        diagonzied = diagonzied.reshape(-1, assets)
+        weight_df = cudf.DataFrame(diagonzied)
+        weight_df['month'] = df['month']
+        weight_df['year'] = df['year']
+        weight_df['sample_id'] = df['sample_id']
+        output.update({self.OUTPUT_PORT_NAME: weight_df})
         return output

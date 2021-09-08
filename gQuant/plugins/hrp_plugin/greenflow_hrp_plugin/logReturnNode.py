@@ -81,27 +81,26 @@ class LogReturnNode(TemplateNodeMixin, Node):
         df = inputs[self.INPUT_PORT_NAME]
         # df = df.drop('datetime', axis=1)
         output = {}
-        if self.outport_connected(self.OUTPUT_PORT_NAME):
-            col = list(df.columns)
-            col.remove('date')
-            col.remove('sample_id')
-            col.remove('year')
-            col.remove('month')
+        col = list(df.columns)
+        col.remove('date')
+        col.remove('sample_id')
+        col.remove('year')
+        col.remove('month')
 
-            logprice = df[col].log()
-            log_return = logprice - logprice.shift(1)
-            log_return['date'] = df['date']
-            log_return['sample_id'] = df['sample_id']
-            log_return['year'] = df['year']
-            log_return['month'] = df['month']
-            log_return['corrupted'] = df['sample_id'] - \
-                df['sample_id'].shift(1)
-            log_return = log_return.dropna()
-            corrupted = log_return['corrupted'] == 1
-            # print('corruped rows', corrupted.sum())
-            log_return[corrupted] = None
-            log_return = log_return.dropna()
-            log_return = log_return.drop('corrupted', axis=1)
+        logprice = df[col].log()
+        log_return = logprice - logprice.shift(1)
+        log_return['date'] = df['date']
+        log_return['sample_id'] = df['sample_id']
+        log_return['year'] = df['year']
+        log_return['month'] = df['month']
+        log_return['corrupted'] = df['sample_id'] - \
+            df['sample_id'].shift(1)
+        log_return = log_return.dropna()
+        corrupted = log_return['corrupted'] == 1
+        # print('corruped rows', corrupted.sum())
+        log_return[corrupted] = None
+        log_return = log_return.dropna()
+        log_return = log_return.drop('corrupted', axis=1)
 
-            output.update({self.OUTPUT_PORT_NAME: log_return})
+        output.update({self.OUTPUT_PORT_NAME: log_return})
         return output
