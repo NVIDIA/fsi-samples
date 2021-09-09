@@ -57,7 +57,7 @@ pip install greenflowlab
 
 #### Install the latest RAPIDS
 ```bash
-conda install -y -c rapidsai -c nvidia -c conda-forge rapids-blazing=21.08 cudatoolkit=11.2
+conda install -y -c rapidsai -c nvidia -c conda-forge rapids=21.06 cudatoolkit=11.0
 ```
 
 #### Install the Greenflow RAPIDS plugin
