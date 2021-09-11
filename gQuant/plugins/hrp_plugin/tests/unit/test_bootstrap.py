@@ -51,9 +51,6 @@ class TestBootstrap(unittest.TestCase):
             output,
             ref.T,
             block_size,
-            number_samples,
-            length,
-            assets,
             num_positions,
             sample_positions)
         truth0 = cupy.array([[0., 1., 2., 2., 3., 3.],

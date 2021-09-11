@@ -27,8 +27,8 @@ SUM_LEN = 256 * 32
 
 
 @cuda.jit
-def boot_strap(result, ref, block_size, sample, length, assets, num_positions,
-               positions):
+def boot_strap(result, ref, block_size, num_positions, positions):
+    sample, assets, length = result.shape
     i = cuda.threadIdx.x
     sample_id = cuda.blockIdx.x // num_positions
     position_id = cuda.blockIdx.x % num_positions
@@ -661,9 +661,6 @@ def run_bootstrap(v, number_samples=2, block_size=60, number_of_threads=256):
         output,
         ref.T,
         block_size,
-        number_samples,
-        length,
-        assets,
         num_positions,
         sample_positions)
     # reshape the results [number_samples, number assets, time]

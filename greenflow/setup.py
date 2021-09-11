@@ -14,7 +14,7 @@ install_requires = ['dask[distributed]', 'dask[dataframe]', 'configparser',
 
 setup(
     name='greenflow',
-    version='1.0.4',
+    version='1.0.5',
     description='greenflow - RAPIDS Financial Services Algorithms',
     long_description=long_description,
     long_description_content_type='text/markdown',

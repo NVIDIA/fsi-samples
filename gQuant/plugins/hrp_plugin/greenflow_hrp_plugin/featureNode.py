@@ -40,7 +40,8 @@ class FeatureNode(TemplateNodeMixin, Node):
                 port_type: [
                     "pandas.DataFrame", "cudf.DataFrame",
                     "dask_cudf.DataFrame", "dask.dataframe.DataFrame"
-                ]
+                ],
+                PortsSpecSchema.optional: True
             }
         }
         port_outports = {
