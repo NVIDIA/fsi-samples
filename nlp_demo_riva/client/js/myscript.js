@@ -24,7 +24,8 @@ function clicked() {
         function say_question(){
             playTheText(question_doc, extra);
         }
-            playTheText('Question', say_question);
+            say_question();
+            // playTheText('Question', say_question);
         }
     };
 
