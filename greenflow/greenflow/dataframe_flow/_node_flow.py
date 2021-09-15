@@ -858,6 +858,10 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
                 dy = PortsSpecSchema.dynamic
                 if inports[iport].get(dy, False):
                     continue
+
+                if inports[iport].get(PortsSpecSchema.optional, False):
+                    continue
+
                 # Is it possible that iport not connected? If so iport should
                 # not be in required. Should raise an exception here.
                 warn_msg = \

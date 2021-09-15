@@ -1,0 +1,52 @@
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: data/pricess.csv
+    17assets: true
+  inputs: {}
+  module: investment_nodes
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: performance_diff.hrp_nrp_diff@out
+- id: bootstrap
+  type: BootstrapNode
+  conf:
+    samples: 5120
+    partitions: 100
+  inputs:
+    in: load_raw_csv.df_out
+  module: investment_nodes
+- id: log_return
+  type: LogReturnNode
+  conf: {}
+  inputs:
+    in: bootstrap.out
+  module: investment_nodes
+- id: distance_node
+  type: DistanceNode
+  conf:
+    window: 12
+  inputs:
+    in: log_return.out
+  module: investment_nodes
+- id: performance_diff
+  type: CompositeNode
+  conf:
+    input:
+      - nrp_weight.in
+      - hrp_weight.covariance_df
+      - assets_order.in
+      - portfolio_construct_nrp.return_df
+      - portfolio_construct_hrp.return_df
+    output:
+      - hrp_nrp_diff.out
+    subnodes_conf: {}
+    taskgraph: notebooks/workflow.gq.yaml
+  inputs:
+    nrp_weight@in: distance_node.cov_df
+    hrp_weight@covariance_df: distance_node.cov_df
+    assets_order@in: distance_node.distance_df
+    portfolio_construct_nrp@return_df: log_return.out
+    portfolio_construct_hrp@return_df: log_return.out

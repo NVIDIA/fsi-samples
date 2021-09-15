@@ -127,7 +127,7 @@ class DataSplittingNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
             train_cols.remove(target_col)
         conf = copy.copy(self.conf)
         del conf['target']
-        r = cuml.preprocessing.model_selection.train_test_split(
+        r = cuml.train_test_split(
             input_df[train_cols], input_df[target_col], **conf)
         r[0].index = r[2].index
         r[0][target_col] = r[2]

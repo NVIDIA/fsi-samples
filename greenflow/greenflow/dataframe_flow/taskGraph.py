@@ -353,7 +353,7 @@ class TaskGraph(object):
 
                 if (to_type == OUTPUT_TYPE):
                     continue
-                task_node = get_node_obj(itask)
+                task_node = get_node_obj(itask, tgraph_mixin=True)
                 # task_outputs = itask.get(TaskSpecSchema.outputs, [])
                 for pout in task_node._get_output_ports():
                     out_tip = '{}.{}'.format(

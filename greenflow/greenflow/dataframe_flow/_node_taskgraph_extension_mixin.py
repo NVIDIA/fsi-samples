@@ -1,5 +1,6 @@
 from .portsSpecSchema import (PortsSpecSchema, NodePorts)
 from .metaSpec import (MetaDataSchema, MetaData)
+from copy import deepcopy
 
 __all__ = ['NodeTaskGraphExtensionMixin']
 
@@ -56,12 +57,10 @@ class NodeTaskGraphExtensionMixin:
         dynamic = None
         inports = {}
         for input_port in port_inports:
+            inports[input_port] = deepcopy(port_inports[input_port])
             if input_port in input_connections:
                 determined_type = input_connections[input_port]
-                inports[input_port] = {port_type: determined_type}
-            else:
-                types = port_inports[input_port][port_type]
-                inports[input_port] = {port_type: types}
+                inports[input_port].update({port_type: determined_type})
 
             if dy in port_inports[input_port]:
                 inports[input_port][dy] = True
