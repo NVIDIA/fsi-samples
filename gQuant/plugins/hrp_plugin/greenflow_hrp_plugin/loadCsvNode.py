@@ -60,16 +60,16 @@ class LoadCsvNode(Node):
     def meta_setup(self):
         df_out_10 = {
             'date': 'date',
-            'AAPL': 'float64',
-            'PETS': 'float64',
-            'STMP': 'float64',
-            'VZ': 'float64',
-            'SO': 'float64',
-            'T': 'float64',
-            'FXY': 'float64',
-            'FXB': 'float64',
-            'FXF': 'float64',
-            'VCLT': 'float64',
+            'AAA': 'float64',
+            'BBB': 'float64',
+            'CCC': 'float64',
+            'DDD': 'float64',
+            'EEE': 'float64',
+            'FFF': 'float64',
+            'GGG': 'float64',
+            'HHH': 'float64',
+            'III': 'float64',
+            'JJJ': 'float64',
         }
 
         df_out_17 = {
