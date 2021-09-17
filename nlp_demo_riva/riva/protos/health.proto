@@ -1,0 +1,39 @@
+// Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto.  Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+
+//
+//Based on gRPC health check protocol - more details found here:
+//https://github.com/grpc/grpc/blob/master/doc/health-checking.md
+//
+
+syntax = "proto3";
+option go_package = "nvidia.com/riva_speech";
+
+package grpc.health.v1;
+
+
+option cc_enable_arenas = true;
+
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+}

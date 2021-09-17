@@ -1,0 +1,131 @@
+// Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto.  Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+syntax = "proto3";
+
+package nvidia.jarvis.nlp;
+
+option cc_enable_arenas = true;
+option go_package = "nvidia.com/jarvis_speech";
+
+/*
+ * The Jarvis Core NLP Service provides generic NLP services for custom
+ * model use cases. The intent of this service is to allow users to design
+ * models for arbitrary use cases that conform simply with input and output types
+ * specified in the service. As an explicit example, the ClassifyText function
+ * could be used for sentiment classification, domain recognition, language
+ * identification, etc.
+ */
+service JarvisCoreNLP {
+  // ClassifyText takes as input an input/query string and parameters related
+  // to the requested model to use to evaluate the text. The service evaluates the
+  // text with the requested model, and returns one or more classifications.
+  rpc ClassifyText(TextClassRequest) returns (TextClassResponse) {}
+
+  // ClassifyTokens takes as input either a string or list of tokens and parameters
+  // related to which model to use. The service evaluates the text with the requested
+  // model, performing additional tokenization if necessary, and returns one or more
+  // class labels per token.
+  rpc ClassifyTokens(TokenClassRequest) returns (TokenClassResponse) {}
+
+  // TransformText takes an input/query string and parameters related to the
+  // requested model and returns another string. The behavior of the function
+  // is defined entirely by the underlying model and may be used for
+  // tasks like translation, adding punctuation, augment the input directly, etc.
+  rpc TransformText(TextTransformRequest) returns (TextTransformResponse) {}
+
+}
+
+// NLPModelParams is a metadata message that is included in every request message
+// used by the Core NLP Service and is used to specify model characteristics/requirements
+message NLPModelParams {
+  // Requested model to use. If unavailable, the request will return an error
+  string model_name = 1;
+}
+
+// TextTransformRequest is a request type intended for services like TransformText
+// which take an arbitrary text input
+message TextTransformRequest {
+  // Each repeated text element is handled independently for handling multiple
+  // input strings with a single request
+  repeated string text = 1;
+  uint32 top_n = 2; // 
+  NLPModelParams model = 3;
+}
+
+// TextTransformResponse is returned by the TransformText method. Responses
+// are returned in the same order as they were requested.
+message TextTransformResponse {
+  repeated string text = 1;
+}
+
+// TextClassRequest is the input message to the ClassifyText service.
+message TextClassRequest {
+  // Each repeated text element is handled independently for handling multiple
+  // input strings with a single request
+  repeated string text = 1;
+  
+  // Return the top N classification results for each input. 0 or 1 will return top class, otherwise N.
+  // Note: Current disabled.
+  uint32 top_n = 2;
+  NLPModelParams model = 3;
+}
+
+// Classification messages return a class name and corresponding score
+message Classification {
+  string class_name = 1;
+  float score = 2;
+}
+
+// Span of a particular result
+message Span {
+  uint32 start = 1;
+  uint32 end = 2;
+}
+
+// ClassificationResults contain zero or more Classification messages
+// If the number of Classifications is > 1, top_n > 1 must have been
+// specified.
+message ClassificationResult {
+  repeated Classification labels = 1;
+}
+
+// TextClassResponse is the return message from the ClassifyText service.
+message TextClassResponse {
+  repeated ClassificationResult results = 1;
+}
+
+// TokenClassRequest is the input message to the ClassifyText service.
+message TokenClassRequest {
+  // Each repeated text element is handled independently for handling multiple
+  // input strings with a single request
+  repeated string text = 1;
+
+  // Return the top N classification results for each input. 0 or 1 will return top class, otherwise N.
+  // Note: Current disabled.
+  uint32 top_n = 3;
+  NLPModelParams model = 4;
+}
+
+// TokenClassValue is used to correlate an input token with its classification results
+message TokenClassValue {
+  string token = 1;
+  repeated Classification label = 2;
+  repeated Span span = 3;
+}
+
+// TokenClassSequence is used for returning a sequence of TokenClassValue objects
+// in the original order of input tokens
+message TokenClassSequence {
+  repeated TokenClassValue results = 1;
+}
+
+// TokenClassResponse returns a single TokenClassSequence per input request
+message TokenClassResponse {
+  repeated TokenClassSequence results = 1;
+}

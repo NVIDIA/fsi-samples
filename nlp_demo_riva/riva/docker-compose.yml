@@ -1,0 +1,27 @@
+version: "3.8"
+services:
+  riva:
+    image: "nvcr.io/nvidia/riva/riva-speech:1.4.0-beta-server"
+    container_name: "speech"
+    shm_size: '1gb'
+    ipc: 'shareable'
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+    volumes:
+        - riva-model-repo:/data
+    command: ["start-riva", "--riva-uri=0.0.0.0:50051", "--asr_service=true", "--tts_service=true", "--nlp_service=true"]
+  client:
+    image: client
+    ports:
+        - "8888:8888"
+    depends_on:
+        - "riva"
+    command: ["/usr/bin/python3", "webserver.py"]
+volumes:
+    riva-model-repo:
+        external: true

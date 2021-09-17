@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+	<head>
+        <meta charset="UTF-8">
+          <link rel="stylesheet" href="css/styles.css">
+          <link rel="stylesheet" href="css/all.css">
+        <script src="js/myscript.js"></script>
+	</head>
+	<body>
+
+        <div class="bar"></div>
+
+		<div class="container">
+            <h1>Conversational AI</h1>
+            <h2>What is the context of the conversation?</h2>
+
+            <div class="ui textarea">
+                <div class="metadata">
+                    <label>Context Text</label>
+                    <span class="sublabel">10000 characters</span>          
+                </div>
+                <textarea placeholder="Paste in text you would like to talk about" maxlength="10000 characters" class="textarea" id="para"></textarea>
+            </div>
+
+            <h2>Ask a question</h2>
+            <p>
+            Press <i class="fas fa-microphone"></i> to record your audio via Microphone. Press the <i class="fas fa-stop"></i> when finished. Press "ask" to ask the AI a contextual question. Press <i class="fas fa-play"></i> to play the question.
+            </p>
+
+            <div id="controls">
+                <button id="recordButton"><i class="fas fa-microphone"></i></button>
+                <button id="pauseButton" disabled><i class="fas fa-pause"></i></button>
+                <button id="stopButton" disabled><i class="fas fa-stop"></i></button>
+            </div>
+
+            <div class="ui textfield">
+                <div class="metadata">
+                    <label>Question</label>
+                </div>
+                <input placeholder="Record or Type a question to ask" class="textarea" id="question"></input><button id="playit" onclick="playIt()"><i class="fas fa-play"></i></button>
+            </div>
+            <div class="ui buttons">
+			<button type="button" class="ui button primary" onclick="clicked()">Ask</button>
+            </div>
+            <h2>Get an Answer</h2>
+            <p id="context">
+            </p>
+            <div class="metadata">
+                <label>Example questions:</label>
+            </div>
+            <div class="ui selection">
+			<select class="ui select" onchange="selected()" id="examples">
+			</select>
+            </div>
+        </div>
+        <script src="js/recorder.js"></script>
+        <script src="js/app.js"></script>
+	</body>
+</html>
