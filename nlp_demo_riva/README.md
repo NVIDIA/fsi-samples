@@ -15,7 +15,7 @@ Not satisfied with the model performance? Try to improve it with your own data. 
 
 ### How to use?
 
-You need to deploy the [RIVA](https://docs.nvidia.com/deeplearning/riva/index.html) to host all the models in the Triton Server. 
+You need to deploy the [RIVA](https://docs.nvidia.com/deeplearning/riva/index.html) to host all the models in the Triton Server. To use RIVA, go to [NGC](https://ngc.nvidia.com/setup) to sign up or log in to your NGC account. Follow the instruction at [this page](https://ngc.nvidia.com/setup) to setup the API keys for your system.
 
 The easiest way to set it up is to run script:
 
@@ -35,7 +35,7 @@ Open up the webpage at:
 https://ip:8888
 ```
 
-Note, it is required to use `https://` connection to get the browser microphone to work remotely. Have fun playing with it!
+Note, it is required to use `https://` connection to get the browser microphone to work remotely. Note, you might need to accept the risk warning from the browser to proceed. Have fun playing with it!
 
 To shut down the demo
 ```bash
