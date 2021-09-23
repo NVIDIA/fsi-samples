@@ -93,7 +93,7 @@ bash make_tar.sh
 ## References
 
 1. https://github.com/NVIDIA/fsi-samples/tree/main/greenflow
-2. Markus J, Stephan K et al. Interpretable Machine Learning for Diversified Portfolio Construction, SSRN, Jan 2021
+2. Markus J, Stephan K et al. Interpretable Machine Learning for Diversified Portfolio Construction, The Journal of Financial Data Science Summer 2021, Jan 2021
 3. https://numba.pydata.org/
 4. https://dask.org/
 5. http://jupyterlab.io/
