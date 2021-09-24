@@ -74,5 +74,4 @@
   inputs:
     in1: cumulative_return.cum_return
     in2: sharpe_ratio.sharpe_out
-  module: rapids_modules
   type: Output_Collector

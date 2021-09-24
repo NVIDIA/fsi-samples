@@ -4,6 +4,7 @@ from .portsSpecSchema import NodePorts, ConfSchema
 
 __all__ = ['Output_Collector', 'OUTPUT_ID', 'OUTPUT_TYPE']
 
+
 class Output_Collector(Node):
     def meta_setup(self):
         return super().meta_setup()
@@ -16,6 +17,7 @@ class Output_Collector(Node):
 
     def process(self, inputs):
         return super().process(inputs)
+
 
 # TODO: DO NOT RELY ON special OUTPUT_ID.
 # OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
