@@ -8,9 +8,11 @@ Greenflow plugin that includes a set of nodes for Cusignal library.
 First create a Python enviroment or use one with RAPIDS cuSignal library. Tip,
 use mamba to resolve dependencies quicker.
 ```bash
-conda create -n rapids_cusignal mamba -c conda-forge
+conda create -n rapids_cusignal -c conda-forge mamba python=3.8
 
-mamba install -n rapids_cusignal -c rapidsai -c nvidia -c conda-forge \
+conda activate rapids_cusignal
+
+mamba install -c rapidsai -c nvidia -c conda-forge \
     cusignal=21.06 python=3.8 cudatoolkit=11.2
 ```
 
