@@ -1,8 +1,8 @@
 # Changelog
 
-## [v1.0.4](https://github.com/NVIDIA/fsi-samples/tree/v1.0.4) (2021-05-13)
+## [v1.0.5](https://github.com/NVIDIA/fsi-samples/tree/v1.0.5) (2021-09-26)
 
-[Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.3...v1.0.4)
+[Full Changelog](https://github.com/NVIDIA/fsi-samples/compare/v1.0.3...v1.0.5)
 
 **Closed issues:**
 
@@ -11,6 +11,14 @@
 
 **Merged pull requests:**
 
+- \[REVIEW\] A tiny fix of the readme [\#145](https://github.com/NVIDIA/fsi-samples/pull/145) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\]NLP demo with RIVA backend [\#144](https://github.com/NVIDIA/fsi-samples/pull/144) ([yidong72](https://github.com/yidong72))
+- \[REVIEW\] release HRP greenflow plugin [\#143](https://github.com/NVIDIA/fsi-samples/pull/143) ([yidong72](https://github.com/yidong72))
+- Bump jupyterlab from 1.2.1 to 1.2.21 in /gtc21-s32407-backtestingequityinvestmentstrats/docker [\#142](https://github.com/NVIDIA/fsi-samples/pull/142) ([dependabot[bot]](https://github.com/apps/dependabot))
+- Cusignal nodes for Greenflow. [\#141](https://github.com/NVIDIA/fsi-samples/pull/141) ([avolkov1](https://github.com/avolkov1))
+- \[REVIEW\]add the dynamic input port meta check [\#139](https://github.com/NVIDIA/fsi-samples/pull/139) ([yidong72](https://github.com/yidong72))
+- Update README.md [\#138](https://github.com/NVIDIA/fsi-samples/pull/138) ([MarkJosephBennett](https://github.com/MarkJosephBennett))
+- \[review\]release 1.0.4 candidate [\#137](https://github.com/NVIDIA/fsi-samples/pull/137) ([yidong72](https://github.com/yidong72))
 - \[REVIEW\] Update build script. [\#136](https://github.com/NVIDIA/fsi-samples/pull/136) ([avolkov1](https://github.com/avolkov1))
 - add nvidia headers [\#135](https://github.com/NVIDIA/fsi-samples/pull/135) ([MarkJosephBennett](https://github.com/MarkJosephBennett))
 - \[Review\]Sync up main branch back to develop [\#134](https://github.com/NVIDIA/fsi-samples/pull/134) ([yidong72](https://github.com/yidong72))
@@ -156,7 +164,6 @@
 - \[REVIEW\] change the text for notebook 05 [\#55](https://github.com/NVIDIA/fsi-samples/pull/55) ([yidong72](https://github.com/yidong72))
 - Fix \#50b - Rename notebook folder to notebooks [\#52](https://github.com/NVIDIA/fsi-samples/pull/52) ([miguelusque](https://github.com/miguelusque))
 - Fix \#50 - Rename notebook folder to notebooks [\#51](https://github.com/NVIDIA/fsi-samples/pull/51) ([miguelusque](https://github.com/miguelusque))
-- Fix \#39 - Refactor 04\_portfolio\_trade.ipynb notebook [\#44](https://github.com/NVIDIA/fsi-samples/pull/44) ([miguelusque](https://github.com/miguelusque))
 
 ## [v0.2](https://github.com/NVIDIA/fsi-samples/tree/v0.2) (2019-08-16)
 
@@ -178,6 +185,7 @@
 **Merged pull requests:**
 
 - Fix \#17 - cuIndicator notebook plot widget is too complicated \(WIP\) [\#45](https://github.com/NVIDIA/fsi-samples/pull/45) ([miguelusque](https://github.com/miguelusque))
+- Fix \#39 - Refactor 04\_portfolio\_trade.ipynb notebook [\#44](https://github.com/NVIDIA/fsi-samples/pull/44) ([miguelusque](https://github.com/miguelusque))
 - Merge develop to master [\#43](https://github.com/NVIDIA/fsi-samples/pull/43) ([yidong72](https://github.com/yidong72))
 - Fix \#40 - Remove debug info [\#41](https://github.com/NVIDIA/fsi-samples/pull/41) ([miguelusque](https://github.com/miguelusque))
 - Update mortgage example using TaskGraph API. [\#38](https://github.com/NVIDIA/fsi-samples/pull/38) ([avolkov1](https://github.com/avolkov1))
