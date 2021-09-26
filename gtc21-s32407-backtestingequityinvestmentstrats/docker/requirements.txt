@@ -7,6 +7,6 @@ cupy-cuda110
 pandas
 dask-cuda
 jupyter
-jupyterlab==1.2.1
+jupyterlab==1.2.21
 jupyterlab-nvdashboard
 dask_labextension
