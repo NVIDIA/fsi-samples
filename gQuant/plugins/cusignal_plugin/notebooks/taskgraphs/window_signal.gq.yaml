@@ -1,0 +1,9 @@
+- id: winsig
+  type: CusignalWindowNode
+  conf:
+    window_type: general_cosine
+    sym: true
+    use_cpu: false
+    M: 10000000
+  inputs: {}
+  module: greenflow_cusignal_plugin.windows

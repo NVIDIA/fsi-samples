@@ -1,0 +1,29 @@
+- id: sig_task
+  type: SignalGeneratorNode
+  conf:
+    pycode: |-
+      import cupy as cp
+      sig = cp.random.rand(int(1e8))
+      myout = {'out1': sig}
+  inputs: {}
+  module: greenflow_cusignal_plugin.gensig
+- id: convolve_task
+  type: CusignalConvolveNode
+  conf:
+    mode: same
+    method: auto
+    normalize: true
+    use_cpu: false
+  inputs:
+    in1: sig_task.out1
+    in2: win_hann.window
+  module: greenflow_cusignal_plugin.convolution
+- id: win_hann
+  type: CusignalWindowNode
+  conf:
+    window_type: hann
+    sym: true
+    use_cpu: false
+    M: 1000
+  inputs: {}
+  module: greenflow_cusignal_plugin.windows

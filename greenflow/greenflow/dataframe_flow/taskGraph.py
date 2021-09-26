@@ -7,15 +7,15 @@ from types import ModuleType
 from collections import OrderedDict
 import ruamel.yaml
 
-from .node import Node
-from ._node_flow import OUTPUT_ID, OUTPUT_TYPE, _CLEANUP
+from ._node_flow import _CLEANUP
 from .task import Task
 from .taskSpecSchema import TaskSpecSchema
-from .portsSpecSchema import NodePorts, ConfSchema, PortsSpecSchema
+from .portsSpecSchema import PortsSpecSchema
 from .util import get_encoded_class
 from .config_nodes_modules import get_node_obj
+from .output_collector_node import (Output_Collector, OUTPUT_TYPE, OUTPUT_ID)
 
-__all__ = ['TaskGraph', 'OutputCollector']
+__all__ = ['TaskGraph', 'Output_Collector']
 
 server_task_graph = None
 
@@ -31,20 +31,6 @@ def add_module_from_base64(module_name, class_str):
         sys.modules[module_name] = mod
     setattr(mod, class_name, class_obj)
     return class_obj
-
-
-class OutputCollector(Node):
-    def meta_setup(self):
-        return super().meta_setup()
-
-    def ports_setup(self):
-        return NodePorts(inports={}, outports={})
-
-    def conf_schema(self):
-        return ConfSchema()
-
-    def process(self, inputs):
-        return super().process(inputs)
 
 
 class Results(object):
@@ -181,6 +167,24 @@ class TaskGraph(object):
         self.__index = idx + 1
         return task
 
+    def __getitem__(self, key):
+        # FIXME: This is inconsistent. Above for __contains__, __iter__, and
+        #     __next__, the returned object is a Task instance. Here however
+        #     the returned object is a Node instance.
+        if not self.__node_dict:
+            warnings.warn(
+                'Task graph internal state empty. Did you build the task '
+                'graph? Run ".build()"',
+                RuntimeWarning)
+
+        elif key not in self.__node_dict:
+            warnings.warn(
+                'Task graph missing task id "{}". Check the spelling of the '
+                'task id.'.format(key),
+                RuntimeWarning)
+
+        return self.__node_dict[key]
+
     def __find_roots(self, node, inputs, consider_load=True):
         """
         find the root nodes that the `node` depends on
@@ -198,9 +202,9 @@ class TaskGraph(object):
         None
 
         """
-
         if (node.visited):
             return
+
         node.visited = True
 
         if len(node.inputs) == 0:
@@ -310,7 +314,7 @@ class TaskGraph(object):
         with open(filename, 'w') as fh:
             ruamel.yaml.dump(tlist_od, fh, default_flow_style=False)
 
-    def viz_graph(self, show_ports=False):
+    def viz_graph(self, show_ports=False, pydot_options=None):
         """
         Generate the visulization of the graph in the JupyterLab
 
@@ -320,6 +324,8 @@ class TaskGraph(object):
         """
         import networkx as nx
         G = nx.DiGraph()
+        if pydot_options:
+            G.graph['graph'] = pydot_options
         # instantiate objects
         for itask in self:
             task_inputs = itask[TaskSpecSchema.inputs]
@@ -390,13 +396,10 @@ class TaskGraph(object):
         for task in self:
             task_id = task[TaskSpecSchema.task_id]
             nodetype = task[TaskSpecSchema.node_type]
-            if (task_id == OUTPUT_ID or nodetype == OUTPUT_TYPE):
-                output_task = Task({
-                    TaskSpecSchema.task_id: OUTPUT_ID,
-                    TaskSpecSchema.conf: {},
-                    TaskSpecSchema.node_type: OutputCollector,
-                    TaskSpecSchema.inputs: task[TaskSpecSchema.inputs]
-                })
+            nodetype = nodetype if isinstance(nodetype, str) else \
+                nodetype.__name__
+            if nodetype == OUTPUT_TYPE:
+                output_task = task
                 node = get_node_obj(output_task, tgraph_mixin=True)
             else:
                 node = get_node_obj(task, replace.get(task_id), profile,
@@ -436,7 +439,7 @@ class TaskGraph(object):
                     'from_port': src_port
                 })
 
-    def build(self, replace=None, profile=False):
+    def build(self, replace=None, profile=None):
         """
         compute the graph structure of the nodes. It will set the input and
         output nodes for each of the node
@@ -446,6 +449,7 @@ class TaskGraph(object):
         replace: dict
             conf parameters replacement
         """
+        profile = False if profile is None else profile
         # make connection only
         self._build(replace=replace, profile=profile)
 
@@ -487,9 +491,6 @@ class TaskGraph(object):
                     queue.append(child)
         # print('----done----')
 
-    def __getitem__(self, key):
-        return self.__node_dict[key]
-
     def __str__(self):
         out_str = ""
         for k in self.__node_dict.keys():
@@ -515,59 +516,96 @@ class TaskGraph(object):
             add_module_from_base64(module_name, encoded_class)
             self.__widget.cache = cacheCopy
 
-    def _run(self, outputs=None, replace=None, profile=False, formated=False):
+    def _run(self, outputs=None, replace=None, profile=None, formated=False,
+             build=True):
         replace = dict() if replace is None else replace
 
-        self.build(replace, profile)
+        if build:
+            self.build(replace, profile)
+        else:
+            if replace:
+                warnings.warn(
+                    'Replace is specified, but build is set to False. No '
+                    'replacement will be done. Either set build=True or '
+                    'first build with replace then call run.',
+                    RuntimeWarning)
 
-        graph_outputs = []
-        # add the output graph only if the Output Node is not in the graph
-        found_output_node = False
-        for task in self:
-            if (task[TaskSpecSchema.task_id] == OUTPUT_ID or
-                    task[TaskSpecSchema.node_type] == OUTPUT_TYPE):
-                found_output_node = True
-                outputs_collector_node = self[task[TaskSpecSchema.task_id]]
-                for input_item in outputs_collector_node.inputs:
-                    from_node_id = input_item['from_node'].uid
-                    fromStr = from_node_id+'.'+input_item['from_port']
-                    graph_outputs.append(fromStr)
-                break
+            if profile is not None:
+                warnings.warn(
+                    'Profile is specified, but build is set to False. '
+                    'Profile will be done according to last build. '
+                    'Alternatively either set build=True or first build with '
+                    'desired profile option then call run.',
+                    RuntimeWarning)
 
+            # Reset visited status to run the taskgraph. This is done during
+            # build, but since not building need to reset here.
+            for inode in self.__node_dict.values():
+                inode.visited = False
+
+        using_output_node = False
         if outputs is None:
-            outputs = graph_outputs
+            graph_outputs = []
+            outputs = graph_outputs  # reference copy
+            # Find the output collector in the task graph.
+            for task in self:
+                # FIXME: Note the inconsistency of getting a task
+                #     "for task in self" yet also retrieving a node
+                #     via "self[task_id]".
+                node = self[task[TaskSpecSchema.task_id]]
+                if node.node_type_str == OUTPUT_TYPE:
+                    using_output_node = True
+                    outputs_collector_node = node
+                    for input_item in outputs_collector_node.inputs:
+                        from_node_id = input_item['from_node'].uid
+                        fromStr = from_node_id + '.' + input_item['from_port']
+                        graph_outputs.append(fromStr)
+                    break
 
-        if not found_output_node:
+            if not using_output_node:
+                warnings.warn(
+                    'Outputs not specified and output collector not found '
+                    'in the task graph. Nothing will be run.',
+                    RuntimeWarning)
+
+                result = Results([])
+                if formated:
+                    return formated_result(result)
+                else:
+                    return result
+
+        if using_output_node:
+            # This is rewiring the graph which should not be needed.
+            # clean all the connections to this output node
+            # for inode in self.__node_dict.values():
+            #     inode.outputs = list(filter(
+            #         lambda x: x['to_node'] != outputs_collector_node,
+            #         inode.outputs))
+            outputs_collector_node.input_df.clear()
+        else:
+            # This does make it possible to temporarily have 2 output
+            # collectors in a task graph. This 2nd collector is cleaned up. 
             output_task = Task({
-                TaskSpecSchema.task_id: OUTPUT_ID,
+                # Use a slightly different uid to differentiate from an
+                # output node that might be part of the task graph.
+                TaskSpecSchema.task_id: '{}-outspec'.format(OUTPUT_ID),
                 TaskSpecSchema.conf: {},
-                TaskSpecSchema.node_type: OutputCollector,
-                TaskSpecSchema.inputs: []
+                TaskSpecSchema.node_type: Output_Collector,
+                TaskSpecSchema.inputs: outputs
             })
 
             outputs_collector_node = get_node_obj(output_task,
                                                   tgraph_mixin=True)
-
-        outputs_collector_node.clear_input = False
-        if not found_output_node or outputs is not None:
-            if found_output_node:
-                # clean all the connections to this output node
-                for uid in self.__node_dict.keys():
-                    node = self.__node_dict[uid]
-                    node.outputs = list(filter(
-                        lambda x: x['to_node'] != outputs_collector_node,
-                        node.outputs))
-
-            # remove the output
-            # set the connection only if output_node is manullay created
-            # or the output is overwritten
-            outputs_collector_node.inputs.clear()
-            outputs_collector_node.outputs.clear()
             for task_id in outputs:
                 nodeid_oport = task_id.split('.')
                 nodeid = nodeid_oport[0]
-                oport = nodeid_oport[1] if len(nodeid_oport) > 1 else None
-                onode = self.__node_dict[nodeid]
+                oport = nodeid_oport[1]
+                try:
+                    onode = self.__node_dict[nodeid]
+                except KeyError as err:
+                    raise RuntimeError('Missing nodeid: {}. Did you build the '
+                                       'task graph?'.format(nodeid)) from err
+
                 dummy_port = task_id
                 outputs_collector_node.inputs.append({
                     'from_node': onode,
@@ -580,7 +618,7 @@ class TaskGraph(object):
                     'from_port': oport
                 })
 
-        results_task_ids = outputs
+        outputs_collector_node.clear_input = False
 
         inputs = []
         self.__find_roots(outputs_collector_node, inputs, consider_load=True)
@@ -609,10 +647,11 @@ class TaskGraph(object):
                     current_node = nodes[0]
                     current_node['busy'] = True
                 self.__widget.cache = cacheCopy
+
             for i in inputs:
                 i.flow(progress_fun)
-            # clean up the progress
 
+            # clean up the progress
             def cleanup():
                 import time
                 cacheCopy = copy.deepcopy(self.__widget.cache)
@@ -620,6 +659,7 @@ class TaskGraph(object):
                     node['busy'] = False
                 time.sleep(1)
                 self.__widget.cache = cacheCopy
+
             import threading
             t = threading.Thread(target=cleanup)
             t.start()
@@ -631,16 +671,31 @@ class TaskGraph(object):
         port_map = {}
         for input_item in outputs_collector_node.inputs:
             from_node_id = input_item['from_node'].uid
-            fromStr = from_node_id+'.'+input_item['from_port']
+            fromStr = from_node_id + '.' + input_item['from_port']
             port_map[fromStr] = input_item['to_port']
+
+        results_task_ids = outputs
         results = []
         for task_id in results_task_ids:
             results.append((task_id, results_dfs_dict[port_map[task_id]]))
+
         # clean the results afterwards
-        outputs_collector_node.input_df = {}
+        outputs_collector_node.input_df.clear()
+        if not using_output_node:
+            # Remove the output collector that's not part of the task graph.
+            for inode in self.__node_dict.values():
+                inode.outputs = list(filter(
+                    lambda x: x['to_node'] != outputs_collector_node,
+                    inode.outputs))
+            del outputs_collector_node
+
+        # Prevent memory leaks. Clean up the task graph.
+        for inode in self.__node_dict.values():
+            # if not inode.visited:
+            inode.input_df.clear()
+
         result = Results(results)
-        ####
-        # this is for nemo work around, to clean up the nemo graph
+        # Cleanup logic for any plugin that used "register_cleanup".
         self.run_cleanup()
 
         if formated:
@@ -652,7 +707,8 @@ class TaskGraph(object):
         for v in _CLEANUP.values():
             v(ui_clean)
 
-    def run(self, outputs=None, replace=None, profile=False, formated=False):
+    def run(self, outputs=None, replace=None, profile=None, formated=False,
+            build=True):
         """
         Flow the dataframes in the graph to do the data science computations.
 
@@ -678,25 +734,29 @@ class TaskGraph(object):
                 err = ""
                 result = None
                 result = self._run(outputs=outputs, replace=replace,
-                                   profile=profile, formated=formated)
+                                   profile=profile, formated=formated,
+                                   build=build)
             except Exception:
                 err = traceback.format_exc()
             finally:
                 import ipywidgets
                 out = ipywidgets.Output(layout={'border': '1px solid black'})
                 out.append_stderr(err)
+
             if result is None:
                 result = ipywidgets.Tab()
+
             result.set_title(len(result.children), 'std output')
             result.children = result.children + (out,)
             return result
         else:
             return self._run(outputs=outputs, replace=replace, profile=profile,
-                             formated=formated)
+                             formated=formated, build=build)
 
-    def to_pydot(self, show_ports=False):
+    def to_pydot(self, show_ports=False, pydot_options=None):
         import networkx as nx
-        nx_graph = self.viz_graph(show_ports=show_ports)
+        nx_graph = self.viz_graph(show_ports=show_ports,
+                                  pydot_options=pydot_options)
         to_pydot = nx.drawing.nx_pydot.to_pydot
         pdot = to_pydot(nx_graph)
         return pdot
@@ -710,9 +770,24 @@ class TaskGraph(object):
             self.__widget = widget
         return self.__widget
 
-    def draw(self, show='lab', fmt='png', show_ports=False):
+    def del_widget(self):
+        del self.__widget
+        self.__widget = None
+
+    def draw(self, show='lab', fmt='png', show_ports=False,
+             pydot_options=None):
+        '''
+        :param show: str; One of 'ipynb', 'lab'
+        :param fmt: str; 'png' or 'svg'. Only used if show='ipynb'
+        :param show_ports: boolean; Labels intermediate ports between nodes in
+            the taskgraph. Only used if show='ipynb'
+        :param pydot_options: dict; Passed to the graph attribute of a graphviz
+            generated dot graph. Only used when show='ipynb'. Refer to:
+                https://graphviz.org/doc/info/attrs.html
+            Example: pydot_options={'rankdir': 'LR'} to draw left-to-right
+        '''
         if show in ('ipynb',):
-            pdot = self.to_pydot(show_ports)
+            pdot = self.to_pydot(show_ports, pydot_options)
             pdot_out = pdot.create(format=fmt)
             if fmt in ('svg',):
                 from IPython.display import SVG as Image  # @UnusedImport

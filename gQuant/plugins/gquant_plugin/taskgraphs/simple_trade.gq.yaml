@@ -27,7 +27,6 @@
     in4: sharpe_ratio.sharpe_out
     in5: cumulative_return.cum_return
     in6: stock_data.cudf_out
-  module: rapids_modules
   type: Output_Collector
 - conf:
     keys:
