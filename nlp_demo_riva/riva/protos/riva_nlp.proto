@@ -1,0 +1,244 @@
+// Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto.  Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+syntax = "proto3";
+
+package nvidia.riva.nlp;
+
+option cc_enable_arenas = true;
+option go_package = "nvidia.com/riva_speech";
+
+/* Riva Natural Language Services implement generic and task-specific APIs. 
+ * The generic APIs allows users to design
+ * models for arbitrary use cases that conform simply with input and output types
+ * specified in the service. As an explicit example, the ClassifyText function
+ * could be used for sentiment classification, domain recognition, language
+ * identification, etc.
+ * The task-specific APIs can be used for popular NLP tasks such as 
+ * intent recognition (as well as slot filling), and entity extraction.
+ */
+
+service RivaLanguageUnderstanding {
+
+  // ClassifyText takes as input an input/query string and parameters related
+  // to the requested model to use to evaluate the text. The service evaluates the
+  // text with the requested model, and returns one or more classifications.
+  rpc ClassifyText(TextClassRequest) returns (TextClassResponse) {}
+
+  // ClassifyTokens takes as input either a string or list of tokens and parameters
+  // related to which model to use. The service evaluates the text with the requested
+  // model, performing additional tokenization if necessary, and returns one or more
+  // class labels per token.
+  rpc ClassifyTokens(TokenClassRequest) returns (TokenClassResponse) {}
+
+  // TransformText takes an input/query string and parameters related to the
+  // requested model and returns another string. The behavior of the function
+  // is defined entirely by the underlying model and may be used for
+  // tasks like translation, adding punctuation, augment the input directly, etc.
+  rpc TransformText(TextTransformRequest) returns (TextTransformResponse) {}
+
+  // AnalyzeEntities accepts an input string and returns all named entities within
+  // the text, as well as a category and likelihood.
+  rpc AnalyzeEntities(AnalyzeEntitiesRequest) returns (TokenClassResponse) {}
+
+  // AnalyzeIntent accepts an input string and returns the most likely
+  // intent as well as slots relevant to that intent.
+  //
+  // The model requires that a valid "domain" be passed in, and optionally
+  // supports including a previous intent classification result to provide
+  // context for the model.
+  rpc AnalyzeIntent(AnalyzeIntentRequest) returns (AnalyzeIntentResponse) {}
+
+  // PunctuateText takes text with no- or limited- punctuation and returns 
+  // the same text with corrected punctuation and capitalization.
+  rpc PunctuateText(TextTransformRequest) returns (TextTransformResponse) {}
+
+  // NaturalQuery is a search function that enables querying one or more documents
+  // or contexts with a query that is written in natural language.
+  rpc NaturalQuery(NaturalQueryRequest) returns (NaturalQueryResponse) {}
+}
+
+// NLPModelParams is a metadata message that is included in every request message
+// used by the Core NLP Service and is used to specify model characteristics/requirements
+message NLPModelParams {
+  // Requested model to use. If unavailable, the request will return an error
+  string model_name = 1;
+}
+
+// TextTransformRequest is a request type intended for services like TransformText
+// which take an arbitrary text input
+message TextTransformRequest {
+  // Each repeated text element is handled independently for handling multiple
+  // input strings with a single request
+  repeated string text = 1;
+  uint32 top_n = 2; // 
+  NLPModelParams model = 3;
+}
+
+// TextTransformResponse is returned by the TransformText method. Responses
+// are returned in the same order as they were requested.
+message TextTransformResponse {
+  repeated string text = 1;
+}
+
+// TextClassRequest is the input message to the ClassifyText service.
+message TextClassRequest {
+  // Each repeated text element is handled independently for handling multiple
+  // input strings with a single request
+  repeated string text = 1;
+  
+  // Return the top N classification results for each input. 0 or 1 will return top class, otherwise N.
+  // Note: Current disabled.
+  uint32 top_n = 2;
+  NLPModelParams model = 3;
+}
+
+// Classification messages return a class name and corresponding score
+message Classification {
+  string class_name = 1;
+  float score = 2;
+}
+
+// Span of a particular result
+message Span {
+  uint32 start = 1;
+  uint32 end = 2;
+}
+
+// ClassificationResults contain zero or more Classification messages
+// If the number of Classifications is > 1, top_n > 1 must have been
+// specified.
+message ClassificationResult {
+  repeated Classification labels = 1;
+}
+
+// TextClassResponse is the return message from the ClassifyText service.
+message TextClassResponse {
+  repeated ClassificationResult results = 1;
+}
+
+// TokenClassRequest is the input message to the ClassifyText service.
+message TokenClassRequest {
+  // Each repeated text element is handled independently for handling multiple
+  // input strings with a single request
+  repeated string text = 1;
+
+  // Return the top N classification results for each input. 0 or 1 will return top class, otherwise N.
+  // Note: Current disabled.
+  uint32 top_n = 3;
+  NLPModelParams model = 4;
+}
+
+// TokenClassValue is used to correlate an input token with its classification results
+message TokenClassValue {
+  string token = 1;
+  repeated Classification label = 2;
+  repeated Span span = 3;
+}
+
+// TokenClassSequence is used for returning a sequence of TokenClassValue objects
+// in the original order of input tokens
+message TokenClassSequence {
+  repeated TokenClassValue results = 1;
+}
+
+// TokenClassResponse returns a single TokenClassSequence per input request
+message TokenClassResponse {
+  repeated TokenClassSequence results = 1;
+}
+
+// AnalyzeIntentContext is reserved for future use when we may send context back in a
+// a variety of different formats (including raw neural network hidden states)
+message AnalyzeIntentContext {
+  // Reserved for future use
+}
+
+// AnalyzeIntentOptions is an optional configuration message to be sent as part of
+// an AnalyzeIntentRequest with query metadata
+message AnalyzeIntentOptions {
+  // Optionally provide context from previous interactions to bias the model's prediction
+  oneof context {
+    string previous_intent = 1;
+    AnalyzeIntentContext vectors = 2;
+  }
+  // Optional domain field. Domain must be supported otherwise an error will be returned.
+  // If left blank, a domain detector will be run first and then the query routed to the
+  // appropriate intent classifier (if it exists)
+  string domain = 3;
+
+  // Optional language field. Assumed to be "en-US" if not specified.
+  string lang = 4;
+}
+
+// AnalyzeIntentRequest is the input message for the AnalyzeIntent service
+message AnalyzeIntentRequest {
+  // The string to analyze for intent and slots
+  string query = 1;
+  // Optional configuration for the request, including providing context from previous turns
+  // and hardcoding a domain/language
+  AnalyzeIntentOptions options = 2;
+}
+
+// AnalyzeIntentResponse is returned by the AnalyzeIntent service, and includes information
+// related to the query's intent, (optionally) slot data, and its domain.
+message AnalyzeIntentResponse {
+  // Intent classification result, including the label and score
+  Classification intent = 1;
+  // List of tokens explicitly marked as filling a slot relevant to the intent, where the
+  // tokens may not exactly match the input (based on the recombined values after tokenization)
+  repeated TokenClassValue slots = 2; 
+  // Returns the inferred domain for the query if not hardcoded in the request. In the case where
+  // the domain was hardcoded in AnalyzeIntentRequest, the returned domain is an exact match to the
+  // request. In the case where no domain matches the query, intent and slots will be unset.
+  // 
+  // DEPRECATED, use Classification domain field.
+  string domain_str = 3;
+
+  // Returns the inferred domain for the query if not hardcoded in the request. In the case where
+  // the domain was hardcoded in AnalyzeIntentRequest, the returned domain is an exact match to the
+  // request. In the case where no domain matches the query, intent and slots will be unset.
+  Classification domain = 4;
+}
+
+// AnalyzeEntitiesOptions is an optional configuration message to be sent as part of
+// an AnalyzeEntitiesRequest with query metadata
+message AnalyzeEntitiesOptions {
+  // Optional language field. Assumed to be "en-US" if not specified.
+  string lang = 4;
+}
+
+// AnalyzeEntitiesRequest is the input message for the AnalyzeEntities service
+message AnalyzeEntitiesRequest {
+  // The string to analyze for intent and slots
+  string query = 1;
+  // Optional configuration for the request, including providing context from previous turns
+  // and hardcoding a domain/language
+  AnalyzeEntitiesOptions options = 2;
+}
+
+message NaturalQueryRequest {    
+  // The natural language query
+  string query = 1;
+
+  // Maximum number of answers to return for the query. Defaults to 1 if not set.
+  uint32 top_n = 2;
+
+  // Context to search with the above query
+  string context = 3;
+}
+
+message NaturalQueryResult {
+  // text which answers the query
+  string answer = 1;
+  // Score representing confidence in result
+  float score = 2;
+}
+
+message NaturalQueryResponse {
+  repeated NaturalQueryResult results = 1;
+}

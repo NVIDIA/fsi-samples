@@ -1,0 +1,16 @@
+FROM nvcr.io/nvidia/riva/riva-speech-client:1.4.0-beta
+# RUN apt-get update
+RUN apt-get update && apt-get -y install git python3-dev build-essential locales-all
+ENV LC_ALL=en_US.utf8
+RUN mkdir /workspace
+WORKDIR /workspace
+WORKDIR /home
+
+#RUN pip install tensorflow==1.13.1
+RUN pip install cherrypy pudb
+
+RUN mkdir /workspace/server
+
+RUN pip3 install inflect unidecode
+COPY . /workspace/server
+WORKDIR /workspace/server

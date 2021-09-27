@@ -50,6 +50,25 @@ class SortNode(TemplateNodeMixin, NodeHDFCacheMixin, Node):
             out_ports=meta_outports
         )
 
+    def update(self):
+        TemplateNodeMixin.update(self)
+        meta_inports = self.template_meta_setup().inports
+        required = meta_inports[self.INPUT_PORT_NAME]
+        if 'keys' in self.conf:
+            input_meta = self.get_input_meta()
+            if self.INPUT_PORT_NAME not in input_meta:
+                for col in self.conf['keys']:
+                    required[col] = None
+            else:
+                col_from_inport = input_meta[self.INPUT_PORT_NAME]
+                for col in self.conf['keys']:
+                    if col in col_from_inport:
+                        required[col] = col_from_inport[col]
+                    else:
+                        required[col] = None
+        meta_inports[self.INPUT_PORT_NAME] = required
+        self.template_meta_setup(in_ports=meta_inports, out_ports=None)
+
     def conf_schema(self):
         json = {
             "title": "Sort Column configure",

@@ -3,7 +3,8 @@ import uuid
 from greenflow.dataframe_flow import TaskGraph
 from greenflow.dataframe_flow import Node
 from greenflow.dataframe_flow.task import Task
-from greenflow.dataframe_flow._node_flow import OUTPUT_TYPE, OUTPUT_ID
+from greenflow.dataframe_flow.output_collector_node import (
+    OUTPUT_TYPE, OUTPUT_ID)
 from greenflow.dataframe_flow import (TaskSpecSchema, PortsSpecSchema)
 from greenflow.dataframe_flow.config_nodes_modules import (
     load_modules, get_greenflow_config_modules, get_node_tgraphmixin_instance)
@@ -99,7 +100,9 @@ def get_nodes(task_graph):
     """
     for task in task_graph:
         if (task.get(TaskSpecSchema.node_type) == OUTPUT_TYPE):
-            task.set_output()
+            # Setting output collector ID should not be needed.
+            task._task_spec[TaskSpecSchema.task_id] = OUTPUT_ID
+            # task._task_spec[TaskSpecSchema.node_type] = Output_Collector
     task_graph.build()
     nodes = []
     edges = []

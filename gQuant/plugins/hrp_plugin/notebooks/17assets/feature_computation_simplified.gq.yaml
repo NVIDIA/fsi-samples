@@ -1,0 +1,78 @@
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: data/pricess.csv
+    17assets: true
+  inputs: {}
+  module: investment_nodes
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: feature_computation.all_corr_feature@out
+- id: bootstrap
+  type: BootstrapNode
+  conf:
+    samples: 10
+    partitions: 4
+  inputs:
+    in: load_raw_csv.df_out
+  module: investment_nodes
+- id: log_return
+  type: LogReturnNode
+  conf: {}
+  inputs:
+    in: bootstrap.out
+  module: investment_nodes
+- id: feature_computation
+  type: CompositeNode
+  conf:
+    input:
+      - all_max_raise.logreturn_df
+      - all_max_drawdown.logreturn_df
+      - all_data_distance.in
+    output:
+      - all_corr_feature.out
+      - all_data_distance.cov_df
+      - all_data_distance.distance_df
+    subnode_ids:
+      - all_max_raise
+      - all_max_drawdown
+      - all_data_distance
+      - all_max_drawdown_feature
+      - all_max_raise_feature
+      - all_mean_feature
+      - all_std_feature
+      - all_corr_feature
+    subnodes_conf:
+      all_max_raise:
+        conf:
+          negative: true
+          window: 242
+      all_max_drawdown:
+        conf:
+          negative: false
+          window: 242
+      all_data_distance:
+        conf:
+          window: 242
+      all_max_drawdown_feature:
+        conf:
+          name: all_max_drawdown
+      all_max_raise_feature:
+        conf:
+          name: all_max_raise
+      all_mean_feature:
+        conf:
+          name: all_mean
+      all_std_feature:
+        conf:
+          name: all_std
+      all_corr_feature:
+        conf:
+          name: all_corr
+    taskgraph: notebooks/17assets/feature_computation.gq.yaml
+  inputs:
+    all_max_raise@logreturn_df: log_return.out
+    all_max_drawdown@logreturn_df: log_return.out
+    all_data_distance@in: log_return.out

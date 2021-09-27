@@ -9,7 +9,6 @@
   inputs:
     in1: csv_output2.df_out
     in2: csv_output1.df_out
-  module: rapids_modules
   type: Output_Collector
 - conf:
     input:

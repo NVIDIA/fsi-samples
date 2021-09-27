@@ -9,7 +9,6 @@
   inputs:
     in1: stock_data.cudf_out
     in2: add_return_feature.stock_out
-  module: rapids_modules
   type: Output_Collector
 - conf:
   - column: volume

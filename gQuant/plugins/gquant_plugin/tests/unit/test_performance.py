@@ -47,9 +47,10 @@ class TestPerformance(unittest.TestCase):
             'ports_setup.classificationGenerator.py': 2,
             'ports_setup.csvStockLoader.py': 3,
             'ports_setup.taskGraph.py': 5,
-            'ports_setup._node_flow.py': 304,
-            'ports_setup.template_node_mixin.py': 61,
-            'ports_setup_ext._node_taskgraph_extension_mixin.py': 61
+            'ports_setup._node_flow.py': 320,
+            'ports_setup.template_node_mixin.py': 77,
+            'ports_setup_ext._node_taskgraph_extension_mixin.py': 77,
+            'ports_setup.output_collector_node.py': 5
         }
 
         self.meta_setup_ref = {
@@ -60,9 +61,10 @@ class TestPerformance(unittest.TestCase):
             'meta_setup.csvStockLoader.py': 3,
             'meta_setup.taskGraph.py': 5,
             'meta_setup.node.py': 5,
-            'meta_setup._node_flow.py': 158,
+            'meta_setup._node_flow.py': 177,
             'meta_setup.template_node_mixin.py': 47,
             'meta_setup_ext._node_taskgraph_extension_mixin.py': 47,
+            'meta_setup.output_collector_node.py': 5
         }
 
         tgraphpath = str(topdir) + \

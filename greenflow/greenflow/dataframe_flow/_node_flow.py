@@ -12,14 +12,11 @@ from .taskSpecSchema import TaskSpecSchema
 from .metaSpec import MetaData
 from ._node import _Node
 from ._node_taskgraph_extension_mixin import NodeTaskGraphExtensionMixin
-
-# OUTPUT_ID = 'f291b900-bd19-11e9-aca3-a81e84f29b0f_uni_output'
-OUTPUT_ID = 'collector_id_fd9567b6'
-OUTPUT_TYPE = 'Output_Collector'
+from .output_collector_node import OUTPUT_TYPE
 
 
-__all__ = ['NodeTaskGraphMixin', 'OUTPUT_ID', 'OUTPUT_TYPE',
-           'register_validator', 'register_copy_function']
+__all__ = ['NodeTaskGraphMixin', 'register_validator',
+           'register_copy_function', 'register_cleanup']
 
 # class NodeIncomingEdge(object):
 #     from_node = 'from_node'
@@ -84,6 +81,7 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
         ----------
             _task_obj
             uid
+            node_type_str
             conf
             load
             save
@@ -348,11 +346,10 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
                 return meta_data.outports[from_port_name]
 
             if from_port_name not in meta_data.outports:
-                nodetype_list = _get_nodetype(self)
-                nodetype_names = [inodet.__name__ for inodet in nodetype_list]
-                if 'OutputCollector' in nodetype_names:
+                if self.node_type_str == OUTPUT_TYPE:
                     continue
 
+                nodetype_list = _get_nodetype(self)
                 warnings.warn(
                     'node "{}" node-type "{}" to port "{}", from node "{}" '
                     'node-type "{}" oport "{}" missing oport in metadata for '
@@ -417,9 +414,13 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
             iport = out['to_port']
             oport = out['from_port']
 
+            # Prevent memory leaks.
+            if not onode.visited:
+                continue
+
             if oport is not None:
                 if oport not in output_df:
-                    if onode.uid in (OUTPUT_ID,):
+                    if onode.node_type_str == OUTPUT_TYPE:
                         onode_msg = 'is listed in task-graph outputs'
                     else:
                         onode_msg = 'is required as input to node "{}"'.format(
@@ -684,6 +685,7 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
             end = time.time()
             print('id:%s process time:%.3fs' % (self.uid, end-start))
             return result
+
         if self.profile:
             return timer
         else:
@@ -708,7 +710,7 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
                 else:
                     output_df = self.decorate_process()(inputs)
 
-        if self.uid != OUTPUT_ID and output_df is None:
+        if self.node_type_str != OUTPUT_TYPE and output_df is None:
             raise Exception("None output")
         else:
             self.__validate_output(output_df)
@@ -722,12 +724,11 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
         """
         Validate the connected port types match
         """
-        self_nodetype = _get_nodetype(self)
-        nodetype_names = [inodet.__name__ for inodet in self_nodetype]
-        if 'OutputCollector' in nodetype_names:
-            # Don't validate for OutputCollector
+        if self.node_type_str == OUTPUT_TYPE:
+            # Don't validate for Output_Collector
             return
 
+        self_nodetype = _get_nodetype(self)
         msgfmt = '"{task}":"{nodetype}" {inout} port "{ioport}" {inout} port '\
             'type(s) "{ioport_types}"'
 
@@ -858,6 +859,10 @@ class NodeTaskGraphMixin(NodeTaskGraphExtensionMixin):
                 dy = PortsSpecSchema.dynamic
                 if inports[iport].get(dy, False):
                     continue
+
+                if inports[iport].get(PortsSpecSchema.optional, False):
+                    continue
+
                 # Is it possible that iport not connected? If so iport should
                 # not be in required. Should raise an exception here.
                 warn_msg = \

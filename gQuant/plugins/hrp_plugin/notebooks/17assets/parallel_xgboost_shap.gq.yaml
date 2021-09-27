@@ -1,0 +1,135 @@
+- id: ''
+  type: Output_Collector
+  conf: {}
+  inputs:
+    in1: train_shap_dot.summary_plot
+    in2: test_shap_dot.summary_plot
+    in3: train_shap_bar.summary_plot
+    in4: test_shap_bar.summary_plot
+- id: load_raw_csv
+  type: LoadCsvNode
+  conf:
+    csvfile: notebooks/data/pricess.csv
+    17assets: true
+  inputs: {}
+  module: investment_nodes
+- id: xgboost_train
+  type: TrainXGBoostNode
+  conf:
+    num_of_rounds: 100
+    columns:
+      - month
+      - sample_id
+      - year
+      - portfolio
+    include: false
+    xgboost_parameters:
+      eta: 0.3
+      min_child_weight: 1
+      subsample: 1
+      sampling_method: uniform
+      colsample_bytree: 1
+      colsample_bylevel: 1
+      colsample_bynode: 1
+      max_depth: 8
+      max_leaves: 256
+      grow_policy: depthwise
+      gamma: 0
+      lambda: 1
+      alpha: 0
+      tree_method: gpu_hist
+      single_precision_histogram: false
+      deterministic_histogram: false
+      objective: 'reg:squarederror'
+    target: portfolio
+  inputs:
+    in: persist.split_data@train
+  module: greenflow_gquant_plugin.ml
+- id: train_infer_shap
+  type: InferXGBoostNode
+  conf:
+    prediction: predict
+    pred_contribs: true
+  inputs:
+    model_in: xgboost_train.model_out
+    data_in: persist.split_data@train
+  module: greenflow_gquant_plugin.ml
+- id: test_infer_shap
+  type: InferXGBoostNode
+  conf:
+    prediction: predict
+    pred_contribs: true
+  inputs:
+    model_in: xgboost_train.model_out
+    data_in: persist.split_data@test
+  module: greenflow_gquant_plugin.ml
+- id: train_shap_dot
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: dot
+  inputs:
+    model_in: xgboost_train.model_out
+    shap_in: train_infer_shap.out
+    data_in: persist.split_data@train
+  module: investment_nodes
+- id: test_shap_dot
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: dot
+  inputs:
+    model_in: xgboost_train.model_out
+    shap_in: test_infer_shap.out
+    data_in: persist.split_data@test
+  module: investment_nodes
+- id: train_shap_bar
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: bar
+  inputs:
+    model_in: xgboost_train.model_out
+    shap_in: train_infer_shap.out
+    data_in: persist.split_data@train
+  module: investment_nodes
+- id: test_shap_bar
+  type: ShapSummaryPlotPlotNode
+  conf:
+    max_display: 20
+    plot_type: bar
+  inputs:
+    model_in: xgboost_train.model_out
+    shap_in: test_infer_shap.out
+    data_in: persist.split_data@test
+  module: investment_nodes
+- id: parallel
+  type: SimpleParallelNode
+  conf:
+    input:
+      - bootstrap.in
+    output:
+      - merge_target.merged
+    map:
+      - node_id: bootstrap
+        xpath: bootstrap.conf.offset
+    taskgraph: notebooks/17assets/full_workflow_xgboost_performance.gq.yaml
+    iterations: 25
+  inputs:
+    bootstrap@in: load_raw_csv.df_out
+  module: greenflow_dask_plugin
+- id: persist
+  type: PersistNode
+  conf: {}
+  inputs:
+    split_data@test: split_data.test
+    split_data@train: split_data.train
+  module: greenflow_dask_plugin
+- id: split_data
+  type: DataSplittingNode
+  conf:
+    train_size: 0.9
+    target: portfolio
+  inputs:
+    in: parallel.merge_target@merged
+  module: greenflow_gquant_plugin.ml

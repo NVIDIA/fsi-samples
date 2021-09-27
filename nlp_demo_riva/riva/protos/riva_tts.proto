@@ -1,0 +1,46 @@
+// Copyright (c) 2021, NVIDIA CORPORATION.  All rights reserved.
+//
+// NVIDIA CORPORATION and its licensors retain all intellectual property
+// and proprietary rights in and to this software, related documentation
+// and any modifications thereto.  Any use, reproduction, disclosure or
+// distribution of this software and related documentation without an express
+// license agreement from NVIDIA CORPORATION is strictly prohibited.
+
+
+syntax = "proto3";
+
+package nvidia.riva.tts;
+
+option cc_enable_arenas = true;
+option go_package = "nvidia.com/riva_speech";
+
+import "riva_audio.proto";
+
+service RivaSpeechSynthesis {
+    // Used to request speech-to-text from the service. Submit a request containing the
+    // desired text and configuration, and receive audio bytes in the requested format.
+    rpc Synthesize(SynthesizeSpeechRequest) returns (SynthesizeSpeechResponse) {}
+
+    // Used to request speech-to-text returned via stream as it becomes available.
+    // Submit a SynthesizeSpeechRequest with desired text and configuration,
+    // and receive stream of bytes in the requested format.
+    rpc SynthesizeOnline(SynthesizeSpeechRequest) returns (stream SynthesizeSpeechResponse) {}
+}
+
+message SynthesizeSpeechRequest {
+    string text = 1;
+    string language_code = 2;
+    // audio encoding params
+    AudioEncoding encoding = 3;
+    int32 sample_rate_hz = 4;
+    // voice params
+    string voice_name = 5;
+}
+
+message SynthesizeSpeechResponse {
+    bytes audio = 1;
+}
+
+/*
+ *
+ */
