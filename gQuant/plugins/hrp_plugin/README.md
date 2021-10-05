@@ -1,8 +1,8 @@
 ## Greenflow Plugin for Hierarchical Risk Parity(HRP) diversification
 
-This package includes a set of Greenflow nodes[1] that accelerate the investment workflow in the GPU described in the paper[2]. It has following steps
+This package includes a set of Greenflow nodes[1] that accelerate the investment workflow in the GPU described in the paper([2],[6]). The end-to-end workflow is organized as a directed acyclic graph containing following steps: 
 
-* Load CSV data
+* Load CSV data to GPU
 * Run bootstrap to generate 1 million scenarios
 * Compute assets distances to run hierarchical clustering and HRP weights for the assets
 * Compute the weights for the assets based on naïve RP method
@@ -12,12 +12,20 @@ This package includes a set of Greenflow nodes[1] that accelerate the investment
 * Run HPO to find out the best parameters for the XGBoost model
 * Compute the Shap values from the XGBoost model and find out which feature explains the Sharpe difference via visualization
 
-It leverage the Numba GPU kernel[3] to accelerate customized computation. Dask[4] is used to parallelize the Bootstrap sample computation in different GPUs.  
 
+It leverage the Numba GPU kernel[3] to accelerate customized computation. Dask[4] is used to parallelize the Bootstrap sample computation in different GPUs. 
+
+To play with it, there are two notebooks under the `notebooks` directory. The `10assets` notebook is ready to run which uses synthetic dataset.
+
+You need to prepare `17assets` csv file (the same format as the synthetic one) to run the `17assets` notebook.
 
 ## How to install
 
-### Method 1. Docker
+### Data files
+
+CSV files are located at `notebooks/data` directory. You need to prepare your own CSV file to run the 17assets notebook.
+
+### Method 1. Docker (RECOMMENDED)
 In this project directory, build the docker image:
 ```bash
 docker build --network=host -f docker/Dockerfile -t hrp_example .
@@ -73,7 +81,7 @@ pip install .
 ```
 
 #### Run the examples
-Launching the Jupyter Lab[5] by,
+At the root directory of this plugin, launch the Jupyter Lab[5] by,
 ```bash
 jupyter-lab --allow-root --ip=0.0.0.0 --no-browser --NotebookApp.token=''
 ```
@@ -93,7 +101,8 @@ bash make_tar.sh
 ## References
 
 1. https://github.com/NVIDIA/fsi-samples/tree/main/greenflow
-2. Markus J, Stephan K et al. Interpretable Machine Learning for Diversified Portfolio Construction, The Journal of Financial Data Science Summer 2021, Jan 2021
+2. [Markus J, Stephan K et al. Interpretable Machine Learning for Diversified Portfolio Construction, The Journal of Financial Data Science Summer 2021, Jan 2021](https://jfds.pm-research.com/content/3/3/31)
 3. https://numba.pydata.org/
 4. https://dask.org/
 5. http://jupyterlab.io/
+6. https://developer.nvidia.com/blog/accelerating-interpretable-machine-learning-for-diversified-portfolio-construction/
