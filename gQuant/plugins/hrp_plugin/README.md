@@ -12,6 +12,7 @@ This package includes a set of Greenflow nodes[1] that accelerate the investment
 * Run HPO to find out the best parameters for the XGBoost model
 * Compute the Shap values from the XGBoost model and find out which feature explains the Sharpe difference via visualization
 
+To learn how to use Greenflow to launch the workflow, here is a [video tutorial](https://www.youtube.com/watch?v=Ie6Dtj7Shas&t=2s).
 
 It leverage the Numba GPU kernel[3] to accelerate customized computation. Dask[4] is used to parallelize the Bootstrap sample computation in different GPUs. 
 
