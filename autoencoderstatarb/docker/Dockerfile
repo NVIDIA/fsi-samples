@@ -33,7 +33,7 @@ ADD ./LICENSE /.
 ADD ./README.md ./
 ADD ./CONTRIBUTING.md ./
 ADD ./*.ipynb ./
-ADD ./*.png ./
+ADD images ./images
 
 EXPOSE 8888
 EXPOSE 8889
