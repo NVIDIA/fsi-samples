@@ -1,8 +1,6 @@
 # Credit Default Risk 
 Inspired by the Bank of England paper 816 entitled "Machine learning explainability in finance: an application to default risk analysis" [1]from August 2019 where a U.K. mortgage dataset was used, we use the widely available public U.S. Fannie Mae mortgage dataset to show an XGBoost classifer for predicting loan delinquencies. For Fannie Mae, there are the loan acquisition files (kept in subdir acq) and loan performance files (kept in subdir perf). The NVIDIA developer blog article is entitled "Explaining and Accelerating Machine Learning for Loan Delinquencies" by Mark Bennett, John Ashley, and Patrick Hogan [3]. Python code began with Kyle DeGrave's article entitled "Predicting Loan Defaults in the Fannie Mae Data Set" [2], and further code contributions were made for acceleration, deep learning, and explainability by Emanuel Scoullos, Jochen Papenbrock, and Mark Bennett of NVIDIA. More detailed analysis of explanability approaches for portfolio construction and mortgage loans is provided in the more recent articles [4], [5], [6] by Emanual Scoullos, Jochen Papenbrock, Prabhu Ramamoorthy, Thomas Schoenemeyer, and Miguel Martinez.
 
-See also the related articles for additional debt instrument explainability [4] and acceleration results for simulating equity instruments[5]. 
-
 ## Features
 Revised code for four Python Jupyter Notebooks:
 
