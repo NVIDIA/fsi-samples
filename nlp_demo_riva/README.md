@@ -35,7 +35,7 @@ Open up the webpage at:
 https://ip:8888
 ```
 
-Note, it is required to use `https://` connection to get the browser microphone to work remotely. Note, you might need to accept the risk warning from the browser to proceed. Have fun playing with it!
+<strong>Note, it is required</strong> to use `https://` connection to get the browser microphone to work remotely. Note, you might need to accept the risk warning from the browser to proceed. Have fun playing with it!
 
 To shut down the demo
 ```bash
