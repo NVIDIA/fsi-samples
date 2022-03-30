@@ -21,7 +21,8 @@
 # RUN: docker run --gpus all --rm -it -p 8888:8888 -p 8889:8889 -p 8890:8890 -p 8891:8891 -v `pwd`:$HOME cdr:nvidia
 # JUPYTER NOTEBOOK: /jupyter
 
-FROM rapidsai/rapidsai:21.10-cuda11.4-runtime-ubuntu20.04-py3.8
+#FROM rapidsai/rapidsai:21.10-cuda11.4-runtime-ubuntu20.04-py3.8
+FROM rapidsai/rapidsai:21.06-cuda11.2-runtime-ubuntu20.04
 
 ADD docker/requirements.txt /workspace/
 SHELL ["conda", "run", "-n", "rapids", "/bin/bash", "-c"]
