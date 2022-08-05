@@ -1,0 +1,45 @@
+{
+  "format_version": 2,
+
+  "executors": [
+    {
+      "tasks": ["train", "submit_model"],
+      "executor": {
+        "path": "tabformer_lstm_trainer.TabformerTrainer",
+        "args": {
+          "lr": 0.001,
+          "epochs": 2,
+          "dataset_base_dir": "/federated_learning/data"
+        }
+      }
+    },
+    {
+      "tasks": ["validate"],
+      "executor": {
+        "path": "tabformer_lstm_validator.TabformerValidator",
+        "args": {
+          "dataset_base_dir": "/federated_learning/data"
+        }
+      }
+    }
+  ],
+  "task_result_filters": [
+    {
+      "tasks": ["train"],
+      "filters":[
+          {
+          "path": "nvflare.app_common.filters.svt_privacy.SVTPrivacy",
+          "args": {
+            "fraction": 0.6,
+            "epsilon": 0.001,
+            "noise_var": 1.0
+          }
+        }
+      ]        
+    }
+  ],
+  "task_data_filters": [
+  ],
+  "components": [
+  ]
+}
