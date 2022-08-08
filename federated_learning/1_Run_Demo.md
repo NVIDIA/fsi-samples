@@ -7,7 +7,7 @@ Before we can run our custom federated learning app, we need to first start the 
 ---
 
 ### 0. Setting up the application environment in POC mode
-NVFLARE provides a "POC mode" that allows us to simulate the FL environment on a single local machine. Run the `poc` command to generates a poc folder with a server, two clients, and one admin:
+NVFLARE provides a "POC mode" that allows us to simulate the FL environment on a single local machine. Run the `poc` command in the `federated_learning` directory to generate a poc folder with a server, two clients, and one admin:
 
 ```bash
 poc -n 2
