@@ -43,6 +43,6 @@ At the end of the notebook you'll see that the resulting data splits are named `
 ### 3. Check path in config
 Update the `dataset_base_dir` argument in the client config file (`train-tabformer/config/config_fed_client.json`) to match your local path to datasets folder. 
 
-**Note:** Specify the **absolute** path to the `data` folder in the config. i.e. do not include relative paths such as `~`
+**Note:** Specify the **absolute** path to the `data` folder in the config. i.e. do not include path aliases such as `~`
 
 ---
