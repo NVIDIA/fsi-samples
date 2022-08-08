@@ -1,0 +1,11 @@
+--extra-index-url https://download.pytorch.org/whl/cu116
+
+nvflare==2.0.10
+torch==1.12.1
+torchvision==0.13.1
+pandas==1.4.1
+numpy==1.22.1
+scikit-learn==1.0.2
+jupyter==1.0.0
+iso18245==1.2.0
+protobuf==3.20.0
