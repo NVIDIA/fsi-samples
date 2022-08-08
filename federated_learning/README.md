@@ -12,7 +12,7 @@ Below you'll find a step-by-step guide on how to setup and run this project.
 
 ## Requirements
 
-In order to run this example as is, you'll need two GPUs on your local machine since each client server trains independently. 
+In order to run this example as is, you'll need two GPUs on your local machine since each client trains a model independently.
 
 However, if you don't have two GPUs available and would like to train on a single GPU, you can modify the code as follows: in `train-tabformer/custom/tabformer-lstm-trainer.py` on line 84, and in `train-tabformer/custom/tabformer-lstm-validator.py` set `gpu_id = 0`.
 
