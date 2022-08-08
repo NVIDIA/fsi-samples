@@ -2,7 +2,7 @@
 
 Before we can run our custom federated learning app, we need to first start the POC mode that simulates the FL environment. Next, we'll walk through how we start the federated training, how we monitor the progress, and finally how we shut down the system when it finishes.
 
-**Note: This example was designed to be run on a machine with 2 GPUs available.** Each site trains on it's own GPU, however the central server doesn't need a GPU to aggregate the weights. By default it will use your first GPU to train site 1, and the second to train site 2. If you need to modify this behavior, this can be changed in the `_initialize_trainer()` function in our [trainer](/train-tabformer/custom/tabformer_lstm_trainer.py) and the `_initialize_validator()` function in the [validator](/train-tabformer/custom/tabformer_lstm_validator.py).
+**Note: This example was designed to be run on a machine with 2 GPUs available.** Each site trains on it's own GPU, however the central server doesn't need a GPU to aggregate the weights. By default it will use your first GPU to train site 1, and the second to train site 2. If you need to modify this behavior, this can be changed in the `_initialize_trainer()` function in our [trainer](./train-tabformer/custom/tabformer_lstm_trainer.py) and the `_initialize_validator()` function in the [validator](./train-tabformer/custom/tabformer_lstm_validator.py).
 
 ---
 
