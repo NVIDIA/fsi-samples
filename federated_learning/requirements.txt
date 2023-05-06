@@ -1,6 +1,6 @@
 --extra-index-url https://download.pytorch.org/whl/cu116
 
-nvflare==2.0.10
+nvflare==2.3.0
 torch==1.12.1
 torchvision==0.13.1
 pandas==1.4.1
