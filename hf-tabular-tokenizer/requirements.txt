@@ -1,0 +1,10 @@
+pytest
+numpy
+pandas
+scikit-learn
+transformers
+deprecated
+matplotlib
+tqdm
+torch
+datasets
